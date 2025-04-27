@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,7 +15,7 @@ class CameraScreen extends StatefulWidget {
   State<CameraScreen> createState() => CameraScreenState();
 }
 
-class CameraScreenState extends State<CameraScreen> {
+class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver {
   bool _isLoading = false;
   bool _isInitialized = false;
   late CameraController _cameraController;
@@ -26,15 +27,34 @@ class CameraScreenState extends State<CameraScreen> {
   @override
   void initState() {
     super.initState();
+    // Add observer for app lifecycle changes
+    WidgetsBinding.instance.addObserver(this);
     _initializeCamera();
   }
   
   @override
   void dispose() {
+    // Remove observer when disposing
+    WidgetsBinding.instance.removeObserver(this);
     if (_isInitialized) {
       _cameraController.dispose();
     }
     super.dispose();
+  }
+  
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Handle app lifecycle changes
+    if (!_isInitialized) return;
+    
+    // If app is inactive, dispose camera
+    if (state == AppLifecycleState.inactive) {
+      _cameraController.dispose();
+      _isInitialized = false;
+    } else if (state == AppLifecycleState.resumed) {
+      // Reinitialize camera when app is resumed
+      _initializeCamera();
+    }
   }
   
   // Initialize the camera
@@ -69,10 +89,16 @@ class CameraScreenState extends State<CameraScreen> {
         return;
       }
       
-      // Initialize the camera controller with the first (back) camera
+      // Find the back camera
+      final backCamera = _cameras.firstWhere(
+        (camera) => camera.lensDirection == CameraLensDirection.back,
+        orElse: () => _cameras.first,
+      );
+      
+      // Initialize the camera controller with basic settings
       _cameraController = CameraController(
-        _cameras[0],
-        ResolutionPreset.high,
+        backCamera,
+        ResolutionPreset.medium, // Medium resolution for better performance
         enableAudio: false,
       );
       
@@ -87,12 +113,14 @@ class CameraScreenState extends State<CameraScreen> {
       }
     } catch (e) {
       print('Error initializing camera: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error initializing camera: $e')),
-      );
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error initializing camera: $e')),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
   
@@ -303,6 +331,29 @@ class CameraScreenState extends State<CameraScreen> {
 
   // Helper function for string truncation
   int min(int a, int b) => a < b ? a : b;
+  
+  // Build the camera preview with proper aspect ratio
+  Widget _buildCameraPreview() {
+    if (!_isInitialized) {
+      return Container(
+        color: Colors.black,
+        child: const Center(
+          child: Text(
+            'Camera initializing...',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+    
+    // Simply use a container that fills the screen
+    // and let CameraPreview handle the aspect ratio naturally
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      child: CameraPreview(_cameraController),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -310,23 +361,10 @@ class CameraScreenState extends State<CameraScreen> {
       backgroundColor: AppTheme.secondaryBeige,
       body: Stack(
         children: [
-          // Camera preview or placeholder
-          _isInitialized
-              ? Positioned.fill(
-                  child: AspectRatio(
-                    aspectRatio: _cameraController.value.aspectRatio,
-                    child: CameraPreview(_cameraController),
-                  ),
-                )
-              : Container(
-                  color: Colors.black,
-                  child: const Center(
-                    child: Text(
-                      'Camera initializing...',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
+          // Camera preview with corrected aspect ratio
+          Positioned.fill(
+            child: _buildCameraPreview(),
+          ),
           
           // Loading indicator
           if (_isLoading)

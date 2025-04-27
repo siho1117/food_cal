@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Add this import for SystemChrome
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv
 import 'config/theme.dart';
 import 'screens/splash_screen.dart';
@@ -16,6 +17,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 Future<void> main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Set preferred orientations to portrait only
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   // Load .env file
   await dotenv.load();
