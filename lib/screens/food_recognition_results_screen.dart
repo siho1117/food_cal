@@ -44,6 +44,7 @@ class _FoodRecognitionResultsScreenState
     }
 
     try {
+      print('Starting food recognition process...');
       // Call API to recognize food
       final items = await _repository.recognizeFood(
         widget.imageFile,
@@ -55,6 +56,21 @@ class _FoodRecognitionResultsScreenState
           _recognizedItems = items;
           _isLoading = false;
         });
+        
+        // If we got back items but they're "unidentified", show an appropriate message
+        if (items.isNotEmpty && 
+            (items[0].name == 'Unidentified Food Item' || 
+             items[0].name == 'Unknown Food')) {
+          setState(() {
+            _hasError = true;
+            _errorMessage = 'Could not identify food in the image. Please try again with a clearer photo.';
+          });
+        } else if (items.isEmpty) {
+          setState(() {
+            _hasError = true;
+            _errorMessage = 'No food items were detected in the image.';
+          });
+        }
       }
     } catch (e) {
       print('Error recognizing food: $e');
@@ -203,7 +219,7 @@ class _FoodRecognitionResultsScreenState
             const SizedBox(height: 8),
             Text(
               _errorMessage.isNotEmpty
-                  ? _errorMessage
+                  ? _simplifyErrorMessage(_errorMessage)
                   : 'Unable to recognize food in the image.',
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.grey),
@@ -221,6 +237,32 @@ class _FoodRecognitionResultsScreenState
         ),
       ),
     );
+  }
+
+  // Helper method to simplify error messages for users
+  String _simplifyErrorMessage(String message) {
+    // Filter out technical details
+    if (message.contains('Exception:')) {
+      message = message.replaceAll('Exception:', '').trim();
+    }
+    
+    if (message.contains('Failed to recognize food:')) {
+      message = message.replaceAll('Failed to recognize food:', '').trim();
+    }
+    
+    if (message.contains('VM proxy error')) {
+      return 'Connection issue with the food recognition service. Please try again later.';
+    }
+    
+    if (message.contains('unsupported response format')) {
+      return 'No food recognized in the image. Please try again with a clearer photo.';
+    }
+    
+    if (message.contains('timeout')) {
+      return 'The request took too long to process. Please try again.';
+    }
+    
+    return message;
   }
 
   Widget _buildResultsContent() {

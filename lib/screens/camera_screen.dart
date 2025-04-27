@@ -1,6 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:camera/camera.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:image_picker/image_picker.dart';
 import '../config/theme.dart';
 import '../data/services/fallback_provider.dart';
+import '../screens/food_recognition_results_screen.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({Key? key}) : super(key: key);
@@ -11,22 +16,245 @@ class CameraScreen extends StatefulWidget {
 
 class CameraScreenState extends State<CameraScreen> {
   bool _isLoading = false;
+  bool _isInitialized = false;
+  late CameraController _cameraController;
+  late List<CameraDescription> _cameras;
+  File? _capturedImage;
+  final ImagePicker _picker = ImagePicker();
+  String _selectedMealType = 'snack'; // Default meal type
   
-  // Placeholder method to make main.dart happy
-  void capturePhoto() {
-    // Just show a message during testing
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Camera functionality is disabled during connection testing'),
-        duration: Duration(seconds: 2),
+  @override
+  void initState() {
+    super.initState();
+    _initializeCamera();
+  }
+  
+  @override
+  void dispose() {
+    if (_isInitialized) {
+      _cameraController.dispose();
+    }
+    super.dispose();
+  }
+  
+  // Initialize the camera
+  Future<void> _initializeCamera() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      // Request camera permission
+      var status = await Permission.camera.request();
+      if (status.isDenied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Camera permission is required')),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+      
+      // Get available cameras
+      _cameras = await availableCameras();
+      
+      if (_cameras.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No camera found')),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+      
+      // Initialize the camera controller with the first (back) camera
+      _cameraController = CameraController(
+        _cameras[0],
+        ResolutionPreset.high,
+        enableAudio: false,
+      );
+      
+      // Initialize and check for errors
+      await _cameraController.initialize();
+      
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error initializing camera: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error initializing camera: $e')),
+      );
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+  
+  // Capture photo from camera
+  Future<void> capturePhoto() async {
+    if (!_isInitialized) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Camera is not initialized')),
+      );
+      return;
+    }
+    
+    try {
+      // Take the picture
+      final XFile image = await _cameraController.takePicture();
+      
+      // Convert to File
+      final File imageFile = File(image.path);
+      
+      setState(() {
+        _capturedImage = imageFile;
+      });
+      
+      // Show the captured image and options
+      _showImageOptions();
+    } catch (e) {
+      print('Error capturing photo: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error capturing photo: $e')),
+      );
+    }
+  }
+  
+  // Select image from gallery
+  Future<void> pickImageFromGallery() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      
+      if (image != null) {
+        setState(() {
+          _capturedImage = File(image.path);
+        });
+        
+        // Show the captured image and options
+        _showImageOptions();
+      }
+    } catch (e) {
+      print('Error picking image: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error picking image: $e')),
+      );
+    }
+  }
+  
+  // Show options for the captured image
+  void _showImageOptions() {
+    if (_capturedImage == null) return;
+    
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Title
+              const Text(
+                'Food Photo',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Image preview
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(
+                  _capturedImage!,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Meal type selector
+              DropdownButton<String>(
+                value: _selectedMealType,
+                isExpanded: true,
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    setModalState(() {
+                      _selectedMealType = newValue;
+                    });
+                  }
+                },
+                items: ['breakfast', 'lunch', 'dinner', 'snack'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(
+                      value.substring(0, 1).toUpperCase() + value.substring(1),
+                      style: const TextStyle(
+                        fontSize: 16,
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Action buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Retake button
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      setState(() {
+                        _capturedImage = null;
+                      });
+                    },
+                    icon: const Icon(Icons.replay, size: 20),
+                    label: const Text('Retake'),
+                  ),
+                  
+                  // Analyze button
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      // Navigate to food recognition results screen
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => FoodRecognitionResultsScreen(
+                            imageFile: _capturedImage!,
+                            mealType: _selectedMealType,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.check, size: 20),
+                    label: const Text('Analyze Food'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryBlue,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
-    
-    // Alternatively, run the connection test when capture is attempted
-    // testVMConnection();
   }
-
-  // Test function to check VM connectivity
+  
+  // Test VM connection (keeping this for now)
   void testVMConnection() async {
     setState(() {
       _isLoading = true;
@@ -80,133 +308,86 @@ class CameraScreenState extends State<CameraScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.secondaryBeige,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text(
-          'VM Connection Test',
-          style: TextStyle(
-            color: AppTheme.primaryBlue,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Info text
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Text(
-                'Test the connection to your VM and OpenAI',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[700],
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            
-            // VM configuration display
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 2),
+      body: Stack(
+        children: [
+          // Camera preview or placeholder
+          _isInitialized
+              ? Positioned.fill(
+                  child: AspectRatio(
+                    aspectRatio: _cameraController.value.aspectRatio,
+                    child: CameraPreview(_cameraController),
                   ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'VM Configuration',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: AppTheme.primaryBlue,
+                )
+              : Container(
+                  color: Colors.black,
+                  child: const Center(
+                    child: Text(
+                      'Camera initializing...',
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: const [
-                      Text('VM IP: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text('35.201.20.109'),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: const [
-                      Text('Port: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text('3000 (Node.js server)'),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: const [
-                      Text('Endpoint: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text('/api/openai-proxy'),
-                    ],
-                  ),
-                ],
+                ),
+          
+          // Loading indicator
+          if (_isLoading)
+            const Positioned.fill(
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                ),
               ),
             ),
-            
-            const SizedBox(height: 30),
-            
-            // Test button
-            _isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: testVMConnection,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryBlue,
-                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+          
+          // Bottom controls
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 100, // Above the bottom nav bar
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              color: Colors.black45,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Gallery button
+                  IconButton(
+                    icon: const Icon(Icons.photo_library, color: Colors.white, size: 30),
+                    onPressed: pickImageFromGallery,
+                  ),
+                  
+                  // Capture button
+                  GestureDetector(
+                    onTap: capturePhoto,
+                    child: Container(
+                      height: 70,
+                      width: 70,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 4,
+                        ),
+                      ),
+                      child: Container(
+                        margin: const EdgeInsets.all(5),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
                       ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.cloud_sync),
-                        SizedBox(width: 12),
-                        Text(
-                          'Test VM Connection',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
-            
-            const SizedBox(height: 20),
-            
-            // Additional info text
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                'This test will send a simple question to your VM, which should forward it to OpenAI and return the response.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                  fontStyle: FontStyle.italic,
-                ),
+                  
+                  // VM Test button (keeping for now)
+                  IconButton(
+                    icon: const Icon(Icons.cloud_sync, color: Colors.white, size: 30),
+                    onPressed: testVMConnection,
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
