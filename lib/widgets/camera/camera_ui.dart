@@ -1,41 +1,12 @@
+// lib/widgets/camera/camera_ui.dart
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'dart:io'; // Added import for File class
+import 'dart:io'; 
+import 'dart:math' as math;
 import '../../config/theme.dart';
 
 /// UI elements for the camera screen
 class CameraUI {
-  /// Builds the camera preview
-  static Widget buildCameraPreview(CameraController controller, Function(TapUpDetails) onFocusTap) {
-    if (!controller.value.isInitialized) {
-      return Container(
-        color: Colors.black,
-        child: const Center(
-          child: Text(
-            'Camera initializing...',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      );
-    }
-
-    return GestureDetector(
-      onTapUp: onFocusTap,
-      child: SizedBox(
-        width: double.infinity,
-        height: double.infinity,
-        child: FittedBox(
-          fit: BoxFit.cover,
-          child: SizedBox(
-            width: controller.value.previewSize!.height,
-            height: controller.value.previewSize!.width,
-            child: CameraPreview(controller),
-          ),
-        ),
-      ),
-    );
-  }
-
   /// Builds the bottom control area (semi-transparent black background)
   static Widget buildControlPanel(double height) {
     return Container(

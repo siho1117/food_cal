@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
@@ -35,6 +37,10 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
   @override
   void initState() {
     super.initState();
+    // Lock orientation to portrait before initializing camera
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
     // Add observer for app lifecycle changes
     WidgetsBinding.instance.addObserver(this);
     _initializeCamera();
@@ -76,12 +82,14 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
       // Request camera permission
       var status = await Permission.camera.request();
       if (status.isDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Camera permission is required')),
-        );
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Camera permission is required')),
+          );
+          setState(() {
+            _isLoading = false;
+          });
+        }
         return;
       }
       
@@ -89,12 +97,14 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
       _cameras = await availableCameras();
       
       if (_cameras.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No camera found')),
-        );
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No camera found')),
+          );
+          setState(() {
+            _isLoading = false;
+          });
+        }
         return;
       }
       
@@ -103,6 +113,9 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
         (camera) => camera.lensDirection == CameraLensDirection.back,
         orElse: () => _cameras.first,
       );
+      
+      // Print the sensor orientation for debugging
+      print('Camera sensor orientation: ${backCamera.sensorOrientation}');
       
       // Initialize the camera controller with high resolution
       _cameraController = CameraController(
@@ -143,9 +156,9 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
   Future<void> _onFocusPanel(TapUpDetails details) async {
     if (!_isInitialized) return;
     
-    final screenSize = MediaQuery.of(context).size;
-    
     try {
+      final screenSize = MediaQuery.of(context).size;
+      
       final double x = details.localPosition.dx / screenSize.width;
       final double y = details.localPosition.dy / screenSize.height;
       
@@ -188,12 +201,22 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
     }
   }
   
+  // Get the rotation needed based on camera sensor orientation
+  int _getImageRotation() {
+    final CameraDescription camera = _cameraController.description;
+    // For back camera in portrait mode, we typically need to rotate
+    // (Android = 90° or 270°, iOS may be different)
+    return camera.sensorOrientation;
+  }
+  
   // Capture photo from camera
   Future<void> capturePhoto() async {
     if (!_isInitialized) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Camera is not initialized')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Camera is not initialized')),
+        );
+      }
       return;
     }
     
@@ -215,25 +238,45 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
       // Delete the original file from camera cache
       await originalFile.delete();
       
-      // Resize and compress the image to 256x256 with a moderate JPEG quality
-      final File optimizedFile = await _resizeAndOptimizeImage(copiedFile, 256, 256, 75);
+      // Get the rotation needed
+      final int rotation = _getImageRotation();
+      print('Applying rotation: $rotation degrees');
       
-      setState(() {
-        _capturedImage = optimizedFile;
-      });
+      // Resize and compress the image with rotation correction
+      final File optimizedFile = await _resizeAndOptimizeImage(
+        copiedFile, 
+        256, 
+        256, 
+        75,
+        rotation
+      );
       
-      // Show the captured image and options
-      _showImageOptions();
+      if (mounted) {
+        setState(() {
+          _capturedImage = optimizedFile;
+        });
+        
+        // Show the captured image and options
+        _showImageOptions();
+      }
     } catch (e) {
       print('Error capturing photo: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error capturing photo: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error capturing photo: $e')),
+        );
+      }
     }
   }
   
-  // Resize and optimize image for network transfer
-  Future<File> _resizeAndOptimizeImage(File originalFile, int targetWidth, int targetHeight, int quality) async {
+  // Resize and optimize image for network transfer with rotation correction
+  Future<File> _resizeAndOptimizeImage(
+    File originalFile, 
+    int targetWidth, 
+    int targetHeight, 
+    int quality,
+    int rotation
+  ) async {
     try {
       final Uint8List originalBytes = await originalFile.readAsBytes();
       
@@ -248,6 +291,7 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
         minHeight: targetHeight,
         quality: quality,
         format: CompressFormat.jpeg,
+        rotate: rotation, // Apply the correct rotation
       );
       
       if (compressedBytes == null) {
@@ -290,27 +334,37 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
         // Copy the image to our temp directory to avoid modifying original gallery image
         final File copiedFile = await originalFile.copy(tempPath);
         
-        // Resize and optimize the copied image
-        final File optimizedFile = await _resizeAndOptimizeImage(copiedFile, 256, 256, 75);
+        // Resize and optimize the copied image (no rotation for gallery images)
+        final File optimizedFile = await _resizeAndOptimizeImage(
+          copiedFile, 
+          256, 
+          256, 
+          75,
+          0 // No rotation for gallery images
+        );
         
-        setState(() {
-          _capturedImage = optimizedFile;
-        });
-        
-        // Show the captured image and options
-        _showImageOptions();
+        if (mounted) {
+          setState(() {
+            _capturedImage = optimizedFile;
+          });
+          
+          // Show the captured image and options
+          _showImageOptions();
+        }
       }
     } catch (e) {
       print('Error picking image: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking image: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking image: $e')),
+        );
+      }
     }
   }
   
   // Show options for the captured image using the UI helper
   void _showImageOptions() {
-    if (_capturedImage == null) return;
+    if (_capturedImage == null || !mounted) return;
     
     CameraUI.showImageOptionsSheet(
       context: context,
@@ -355,7 +409,7 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
         children: [
           // Camera preview or loading indicator
           if (_isInitialized) 
-            CameraUI.buildCameraPreview(_cameraController, _onFocusPanel)
+            _buildCameraPreview()
           else
             const Center(
               child: CircularProgressIndicator(
@@ -398,6 +452,58 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
       ),
       extendBodyBehindAppBar: true,
       extendBody: true,
+    );
+  }
+  
+  // Build camera preview with rotation handling directly in this widget
+  Widget _buildCameraPreview() {
+    if (!_cameraController.value.isInitialized) {
+      return Container(
+        color: Colors.black,
+        child: const Center(
+          child: Text(
+            'Camera initializing...',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+
+    // Get screen size
+    final size = MediaQuery.of(context).size;
+    // Get the camera preview size
+    final previewSize = _cameraController.value.previewSize!;
+    
+    // Get device orientation
+    final deviceOrientation = MediaQuery.of(context).orientation;
+    
+    // Determine if we need to swap width and height
+    final needToSwapDimensions = 
+        _cameraController.description.sensorOrientation == 90 || 
+        _cameraController.description.sensorOrientation == 270;
+    
+    // Calculate the preview aspect ratio
+    final previewAspectRatio = needToSwapDimensions
+        ? previewSize.height / previewSize.width
+        : previewSize.width / previewSize.height;
+    
+    // Calculate scale to fill screen
+    final screenAspectRatio = size.width / size.height;
+    final scale = screenAspectRatio < previewAspectRatio
+        ? size.height / size.width * previewAspectRatio
+        : size.width / size.height / previewAspectRatio;
+    
+    return GestureDetector(
+      onTapUp: _onFocusPanel,
+      child: Center(
+        child: Transform.scale(
+          scale: scale,
+          child: AspectRatio(
+            aspectRatio: 1 / previewAspectRatio,
+            child: CameraPreview(_cameraController),
+          ),
+        ),
+      ),
     );
   }
 }

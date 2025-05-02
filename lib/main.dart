@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Add this import for SystemChrome
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv
+import 'package:flutter/services.dart'; // For SystemChrome
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'config/theme.dart';
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
@@ -10,7 +10,7 @@ import 'screens/exercise_screen.dart';
 import 'screens/settings_screen.dart';
 import 'widgets/custom_bottom_nav.dart';
 import 'widgets/custom_app_bar.dart';
-import 'data/services/api_service.dart'; // Import API service
+import 'data/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Load environment variables before the app starts
@@ -18,10 +18,9 @@ Future<void> main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set preferred orientations to portrait only
+  // Set preferred orientations to portrait only - most important line for fixing orientation issues!
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
   ]);
 
   // Load .env file
@@ -158,8 +157,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       bottomNavigationBar: CustomBottomNav(
         currentIndex: _currentIndex,
         onTap: _onItemTapped,
-        onCameraCapture:
-            null, // Remove this callback as we're handling it in onItemTapped
+        onCameraCapture: null,
       ),
     );
   }
