@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,6 +8,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'dart:typed_data';
 import '../config/theme.dart';
 import '../screens/food_recognition_results_screen.dart';
+import '../widgets/camera/camera_ui.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({Key? key}) : super(key: key);
@@ -18,24 +18,18 @@ class CameraScreen extends StatefulWidget {
 }
 
 class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver {
+  // Camera state
   bool _isLoading = false;
   bool _isInitialized = false;
   late CameraController _cameraController;
   late List<CameraDescription> _cameras;
+  
+  // Image state
   File? _capturedImage;
   final ImagePicker _picker = ImagePicker();
   String _selectedMealType = 'snack'; // Default meal type
   
-  // Focus indicator state
-  Offset? _focusPoint;
-  bool _showFocusCircle = false;
-  
-  // Zoom control state
-  double _minAvailableZoom = 1.0;
-  double _maxAvailableZoom = 1.0;
-  double _currentZoomLevel = 1.0;
-  
-  // Flash control state
+  // Flash mode state
   FlashMode _currentFlashMode = FlashMode.off;
   
   @override
@@ -43,11 +37,6 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
     super.initState();
     // Add observer for app lifecycle changes
     WidgetsBinding.instance.addObserver(this);
-    // Lock orientation to portrait mode
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
     _initializeCamera();
   }
   
@@ -55,13 +44,6 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
   void dispose() {
     // Remove observer when disposing
     WidgetsBinding.instance.removeObserver(this);
-    // Release orientation lock when leaving camera screen
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
     if (_isInitialized) {
       _cameraController.dispose();
     }
@@ -122,24 +104,16 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
         orElse: () => _cameras.first,
       );
       
-      // Initialize the camera controller with medium resolution
-      // Using medium instead of high since we'll resize anyway to save bandwidth
+      // Initialize the camera controller with high resolution
       _cameraController = CameraController(
         backCamera,
-        ResolutionPreset.medium,
+        ResolutionPreset.high,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
       
-      // Initialize and check for errors
+      // Initialize the camera
       await _cameraController.initialize();
-      
-      // Lock the camera orientation to portrait
-      // This helps ensure consistent camera preview in portrait mode
-      await _cameraController.lockCaptureOrientation(DeviceOrientation.portraitUp);
-      
-      // Get available zoom range
-      await _getZoomLevel();
       
       // Set initial flash mode
       await _cameraController.setFlashMode(FlashMode.off);
@@ -165,67 +139,20 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
     }
   }
   
-  // Get available zoom level from camera
-  Future<void> _getZoomLevel() async {
-    try {
-      _minAvailableZoom = await _cameraController.getMinZoomLevel();
-      _maxAvailableZoom = await _cameraController.getMaxZoomLevel();
-      setState(() {});
-    } catch (e) {
-      print('Error getting zoom level: $e');
-    }
-  }
-  
-  // Handle focus at point
+  // Handle auto-focus at point
   Future<void> _onFocusPanel(TapUpDetails details) async {
     if (!_isInitialized) return;
     
     final screenSize = MediaQuery.of(context).size;
     
-    // Calculate focus point
-    final offset = details.localPosition;
-    final double x = offset.dx / screenSize.width;
-    final double y = offset.dy / screenSize.height;
-    
-    // Show focus indicator
-    setState(() {
-      _focusPoint = offset;
-      _showFocusCircle = true;
-    });
-    
-    // Set focus and metering points on camera
     try {
+      final double x = details.localPosition.dx / screenSize.width;
+      final double y = details.localPosition.dy / screenSize.height;
+      
       await _cameraController.setFocusPoint(Offset(x, y));
       await _cameraController.setExposurePoint(Offset(x, y));
-      
-      // Hide focus indicator after delay
-      await Future.delayed(const Duration(seconds: 2));
-      if (mounted) {
-        setState(() {
-          _showFocusCircle = false;
-        });
-      }
     } catch (e) {
       print('Error setting focus: $e');
-    }
-  }
-  
-  // Handle zoom functionality
-  void _handleScaleUpdate(ScaleUpdateDetails details) {
-    if (!_isInitialized) return;
-    
-    // Calculate new zoom level
-    double newZoomLevel = (_currentZoomLevel * details.scale)
-        .clamp(_minAvailableZoom, _maxAvailableZoom);
-    
-    // Only update if there's a significant change
-    if ((newZoomLevel - _currentZoomLevel).abs() > 0.01) {
-      setState(() {
-        _currentZoomLevel = newZoomLevel;
-      });
-      
-      // Set zoom level on camera
-      _cameraController.setZoomLevel(newZoomLevel);
     }
   }
   
@@ -308,8 +235,6 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
   // Resize and optimize image for network transfer
   Future<File> _resizeAndOptimizeImage(File originalFile, int targetWidth, int targetHeight, int quality) async {
     try {
-      // Import the image_processing package functions
-      // Note: We're using the flutter_image_compress package in this case
       final Uint8List originalBytes = await originalFile.readAsBytes();
       
       // Get a temporary file path for the resized image
@@ -383,356 +308,93 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
     }
   }
   
-  // Show options for the captured image
+  // Show options for the captured image using the UI helper
   void _showImageOptions() {
     if (_capturedImage == null) return;
     
-    showModalBottomSheet(
+    CameraUI.showImageOptionsSheet(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Title
-              const Text(
-                'Food Photo',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Image preview
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  _capturedImage!,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Meal type selector
-              DropdownButton<String>(
-                value: _selectedMealType,
-                isExpanded: true,
-                onChanged: (String? newValue) {
-                  if (newValue != null) {
-                    setModalState(() {
-                      _selectedMealType = newValue;
-                    });
-                  }
-                },
-                items: ['breakfast', 'lunch', 'dinner', 'snack'].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(
-                      value.substring(0, 1).toUpperCase() + value.substring(1),
-                      style: const TextStyle(
-                        fontSize: 16,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Action buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // Retake button
-                  TextButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      setState(() {
-                        _capturedImage = null;
-                      });
-                    },
-                    icon: const Icon(Icons.replay, size: 20),
-                    label: const Text('Retake'),
-                  ),
-                  
-                  // Analyze button
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      // Navigate to food recognition results screen
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => FoodRecognitionResultsScreen(
-                            imageFile: _capturedImage!,
-                            mealType: _selectedMealType,
-                          ),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.check, size: 20),
-                    label: const Text('Analyze Food'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryBlue,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-  
-  // Build focus indicator widget
-  Widget _buildFocusCircle() {
-    if (!_showFocusCircle || _focusPoint == null) {
-      return const SizedBox.shrink();
-    }
-    
-    return Positioned(
-      left: _focusPoint!.dx - 24,
-      top: _focusPoint!.dy - 24,
-      child: Container(
-        height: 48,
-        width: 48,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: AppTheme.primaryBlue, width: 2),
-          color: Colors.transparent,
-        ),
-        child: const Center(
-          child: AnimatedOpacity(
-            opacity: 0.7,
-            duration: Duration(milliseconds: 300),
-            child: Icon(
-              Icons.circle,
-              size: 12,
-              color: AppTheme.primaryBlue,
+      imageFile: _capturedImage!,
+      mealType: _selectedMealType,
+      onMealTypeChanged: (newValue) {
+        setState(() {
+          _selectedMealType = newValue;
+        });
+      },
+      onRetake: () {
+        setState(() {
+          _capturedImage = null;
+        });
+      },
+      onAnalyze: () {
+        // Navigate to food recognition results screen
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => FoodRecognitionResultsScreen(
+              imageFile: _capturedImage!,
+              mealType: _selectedMealType,
             ),
           ),
-        ),
-      ),
-    );
-  }
-  
-  // Get flash mode icon
-  IconData _getFlashModeIcon() {
-    switch (_currentFlashMode) {
-      case FlashMode.off:
-        return Icons.flash_off;
-      case FlashMode.auto:
-        return Icons.flash_auto;
-      case FlashMode.always:
-        return Icons.flash_on;
-      case FlashMode.torch:
-        return Icons.highlight;
-    }
-  }
-  
-  // Build the camera preview with proper aspect ratio
-  Widget _buildCameraPreview() {
-    if (!_isInitialized) {
-      return Container(
-        color: Colors.black,
-        child: const Center(
-          child: Text(
-            'Camera initializing...',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      );
-    }
-    
-    // Use a simpler approach that's known to work reliably
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: Colors.black,
-      child: GestureDetector(
-        onTapUp: _onFocusPanel,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Camera preview that fills the available space
-            CameraPreview(_cameraController),
-            
-            // Transparent overlay for handling scale gestures
-            Positioned.fill(
-              child: GestureDetector(
-                onScaleStart: (_) {},
-                onScaleUpdate: _handleScaleUpdate,
-                onScaleEnd: (_) {},
-                child: Container(
-                  color: Colors.transparent,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get screen dimensions for precise positioning
+    // Get screen dimensions for positioning UI elements
     final screenHeight = MediaQuery.of(context).size.height;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
     final navBarHeight = 75.0; // Height of your CurvedNavigationBar
     
-    // Calculate bottom control panel height (approximately 20% of screen)
+    // Calculate bottom control panel height
     final controlPanelHeight = screenHeight * 0.14;
     
     return Scaffold(
       backgroundColor: Colors.black,
-      // Use a full-screen body without the camera button
-      body: OrientationBuilder(
-        builder: (context, orientation) {
-          return Stack(
-            children: [
-              // Camera preview with focus and zoom
-              if (_isInitialized) 
-                _buildCameraPreview(),
-              
-              // Zoom level indicator (only show when zooming)
-              if (_isInitialized && _currentZoomLevel > 1.0)
-                Positioned(
-                  top: 50,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '${_currentZoomLevel.toStringAsFixed(1)}x',
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ),
-              
-              // Focus circle
-              if (_isInitialized)
-                _buildFocusCircle(),
-              
-              // Loading indicator
-              if (_isLoading || !_isInitialized)
-                const Positioned.fill(
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              
-              // Semi-transparent black background for camera controls (20% of screen)
-              // You can adjust the opacity here (0.7 is darker, 0.3 is lighter)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                height: controlPanelHeight,
-                child: Container(
-                  color: Colors.black.withOpacity(0.5), // Change this value to adjust darkness
-                ),
+      body: Stack(
+        children: [
+          // Camera preview or loading indicator
+          if (_isInitialized) 
+            CameraUI.buildCameraPreview(_cameraController, _onFocusPanel)
+          else
+            const Center(
+              child: CircularProgressIndicator(
+                color: Colors.white,
               ),
-              
-              // Camera controls - now only include gallery and flash buttons
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: navBarHeight * 0.9, // Position just above the navigation bar
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  color: Colors.transparent, // Transparent background
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Gallery button (left side) - removed black circle background
-                      IconButton(
-                        icon: const Icon(Icons.photo_library, color: Colors.white, size: 26),
-                        onPressed: pickImageFromGallery,
-                        padding: EdgeInsets.zero,
-                      ),
-                      
-                      // Spacer where orange button will be
-                      const SizedBox(width: 80),
-                      
-                      // Flash toggle button (right side) - removed black circle background
-                      IconButton(
-                        icon: Icon(
-                          _getFlashModeIcon(),
-                          color: Colors.white,
-                          size: 26,
-                        ),
-                        onPressed: _toggleFlashMode,
-                        padding: EdgeInsets.zero,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              
-              // Invisible touch detector over the orange button area
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: GestureDetector(
-                    onTap: capturePhoto,
-                    child: Container(
-                      width: 75, // Large enough to cover the entire orange button
-                      height: 100, // Extend up high enough to cover the full button
-                      color: Colors.transparent, // Completely invisible
-                    ),
-                  ),
-                ),
-              ),
-
-              // Orientation warning - show only in landscape
-              if (orientation == Orientation.landscape)
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.black.withOpacity(0.7),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Icon(
-                            Icons.screen_rotation,
-                            color: Colors.white,
-                            size: 50,
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Please rotate your device to portrait mode',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          );
-        }
+            ),
+          
+          // Semi-transparent black background for camera controls
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: controlPanelHeight,
+            child: CameraUI.buildControlPanel(controlPanelHeight),
+          ),
+          
+          // Camera control buttons
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: navBarHeight * 0.9, // Position just above the navigation bar
+            child: CameraUI.buildControlButtons(
+              navBarHeight: navBarHeight,
+              onGalleryTap: pickImageFromGallery,
+              onFlashTap: _toggleFlashMode,
+              flashIcon: CameraUI.getFlashModeIcon(_currentFlashMode),
+            ),
+          ),
+          
+          // Invisible touch detector over the orange button area
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: CameraUI.buildCaptureButtonArea(capturePhoto),
+            ),
+          ),
+        ],
       ),
       extendBodyBehindAppBar: true,
       extendBody: true,
