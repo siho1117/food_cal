@@ -587,6 +587,9 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final navBarHeight = 75.0; // Height of your CurvedNavigationBar
     
+    // Calculate bottom control panel height (approximately 20% of screen)
+    final controlPanelHeight = screenHeight * 0.14;
+    
     return Scaffold(
       backgroundColor: Colors.black,
       // Use a full-screen body without the camera button
@@ -633,6 +636,18 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
                   ),
                 ),
               
+              // Semi-transparent black background for camera controls (20% of screen)
+              // You can adjust the opacity here (0.7 is darker, 0.3 is lighter)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: controlPanelHeight,
+                child: Container(
+                  color: Colors.black.withOpacity(0.5), // Change this value to adjust darkness
+                ),
+              ),
+              
               // Camera controls - now only include gallery and flash buttons
               Positioned(
                 left: 0,
@@ -644,41 +659,25 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      // Gallery button (left side)
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.photo_library, color: Colors.white, size: 26),
-                          onPressed: pickImageFromGallery,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
+                      // Gallery button (left side) - removed black circle background
+                      IconButton(
+                        icon: const Icon(Icons.photo_library, color: Colors.white, size: 26),
+                        onPressed: pickImageFromGallery,
+                        padding: EdgeInsets.zero,
                       ),
                       
                       // Spacer where orange button will be
                       const SizedBox(width: 80),
                       
-                      // Flash toggle button (right side)
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
-                          shape: BoxShape.circle,
+                      // Flash toggle button (right side) - removed black circle background
+                      IconButton(
+                        icon: Icon(
+                          _getFlashModeIcon(),
+                          color: Colors.white,
+                          size: 26,
                         ),
-                        child: IconButton(
-                          icon: Icon(
-                            _getFlashModeIcon(),
-                            color: Colors.white,
-                            size: 26,
-                          ),
-                          onPressed: _toggleFlashMode,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
+                        onPressed: _toggleFlashMode,
+                        padding: EdgeInsets.zero,
                       ),
                     ],
                   ),
@@ -740,6 +739,3 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
     );
   }
 }
-
-// We're no longer using the custom ScaleGestureDetector class
-// as we've integrated the functionality directly in the _buildCameraPreview method
