@@ -20,9 +20,15 @@ class CameraScreenState extends State<CameraScreen> {
   File? _capturedImage;
   final ImagePicker _picker = ImagePicker();
   String _selectedMealType = 'snack'; // Default meal type
+  bool _isLoading = false;
   
   Future<void> capturePhoto() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
     try {
+      // Use ImagePicker to launch the native camera
       final XFile? pickedFile = await _picker.pickImage(
         source: ImageSource.camera,
         imageQuality: 90,
@@ -32,7 +38,7 @@ class CameraScreenState extends State<CameraScreen> {
       if (pickedFile != null) {
         final File originalFile = File(pickedFile.path);
         
-        // Process the image (resize/optimize)
+        // Process the image
         final File optimizedFile = await _resizeAndOptimizeImage(
           originalFile, 
           256, 
@@ -43,14 +49,25 @@ class CameraScreenState extends State<CameraScreen> {
         if (mounted) {
           setState(() {
             _capturedImage = optimizedFile;
+            _isLoading = false;
           });
           
           _showImageOptions();
+        }
+      } else {
+        // User cancelled taking a picture
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
         }
       }
     } catch (e) {
       print('Error capturing photo: $e');
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error capturing photo: $e')),
         );
@@ -93,6 +110,10 @@ class CameraScreenState extends State<CameraScreen> {
   }
   
   Future<void> pickImageFromGallery() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
@@ -112,14 +133,25 @@ class CameraScreenState extends State<CameraScreen> {
         if (mounted) {
           setState(() {
             _capturedImage = optimizedFile;
+            _isLoading = false;
           });
           
           _showImageOptions();
+        }
+      } else {
+        // User cancelled picking an image
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
         }
       }
     } catch (e) {
       print('Error picking image: $e');
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error picking image: $e')),
         );
@@ -132,6 +164,10 @@ class CameraScreenState extends State<CameraScreen> {
     
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppTheme.secondaryBeige,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Container(
           padding: const EdgeInsets.all(16),
@@ -144,6 +180,7 @@ class CameraScreenState extends State<CameraScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryBlue,
                 ),
               ),
               
@@ -163,29 +200,42 @@ class CameraScreenState extends State<CameraScreen> {
               const SizedBox(height: 16),
               
               // Meal type selector
-              DropdownButton<String>(
-                value: _selectedMealType,
-                isExpanded: true,
-                onChanged: (String? newValue) {
-                  if (newValue != null) {
-                    setModalState(() {
-                      setState(() {
-                        _selectedMealType = newValue;
-                      });
-                    });
-                  }
-                },
-                items: ['breakfast', 'lunch', 'dinner', 'snack'].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(
-                      value.substring(0, 1).toUpperCase() + value.substring(1),
-                      style: const TextStyle(
-                        fontSize: 16,
-                      ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedMealType,
+                    isExpanded: true,
+                    icon: const Icon(
+                      Icons.arrow_drop_down,
+                      color: AppTheme.primaryBlue,
                     ),
-                  );
-                }).toList(),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setModalState(() {
+                          setState(() {
+                            _selectedMealType = newValue;
+                          });
+                        });
+                      }
+                    },
+                    items: ['breakfast', 'lunch', 'dinner', 'snack'].map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(
+                          value.substring(0, 1).toUpperCase() + value.substring(1),
+                          style: const TextStyle(
+                            fontSize: 16,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
               ),
               
               const SizedBox(height: 16),
@@ -195,15 +245,20 @@ class CameraScreenState extends State<CameraScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   // Retake button
-                  TextButton.icon(
+                  OutlinedButton.icon(
                     onPressed: () {
                       Navigator.of(context).pop();
                       setState(() {
                         _capturedImage = null;
                       });
+                      // Launch camera again
+                      capturePhoto();
                     },
                     icon: const Icon(Icons.replay, size: 20),
                     label: const Text('Retake'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.primaryBlue,
+                    ),
                   ),
                   
                   // Analyze button
@@ -238,156 +293,89 @@ class CameraScreenState extends State<CameraScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.secondaryBeige,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Main content
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'FOOD PHOTO',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryBlue,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Take a photo of your food to analyze its nutritional content',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
+      appBar: AppBar(
+        title: const Text(
+          'FOOD PHOTO',
+          style: TextStyle(
+            color: AppTheme.primaryBlue,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppTheme.primaryBlue),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Gallery button - LARGE & TOP
+              Container(
+                width: double.infinity,
+                height: 120,
+                margin: const EdgeInsets.only(bottom: 40),
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : pickImageFromGallery,
+                  icon: const Icon(
+                    Icons.photo_library,
+                    size: 36,
                   ),
-                ),
-                
-                // Image preview area
-                Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          spreadRadius: 0,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: _capturedImage != null
-                        ? Image.file(
-                            _capturedImage!,
-                            fit: BoxFit.cover,
-                          )
-                        : Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Icon(
-                                  Icons.camera_alt,
-                                  size: 80,
-                                  color: Colors.grey,
-                                ),
-                                SizedBox(height: 16),
-                                Text(
-                                  'No photo yet',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Tap the camera button to take a photo',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
+                  label: const Text(
+                    'Gallery',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-                
-                // Button area
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Gallery button
-                      ElevatedButton.icon(
-                        onPressed: pickImageFromGallery,
-                        icon: const Icon(Icons.photo_library),
-                        label: const Text('Gallery'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppTheme.primaryBlue,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                          elevation: 3,
-                        ),
-                      ),
-                      
-                      // Camera button
-                      ElevatedButton.icon(
-                        onPressed: capturePhoto,
-                        icon: const Icon(Icons.camera_alt, size: 24),
-                        label: const Text('Take Photo', style: TextStyle(fontSize: 16)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryBlue,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                          elevation: 3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            
-            // If the image was just captured, show a quick tip
-            if (_capturedImage != null)
-              Positioned(
-                bottom: 100,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Tap "Analyze Food" to continue',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppTheme.primaryBlue,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                 ),
               ),
-          ],
+              
+              // Camera button - LARGE & BOTTOM
+              Container(
+                width: double.infinity,
+                height: 120,
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : capturePhoto,
+                  icon: _isLoading 
+                      ? const SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                        )
+                      : const Icon(
+                          Icons.camera_alt,
+                          size: 36,
+                        ),
+                  label: Text(
+                    _isLoading ? 'Loading...' : 'Camera',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryBlue,
+                    foregroundColor: Colors.white,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
