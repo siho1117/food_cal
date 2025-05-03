@@ -18,10 +18,9 @@ Future<void> main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set preferred orientations to portrait only - most important line for fixing orientation issues!
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
+  // We're removing the portrait-only orientation lock from here
+  // The system level locks in Android and iOS manifests will still keep
+  // the UI in portrait mode, but the camera can still rotate naturally
 
   // Load .env file
   await dotenv.load();
