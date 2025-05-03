@@ -37,10 +37,6 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
   @override
   void initState() {
     super.initState();
-    // Lock orientation to portrait before initializing camera
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-    ]);
     // Add observer for app lifecycle changes
     WidgetsBinding.instance.addObserver(this);
     _initializeCamera();
@@ -201,14 +197,6 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
     }
   }
   
-  // Get the rotation needed based on camera sensor orientation
-  int _getImageRotation() {
-    final CameraDescription camera = _cameraController.description;
-    // For back camera in portrait mode, we typically need to rotate
-    // (Android = 90° or 270°, iOS may be different)
-    return camera.sensorOrientation;
-  }
-  
   // Capture photo from camera
   Future<void> capturePhoto() async {
     if (!_isInitialized) {
@@ -238,9 +226,8 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
       // Delete the original file from camera cache
       await originalFile.delete();
       
-      // Get the rotation needed
-      final int rotation = _getImageRotation();
-      print('Applying rotation: $rotation degrees');
+      // We'll always use portrait mode (90 degrees) for the captured image
+      final int rotation = 90; // Fixed rotation for portrait mode
       
       // Resize and compress the image with rotation correction
       final File optimizedFile = await _resizeAndOptimizeImage(
@@ -291,7 +278,7 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
         minHeight: targetHeight,
         quality: quality,
         format: CompressFormat.jpeg,
-        rotate: rotation, // Apply the correct rotation
+        rotate: rotation, // Apply portrait mode rotation
       );
       
       if (compressedBytes == null) {
@@ -334,7 +321,7 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
         // Copy the image to our temp directory to avoid modifying original gallery image
         final File copiedFile = await originalFile.copy(tempPath);
         
-        // Resize and optimize the copied image (no rotation for gallery images)
+        // For gallery images, we don't need to rotate since they already have orientation metadata
         final File optimizedFile = await _resizeAndOptimizeImage(
           copiedFile, 
           256, 
@@ -455,7 +442,7 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
     );
   }
   
-  // Build camera preview with rotation handling directly in this widget
+  // Build camera preview with simplified orientation handling
   Widget _buildCameraPreview() {
     if (!_cameraController.value.isInitialized) {
       return Container(
@@ -474,18 +461,8 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
     // Get the camera preview size
     final previewSize = _cameraController.value.previewSize!;
     
-    // Get device orientation
-    final deviceOrientation = MediaQuery.of(context).orientation;
-    
-    // Determine if we need to swap width and height
-    final needToSwapDimensions = 
-        _cameraController.description.sensorOrientation == 90 || 
-        _cameraController.description.sensorOrientation == 270;
-    
-    // Calculate the preview aspect ratio
-    final previewAspectRatio = needToSwapDimensions
-        ? previewSize.height / previewSize.width
-        : previewSize.width / previewSize.height;
+    // Calculate the preview aspect ratio (always in portrait mode)
+    final previewAspectRatio = previewSize.height / previewSize.width;
     
     // Calculate scale to fill screen
     final screenAspectRatio = size.width / size.height;
