@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // For SystemChrome
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'config/theme.dart';
 import 'screens/splash_screen.dart';
@@ -17,10 +16,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 Future<void> main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
-
-  // We're removing the portrait-only orientation lock from here
-  // The system level locks in Android and iOS manifests will still keep
-  // the UI in portrait mode, but the camera can still rotate naturally
 
   // Load .env file
   await dotenv.load();

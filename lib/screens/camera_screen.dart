@@ -1,14 +1,12 @@
+// lib/screens/camera_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'dart:typed_data';
 import '../config/theme.dart';
 import '../screens/food_recognition_results_screen.dart';
-import '../widgets/camera/camera_ui.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({Key? key}) : super(key: key);
@@ -17,199 +15,38 @@ class CameraScreen extends StatefulWidget {
   State<CameraScreen> createState() => CameraScreenState();
 }
 
-class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver {
-  // Camera state
-  bool _isLoading = false;
-  bool _isInitialized = false;
-  late CameraController _cameraController;
-  late List<CameraDescription> _cameras;
-  
+class CameraScreenState extends State<CameraScreen> {
   // Image state
   File? _capturedImage;
   final ImagePicker _picker = ImagePicker();
   String _selectedMealType = 'snack'; // Default meal type
   
-  // Flash mode state
-  FlashMode _currentFlashMode = FlashMode.off;
-  
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _initializeCamera();
-  }
-  
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    if (_isInitialized) {
-      _cameraController.dispose();
-    }
-    super.dispose();
-  }
-  
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!_isInitialized) return;
-    
-    if (state == AppLifecycleState.inactive) {
-      _cameraController.dispose();
-      _isInitialized = false;
-    } else if (state == AppLifecycleState.resumed) {
-      _initializeCamera();
-    }
-  }
-  
-  Future<void> _initializeCamera() async {
-    setState(() {
-      _isLoading = true;
-      _isInitialized = false;
-    });
-    
-    try {
-      var status = await Permission.camera.request();
-      if (status.isDenied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Camera permission is required')),
-          );
-          setState(() {
-            _isLoading = false;
-          });
-        }
-        return;
-      }
-      
-      _cameras = await availableCameras();
-      
-      if (_cameras.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No camera found')),
-          );
-          setState(() {
-            _isLoading = false;
-          });
-        }
-        return;
-      }
-      
-      final backCamera = _cameras.firstWhere(
-        (camera) => camera.lensDirection == CameraLensDirection.back,
-        orElse: () => _cameras.first,
-      );
-      
-      _cameraController = CameraController(
-        backCamera,
-        ResolutionPreset.high,
-        enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.jpeg,
-      );
-      
-      await _cameraController.initialize();
-      await _cameraController.setFlashMode(FlashMode.off);
-      
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Error initializing camera: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error initializing camera: $e')),
-        );
-        setState(() {
-          _isLoading = false;
-          _isInitialized = false;
-        });
-      }
-    }
-  }
-  
-  Future<void> _onFocusPanel(TapUpDetails details) async {
-    if (!_isInitialized) return;
-    
-    try {
-      final screenSize = MediaQuery.of(context).size;
-      
-      final double x = details.localPosition.dx / screenSize.width;
-      final double y = details.localPosition.dy / screenSize.height;
-      
-      await _cameraController.setFocusPoint(Offset(x, y));
-      await _cameraController.setExposurePoint(Offset(x, y));
-    } catch (e) {
-      print('Error setting focus: $e');
-    }
-  }
-  
-  Future<void> _toggleFlashMode() async {
-    if (!_isInitialized) return;
-    
-    FlashMode newMode;
-    
-    switch (_currentFlashMode) {
-      case FlashMode.off:
-        newMode = FlashMode.auto;
-        break;
-      case FlashMode.auto:
-        newMode = FlashMode.always;
-        break;
-      case FlashMode.always:
-        newMode = FlashMode.torch;
-        break;
-      case FlashMode.torch:
-        newMode = FlashMode.off;
-        break;
-    }
-    
-    try {
-      await _cameraController.setFlashMode(newMode);
-      setState(() {
-        _currentFlashMode = newMode;
-      });
-    } catch (e) {
-      print('Error setting flash mode: $e');
-    }
-  }
-  
   Future<void> capturePhoto() async {
-    if (!_isInitialized) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Camera is not initialized')),
-        );
-      }
-      return;
-    }
-    
     try {
-      final XFile image = await _cameraController.takePicture();
-      final String imagePath = image.path;
-      
-      final tempDir = await getTemporaryDirectory();
-      final String appImagePath = '${tempDir.path}/food_capture_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      
-      final File originalFile = File(imagePath);
-      final File copiedFile = await originalFile.copy(appImagePath);
-      
-      await originalFile.delete();
-      
-      final File optimizedFile = await _resizeAndOptimizeImage(
-        copiedFile, 
-        256, 
-        256, 
-        75
+      final XFile? pickedFile = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 90,
+        preferredCameraDevice: CameraDevice.rear,
       );
       
-      if (mounted) {
-        setState(() {
-          _capturedImage = optimizedFile;
-        });
+      if (pickedFile != null) {
+        final File originalFile = File(pickedFile.path);
         
-        _showImageOptions();
+        // Process the image (resize/optimize)
+        final File optimizedFile = await _resizeAndOptimizeImage(
+          originalFile, 
+          256, 
+          256, 
+          75
+        );
+        
+        if (mounted) {
+          setState(() {
+            _capturedImage = optimizedFile;
+          });
+          
+          _showImageOptions();
+        }
       }
     } catch (e) {
       print('Error capturing photo: $e');
@@ -248,8 +85,6 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
       final File compressedFile = File(targetPath);
       await compressedFile.writeAsBytes(compressedBytes);
       
-      await originalFile.delete();
-      
       return compressedFile;
     } catch (e) {
       print('Error optimizing image: $e');
@@ -267,13 +102,8 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
       if (image != null) {
         final File originalFile = File(image.path);
         
-        final tempDir = await getTemporaryDirectory();
-        final String tempPath = '${tempDir.path}/gallery_temp_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        
-        final File copiedFile = await originalFile.copy(tempPath);
-        
         final File optimizedFile = await _resizeAndOptimizeImage(
-          copiedFile, 
+          originalFile, 
           256, 
           256, 
           75
@@ -300,98 +130,266 @@ class CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver 
   void _showImageOptions() {
     if (_capturedImage == null || !mounted) return;
     
-    CameraUI.showImageOptionsSheet(
+    showModalBottomSheet(
       context: context,
-      imageFile: _capturedImage!,
-      mealType: _selectedMealType,
-      onMealTypeChanged: (newValue) {
-        setState(() {
-          _selectedMealType = newValue;
-        });
-      },
-      onRetake: () {
-        setState(() {
-          _capturedImage = null;
-        });
-      },
-      onAnalyze: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => FoodRecognitionResultsScreen(
-              imageFile: _capturedImage!,
-              mealType: _selectedMealType,
-            ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Title
+              const Text(
+                'Food Photo',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Image preview
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(
+                  _capturedImage!,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Meal type selector
+              DropdownButton<String>(
+                value: _selectedMealType,
+                isExpanded: true,
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    setModalState(() {
+                      setState(() {
+                        _selectedMealType = newValue;
+                      });
+                    });
+                  }
+                },
+                items: ['breakfast', 'lunch', 'dinner', 'snack'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(
+                      value.substring(0, 1).toUpperCase() + value.substring(1),
+                      style: const TextStyle(
+                        fontSize: 16,
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Action buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Retake button
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      setState(() {
+                        _capturedImage = null;
+                      });
+                    },
+                    icon: const Icon(Icons.replay, size: 20),
+                    label: const Text('Retake'),
+                  ),
+                  
+                  // Analyze button
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => FoodRecognitionResultsScreen(
+                            imageFile: _capturedImage!,
+                            mealType: _selectedMealType,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.check, size: 20),
+                    label: const Text('Analyze Food'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryBlue,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final navBarHeight = 75.0;
-    final controlPanelHeight = screenHeight * 0.14;
-    
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          if (_isInitialized) 
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              child: FittedBox(
-                fit: BoxFit.cover,
-                child: SizedBox(
-                  width: _cameraController.value.previewSize!.height,
-                  height: _cameraController.value.previewSize!.width,
-                  child: GestureDetector(
-                    onTapUp: _onFocusPanel,
-                    child: CameraPreview(_cameraController),
+      backgroundColor: AppTheme.secondaryBeige,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Main content
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'FOOD PHOTO',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryBlue,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Take a photo of your food to analyze its nutritional content',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Image preview area
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          spreadRadius: 0,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: _capturedImage != null
+                        ? Image.file(
+                            _capturedImage!,
+                            fit: BoxFit.cover,
+                          )
+                        : Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(
+                                  Icons.camera_alt,
+                                  size: 80,
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'No photo yet',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Tap the camera button to take a photo',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                    ),
+                  ),
+                ),
+                
+                // Button area
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Gallery button
+                      ElevatedButton.icon(
+                        onPressed: pickImageFromGallery,
+                        icon: const Icon(Icons.photo_library),
+                        label: const Text('Gallery'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppTheme.primaryBlue,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          elevation: 3,
+                        ),
+                      ),
+                      
+                      // Camera button
+                      ElevatedButton.icon(
+                        onPressed: capturePhoto,
+                        icon: const Icon(Icons.camera_alt, size: 24),
+                        label: const Text('Take Photo', style: TextStyle(fontSize: 16)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryBlue,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                          elevation: 3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            
+            // If the image was just captured, show a quick tip
+            if (_capturedImage != null)
+              Positioned(
+                bottom: 100,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Tap "Analyze Food" to continue',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            )
-          else
-            const Center(
-              child: CircularProgressIndicator(
-                color: Colors.white,
-              ),
-            ),
-          
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: controlPanelHeight,
-            child: CameraUI.buildControlPanel(controlPanelHeight),
-          ),
-          
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: navBarHeight * 0.9,
-            child: CameraUI.buildControlButtons(
-              navBarHeight: navBarHeight,
-              onGalleryTap: pickImageFromGallery,
-              onFlashTap: _toggleFlashMode,
-              flashIcon: CameraUI.getFlashModeIcon(_currentFlashMode),
-            ),
-          ),
-          
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: CameraUI.buildCaptureButtonArea(capturePhoto),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
-      extendBodyBehindAppBar: true,
-      extendBody: true,
     );
   }
 }
