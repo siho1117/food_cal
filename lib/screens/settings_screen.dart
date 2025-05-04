@@ -12,6 +12,7 @@ import '../widgets/settings/feedback_widget.dart';
 import '../widgets/settings/monthly_weight_goal_dialog.dart';
 import '../widgets/settings/weight_entry_dialog.dart';
 import '../utils/formula.dart';
+import '../config/theme.dart';
 
 class SettingsScreen extends StatefulWidget {
   // New parameter to check if we should show back button
@@ -27,10 +28,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // Color constants
-  final Color primaryBlue = const Color(0xFF0052CC);
-  final Color secondaryBeige = const Color(0xFFF5EFE0);
-
   // User repository
   final UserRepository _userRepository = UserRepository();
 
@@ -297,7 +294,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: secondaryBeige,
+        backgroundColor: AppTheme.secondaryBeige,
         body: const Center(
           child: CircularProgressIndicator(),
         ),
@@ -305,7 +302,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     return Scaffold(
-      backgroundColor: secondaryBeige,
+      backgroundColor: AppTheme.secondaryBeige,
       // Add an app bar with back button when needed
       appBar: widget.showBackButton
           ? AppBar(
@@ -313,13 +310,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               elevation: 0,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
-                color: primaryBlue,
+                color: AppTheme.primaryBlue,
                 onPressed: () => Navigator.of(context).pop(),
               ),
               title: const Text(
                 'Settings',
                 style: TextStyle(
-                  color: Color(0xFF0052CC),
+                  color: AppTheme.primaryBlue,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -343,7 +340,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           style: TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
-                            color: primaryBlue,
+                            color: AppTheme.primaryBlue,
                             letterSpacing: 2,
                           ),
                         ),
@@ -379,7 +376,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: primaryBlue,
+                  color: AppTheme.primaryBlue,
                 ),
               ),
 
@@ -469,7 +466,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: primaryBlue,
+                  color: AppTheme.primaryBlue,
                 ),
               ),
 
@@ -540,7 +537,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: primaryBlue,
+                  color: AppTheme.primaryBlue,
                 ),
               ),
 
@@ -591,12 +588,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: primaryBlue.withOpacity(0.1),
+                color: AppTheme.primaryBlue.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 icon,
-                color: primaryBlue,
+                color: AppTheme.primaryBlue,
                 size: 24,
               ),
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/theme.dart';
 
 class ProfilePictureWidget extends StatelessWidget {
   final String? avatarUrl;
@@ -12,8 +13,6 @@ class ProfilePictureWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color primaryBlue = const Color(0xFF0052CC);
-
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -26,7 +25,7 @@ class ProfilePictureWidget extends StatelessWidget {
                 // Avatar
                 CircleAvatar(
                   radius: 50,
-                  backgroundColor: primaryBlue.withOpacity(0.1),
+                  backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
                   backgroundImage:
                       avatarUrl != null ? NetworkImage(avatarUrl!) : null,
                   child: avatarUrl == null
@@ -45,7 +44,7 @@ class ProfilePictureWidget extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: primaryBlue,
+                      color: AppTheme.accentColor, // Changed to burgundy accent
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: Colors.white,

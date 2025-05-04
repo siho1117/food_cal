@@ -4,15 +4,21 @@ class AppTheme {
   // Private constructor to prevent instantiation
   AppTheme._();
 
-  // Color Constants
-  static const Color primaryBlue = Color(0xFF0052CC);
-  static const Color secondaryBeige = Color(0xFFF5EFE0);
-  static const Color textDark = Color(0xFF333333);
-  static const Color textLight = Colors.white;
-  static const Color accentColor = Color(0xFF00A3FF);
+  // Color Constants - Main palette from the design
+  static const Color primaryBlue = Color(0xFF0D4033);      // Deep green (replacing blue)
+  static const Color secondaryBeige = Color(0xFFF5EFE0);   // Keeping original beige
+  static const Color textDark = Color(0xFF333333);         // Keeping original dark text
+  static const Color textLight = Colors.white;             // Keeping white text
+  static const Color accentColor = Color(0xFF8B3A3A);      // Burgundy (replacing blue accent)
+  
+  // Additional colors from the design palette
+  static const Color goldAccent = Color(0xFFCF9340);       // Gold/mustard 
+  static const Color coralAccent = Color(0xFFE27069);      // Coral/salmon
+  static const Color mintAccent = Color(0xFFE4F7D7);       // Mint green
+  static const Color nudeAccent = Color(0xFFDEBAB0);       // Nude/blush
 
   // Font Constants
-  static const String fontFamily = 'Montserrat';
+  static const String fontFamily = 'Montserrat';          // Keeping original font
 
   // Text Styles
   static const TextStyle headingStyle = TextStyle(
@@ -46,6 +52,7 @@ class AppTheme {
       secondary: secondaryBeige,
       background: secondaryBeige,
       surface: Colors.white,
+      tertiary: accentColor,
     ),
     scaffoldBackgroundColor: secondaryBeige,
     textTheme: const TextTheme(

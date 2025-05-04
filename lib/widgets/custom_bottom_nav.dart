@@ -17,10 +17,9 @@ class CustomBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Very dark beige, almost brown for stronger contrast
-    final navBarColor = AppTheme.primaryBlue; // Very dark beige
-    final primaryBlue = const Color.fromARGB(
-        255, 255, 147, 46); // App's primary blue for selected button
+    // Use colors from the theme instead of hardcoded values
+    final navBarColor = AppTheme.primaryBlue; // Primary color from theme
+    final selectedButtonColor = AppTheme.accentColor; // Accent color from theme
 
     // Check if we're on the camera screen
     final isCameraScreen = currentIndex == 2;
@@ -29,8 +28,8 @@ class CustomBottomNav extends StatelessWidget {
       index: currentIndex,
       height: 75, // Maintained height
       backgroundColor: Colors.transparent,
-      color: navBarColor, // Very dark beige navigation bar
-      buttonBackgroundColor: primaryBlue, // Selected button is blue
+      color: navBarColor, // Use theme color for nav bar 
+      buttonBackgroundColor: selectedButtonColor, // Use accent color for selected button
       animationCurve: Curves.easeOutCubic,
       animationDuration: const Duration(milliseconds: 400),
       items: [

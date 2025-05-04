@@ -243,7 +243,7 @@ class _DailySummaryWidgetState extends State<DailySummaryWidget> {
             children: [
               Text(
                 '$_totalCalories',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.primaryBlue,
@@ -306,19 +306,19 @@ class _DailySummaryWidgetState extends State<DailySummaryWidget> {
                 'Protein',
                 macroGrams['protein']!,
                 macroPercentages['protein']!,
-                Colors.red,
+                AppTheme.coralAccent, // Red for protein
               ),
               _buildMacroInfo(
                 'Carbs',
                 macroGrams['carbs']!,
                 macroPercentages['carbs']!,
-                Colors.green,
+                AppTheme.goldAccent, // Green for carbs
               ),
               _buildMacroInfo(
                 'Fat',
                 macroGrams['fat']!,
                 macroPercentages['fat']!,
-                Colors.blue,
+                AppTheme.accentColor, // Blue for fat
               ),
             ],
           ),
@@ -330,9 +330,9 @@ class _DailySummaryWidgetState extends State<DailySummaryWidget> {
             borderRadius: BorderRadius.circular(4),
             child: Row(
               children: [
-                _buildMacroBar(macroPercentages['protein']!, Colors.red),
-                _buildMacroBar(macroPercentages['carbs']!, Colors.green),
-                _buildMacroBar(macroPercentages['fat']!, Colors.blue),
+                _buildMacroBar(macroPercentages['protein']!, AppTheme.coralAccent),
+                _buildMacroBar(macroPercentages['carbs']!, AppTheme.goldAccent),
+                _buildMacroBar(macroPercentages['fat']!, AppTheme.accentColor),
               ],
             ),
           ),

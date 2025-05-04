@@ -50,15 +50,15 @@ class DailyBurnWidget extends StatelessWidget {
     switch (recommendationType) {
       case 'loss':
         recommendationText = 'Supports your weight loss goal';
-        recommendationColor = Colors.green;
+        recommendationColor = AppTheme.primaryBlue; // Green for weight loss
         break;
       case 'gain':
         recommendationText = 'Supports your muscle gain goal';
-        recommendationColor = Colors.blue;
+        recommendationColor = AppTheme.goldAccent; // Gold for muscle gain
         break;
       case 'maintain':
         recommendationText = 'Helps maintain your current weight';
-        recommendationColor = AppTheme.primaryBlue;
+        recommendationColor = AppTheme.accentColor; // Burgundy for maintenance
         break;
       default:
         recommendationText =
@@ -193,7 +193,7 @@ class DailyBurnWidget extends StatelessWidget {
                   intensity: 'Light',
                   examples: 'Walking, yoga, stretching',
                   minutes: lightMinutes,
-                  color: Colors.green,
+                  color: AppTheme.mintAccent, // Mint green for light exercise
                 ),
 
                 const SizedBox(height: 8),
@@ -202,7 +202,7 @@ class DailyBurnWidget extends StatelessWidget {
                   intensity: 'Moderate',
                   examples: 'Brisk walking, cycling, swimming',
                   minutes: moderateMinutes,
-                  color: AppTheme.primaryBlue,
+                  color: AppTheme.goldAccent, // Gold for moderate exercise
                 ),
 
                 const SizedBox(height: 8),
@@ -211,7 +211,7 @@ class DailyBurnWidget extends StatelessWidget {
                   intensity: 'Intense',
                   examples: 'Running, HIIT, sports',
                   minutes: intenseMinutes,
-                  color: Colors.orange,
+                  color: AppTheme.coralAccent, // Coral for intense exercise
                 ),
 
                 const SizedBox(height: 12),
@@ -232,26 +232,26 @@ class DailyBurnWidget extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: AppTheme.goldAccent.withOpacity(0.1), // Gold for warning
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    children: const [
+                    children: [
                       Icon(
                         Icons.info_outline,
-                        color: Colors.orange,
+                        color: AppTheme.goldAccent, // Gold for warning icon
                         size: 18,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
                         'Complete your profile',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
-                          color: Colors.orange,
+                          color: AppTheme.goldAccent, // Gold for warning text
                         ),
                       ),
                     ],
@@ -292,7 +292,7 @@ class DailyBurnWidget extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isPrimary
-            ? AppTheme.primaryBlue.withOpacity(0.1)
+            ? AppTheme.primaryBlue.withOpacity(0.1) // Green for primary
             : Colors.grey.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),

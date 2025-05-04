@@ -213,7 +213,7 @@ class _MonthlyWeightGoalDialogState extends State<MonthlyWeightGoalDialog> {
                     icon: Icons.trending_down,
                     label: 'Lose',
                     isSelected: !_isGain,
-                    color: Colors.red,
+                    color: AppTheme.coralAccent, // Coral for lose
                     onTap: () {
                       if (_isGain) _toggleDirection();
                     },
@@ -222,7 +222,7 @@ class _MonthlyWeightGoalDialogState extends State<MonthlyWeightGoalDialog> {
                     icon: Icons.trending_up,
                     label: 'Gain',
                     isSelected: _isGain,
-                    color: Colors.green,
+                    color: AppTheme.goldAccent, // Gold for gain
                     onTap: () {
                       if (!_isGain) _toggleDirection();
                     },
@@ -342,7 +342,7 @@ class _MonthlyWeightGoalDialogState extends State<MonthlyWeightGoalDialog> {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    final color = _isGain ? Colors.green : Colors.red;
+    final color = _isGain ? AppTheme.goldAccent : AppTheme.coralAccent;
 
     return GestureDetector(
       onTap: onTap,

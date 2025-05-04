@@ -269,17 +269,17 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
                         _buildMacroProgressBar(
                           'P',
                           macroPercentages['protein']! / 100,
-                          Colors.red,
+                          AppTheme.coralAccent,
                         ),
                         _buildMacroProgressBar(
                           'C',
                           macroPercentages['carbs']! / 100,
-                          Colors.green,
+                          AppTheme.goldAccent,
                         ),
                         _buildMacroProgressBar(
                           'F',
                           macroPercentages['fat']! / 100,
-                          Colors.blue,
+                          AppTheme.accentColor,
                         ),
                       ],
                     ),
@@ -298,33 +298,39 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
 
   Widget _buildMealTypeIcon(String mealType) {
     IconData iconData;
+    Color iconColor;
 
     switch (mealType.toLowerCase()) {
       case 'breakfast':
         iconData = Icons.breakfast_dining;
+        iconColor = AppTheme.accentColor; // Burgundy for breakfast
         break;
       case 'lunch':
         iconData = Icons.lunch_dining;
+        iconColor = AppTheme.primaryBlue; // Green for lunch
         break;
       case 'dinner':
         iconData = Icons.dinner_dining;
+        iconColor = AppTheme.goldAccent; // Gold for dinner
         break;
       case 'snack':
         iconData = Icons.fastfood;
+        iconColor = AppTheme.coralAccent; // Coral for snack
         break;
       default:
         iconData = Icons.food_bank;
+        iconColor = AppTheme.primaryBlue;
     }
 
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: AppTheme.primaryBlue.withOpacity(0.1),
+        color: iconColor.withOpacity(0.1),
         shape: BoxShape.circle,
       ),
       child: Icon(
         iconData,
-        color: AppTheme.primaryBlue,
+        color: iconColor,
       ),
     );
   }

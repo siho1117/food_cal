@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/theme.dart';
 
 class FeedbackWidget extends StatelessWidget {
   final VoidCallback onSendFeedback;
@@ -19,12 +20,12 @@ class FeedbackWidget extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: AppTheme.coralAccent.withOpacity(0.1), // Changed to coral accent
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.feedback,
-                color: Colors.orange,
+                color: AppTheme.coralAccent, // Changed to coral accent
                 size: 24,
               ),
             ),
@@ -61,7 +62,6 @@ class FeedbackWidget extends StatelessWidget {
 
   void _showFeedbackDialog(BuildContext context) {
     final TextEditingController feedbackController = TextEditingController();
-    final Color primaryBlue = const Color(0xFF0052CC);
 
     showDialog(
       context: context,
@@ -108,7 +108,7 @@ class FeedbackWidget extends StatelessWidget {
               Navigator.of(context).pop();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: primaryBlue,
+              backgroundColor: AppTheme.primaryBlue, // Changed to primary green
             ),
             child: const Text('Send'),
           ),

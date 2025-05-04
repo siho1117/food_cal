@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/theme.dart';
 
 class ActivityLevelDialog extends StatelessWidget {
   final double? currentLevel;
@@ -12,8 +13,6 @@ class ActivityLevelDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color primaryBlue = const Color(0xFF0052CC);
-
     final levels = [
       {
         'level': 1.2,
@@ -38,7 +37,7 @@ class ActivityLevelDialog extends StatelessWidget {
       {
         'level': 1.9,
         'title': 'Very Active',
-        'description': 'Very hard exercise & physical job'
+        'description': 'Very hard daily exercise or physical job'
       },
     ];
 
@@ -62,7 +61,7 @@ class ActivityLevelDialog extends StatelessWidget {
               ),
               subtitle: Text(level['description'] as String),
               trailing: isSelected
-                  ? Icon(Icons.check_circle, color: primaryBlue)
+                  ? Icon(Icons.check_circle, color: AppTheme.primaryBlue)
                   : null,
               onTap: () {
                 onLevelSelected(level['level'] as double);
