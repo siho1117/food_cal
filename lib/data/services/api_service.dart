@@ -19,7 +19,7 @@ class FoodApiService {
 
   // OpenAI model names - updated per your requirement
   final String _visionModel = 'gpt-4.1-mini';
-  final String _textModel = 'gpt-4.1-nano';
+  final String _textModel = 'gpt-4.1-mini';
 
   // Keys for storage
   static const String _errorLogKey = 'api_error_log';
