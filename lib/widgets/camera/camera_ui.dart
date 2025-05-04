@@ -66,6 +66,79 @@ class CameraUI {
     );
   }
 
+  /// Builds a large gallery button for the main camera screen
+  static Widget buildGalleryButton({
+    required VoidCallback? onPressed,
+    required bool isLoading,
+  }) {
+    return Container(
+      width: double.infinity,
+      height: 120,
+      margin: const EdgeInsets.only(bottom: 40),
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: const Icon(
+          Icons.photo_library,
+          size: 36,
+        ),
+        label: const Text(
+          'Gallery',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: AppTheme.primaryBlue,
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds a large camera button for the main camera screen
+  static Widget buildCameraButton({
+    required VoidCallback? onPressed,
+    required bool isLoading,
+  }) {
+    return Container(
+      width: double.infinity,
+      height: 120,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: isLoading 
+            ? const SizedBox(
+                width: 32,
+                height: 32,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+              )
+            : const Icon(
+                Icons.camera_alt,
+                size: 36,
+              ),
+        label: Text(
+          isLoading ? 'Loading...' : 'Camera',
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.primaryBlue,
+          foregroundColor: Colors.white,
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Builds the meal selection bottom sheet
   static void showImageOptionsSheet({
     required BuildContext context,
@@ -77,6 +150,10 @@ class CameraUI {
   }) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppTheme.secondaryBeige,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Container(
           padding: const EdgeInsets.all(16),
@@ -89,6 +166,7 @@ class CameraUI {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryBlue,
                 ),
               ),
               
@@ -108,27 +186,40 @@ class CameraUI {
               const SizedBox(height: 16),
               
               // Meal type selector
-              DropdownButton<String>(
-                value: mealType,
-                isExpanded: true,
-                onChanged: (String? newValue) {
-                  if (newValue != null) {
-                    setModalState(() {
-                      onMealTypeChanged(newValue);
-                    });
-                  }
-                },
-                items: ['breakfast', 'lunch', 'dinner', 'snack'].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(
-                      value.substring(0, 1).toUpperCase() + value.substring(1),
-                      style: const TextStyle(
-                        fontSize: 16,
-                      ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: mealType,
+                    isExpanded: true,
+                    icon: const Icon(
+                      Icons.arrow_drop_down,
+                      color: AppTheme.primaryBlue,
                     ),
-                  );
-                }).toList(),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setModalState(() {
+                          onMealTypeChanged(newValue);
+                        });
+                      }
+                    },
+                    items: ['breakfast', 'lunch', 'dinner', 'snack'].map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(
+                          value.substring(0, 1).toUpperCase() + value.substring(1),
+                          style: const TextStyle(
+                            fontSize: 16,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
               ),
               
               const SizedBox(height: 16),
@@ -138,13 +229,16 @@ class CameraUI {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   // Retake button
-                  TextButton.icon(
+                  OutlinedButton.icon(
                     onPressed: () {
                       Navigator.of(context).pop();
                       onRetake();
                     },
                     icon: const Icon(Icons.replay, size: 20),
                     label: const Text('Retake'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.primaryBlue,
+                    ),
                   ),
                   
                   // Analyze button

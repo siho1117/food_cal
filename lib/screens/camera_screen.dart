@@ -7,6 +7,8 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'dart:typed_data';
 import '../config/theme.dart';
 import '../screens/food_recognition_results_screen.dart';
+import '../widgets/custom_app_bar.dart';
+import '../widgets/camera/camera_ui.dart'; // Import camera UI components
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({Key? key}) : super(key: key);
@@ -43,7 +45,7 @@ class CameraScreenState extends State<CameraScreen> {
           originalFile, 
           256, 
           256, 
-          75
+          45
         );
         
         if (mounted) {
@@ -91,7 +93,7 @@ class CameraScreenState extends State<CameraScreen> {
         originalBytes,
         minWidth: targetWidth,
         minHeight: targetHeight,
-        quality: quality,
+        quality: 45, // Using 45% quality for better compression
         format: CompressFormat.jpeg,
       );
       
@@ -127,7 +129,7 @@ class CameraScreenState extends State<CameraScreen> {
           originalFile, 
           256, 
           256, 
-          75
+          45
         );
         
         if (mounted) {
@@ -162,130 +164,31 @@ class CameraScreenState extends State<CameraScreen> {
   void _showImageOptions() {
     if (_capturedImage == null || !mounted) return;
     
-    showModalBottomSheet(
+    CameraUI.showImageOptionsSheet(
       context: context,
-      backgroundColor: AppTheme.secondaryBeige,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
-      ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Title
-              const Text(
-                'Food Photo',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryBlue,
-                ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Image preview
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  _capturedImage!,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Meal type selector
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedMealType,
-                    isExpanded: true,
-                    icon: const Icon(
-                      Icons.arrow_drop_down,
-                      color: AppTheme.primaryBlue,
-                    ),
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        setModalState(() {
-                          setState(() {
-                            _selectedMealType = newValue;
-                          });
-                        });
-                      }
-                    },
-                    items: ['breakfast', 'lunch', 'dinner', 'snack'].map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(
-                          value.substring(0, 1).toUpperCase() + value.substring(1),
-                          style: const TextStyle(
-                            fontSize: 16,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Action buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // Retake button
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      setState(() {
-                        _capturedImage = null;
-                      });
-                      // Launch camera again
-                      capturePhoto();
-                    },
-                    icon: const Icon(Icons.replay, size: 20),
-                    label: const Text('Retake'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.primaryBlue,
-                    ),
-                  ),
-                  
-                  // Analyze button
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => FoodRecognitionResultsScreen(
-                            imageFile: _capturedImage!,
-                            mealType: _selectedMealType,
-                          ),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.check, size: 20),
-                    label: const Text('Analyze Food'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryBlue,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+      imageFile: _capturedImage!,
+      mealType: _selectedMealType,
+      onMealTypeChanged: (String newValue) {
+        setState(() {
+          _selectedMealType = newValue;
+        });
+      },
+      onRetake: () {
+        setState(() {
+          _capturedImage = null;
+        });
+        capturePhoto();
+      },
+      onAnalyze: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => FoodRecognitionResultsScreen(
+              imageFile: _capturedImage!,
+              mealType: _selectedMealType,
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -293,18 +196,12 @@ class CameraScreenState extends State<CameraScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.secondaryBeige,
-      appBar: AppBar(
-        title: const Text(
-          'FOOD PHOTO',
-          style: TextStyle(
-            color: AppTheme.primaryBlue,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppTheme.primaryBlue),
+      // Add CustomAppBar component
+      appBar: CustomAppBar(
+        onSettingsTap: () {
+          // Navigate to settings screen
+          Navigator.of(context).pushNamed('/settings');
+        },
       ),
       body: Center(
         child: Padding(
@@ -312,67 +209,16 @@ class CameraScreenState extends State<CameraScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Gallery button - LARGE & TOP
-              Container(
-                width: double.infinity,
-                height: 120,
-                margin: const EdgeInsets.only(bottom: 40),
-                child: ElevatedButton.icon(
-                  onPressed: _isLoading ? null : pickImageFromGallery,
-                  icon: const Icon(
-                    Icons.photo_library,
-                    size: 36,
-                  ),
-                  label: const Text(
-                    'Gallery',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AppTheme.primaryBlue,
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
+              // Gallery button from CameraUI
+              CameraUI.buildGalleryButton(
+                onPressed: _isLoading ? null : pickImageFromGallery,
+                isLoading: _isLoading,
               ),
               
-              // Camera button - LARGE & BOTTOM
-              Container(
-                width: double.infinity,
-                height: 120,
-                child: ElevatedButton.icon(
-                  onPressed: _isLoading ? null : capturePhoto,
-                  icon: _isLoading 
-                      ? const SizedBox(
-                          width: 32,
-                          height: 32,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
-                        )
-                      : const Icon(
-                          Icons.camera_alt,
-                          size: 36,
-                        ),
-                  label: Text(
-                    _isLoading ? 'Loading...' : 'Camera',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryBlue,
-                    foregroundColor: Colors.white,
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
+              // Camera button from CameraUI
+              CameraUI.buildCameraButton(
+                onPressed: _isLoading ? null : capturePhoto,
+                isLoading: _isLoading,
               ),
             ],
           ),
