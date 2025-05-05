@@ -4,6 +4,7 @@ import '../../config/theme.dart';
 import '../../config/text_styles.dart';
 import '../../data/repositories/food_repository.dart';
 import '../../data/repositories/user_repository.dart';
+import '../../utils/home_statistics_calculator.dart';
 
 class CalorieSummaryWidget extends StatefulWidget {
   final DateTime date;
@@ -73,84 +74,26 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget> with Single
     try {
       // Load user profile to get calorie goal
       final userProfile = await _userRepository.getUserProfile();
-      final currentWeight =
-          (await _userRepository.getLatestWeightEntry())?.weight;
-
-      // Calculate calorie goal if we have enough data
-      if (userProfile != null &&
-          currentWeight != null &&
-          userProfile.height != null &&
-          userProfile.age != null &&
-          userProfile.gender != null &&
-          userProfile.activityLevel != null) {
-        // Calculate BMR
-        double? bmr;
-        if (userProfile.gender == 'Male') {
-          bmr = (10 * currentWeight) +
-              (6.25 * userProfile.height!) -
-              (5 * userProfile.age!) +
-              5;
-        } else if (userProfile.gender == 'Female') {
-          bmr = (10 * currentWeight) +
-              (6.25 * userProfile.height!) -
-              (5 * userProfile.age!) -
-              161;
-        } else {
-          // Average of male and female formulas
-          final maleBMR = (10 * currentWeight) +
-              (6.25 * userProfile.height!) -
-              (5 * userProfile.age!) +
-              5;
-          final femaleBMR = (10 * currentWeight) +
-              (6.25 * userProfile.height!) -
-              (5 * userProfile.age!) -
-              161;
-          bmr = (maleBMR + femaleBMR) / 2;
-        }
-
-        // Calculate TDEE based on activity level
-        if (bmr != null) {
-          final tdee = bmr * userProfile.activityLevel!;
-
-          // Adjust for weight goal if available
-          if (userProfile.monthlyWeightGoal != null) {
-            // Calculate daily calorie adjustment
-            final dailyWeightChangeKg = userProfile.monthlyWeightGoal! / 30;
-            final calorieAdjustment =
-                dailyWeightChangeKg * 7700; // ~7700 calories per kg
-
-            // Set calorie goal with adjustment
-            _calorieGoal = (tdee + calorieAdjustment).round();
-
-            // Ensure minimum safe calories (90% of BMR)
-            final minimumCalories = (bmr * 0.9).round();
-            if (_calorieGoal < minimumCalories) {
-              _calorieGoal = minimumCalories;
-            }
-          } else {
-            // No weight goal, just use TDEE
-            _calorieGoal = tdee.round();
-          }
-        }
-      }
+      final currentWeight = (await _userRepository.getLatestWeightEntry())?.weight;
 
       // Load food entries
-      final entriesByMeal =
-          await _foodRepository.getFoodEntriesByMeal(widget.date);
+      final entriesByMeal = await _foodRepository.getFoodEntriesByMeal(widget.date);
 
-      // Calculate total calories
-      int calories = 0;
-
-      // Process all meals
-      for (var mealItems in entriesByMeal.values) {
-        for (var item in mealItems) {
-          calories += (item.calories * item.servingSize).round();
-        }
-      }
+      // Use the HomeStatisticsCalculator for all calculations
+      
+      // Calculate calorie goal
+      final calorieGoal = HomeStatisticsCalculator.calculateCalorieGoal(
+        userProfile: userProfile,
+        currentWeight: currentWeight,
+      );
+      
+      // Calculate total calories consumed
+      final totalCalories = HomeStatisticsCalculator.calculateTotalCalories(entriesByMeal);
 
       if (mounted) {
         setState(() {
-          _totalCalories = calories;
+          _totalCalories = totalCalories;
+          _calorieGoal = calorieGoal;
           _isLoading = false;
           
           // Reset animation controller and start animation
@@ -171,20 +114,48 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget> with Single
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
+      return Container(
+        height: 160, // Reduced height
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              spreadRadius: 0,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
       );
     }
 
     // Calculate calorie progress percentage
     final calorieProgress = (_totalCalories / _calorieGoal).clamp(0.0, 1.0);
     final caloriesRemaining = _calorieGoal - _totalCalories;
+    final isOverBudget = caloriesRemaining < 0;
+    final expectedPercentage = HomeStatisticsCalculator.calculateExpectedDailyPercentage();
+    
+    // Determine status color based on progress
+    Color statusColor;
+    if (isOverBudget) {
+      statusColor = Colors.red[400]!;
+    } else if (calorieProgress > expectedPercentage * 1.2) {
+      statusColor = Colors.orange[400]!; // Ahead of expected pace
+    } else if (calorieProgress < expectedPercentage * 0.7) {
+      statusColor = Colors.green[400]!; // Well below expected pace
+    } else {
+      statusColor = AppTheme.primaryBlue; // On track
+    }
 
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -193,100 +164,206 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget> with Single
             offset: const Offset(0, 2),
           ),
         ],
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.white,
+            Colors.grey[50]!,
+          ],
+          stops: const [0.7, 1.0],
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Calorie Summary',
-                style: AppTextStyles.getSubHeadingStyle().copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+          // Header with very light background
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 10), // Reduced padding
+            decoration: BoxDecoration(
+              color: AppTheme.primaryBlue.withOpacity(0.02), // Very light
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.pie_chart_rounded, // Pie chart icon
+                      color: AppTheme.primaryBlue,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Daily Calories',
+                      style: AppTextStyles.getSubHeadingStyle().copyWith(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryBlue,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: _loadData,
-                color: AppTheme.primaryBlue,
-                iconSize: 20,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Calorie display
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '$_totalCalories',
-                style: AppTextStyles.getNumericStyle().copyWith(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryBlue,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  '/ $_calorieGoal cal',
-                  style: AppTextStyles.getNumericStyle().copyWith(
-                    fontSize: 16,
-                    color: Colors.grey[600],
+                IconButton(
+                  icon: Icon(
+                    Icons.refresh_rounded,
+                    color: AppTheme.primaryBlue.withOpacity(0.7),
+                    size: 20,
                   ),
+                  onPressed: _loadData,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
-              ),
-              const Spacer(),
-              Text(
-                caloriesRemaining > 0
-                    ? '${caloriesRemaining} cal left'
-                    : '${-caloriesRemaining} cal over',
-                style: AppTextStyles.getBodyStyle().copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: caloriesRemaining > 0 ? Colors.green : Colors.red,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
 
-          const SizedBox(height: 16),
+          // Calorie counts and progress
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 16), // Reduced padding
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Main calorie display
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Current calories
+                    RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '$_totalCalories',
+                            style: AppTextStyles.getNumericStyle().copyWith(
+                              fontSize: 34,
+                              fontWeight: FontWeight.bold,
+                              color: statusColor,
+                              height: 0.9,
+                            ),
+                          ),
+                          TextSpan(
+                            text: ' / $_calorieGoal',
+                            style: AppTextStyles.getNumericStyle().copyWith(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const Spacer(),
+                    
+                    // Remaining calories
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isOverBudget
+                            ? Colors.red[50]
+                            : Colors.green[50],
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isOverBudget
+                              ? Colors.red[200]!
+                              : Colors.green[200]!,
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isOverBudget
+                                ? Icons.warning_amber_rounded
+                                : Icons.check_circle_outline_rounded,
+                            size: 16,
+                            color: isOverBudget
+                                ? Colors.red[400]
+                                : Colors.green[600],
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            isOverBudget
+                                ? '${-caloriesRemaining} over'
+                                : '$caloriesRemaining left',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: isOverBudget
+                                  ? Colors.red[700]
+                                  : Colors.green[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 6),
+                
+                // Calorie goal description
+                Row(
+                  children: [
+                    Text(
+                      'of daily calorie goal',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${(calorieProgress * 100).round()}%',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: statusColor,
+                      ),
+                    ),
+                  ],
+                ),
 
-          // Enhanced Calorie Progress Bar
-          AnimatedBuilder(
-            animation: _progressAnimation,
-            builder: (context, child) {
-              return _buildEnhancedProgressBar(
-                calorieProgress * _progressAnimation.value,
-                calorieProgress >= 1.0,
-              );
-            },
+                const SizedBox(height: 16),
+
+                // Enhanced Calorie Progress Bar
+                AnimatedBuilder(
+                  animation: _progressAnimation,
+                  builder: (context, child) {
+                    return _buildEnhancedProgressBar(
+                      calorieProgress * _progressAnimation.value,
+                      expectedPercentage,
+                      isOverBudget,
+                      statusColor,
+                    );
+                  },
+                ),
+                
+                const SizedBox(height: 6), // Reduced spacing
+                
+                // Meal markers
+                _buildMealMarkers(),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEnhancedProgressBar(double progress, bool isOverLimit) {
+  Widget _buildEnhancedProgressBar(
+    double progress, 
+    double expectedProgress,
+    bool isOverLimit, 
+    Color statusColor
+  ) {
     final barHeight = 12.0;
     final trackColor = Colors.grey[200]!;
-    
-    // Determine progress color based on how close to the goal
-    Color progressColor;
-    if (isOverLimit) {
-      progressColor = Colors.red;
-    } else if (progress > 0.8) {
-      progressColor = Colors.orange;
-    } else {
-      progressColor = AppTheme.primaryBlue;
-    }
+    final maxWidth = MediaQuery.of(context).size.width - 40; // Adjust for padding
     
     return Stack(
       children: [
@@ -299,15 +376,29 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget> with Single
           ),
         ),
         
+        // Expected progress marker
+        Positioned(
+          left: maxWidth * expectedProgress - 1,
+          top: 0,
+          bottom: 0,
+          child: Container(
+            width: 2,
+            decoration: BoxDecoration(
+              color: Colors.grey[400],
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+        ),
+        
         // Progress fill with gradient
         Container(
           height: barHeight,
-          width: MediaQuery.of(context).size.width * progress * 0.8, // Adjust for padding
+          width: progress < 1.0 ? maxWidth * progress : maxWidth, // Ensure it doesn't exceed maxWidth
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                progressColor.withOpacity(0.7),
-                progressColor,
+                statusColor.withOpacity(0.7),
+                statusColor,
               ],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
@@ -315,7 +406,7 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget> with Single
             borderRadius: BorderRadius.circular(barHeight / 2),
             boxShadow: [
               BoxShadow(
-                color: progressColor.withOpacity(0.3),
+                color: statusColor.withOpacity(0.3),
                 blurRadius: 3,
                 spreadRadius: 0,
                 offset: const Offset(0, 1),
@@ -324,26 +415,9 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget> with Single
           ),
         ),
         
-        // Markers along the bar
-        ...List.generate(5, (index) {
-          final position = (index + 1) / 5;
-          return Positioned(
-            left: MediaQuery.of(context).size.width * position * 0.8 - 1.5,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: Container(
-                width: 1,
-                height: 6,
-                color: trackColor.withOpacity(0.8),
-              ),
-            ),
-          );
-        }),
-        
-        // Current progress indicator
+        // Progress thumb - position adjusted to handle 100% case correctly
         Positioned(
-          left: (MediaQuery.of(context).size.width * progress * 0.8) - 6,
+          left: progress < 0.97 ? (maxWidth * progress) - 6 : maxWidth - 6, // Adjust position near 100%
           top: 0,
           bottom: 0,
           child: Center(
@@ -354,15 +428,15 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget> with Single
                 color: Colors.white,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: progressColor,
+                  color: statusColor,
                   width: 2,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: progressColor.withOpacity(0.3),
-                    blurRadius: 2,
+                    color: statusColor.withOpacity(0.3),
+                    blurRadius: 4,
                     spreadRadius: 0,
-                    offset: const Offset(0, 1),
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
@@ -370,6 +444,37 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget> with Single
           ),
         ),
       ],
+    );
+  }
+  
+  Widget _buildMealMarkers() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _buildMealMarker('Breakfast', 0.0),
+        _buildMealMarker('Lunch', 0.33),
+        _buildMealMarker('Dinner', 0.67),
+        _buildMealMarker('Snacks', 1.0),
+      ],
+    );
+  }
+  
+  Widget _buildMealMarker(String label, double alignment) {
+    return Container(
+      width: 60,
+      padding: const EdgeInsets.only(top: 2),
+      alignment: alignment == 0.0 
+          ? Alignment.centerLeft
+          : alignment == 1.0 
+              ? Alignment.centerRight 
+              : Alignment.center,
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          color: Colors.grey[600],
+        ),
+      ),
     );
   }
 }
