@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../config/theme.dart';
+import '../config/text_styles.dart'; // Import the new text styles
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Function onSettingsTap;
@@ -28,20 +28,18 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             // Center the row items vertically to use the increased height
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // App name with Monoton font
+              // App name with Monoton font - using our new text style
               Flexible(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
                     'FOOD LLM',
-                    style: GoogleFonts.monoton(
-                      textStyle: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryBlue,
-                        letterSpacing: 2,
-                        height: 1.2, // Adjusted line height
-                      ),
+                    style: AppTextStyles.getHeadingStyle().copyWith(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryBlue,
+                      letterSpacing: 2,
+                      height: 1.2, // Adjusted line height
                     ),
                   ),
                 ),
