@@ -337,7 +337,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget> with SingleTi
             // Macro name
             Text(
               name,
-              style: const TextStyle(
+              style: AppTextStyles.getSubHeadingStyle().copyWith(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
               ),
@@ -347,55 +347,61 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget> with SingleTi
         
         const SizedBox(height: 4),
         
-        // Values row with proper layout
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Consumed and target grams
-            RichText(
-              text: TextSpan(
-                style: const TextStyle(
-                  fontFamily: 'Roboto',
-                  fontSize: 16,
+        // Values row with proper layout - aligned to the right side
+        Container(
+          width: 200, // Constraint to make the row shorter
+          alignment: Alignment.centerRight, // Right align the entire row
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end, // Changed to end alignment
+            mainAxisSize: MainAxisSize.min, // Make row as small as possible
+            children: [
+              // Consumed and target grams
+              RichText(
+                text: TextSpan(
+                  style: AppTextStyles.getNumericStyle().copyWith(
+                    fontSize: 16,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: '$consumed',
+                      style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextSpan(
+                      text: 'g / $target',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.normal,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: 'g',
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.normal,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
-                children: [
-                  TextSpan(
-                    text: '$consumed',
-                    style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextSpan(
-                    text: 'g / $target',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.normal,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const TextSpan(
-                    text: 'g',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontWeight: FontWeight.normal,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
               ),
-            ),
-            
-            // Percentage with appropriate color
-            Text(
-              '$percentage%',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: percentColor,
+              
+              const SizedBox(width: 12), // Fixed spacing between elements
+              
+              // Percentage with appropriate color
+              Text(
+                '$percentage%',
+                style: AppTextStyles.getNumericStyle().copyWith(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: percentColor,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
