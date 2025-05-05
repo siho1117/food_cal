@@ -1,7 +1,8 @@
 // lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import '../config/theme.dart';
-import '../widgets/home/daily_summary_widget.dart';
+import '../widgets/home/calorie_summary_widget.dart';
+import '../widgets/home/macronutrient_widget.dart';
 import '../widgets/home/food_log_widget.dart';
 import '../widgets/food/food_entry_form.dart';
 
@@ -29,13 +30,36 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Padding at the top (placeholder for future design)
+              // Header text like settings page
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 5, 20, 0),
+                child: Text(
+                  'DAILY SUMMARY',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[500],
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 20),
 
-              // Daily Summary Widget
+              // Calorie Summary Widget
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: DailySummaryWidget(
+                child: CalorieSummaryWidget(
+                  date: _selectedDate,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Macronutrient Widget
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: MacronutrientWidget(
                   date: _selectedDate,
                 ),
               ),
@@ -87,8 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     // Food log widget
                     FoodLogWidget(
                       date: _selectedDate,
-                      showHeader:
-                          false, // Hide the header since we're showing it above
+                      showHeader: false, // Hide the header since we're showing it above
                       onFoodAdded: _refreshData,
                     ),
                   ],
@@ -107,8 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: const Icon(Icons.arrow_back_ios),
                       onPressed: () {
                         setState(() {
-                          _selectedDate =
-                              _selectedDate.subtract(const Duration(days: 1));
+                          _selectedDate = _selectedDate.subtract(const Duration(days: 1));
                         });
                       },
                       color: AppTheme.primaryBlue,
@@ -146,8 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ? null
                           : () {
                               setState(() {
-                                _selectedDate =
-                                    _selectedDate.add(const Duration(days: 1));
+                                _selectedDate = _selectedDate.add(const Duration(days: 1));
                               });
                             },
                       color: AppTheme.primaryBlue,

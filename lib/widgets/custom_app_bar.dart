@@ -22,7 +22,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       child: SafeArea(
         child: Padding(
           // Increase the vertical padding for more space
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 15.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             // Center the row items vertically to use the increased height
