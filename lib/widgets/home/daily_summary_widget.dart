@@ -1,6 +1,8 @@
 // lib/widgets/home/daily_summary_widget.dart
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
+import '../../config/text_styles.dart';
 import '../../data/repositories/food_repository.dart';
 import '../../data/repositories/user_repository.dart';
 
@@ -16,9 +18,12 @@ class DailySummaryWidget extends StatefulWidget {
   State<DailySummaryWidget> createState() => _DailySummaryWidgetState();
 }
 
-class _DailySummaryWidgetState extends State<DailySummaryWidget> {
+class _DailySummaryWidgetState extends State<DailySummaryWidget> with SingleTickerProviderStateMixin {
   final FoodRepository _foodRepository = FoodRepository();
   final UserRepository _userRepository = UserRepository();
+
+  late AnimationController _animationController;
+  late Animation<double> _progressAnimation;
 
   bool _isLoading = true;
   int _totalCalories = 0;
@@ -32,7 +37,28 @@ class _DailySummaryWidgetState extends State<DailySummaryWidget> {
   @override
   void initState() {
     super.initState();
+    
+    // Create animation controller for progress animations
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    
+    // Initialize the animation properly
+    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+    
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   @override
@@ -143,6 +169,10 @@ class _DailySummaryWidgetState extends State<DailySummaryWidget> {
             'fat': fat,
           };
           _isLoading = false;
+          
+          // Reset animation controller and start animation
+          _animationController.reset();
+          _animationController.forward();
         });
       }
     } catch (e) {
@@ -217,9 +247,9 @@ class _DailySummaryWidgetState extends State<DailySummaryWidget> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Today\'s Summary',
-                style: TextStyle(
+                style: AppTextStyles.getSubHeadingStyle().copyWith(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -243,7 +273,7 @@ class _DailySummaryWidgetState extends State<DailySummaryWidget> {
             children: [
               Text(
                 '$_totalCalories',
-                style: TextStyle(
+                style: AppTextStyles.getNumericStyle().copyWith(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.primaryBlue,
@@ -254,7 +284,7 @@ class _DailySummaryWidgetState extends State<DailySummaryWidget> {
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
                   '/ $_calorieGoal cal',
-                  style: TextStyle(
+                  style: AppTextStyles.getNumericStyle().copyWith(
                     fontSize: 16,
                     color: Colors.grey[600],
                   ),
@@ -265,7 +295,7 @@ class _DailySummaryWidgetState extends State<DailySummaryWidget> {
                 caloriesRemaining > 0
                     ? '${caloriesRemaining} cal left'
                     : '${-caloriesRemaining} cal over',
-                style: TextStyle(
+                style: AppTextStyles.getBodyStyle().copyWith(
                   fontWeight: FontWeight.w500,
                   color: caloriesRemaining > 0 ? Colors.green : Colors.red,
                 ),
@@ -273,129 +303,399 @@ class _DailySummaryWidgetState extends State<DailySummaryWidget> {
             ],
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
 
-          // Progress bar
-          LinearProgressIndicator(
-            value: calorieProgress,
-            backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(
-              calorieProgress >= 1.0 ? Colors.red : AppTheme.primaryBlue,
-            ),
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(4),
+          // Enhanced Calorie Progress Bar
+          AnimatedBuilder(
+            animation: _progressAnimation,
+            builder: (context, child) {
+              return _buildEnhancedProgressBar(
+                calorieProgress * _progressAnimation.value,
+                calorieProgress >= 1.0,
+              );
+            },
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
           // Macro breakdown
-          const Text(
+          Text(
             'Macronutrients',
-            style: TextStyle(
+            style: AppTextStyles.getSubHeadingStyle().copyWith(
               fontWeight: FontWeight.bold,
               fontSize: 16,
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
-          // Macro ratio visualization
+          // Macro Circular Visualization
+          AspectRatio(
+            aspectRatio: 1.0,
+            child: AnimatedBuilder(
+              animation: _progressAnimation,
+              builder: (context, child) {
+                return _buildMacroCircularChart(
+                  macroPercentages: macroPercentages,
+                  animationValue: _progressAnimation.value,
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Macro legend
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildMacroInfo(
+              _buildMacroLegendItem(
                 'Protein',
                 macroGrams['protein']!,
                 macroPercentages['protein']!,
-                AppTheme.coralAccent, // Red for protein
+                AppTheme.coralAccent,
               ),
-              _buildMacroInfo(
+              _buildMacroLegendItem(
                 'Carbs',
                 macroGrams['carbs']!,
                 macroPercentages['carbs']!,
-                AppTheme.goldAccent, // Green for carbs
+                AppTheme.goldAccent,
               ),
-              _buildMacroInfo(
+              _buildMacroLegendItem(
                 'Fat',
                 macroGrams['fat']!,
                 macroPercentages['fat']!,
-                AppTheme.accentColor, // Blue for fat
+                AppTheme.accentColor,
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
 
-          const SizedBox(height: 12),
-
-          // Macro ratio bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: Row(
-              children: [
-                _buildMacroBar(macroPercentages['protein']!, AppTheme.coralAccent),
-                _buildMacroBar(macroPercentages['carbs']!, AppTheme.goldAccent),
-                _buildMacroBar(macroPercentages['fat']!, AppTheme.accentColor),
+  Widget _buildEnhancedProgressBar(double progress, bool isOverLimit) {
+    final barHeight = 12.0;
+    final trackColor = Colors.grey[200]!;
+    
+    // Determine progress color based on how close to the goal
+    Color progressColor;
+    if (isOverLimit) {
+      progressColor = Colors.red;
+    } else if (progress > 0.8) {
+      progressColor = Colors.orange;
+    } else {
+      progressColor = AppTheme.primaryBlue;
+    }
+    
+    return Stack(
+      children: [
+        // Track (background)
+        Container(
+          height: barHeight,
+          decoration: BoxDecoration(
+            color: trackColor,
+            borderRadius: BorderRadius.circular(barHeight / 2),
+          ),
+        ),
+        
+        // Progress fill with gradient
+        Container(
+          height: barHeight,
+          width: MediaQuery.of(context).size.width * progress * 0.8, // Adjust for padding
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                progressColor.withOpacity(0.7),
+                progressColor,
               ],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMacroInfo(
-      String label, String grams, int percentage, Color color) {
-    return Expanded(
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                ),
+            borderRadius: BorderRadius.circular(barHeight / 2),
+            boxShadow: [
+              BoxShadow(
+                color: progressColor.withOpacity(0.3),
+                blurRadius: 3,
+                spreadRadius: 0,
+                offset: const Offset(0, 1),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            '$grams g',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+        ),
+        
+        // Markers along the bar
+        ...List.generate(5, (index) {
+          final position = (index + 1) / 5;
+          return Positioned(
+            left: MediaQuery.of(context).size.width * position * 0.8 - 1.5,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: Container(
+                width: 1,
+                height: 6,
+                color: trackColor.withOpacity(0.8),
+              ),
+            ),
+          );
+        }),
+        
+        // Current progress indicator
+        Positioned(
+          left: (MediaQuery.of(context).size.width * progress * 0.8) - 6,
+          top: 0,
+          bottom: 0,
+          child: Center(
+            child: Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: progressColor,
+                  width: 2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: progressColor.withOpacity(0.3),
+                    blurRadius: 2,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
             ),
           ),
-          Text(
-            '$percentage%',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMacroCircularChart({
+    required Map<String, int> macroPercentages,
+    required double animationValue,
+  }) {
+    return CustomPaint(
+      painter: MacroCircularChartPainter(
+        proteinPercentage: macroPercentages['protein']! / 100 * animationValue,
+        carbsPercentage: macroPercentages['carbs']! / 100 * animationValue,
+        fatPercentage: macroPercentages['fat']! / 100 * animationValue,
+        proteinColor: AppTheme.coralAccent,
+        carbsColor: AppTheme.goldAccent,
+        fatColor: AppTheme.accentColor,
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Total',
+              style: AppTextStyles.getBodyStyle().copyWith(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
             ),
-          ),
-        ],
+            Text(
+              '${_totalCalories}',
+              style: AppTextStyles.getNumericStyle().copyWith(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryBlue,
+              ),
+            ),
+            Text(
+              'calories',
+              style: AppTextStyles.getBodyStyle().copyWith(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildMacroBar(int percentage, Color color) {
-    // Set a minimum visible percentage if any value exists
-    final displayPercentage = percentage > 0 && percentage < 5 ? 5 : percentage;
-
-    return Expanded(
-      flex: displayPercentage,
-      child: Container(
-        height: 16,
-        color: color,
-      ),
+  Widget _buildMacroLegendItem(
+    String label,
+    String grams,
+    int percentage,
+    Color color,
+  ) {
+    return Column(
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: AppTextStyles.getBodyStyle().copyWith(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '$grams g',
+          style: AppTextStyles.getNumericStyle().copyWith(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: color,
+          ),
+        ),
+        Text(
+          '$percentage%',
+          style: AppTextStyles.getNumericStyle().copyWith(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
     );
+  }
+}
+
+class MacroCircularChartPainter extends CustomPainter {
+  final double proteinPercentage;
+  final double carbsPercentage;
+  final double fatPercentage;
+  final Color proteinColor;
+  final Color carbsColor;
+  final Color fatColor;
+
+  MacroCircularChartPainter({
+    required this.proteinPercentage,
+    required this.carbsPercentage,
+    required this.fatPercentage,
+    required this.proteinColor,
+    required this.carbsColor,
+    required this.fatColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) / 2;
+    
+    // Ring widths
+    final outerRingWidth = radius * 0.18;
+    final middleRingWidth = radius * 0.18;
+    final innerRingWidth = radius * 0.18;
+    
+    // Ring radii
+    final outerRingRadius = radius - outerRingWidth / 2;
+    final middleRingRadius = radius - outerRingWidth - middleRingWidth / 2;
+    final innerRingRadius = radius - outerRingWidth - middleRingWidth - innerRingWidth / 2;
+    
+    // Background rings (gray tracks)
+    _drawRing(
+      canvas: canvas,
+      center: center,
+      radius: outerRingRadius,
+      strokeWidth: outerRingWidth,
+      percentage: 1.0,
+      color: Colors.grey.withOpacity(0.1),
+    );
+    
+    _drawRing(
+      canvas: canvas,
+      center: center,
+      radius: middleRingRadius,
+      strokeWidth: middleRingWidth,
+      percentage: 1.0,
+      color: Colors.grey.withOpacity(0.1),
+    );
+    
+    _drawRing(
+      canvas: canvas,
+      center: center,
+      radius: innerRingRadius,
+      strokeWidth: innerRingWidth,
+      percentage: 1.0,
+      color: Colors.grey.withOpacity(0.1),
+    );
+    
+    // Protein ring (outer)
+    _drawRing(
+      canvas: canvas,
+      center: center,
+      radius: outerRingRadius,
+      strokeWidth: outerRingWidth,
+      percentage: proteinPercentage,
+      color: proteinColor,
+    );
+    
+    // Carbs ring (middle)
+    _drawRing(
+      canvas: canvas,
+      center: center,
+      radius: middleRingRadius,
+      strokeWidth: middleRingWidth,
+      percentage: carbsPercentage,
+      color: carbsColor,
+    );
+    
+    // Fat ring (inner)
+    _drawRing(
+      canvas: canvas,
+      center: center,
+      radius: innerRingRadius,
+      strokeWidth: innerRingWidth,
+      percentage: fatPercentage,
+      color: fatColor,
+    );
+  }
+  
+  void _drawRing({
+    required Canvas canvas,
+    required Offset center,
+    required double radius,
+    required double strokeWidth,
+    required double percentage,
+    required Color color,
+  }) {
+    final Paint paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+      
+    // Background track (already drawn separately)
+    
+    // Progress arc
+    if (percentage > 0) {
+      paint.color = color;
+      
+      // Start at the top (270 degrees) and go clockwise
+      final startAngle = -math.pi / 2;
+      final sweepAngle = 2 * math.pi * percentage;
+      
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweepAngle,
+        false,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(MacroCircularChartPainter oldDelegate) {
+    return oldDelegate.proteinPercentage != proteinPercentage ||
+        oldDelegate.carbsPercentage != carbsPercentage ||
+        oldDelegate.fatPercentage != fatPercentage;
   }
 }
