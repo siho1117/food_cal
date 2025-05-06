@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 
-class BMIWidget extends StatelessWidget {
+class BodyMassIndexWidget extends StatelessWidget {
   final double? bmiValue;
   final String classification;
 
-  const BMIWidget({
+  const BodyMassIndexWidget({
     Key? key,
     required this.bmiValue,
     required this.classification,
@@ -16,13 +16,13 @@ class BMIWidget extends StatelessWidget {
     if (bmiValue == null) return Colors.grey;
 
     if (bmiValue! < 18.5) {
-      return AppTheme.goldAccent;     // Gold/Yellow for Underweight (was blue)
+      return AppTheme.goldAccent;     // Gold/Yellow for Underweight
     } else if (bmiValue! < 25) {
-      return AppTheme.primaryBlue;    // Green for Normal (was green)
+      return AppTheme.primaryBlue;    // Green for Normal
     } else if (bmiValue! < 30) {
-      return AppTheme.coralAccent;    // Coral for Overweight (was orange)
+      return AppTheme.coralAccent;    // Coral for Overweight
     } else {
-      return AppTheme.accentColor;    // Burgundy for Obese (was red)
+      return AppTheme.accentColor;    // Burgundy for Obese
     }
   }
 

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../widgets/progress/current_weight_widget.dart';
 import '../widgets/progress/target_weight_widget.dart';
-import '../widgets/progress/bmi_widget.dart';
+import '../widgets/progress/body_mass_index.dart';
 import '../widgets/progress/body_fat_widget.dart';
 import '../widgets/progress/tdee_calculator_widget.dart';
-import '../widgets/progress/bmr_calculator_widget.dart';
+import '../widgets/progress/basal_meta_rate.dart';
 import '../data/repositories/user_repository.dart';
 import '../data/models/user_profile.dart';
 import '../utils/formula.dart';
@@ -140,8 +140,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
               const SizedBox(height: 20),
 
-              // BMR Calculator Widget
-              BMRCalculatorWidget(
+              // BMR Calculator Widget (with renamed class)
+              BasalMetabolicRateWidget(
                 userProfile: _userProfile,
                 currentWeight: _currentWeight,
               ),
@@ -185,8 +185,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
                     return Row(
                       children: [
-                        // BMI Widget
-                        BMIWidget(
+                        // BMI Widget (with renamed class)
+                        BodyMassIndexWidget(
                           bmiValue: bmiValue,
                           classification: classification,
                         ),
