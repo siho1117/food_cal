@@ -1,4 +1,5 @@
 // lib/widgets/home/food_log_widget.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 import '../../data/models/food_item.dart';
@@ -81,46 +82,34 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
         0, (sum, item) => sum + (item.calories * item.servingSize).round());
   }
 
-  // Calculate macro breakdown for a meal
-  Map<String, double> _calculateMealMacros(List<FoodItem> items) {
-    double totalProtein = 0;
-    double totalCarbs = 0;
-    double totalFat = 0;
-
-    for (var item in items) {
-      totalProtein += item.proteins * item.servingSize;
-      totalCarbs += item.carbs * item.servingSize;
-      totalFat += item.fats * item.servingSize;
+  // Delete a food item locally without waiting for repository
+  void _deleteFoodItemLocally(String id, String mealType) {
+    if (_foodByMeal.containsKey(mealType)) {
+      setState(() {
+        _foodByMeal[mealType] = _foodByMeal[mealType]!
+            .where((item) => item.id != id)
+            .toList();
+      });
     }
-
-    return {
-      'protein': totalProtein,
-      'carbs': totalCarbs,
-      'fat': totalFat,
-    };
   }
 
-  // Calculate macro percentages
-  Map<String, int> _calculateMacroPercentages(Map<String, double> macros) {
-    final total = macros['protein']! + macros['carbs']! + macros['fat']!;
-
-    if (total <= 0) {
-      return {'protein': 0, 'carbs': 0, 'fat': 0};
+  // Update a food item locally without waiting for repository
+  void _updateFoodItemLocally(FoodItem updatedItem) {
+    if (_foodByMeal.containsKey(updatedItem.mealType)) {
+      setState(() {
+        final index = _foodByMeal[updatedItem.mealType]!
+            .indexWhere((item) => item.id == updatedItem.id);
+        if (index != -1) {
+          _foodByMeal[updatedItem.mealType]![index] = updatedItem;
+        }
+      });
     }
-
-    return {
-      'protein': ((macros['protein']! / total) * 100).round(),
-      'carbs': ((macros['carbs']! / total) * 100).round(),
-      'fat': ((macros['fat']! / total) * 100).round(),
-    };
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return _buildLoadingState();
     }
 
     // Check if there are any food entries
@@ -131,323 +120,568 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
       children: [
         // Optional header
         if (widget.showHeader) ...[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'TODAY\'S FOOD LOG',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryBlue,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: _loadFoodEntries,
-                color: AppTheme.primaryBlue,
-              )
-            ],
-          ),
-          const SizedBox(height: 10),
+          _buildHeader(),
+          const SizedBox(height: 16),
         ],
 
         // No entries message
         if (!hasEntries)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  color: Colors.grey[600],
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'No food logged for today. Use the camera button to log your meals.',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _buildEmptyState(),
 
         // Food entries by meal type
         if (hasEntries) ...[
-          ...['breakfast', 'lunch', 'dinner', 'snack'].map((mealType) {
-            final mealItems = _foodByMeal[mealType] ?? [];
-
-            // Skip empty meal types
-            if (mealItems.isEmpty) {
-              return const SizedBox.shrink();
-            }
-
-            final totalCalories = _calculateMealCalories(mealItems);
-            final macros = _calculateMealMacros(mealItems);
-            final macroPercentages = _calculateMacroPercentages(macros);
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ExpansionTile(
-                initiallyExpanded: _expandedSections[mealType] ?? true,
-                onExpansionChanged: (expanded) {
-                  setState(() {
-                    _expandedSections[mealType] = expanded;
-                  });
-                },
-                title: Row(
-                  children: [
-                    _buildMealTypeIcon(mealType),
-                    const SizedBox(width: 12),
-                    Text(
-                      mealType.substring(0, 1).toUpperCase() +
-                          mealType.substring(1),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ],
-                ),
-                subtitle: Container(
-                  margin: const EdgeInsets.only(top: 8),
-                  child: Row(
-                    children: [
-                      Text(
-                        '$totalCalories cal',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryBlue,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Macro ratio pill
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryBlue.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          'P: ${macroPercentages['protein']}% C: ${macroPercentages['carbs']}% F: ${macroPercentages['fat']}%',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: AppTheme.primaryBlue,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                children: [
-                  // Macro progress bar
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        _buildMacroProgressBar(
-                          'P',
-                          macroPercentages['protein']! / 100,
-                          AppTheme.coralAccent,
-                        ),
-                        _buildMacroProgressBar(
-                          'C',
-                          macroPercentages['carbs']! / 100,
-                          AppTheme.goldAccent,
-                        ),
-                        _buildMacroProgressBar(
-                          'F',
-                          macroPercentages['fat']! / 100,
-                          AppTheme.accentColor,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ...mealItems.map((item) => _buildFoodItemTile(item)),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            );
-          }).toList(),
+          ..._buildMealSections(),
         ],
       ],
     );
   }
-
-  Widget _buildMealTypeIcon(String mealType) {
-    IconData iconData;
-    Color iconColor;
-
-    switch (mealType.toLowerCase()) {
-      case 'breakfast':
-        iconData = Icons.breakfast_dining;
-        iconColor = AppTheme.accentColor; // Burgundy for breakfast
-        break;
-      case 'lunch':
-        iconData = Icons.lunch_dining;
-        iconColor = AppTheme.primaryBlue; // Green for lunch
-        break;
-      case 'dinner':
-        iconData = Icons.dinner_dining;
-        iconColor = AppTheme.goldAccent; // Gold for dinner
-        break;
-      case 'snack':
-        iconData = Icons.fastfood;
-        iconColor = AppTheme.coralAccent; // Coral for snack
-        break;
-      default:
-        iconData = Icons.food_bank;
-        iconColor = AppTheme.primaryBlue;
-    }
-
+  
+  Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
       decoration: BoxDecoration(
-        color: iconColor.withOpacity(0.1),
-        shape: BoxShape.circle,
+        color: AppTheme.primaryBlue.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Icon(
-        iconData,
-        color: iconColor,
-      ),
-    );
-  }
-
-  Widget _buildMacroProgressBar(String label, double value, Color color) {
-    return Expanded(
-      child: Column(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          LinearProgressIndicator(
-            value: value,
-            backgroundColor: Colors.grey.withOpacity(0.2),
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          const SizedBox(height: 4),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                  fontSize: 12,
-                ),
+              Icon(
+                Icons.restaurant_menu_rounded,
+                color: AppTheme.primaryBlue,
+                size: 20,
               ),
+              const SizedBox(width: 8),
               Text(
-                ' ${(value * 100).round()}%',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
+                'TODAY\'S FOOD LOG',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryBlue,
                 ),
               ),
             ],
           ),
+          IconButton(
+            icon: Icon(
+              Icons.refresh_rounded,
+              color: AppTheme.primaryBlue,
+              size: 20,
+            ),
+            onPressed: _loadFoodEntries,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
         ],
       ),
     );
   }
+  
+  Widget _buildEmptyState() {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            spreadRadius: 0,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.no_food,
+            size: 48,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No Food Entries for Today',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Use the camera or "Add Food" button to log your meals',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildLoadingState() {
+    return Container(
+      height: 200,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            spreadRadius: 0,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+  
+  List<Widget> _buildMealSections() {
+    return ['breakfast', 'lunch', 'dinner', 'snack'].map((mealType) {
+      final mealItems = _foodByMeal[mealType] ?? [];
 
-  Widget _buildFoodItemTile(FoodItem item) {
+      // Skip empty meal types
+      if (mealItems.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      final totalCalories = _calculateMealCalories(mealItems);
+      
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              spreadRadius: 0,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: _buildMealSection(
+          mealType: mealType,
+          mealItems: mealItems,
+          totalCalories: totalCalories,
+        ),
+      );
+    }).toList();
+  }
+  
+  Widget _buildMealSection({
+    required String mealType,
+    required List<FoodItem> mealItems,
+    required int totalCalories,
+  }) {
+    final isExpanded = _expandedSections[mealType] ?? true;
+    
+    return Column(
+      children: [
+        // Meal header
+        InkWell(
+          onTap: () {
+            setState(() {
+              _expandedSections[mealType] = !isExpanded;
+            });
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Meal icon with background
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBlue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    _getMealTypeIcon(mealType),
+                    color: AppTheme.primaryBlue,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                
+                // Meal title
+                Text(
+                  _formatMealType(mealType),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                
+                const Spacer(),
+                
+                // Calorie count
+                Text(
+                  '$totalCalories cal',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: AppTheme.primaryBlue,
+                  ),
+                ),
+                
+                // Expand/collapse button
+                IconButton(
+                  icon: Icon(
+                    isExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: Colors.grey[600],
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _expandedSections[mealType] = !isExpanded;
+                    });
+                  },
+                  padding: const EdgeInsets.all(4),
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+          ),
+        ),
+        
+        // Food items list
+        if (isExpanded) ...[
+          // Divider between header and list
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: Colors.grey[100],
+          ),
+          // List of food items
+          ...mealItems.map((item) => _buildFoodItemTile(item, mealType)),
+        ],
+      ],
+    );
+  }
+  
+  Widget _buildFoodItemTile(FoodItem item, String mealType) {
     // Calculate calories for this item with serving size
     final itemCalories = (item.calories * item.servingSize).round();
 
-    // Calculate nutrient values with serving size - updated to remove decimal places
-    final protein = (item.proteins * item.servingSize).round();
-    final carbs = (item.carbs * item.servingSize).round();
-    final fat = (item.fats * item.servingSize).round();
+    // Calculate nutrient values with serving size
+    final nutrition = item.getNutritionForServing();
+    final protein = nutrition['proteins']!.round();
+    final carbs = nutrition['carbs']!.round();
+    final fat = nutrition['fats']!.round();
 
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      title: Text(
-        item.name,
-        style: const TextStyle(
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      subtitle: Text(
-        'P: ${protein}g • C: ${carbs}g • F: ${fat}g • ${item.servingSize} ${item.servingUnit}',
-        style: const TextStyle(
-          fontSize: 12,
-        ),
-      ),
-      trailing: Text(
-        '$itemCalories cal',
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-      ),
+    // Build the actual food item content
+    Widget foodItemContent = InkWell(
       onTap: () {
-        // TODO: Add food item detail view or edit
+        // Show serving size adjustment dialog
+        _showServingSizeDialog(item);
       },
-      onLongPress: () {
-        _showDeleteConfirmation(item);
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Food image (if available)
+            _buildFoodImage(item),
+            
+            const SizedBox(width: 12),
+            
+            // Food details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Food name
+                  Text(
+                    item.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 4),
+                  
+                  // Serving size
+                  Text(
+                    '${item.servingSize} ${item.servingUnit}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 2),
+                  
+                  // Macros
+                  Text(
+                    'P: ${protein}g • C: ${carbs}g • F: ${fat}g',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Calories
+            Text(
+              '$itemCalories cal',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: AppTheme.primaryBlue,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    // Wrap with Dismissible for swipe-to-delete
+    return Dismissible(
+      key: Key(item.id),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        color: Colors.red[400],
+        child: const Icon(
+          Icons.delete,
+          color: Colors.white,
+          size: 26,
+        ),
+      ),
+      direction: DismissDirection.endToStart, // Only right to left swipe
+      onDismissed: (direction) {
+        // First update the UI immediately (optimistic update)
+        _deleteFoodItemLocally(item.id, mealType);
+        
+        // Then attempt to delete from repository in the background
+        _foodRepository.deleteFoodEntry(item.id, item.timestamp).then((success) {
+          if (success) {
+            // Notify the parent widget if needed
+            if (widget.onFoodAdded != null) {
+              widget.onFoodAdded!();
+            }
+            
+            // Show a brief snackbar confirmation
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Item removed'),
+                duration: const Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          } else {
+            // If deletion failed, reload the data to restore the correct state
+            _loadFoodEntries();
+            
+            // Show error message
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to delete food item'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        });
       },
+      child: foodItemContent,
     );
   }
+  
+  // Build food image widget
+  Widget _buildFoodImage(FoodItem item) {
+    if (item.imagePath != null) {
+      // Use actual image if available
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          width: 50,
+          height: 50,
+          child: Image.file(
+            File(item.imagePath!),
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildDefaultFoodIcon();
+            },
+          ),
+        ),
+      );
+    } else {
+      // Use default food icon
+      return _buildDefaultFoodIcon();
+    }
+  }
+  
+  // Default food icon when no image is available
+  Widget _buildDefaultFoodIcon() {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        color: AppTheme.primaryBlue.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(
+        Icons.fastfood_rounded,
+        color: AppTheme.primaryBlue,
+        size: 24,
+      ),
+    );
+  }
+  
+  IconData _getMealTypeIcon(String mealType) {
+    switch (mealType.toLowerCase()) {
+      case 'breakfast':
+        return Icons.breakfast_dining_rounded;
+      case 'lunch':
+        return Icons.lunch_dining_rounded;
+      case 'dinner':
+        return Icons.dinner_dining_rounded;
+      case 'snack':
+        return Icons.fastfood_rounded;
+      default:
+        return Icons.food_bank_rounded;
+    }
+  }
 
-  void _showDeleteConfirmation(FoodItem item) {
+  String _formatMealType(String mealType) {
+    // Capitalize first letter
+    if (mealType.isEmpty) return 'Snack';
+    return mealType.substring(0, 1).toUpperCase() +
+        mealType.substring(1).toLowerCase();
+  }
+  
+  // Serving size adjustment dialog
+  void _showServingSizeDialog(FoodItem item) {
+    double newServingSize = item.servingSize;
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Remove Food'),
-        content: Text('Remove ${item.name} from your food log?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('CANCEL'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-
-              // Delete the food entry
-              final success = await _foodRepository.deleteFoodEntry(
-                item.id,
-                item.timestamp,
-              );
-
-              if (success) {
-                // Reload the food entries
-                _loadFoodEntries();
-
-                // Notify the parent widget if needed
-                if (widget.onFoodAdded != null) {
-                  widget.onFoodAdded!();
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(
+            item.name,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
             ),
-            child: const Text('REMOVE'),
           ),
-        ],
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Current serving information
+              Text(
+                'Current serving: ${item.servingSize} ${item.servingUnit}',
+                style: TextStyle(
+                  color: Colors.grey[700],
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Serving size slider
+              Text(
+                'Adjust serving size: ${newServingSize.toStringAsFixed(1)} ${item.servingUnit}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Slider(
+                value: newServingSize,
+                min: 0.1,
+                max: 5.0,
+                divisions: 49,
+                label: newServingSize.toStringAsFixed(1),
+                activeColor: AppTheme.primaryBlue,
+                onChanged: (value) {
+                  setState(() {
+                    newServingSize = value;
+                  });
+                },
+              ),
+              
+              // Display adjusted calories
+              Text(
+                'Calories: ${(item.calories * newServingSize).round()} cal',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryBlue,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('CANCEL'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                
+                // Create updated food item with new serving size
+                final updatedItem = FoodItem(
+                  id: item.id,
+                  name: item.name,
+                  calories: item.calories,
+                  proteins: item.proteins,
+                  carbs: item.carbs,
+                  fats: item.fats,
+                  imagePath: item.imagePath,
+                  mealType: item.mealType,
+                  timestamp: item.timestamp,
+                  servingSize: newServingSize,
+                  servingUnit: item.servingUnit,
+                  spoonacularId: item.spoonacularId,
+                );
+                
+                // First update the UI immediately (optimistic update)
+                _updateFoodItemLocally(updatedItem);
+                
+                // Then update in repository in the background
+                _foodRepository.updateFoodEntry(updatedItem).then((success) {
+                  if (success) {
+                    // Notify the parent widget if needed
+                    if (widget.onFoodAdded != null) {
+                      widget.onFoodAdded!();
+                    }
+                  } else {
+                    // If update failed, reload the data to restore the correct state
+                    _loadFoodEntries();
+                    
+                    // Show error message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Failed to update serving size'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryBlue,
+              ),
+              child: const Text('SAVE'),
+            ),
+          ],
+        ),
       ),
     );
   }
