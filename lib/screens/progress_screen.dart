@@ -1,8 +1,9 @@
+// lib/screens/progress_screen.dart
 import 'package:flutter/material.dart';
 import '../widgets/progress/current_weight_widget.dart';
 import '../widgets/progress/target_weight_widget.dart';
-import '../widgets/progress/body_mass_index.dart';
-import '../widgets/progress/body_fat_widget.dart';
+import '../widgets/progress/body_mass_index.dart'; // Import for BMIWidget
+import '../widgets/progress/body_fat_widget.dart'; // Import for BodyFatPercentageWidget
 import '../widgets/progress/tdee_calculator_widget.dart';
 import '../widgets/progress/basal_meta_rate.dart';
 import '../data/repositories/user_repository.dart';
@@ -140,7 +141,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
               const SizedBox(height: 20),
 
-              // BMR Calculator Widget (with renamed class)
+              // BMR Calculator Widget
               BasalMetabolicRateWidget(
                 userProfile: _userProfile,
                 currentWeight: _currentWeight,
@@ -185,19 +186,23 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
                     return Row(
                       children: [
-                        // BMI Widget (with renamed class)
-                        BodyMassIndexWidget(
-                          bmiValue: bmiValue,
-                          classification: classification,
+                        // BMI Widget
+                        Expanded(
+                          child: BMIWidget(
+                            bmiValue: bmiValue,
+                            classification: classification,
+                          ),
                         ),
 
                         const SizedBox(width: 16),
 
                         // Body Fat Widget
-                        BodyFatWidget(
-                          bodyFatPercentage: bodyFatValue,
-                          classification: bodyFatClassification,
-                          isEstimated: true,
+                        Expanded(
+                          child: BodyFatPercentageWidget(
+                            bodyFatPercentage: bodyFatValue,
+                            classification: bodyFatClassification,
+                            isEstimated: true,
+                          ),
                         ),
                       ],
                     );
