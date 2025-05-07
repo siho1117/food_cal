@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 import '../widgets/progress/current_weight_widget.dart';
 import '../widgets/progress/target_weight_widget.dart';
-import '../widgets/progress/body_mass_index.dart'; // Import for BMIWidget
-import '../widgets/progress/body_fat_widget.dart'; // Import for BodyFatPercentageWidget
+import '../widgets/progress/body_mass_index.dart';
+import '../widgets/progress/body_fat_widget.dart';
 import '../widgets/progress/tdee_calculator_widget.dart';
 import '../widgets/progress/basal_meta_rate.dart';
 import '../data/repositories/user_repository.dart';
@@ -73,7 +73,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Text (matching home page style)
+              // Header Text
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -99,7 +99,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
               const SizedBox(height: 24),
 
-              // NEW: Current Weight Widget
+              // Current Weight Widget
               CurrentWeightWidget(
                 onWeightUpdated: _onWeightUpdated,
               ),
@@ -149,72 +149,71 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
               const SizedBox(height: 20),
 
-              // BMI and Body Fat widgets in a row
-              SizedBox(
-                height: 130, // Fixed height for both widgets
-                child: FutureBuilder<double?>(
-                  future: _userRepository.calculateBMI(),
-                  builder: (context, snapshot) {
-                    final bmiValue = snapshot.data;
-                    String classification = "Not set";
-
-                    if (bmiValue != null) {
-                      classification =
-                          _userRepository.getBMIClassification(bmiValue);
-                    }
-
-                    // Extract profile data needed for body fat calculation
-                    final String? gender = _userProfile?.gender;
-                    final int? age = _userProfile?.age;
-
-                    // Calculate body fat using the formula in utils
-                    double? bodyFatValue;
-                    String bodyFatClassification = "Not set";
-
-                    if (bmiValue != null) {
-                      bodyFatValue = Formula.calculateBodyFat(
-                        bmi: bmiValue,
-                        age: age,
-                        gender: gender,
-                      );
-
-                      if (bodyFatValue != null) {
-                        bodyFatClassification = Formula.getBodyFatClassification(
-                          bodyFatValue, gender);
-                      }
-                    }
-
-                    return Row(
-                      children: [
-                        // BMI Widget
-                        Expanded(
-                          child: BMIWidget(
-                            bmiValue: bmiValue,
-                            classification: classification,
-                          ),
-                        ),
-
-                        const SizedBox(width: 16),
-
-                        // Body Fat Widget
-                        Expanded(
-                          child: BodyFatPercentageWidget(
-                            bodyFatPercentage: bodyFatValue,
-                            classification: bodyFatClassification,
-                            isEstimated: true,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
+              // BMI and Body Fat widgets now in a column instead of a row for better layout
+              _buildBodyCompositionWidgets(),
 
               const SizedBox(height: 80), // Extra space for bottom nav
             ],
           ),
         ),
       ),
+    );
+  }
+
+  // Extracted method to build the body composition widgets (BMI and Body Fat)
+  Widget _buildBodyCompositionWidgets() {
+    return FutureBuilder<double?>(
+      future: _userRepository.calculateBMI(),
+      builder: (context, snapshot) {
+        final bmiValue = snapshot.data;
+        String classification = "Not set";
+
+        if (bmiValue != null) {
+          classification = _userRepository.getBMIClassification(bmiValue);
+        }
+
+        // Extract profile data needed for body fat calculation
+        final String? gender = _userProfile?.gender;
+        final int? age = _userProfile?.age;
+
+        // Calculate body fat using the formula in utils
+        double? bodyFatValue;
+        String bodyFatClassification = "Not set";
+
+        if (bmiValue != null) {
+          bodyFatValue = Formula.calculateBodyFat(
+            bmi: bmiValue,
+            age: age,
+            gender: gender,
+          );
+
+          if (bodyFatValue != null) {
+            bodyFatClassification = Formula.getBodyFatClassification(
+              bodyFatValue, gender);
+          }
+        }
+
+        // Using a Column instead of Row for better vertical layout
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // BMI Widget
+            BMIWidget(
+              bmiValue: bmiValue,
+              classification: classification,
+            ),
+
+            const SizedBox(height: 20),
+
+            // Body Fat Widget
+            BodyFatPercentageWidget(
+              bodyFatPercentage: bodyFatValue,
+              classification: bodyFatClassification,
+              isEstimated: true,
+            ),
+          ],
+        );
+      },
     );
   }
 }

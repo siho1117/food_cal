@@ -21,9 +21,7 @@ class _BMIWidgetState extends State<BMIWidget>
     with SingleTickerProviderStateMixin {
       
   late AnimationController _animationController;
-  late Animation<double> _fadeInAnimation;
-  late Animation<double> _sweepAnimation;
-  late Animation<double> _valueAnimation;
+  late Animation<double> _progressAnimation;
 
   @override
   void initState() {
@@ -35,24 +33,10 @@ class _BMIWidgetState extends State<BMIWidget>
       duration: const Duration(milliseconds: 1500),
     );
     
-    _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-      ),
-    );
-    
-    _sweepAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.1, 0.9, curve: Curves.easeOutCubic),
-      ),
-    );
-    
-    _valueAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.2, 0.9, curve: Curves.easeOutCubic),
+        curve: Curves.easeOutCubic,
       ),
     );
     
@@ -84,7 +68,7 @@ class _BMIWidgetState extends State<BMIWidget>
     if (widget.bmiValue! < 18.5) {
       return AppTheme.goldAccent;     // Gold/Yellow for Underweight
     } else if (widget.bmiValue! < 25) {
-      return AppTheme.primaryBlue;    // Green for Normal
+      return AppTheme.primaryBlue;    // Primary blue for Normal
     } else if (widget.bmiValue! < 30) {
       return AppTheme.coralAccent;    // Coral for Overweight
     } else {
@@ -92,9 +76,9 @@ class _BMIWidgetState extends State<BMIWidget>
     }
   }
   
-  // Get position in the BMI gauge (0.0 to 1.0)
+  // Calculate position on the BMI scale (0.0 to 1.0)
   double _getBMIPosition() {
-    if (widget.bmiValue == null) return 0.5; // Center position
+    if (widget.bmiValue == null) return 0.5; // Default to center
     
     // Map BMI range (15-40) to position (0.0-1.0)
     final normalizedPosition = (widget.bmiValue! - 15) / 25;
@@ -122,209 +106,206 @@ class _BMIWidgetState extends State<BMIWidget>
     final bmiPosition = _getBMIPosition();
     final description = _getBMIDescription();
 
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _fadeInAnimation.value,
-          child: Container(
-            padding: const EdgeInsets.all(16),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            spreadRadius: 0,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.white,
+            Colors.grey[50]!,
+          ],
+          stops: const [0.7, 1.0],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with styled background
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              color: AppTheme.primaryBlue.withOpacity(0.02),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Header with primary value
                 Row(
                   children: [
-                    // BMI Value section
-                    Expanded(
-                      flex: 2,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // BMI Title
-                          Text(
-                            'Body Mass Index',
-                            style: AppTextStyles.getSubHeadingStyle().copyWith(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                          
-                          const SizedBox(height: 4),
-                          
-                          // Animated BMI Value
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(
-                                widget.bmiValue != null 
-                                  ? (widget.bmiValue! * _valueAnimation.value).toStringAsFixed(1)
-                                  : "—",
-                                style: AppTextStyles.getNumericStyle().copyWith(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: primaryColor,
-                                ),
-                              ),
-                              
-                              const SizedBox(width: 4),
-                              
-                              // Classification
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, 
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: primaryColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  widget.classification,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: primaryColor,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                    Icon(
+                      Icons.monitor_weight_rounded,
+                      color: AppTheme.primaryBlue,
+                      size: 20,
                     ),
-                    
-                    // Gauge visualization
-                    SizedBox(
-                      height: 60,
-                      width: 60,
-                      child: CustomPaint(
-                        painter: BMIGaugePainter(
-                          bmiPosition: bmiPosition,
-                          sweepAnimation: _sweepAnimation.value,
-                          bmiColor: primaryColor,
-                        ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Body Mass Index',
+                      style: AppTextStyles.getSubHeadingStyle().copyWith(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryBlue,
                       ),
                     ),
                   ],
                 ),
-                
-                const SizedBox(height: 10),
-                
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8, 
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    widget.classification,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // BMI value display
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            child: Center(
+              child: Column(
+                children: [
+                  // Animated BMI value
+                  AnimatedBuilder(
+                    animation: _progressAnimation,
+                    builder: (context, child) {
+                      final displayedValue = widget.bmiValue != null 
+                        ? (widget.bmiValue! * _progressAnimation.value).toStringAsFixed(1)
+                        : "—";
+                      return Text(
+                        displayedValue,
+                        style: AppTextStyles.getNumericStyle().copyWith(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                        ),
+                      );
+                    },
+                  ),
+                  
+                  // "kg/m²" label
+                  Text(
+                    'kg/m²',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // BMI Range visualization
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 // BMI Range bar
-                SizedBox(
+                Container(
                   width: double.infinity,
-                  height: 42,
-                  child: Stack(
-                    children: [
-                      // Background gradient
-                      Container(
-                        height: 6,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(3),
-                          gradient: const LinearGradient(
-                            colors: [
-                              AppTheme.goldAccent,     // Underweight
-                              AppTheme.primaryBlue,    // Normal
-                              AppTheme.coralAccent,    // Overweight
-                              AppTheme.accentColor,    // Obese
-                            ],
-                            stops: [0.15, 0.4, 0.65, 0.9],
-                          ),
-                        ),
-                      ),
-                      
-                      // Position indicator (animated)
-                      if (widget.bmiValue != null)
-                        Positioned(
-                          left: (MediaQuery.of(context).size.width - 64) * 
-                              bmiPosition * _sweepAnimation.value,
-                          top: 0,
-                          child: Column(
-                            children: [
-                              Container(
-                                width: 14,
-                                height: 14,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white,
-                                  border: Border.all(
-                                    color: primaryColor,
-                                    width: 3,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: primaryColor.withOpacity(0.3),
-                                      blurRadius: 4,
-                                      spreadRadius: 0,
-                                      offset: const Offset(0, 1),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: primaryColor,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  widget.bmiValue != null 
-                                      ? widget.bmiValue!.toStringAsFixed(1)
-                                      : "—",
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      
-                      // Range labels
-                      Positioned(
-                        top: 22,
-                        left: 0,
-                        right: 0,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildRangeLabel("Underweight", "<18.5", AppTheme.goldAccent),
-                            _buildRangeLabel("Normal", "18.5-25", AppTheme.primaryBlue),
-                            _buildRangeLabel("Overweight", "25-30", AppTheme.coralAccent),
-                            _buildRangeLabel("Obese", ">30", AppTheme.accentColor),
-                          ],
-                        ),
-                      ),
-                    ],
+                  height: 8,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    gradient: const LinearGradient(
+                      colors: [
+                        AppTheme.goldAccent,     // Underweight
+                        AppTheme.primaryBlue,    // Normal
+                        AppTheme.coralAccent,    // Overweight
+                        AppTheme.accentColor,    // Obese
+                      ],
+                      stops: [0.15, 0.4, 0.65, 0.9],
+                    ),
                   ),
                 ),
                 
-                const SizedBox(height: 12),
+                // Position indicator on the bar
+                if (widget.bmiValue != null)
+                  AnimatedBuilder(
+                    animation: _progressAnimation,
+                    builder: (context, child) {
+                      return Container(
+                        margin: EdgeInsets.only(
+                          left: (MediaQuery.of(context).size.width - 64) * 
+                              bmiPosition * _progressAnimation.value,
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.arrow_drop_down,
+                              color: primaryColor,
+                              size: 24,
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8, 
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: primaryColor,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                widget.bmiValue!.toStringAsFixed(1),
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 
-                // Description
+                const SizedBox(height: 8),
+                
+                // Range labels
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildRangeLabel("< 18.5", "Underweight", AppTheme.goldAccent),
+                    _buildRangeLabel("18.5-25", "Normal", AppTheme.primaryBlue),
+                    _buildRangeLabel("25-30", "Overweight", AppTheme.coralAccent),
+                    _buildRangeLabel("> 30", "Obese", AppTheme.accentColor),
+                  ],
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Description box
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
                     color: primaryColor.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(8),
@@ -358,16 +339,16 @@ class _BMIWidgetState extends State<BMIWidget>
               ],
             ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
   
-  Widget _buildRangeLabel(String text, String range, Color color) {
+  Widget _buildRangeLabel(String value, String label, Color color) {
     return Column(
       children: [
         Text(
-          range,
+          value,
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.bold,
@@ -375,7 +356,7 @@ class _BMIWidgetState extends State<BMIWidget>
           ),
         ),
         Text(
-          text,
+          label,
           style: TextStyle(
             fontSize: 8,
             color: Colors.grey[600],
@@ -383,107 +364,5 @@ class _BMIWidgetState extends State<BMIWidget>
         ),
       ],
     );
-  }
-}
-
-class BMIGaugePainter extends CustomPainter {
-  final double bmiPosition; // 0.0 to 1.0
-  final double sweepAnimation; // Animation progress 0.0 to 1.0
-  final Color bmiColor;
-  
-  BMIGaugePainter({
-    required this.bmiPosition,
-    required this.sweepAnimation,
-    required this.bmiColor,
-  });
-  
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) / 2;
-    
-    // Calculate start and sweep angles
-    final startAngle = -math.pi * 0.75; // Start at top-left
-    final totalSweepAngle = math.pi * 1.5; // 270 degrees sweep
-    final endAngle = startAngle + totalSweepAngle * sweepAnimation;
-    
-    // Mapping bmiPosition (0.0-1.0) to the gauge angle
-    final bmiAngle = startAngle + totalSweepAngle * bmiPosition * sweepAnimation;
-    
-    // Background track paint (grey)
-    final trackPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 8.0
-      ..strokeCap = StrokeCap.round
-      ..color = Colors.grey[200]!;
-    
-    // Value arc paint (bmi color)
-    final valuePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 8.0
-      ..strokeCap = StrokeCap.round
-      ..color = bmiColor;
-    
-    // Draw background track arc
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius - 4),
-      startAngle,
-      totalSweepAngle * sweepAnimation,
-      false,
-      trackPaint,
-    );
-    
-    // Draw value arc
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius - 4),
-      startAngle,
-      (bmiAngle - startAngle),
-      false,
-      valuePaint,
-    );
-    
-    // Draw center circle with icon
-    final centerCirclePaint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = Colors.white;
-    
-    final centerBorderPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0
-      ..color = bmiColor;
-    
-    // Draw center circle
-    canvas.drawCircle(center, radius * 0.6, centerCirclePaint);
-    canvas.drawCircle(center, radius * 0.6, centerBorderPaint);
-    
-    // Draw BMI text in center
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: 'BMI',
-        style: TextStyle(
-          color: bmiColor,
-          fontSize: radius * 0.5,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-      textAlign: TextAlign.center,
-    );
-    
-    textPainter.layout();
-    textPainter.paint(
-      canvas, 
-      Offset(
-        center.dx - textPainter.width / 2,
-        center.dy - textPainter.height / 2,
-      ),
-    );
-  }
-  
-  @override
-  bool shouldRepaint(BMIGaugePainter oldDelegate) {
-    return oldDelegate.bmiPosition != bmiPosition ||
-        oldDelegate.sweepAnimation != sweepAnimation ||
-        oldDelegate.bmiColor != bmiColor;
   }
 }

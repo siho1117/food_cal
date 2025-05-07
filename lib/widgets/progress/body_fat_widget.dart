@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 import '../../config/text_styles.dart';
@@ -23,9 +22,7 @@ class _BodyFatPercentageWidgetState extends State<BodyFatPercentageWidget>
     with SingleTickerProviderStateMixin {
       
   late AnimationController _animationController;
-  late Animation<double> _fadeInAnimation;
   late Animation<double> _progressAnimation;
-  late Animation<double> _fillAnimation;
 
   @override
   void initState() {
@@ -37,24 +34,10 @@ class _BodyFatPercentageWidgetState extends State<BodyFatPercentageWidget>
       duration: const Duration(milliseconds: 1500),
     );
     
-    _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-      ),
-    );
-    
     _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.2, 0.9, curve: Curves.easeOutCubic),
-      ),
-    );
-    
-    _fillAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.1, 0.8, curve: Curves.easeOut),
+        curve: Curves.easeOutCubic,
       ),
     );
     
@@ -144,13 +127,13 @@ class _BodyFatPercentageWidgetState extends State<BodyFatPercentageWidget>
     }
   }
   
-  // Calculate the fill level (0.0 to 1.0) for visualization
-  double _getBodyFatFillLevel() {
-    if (widget.bodyFatPercentage == null) return 0.0;
+  // Calculate position on the body fat scale (0.0 to 1.0)
+  double _getBodyFatPosition() {
+    if (widget.bodyFatPercentage == null) return 0.5; // Default to center
     
-    // Calculate based on reasonable body fat range (3% to 50%)
-    final fillLevel = widget.bodyFatPercentage! / 50.0;
-    return fillLevel.clamp(0.0, 1.0);
+    // Map body fat percentage range (3-50%) to position (0.0-1.0)
+    final normalizedPosition = (widget.bodyFatPercentage! - 3) / 47.0;
+    return normalizedPosition.clamp(0.0, 1.0);
   }
 
   @override
@@ -158,218 +141,246 @@ class _BodyFatPercentageWidgetState extends State<BodyFatPercentageWidget>
     final primaryColor = _getColorForBodyFat();
     final bodyFatIcon = _getBodyFatIcon();
     final healthMessage = _getBodyFatMessage();
-    final fillLevel = _getBodyFatFillLevel();
+    final bodyFatPosition = _getBodyFatPosition();
 
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _fadeInAnimation.value,
-          child: Container(
-            padding: const EdgeInsets.all(16),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            spreadRadius: 0,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.white,
+            Colors.grey[50]!,
+          ],
+          stops: const [0.7, 1.0],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with styled background
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 2),
+              color: AppTheme.primaryBlue.withOpacity(0.02),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.accessibility_new,
+                      color: AppTheme.primaryBlue,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Body Fat Percentage',
+                      style: AppTextStyles.getSubHeadingStyle().copyWith(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryBlue,
+                      ),
+                    ),
+                    if (widget.isEstimated)
+                      Container(
+                        margin: const EdgeInsets.only(left: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          'Est.',
+                          style: TextStyle(
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8, 
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    widget.classification,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  ),
                 ),
               ],
             ),
+          ),
+          
+          // Body Fat value display
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            child: Center(
+              child: Column(
+                children: [
+                  // Animated Body Fat value
+                  AnimatedBuilder(
+                    animation: _progressAnimation,
+                    builder: (context, child) {
+                      final displayedValue = widget.bodyFatPercentage != null 
+                        ? (widget.bodyFatPercentage! * _progressAnimation.value).toStringAsFixed(1)
+                        : "—";
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            displayedValue,
+                            style: AppTextStyles.getNumericStyle().copyWith(
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor,
+                            ),
+                          ),
+                          Text(
+                            '%',
+                            style: AppTextStyles.getNumericStyle().copyWith(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  
+                  // "body fat" label
+                  Text(
+                    'body fat',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Body Fat Range visualization
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header with body fat value
-                Row(
-                  children: [
-                    // Body Fat Value section
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Title with estimated badge
-                          Row(
-                            children: [
-                              Text(
-                                'Body Fat Percentage',
-                                style: AppTextStyles.getSubHeadingStyle().copyWith(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                              if (widget.isEstimated)
-                                Container(
-                                  margin: const EdgeInsets.only(left: 6),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 1,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    'Est.',
-                                    style: TextStyle(
-                                      fontSize: 8,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          
-                          const SizedBox(height: 6),
-                          
-                          // Body Fat Value with animation
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(
-                                widget.bodyFatPercentage != null 
-                                  ? (widget.bodyFatPercentage! * _progressAnimation.value).toStringAsFixed(1)
-                                  : "—",
-                                style: AppTextStyles.getNumericStyle().copyWith(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: primaryColor,
-                                ),
-                              ),
-                              
-                              Text(
-                                "%",
-                                style: AppTextStyles.getNumericStyle().copyWith(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: primaryColor,
-                                ),
-                              ),
-                              
-                              const SizedBox(width: 8),
-                              
-                              // Classification
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, 
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: primaryColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  widget.classification,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: primaryColor,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                // Body Fat Range bar
+                Container(
+                  width: double.infinity,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    gradient: LinearGradient(
+                      colors: const [
+                        AppTheme.goldAccent,    // Essential
+                        AppTheme.primaryBlue,   // Athletic 
+                        AppTheme.mintAccent,    // Fitness
+                        Colors.grey,            // Average
+                        AppTheme.coralAccent,   // Above Avg
+                        AppTheme.accentColor,   // Obese
+                      ],
+                      stops: const [0.05, 0.15, 0.25, 0.40, 0.60, 0.80],
                     ),
-                    
-                    // Body fat cylinder visualization
-                    SizedBox(
-                      height: 60,
-                      width: 40,
-                      child: CustomPaint(
-                        painter: BodyFatCylinderPainter(
-                          fillLevel: fillLevel * _fillAnimation.value,
-                          fillColor: primaryColor,
+                  ),
+                ),
+                
+                // Position indicator on the bar
+                if (widget.bodyFatPercentage != null)
+                  AnimatedBuilder(
+                    animation: _progressAnimation,
+                    builder: (context, child) {
+                      return Container(
+                        margin: EdgeInsets.only(
+                          left: (MediaQuery.of(context).size.width - 64) * 
+                              bodyFatPosition * _progressAnimation.value,
                         ),
-                      ),
-                    ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.arrow_drop_down,
+                              color: primaryColor,
+                              size: 24,
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8, 
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: primaryColor,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                widget.bodyFatPercentage!.toStringAsFixed(1) + '%',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                
+                const SizedBox(height: 8),
+                
+                // Range labels
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildRangeLabel("3%", "Essential", AppTheme.goldAccent),
+                    _buildRangeLabel("15%", "Athletic", AppTheme.primaryBlue),
+                    _buildRangeLabel("25%", "Fitness", AppTheme.mintAccent),
+                    _buildRangeLabel("32%", "Average", Colors.grey[600]!),
+                    _buildRangeLabel(">32%", "High", AppTheme.coralAccent),
                   ],
                 ),
                 
                 const SizedBox(height: 16),
                 
-                // Body composition visualization
+                // Description box
                 Container(
                   width: double.infinity,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      // Essential fat (gold)
-                      _buildCompositionSegment(0.07, AppTheme.goldAccent, "Essential"),
-                      
-                      // Athletic fat (primary blue)
-                      _buildCompositionSegment(0.10, AppTheme.primaryBlue, "Athletic"),
-                      
-                      // Fitness fat (mint green)
-                      _buildCompositionSegment(0.08, AppTheme.mintAccent, "Fitness"),
-                      
-                      // Average fat (grey/neutral)
-                      _buildCompositionSegment(0.15, Colors.grey[400]!, "Average"),
-                      
-                      // Above average (coral)
-                      _buildCompositionSegment(0.20, AppTheme.coralAccent, "Above"),
-                      
-                      // Obese (burgundy)
-                      _buildCompositionSegment(0.40, AppTheme.accentColor, "Obese"),
-                    ],
-                  ),
-                ),
-                
-                // Body Fat indicator
-                if (widget.bodyFatPercentage != null)
-                  AnimatedBuilder(
-                    animation: _fillAnimation,
-                    builder: (context, child) {
-                      // Calculate position based on body fat percentage (3-50% range)
-                      double position = (widget.bodyFatPercentage! - 3) / 47.0;
-                      position = position.clamp(0.0, 1.0) * _fillAnimation.value;
-                      
-                      return Padding(
-                        padding: EdgeInsets.only(
-                          left: (MediaQuery.of(context).size.width - 72) * position,
-                        ),
-                        child: Container(
-                          margin: const EdgeInsets.only(top: 2),
-                          child: Icon(
-                            Icons.arrow_drop_up,
-                            color: primaryColor,
-                            size: 20,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  
-                // Range labels
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildRangeLabel("3%", "Essential"),
-                      _buildRangeLabel("15%", "Athletes"),
-                      _buildRangeLabel("25%", "Fitness"),
-                      _buildRangeLabel("32%", "Average"),
-                      _buildRangeLabel(">32%", "High"),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 12),
-                
-                // Classification description
-                Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
                     color: primaryColor.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(8),
@@ -401,23 +412,12 @@ class _BodyFatPercentageWidgetState extends State<BodyFatPercentageWidget>
               ],
             ),
           ),
-        );
-      },
-    );
-  }
-  
-  Widget _buildCompositionSegment(double widthPercent, Color color, String label) {
-    return Container(
-      width: (MediaQuery.of(context).size.width - 72) * widthPercent,
-      height: 20,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.zero,
+        ],
       ),
     );
   }
   
-  Widget _buildRangeLabel(String value, String label) {
+  Widget _buildRangeLabel(String value, String label, Color color) {
     return Column(
       children: [
         Text(
@@ -425,7 +425,7 @@ class _BodyFatPercentageWidgetState extends State<BodyFatPercentageWidget>
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.bold,
-            color: Colors.grey[600],
+            color: color,
           ),
         ),
         Text(
@@ -437,167 +437,5 @@ class _BodyFatPercentageWidgetState extends State<BodyFatPercentageWidget>
         ),
       ],
     );
-  }
-}
-
-class BodyFatCylinderPainter extends CustomPainter {
-  final double fillLevel; // 0.0 to 1.0
-  final Color fillColor;
-  
-  BodyFatCylinderPainter({
-    required this.fillLevel,
-    required this.fillColor,
-  });
-  
-  @override
-  void paint(Canvas canvas, Size size) {
-    final double width = size.width;
-    final double height = size.height;
-    final double cornerRadius = width * 0.2;
-    
-    // Create paths for cylinder
-    final cylinderPath = Path()
-      ..moveTo(0, cornerRadius)
-      ..arcTo(
-        Rect.fromLTWH(0, 0, cornerRadius * 2, cornerRadius * 2),
-        math.pi, 
-        -math.pi / 2, 
-        false
-      )
-      ..lineTo(width - cornerRadius, 0)
-      ..arcTo(
-        Rect.fromLTWH(width - cornerRadius * 2, 0, cornerRadius * 2, cornerRadius * 2),
-        -math.pi / 2, 
-        -math.pi / 2, 
-        false
-      )
-      ..lineTo(width, height - cornerRadius)
-      ..arcTo(
-        Rect.fromLTWH(width - cornerRadius * 2, height - cornerRadius * 2, cornerRadius * 2, cornerRadius * 2),
-        0, 
-        -math.pi / 2, 
-        false
-      )
-      ..lineTo(cornerRadius, height)
-      ..arcTo(
-        Rect.fromLTWH(0, height - cornerRadius * 2, cornerRadius * 2, cornerRadius * 2),
-        math.pi / 2, 
-        -math.pi / 2, 
-        false
-      )
-      ..close();
-    
-    // Draw cylinder outline
-    final outlinePaint = Paint()
-      ..color = Colors.grey[300]!
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    
-    canvas.drawPath(cylinderPath, outlinePaint);
-    
-    // Calculate fill height based on level
-    final fillHeight = height * (1 - fillLevel);
-    
-    // Create fill path (only up to the fill level)
-    final fillPath = Path()
-      ..moveTo(0, fillHeight > cornerRadius ? fillHeight : cornerRadius)
-      ..lineTo(0, height - cornerRadius)
-      ..arcTo(
-        Rect.fromLTWH(0, height - cornerRadius * 2, cornerRadius * 2, cornerRadius * 2),
-        math.pi, 
-        -math.pi / 2, 
-        false
-      )
-      ..lineTo(width - cornerRadius, height)
-      ..arcTo(
-        Rect.fromLTWH(width - cornerRadius * 2, height - cornerRadius * 2, cornerRadius * 2, cornerRadius * 2),
-        math.pi / 2, 
-        -math.pi / 2, 
-        false
-      )
-      ..lineTo(width, fillHeight > cornerRadius ? fillHeight : cornerRadius);
-    
-    // If fill level is above top corner radius, draw top curved part
-    if (fillHeight <= cornerRadius) {
-      fillPath
-        ..arcTo(
-          Rect.fromLTWH(width - cornerRadius * 2, 0, cornerRadius * 2, cornerRadius * 2),
-          0, 
-          -math.pi / 2, 
-          false
-        )
-        ..lineTo(cornerRadius, 0)
-        ..arcTo(
-          Rect.fromLTWH(0, 0, cornerRadius * 2, cornerRadius * 2),
-          -math.pi / 2, 
-          -math.pi / 2, 
-          false
-        );
-    } else {
-      // Otherwise just connect the sides
-      fillPath
-        ..lineTo(0, fillHeight);
-    }
-    
-    fillPath.close();
-    
-    // Draw the fill
-    final fillPaint = Paint()
-      ..color = fillColor.withOpacity(0.7)
-      ..style = PaintingStyle.fill;
-    
-    canvas.drawPath(fillPath, fillPaint);
-    
-    // Draw graduation lines (5 lines)
-    final linePaint = Paint()
-      ..color = Colors.grey[300]!
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8;
-    
-    final lineSpacing = height / 6;
-    for (int i = 1; i <= 5; i++) {
-      final y = lineSpacing * i;
-      canvas.drawLine(
-        Offset(2, y),
-        Offset(width - 2, y),
-        linePaint,
-      );
-    }
-    
-    // Draw top ellipse if needed for more 3D effect
-    final ellipsePaint = Paint()
-      ..color = Colors.grey[200]!
-      ..style = PaintingStyle.fill;
-    
-    final ellipseRect = Rect.fromLTWH(0, 0, width, cornerRadius * 0.5);
-    canvas.drawOval(ellipseRect, ellipsePaint);
-    
-    final ellipseOutlinePaint = Paint()
-      ..color = Colors.grey[300]!
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-    
-    canvas.drawOval(ellipseRect, ellipseOutlinePaint);
-    
-    // Draw fill level line for emphasis
-    final levelLinePaint = Paint()
-      ..color = fillColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-    
-    // Only draw if fill level is visible within the cylinder
-    if (fillLevel > 0 && fillLevel < 1) {
-      canvas.drawLine(
-        Offset(2, fillHeight),
-        Offset(width - 2, fillHeight),
-        levelLinePaint,
-      );
-    }
-  }
-  
-  @override
-  bool shouldRepaint(BodyFatCylinderPainter oldDelegate) {
-    return oldDelegate.fillLevel != fillLevel ||
-        oldDelegate.fillColor != fillColor;
   }
 }
