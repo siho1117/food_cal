@@ -1,6 +1,14 @@
+// lib/widgets/progress/target_weight_widget.dart
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 import '../../config/text_styles.dart';
+import '../../config/layouts/card_layout.dart';
+import '../../config/layouts/header_layout.dart';
+import '../../config/layouts/content_layout.dart';
+import '../../config/decorations/box_decorations.dart';
+import '../../config/animations/animation_helpers.dart';
+import '../../config/builders/value_builder.dart';
+import '../../config/extensions/num_extensions.dart';
 import '../../utils/formula.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../data/models/user_profile.dart';
@@ -34,19 +42,17 @@ class _TargetWeightWidgetState extends State<TargetWeightWidget>
   void initState() {
     super.initState();
 
+    // Initialize animation using AnimationHelpers
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
 
-    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOutCubic,
-      ),
+    _progressAnimation = AnimationHelpers.createProgressAnimation(
+      controller: _animationController,
     );
 
-    // Start animation when widget is built
+    // Start animation
     _animationController.forward();
   }
 
@@ -102,256 +108,116 @@ class _TargetWeightWidgetState extends State<TargetWeightWidget>
 
   @override
   Widget build(BuildContext context) {
-    // Calculate progress toward goal
+    // Calculate progress information
     final double progress = _calculateProgress();
     final String progressText = _getProgressText();
     final bool hasGoal = widget.targetWeight != null;
-    final bool isOverBudget = _getRemainingWeight() < 0;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            spreadRadius: 0,
-            offset: const Offset(0, 2),
-          ),
-        ],
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.white,
-            Colors.grey[50]!,
-          ],
-          stops: const [0.7, 1.0],
-        ),
+    final bool isWeightLoss = _isWeightLossGoal();
+    final Color targetColor = isWeightLoss ? AppTheme.coralAccent : AppTheme.goldAccent;
+    
+    // Use CardLayout for consistent card styling
+    return CardLayout.card(
+      // Use HeaderLayout for consistent header styling
+      header: HeaderLayout.withRefresh(
+        title: 'Weight Goal',
+        icon: Icons.flag_rounded,
+        onRefresh: _showTargetWeightDialog,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryBlue.withOpacity(0.02),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
+      child: hasGoal 
+          ? _buildGoalContent(progress, progressText, targetColor)
+          : _buildNoGoalContent(),
+    );
+  }
+  
+  // Content when a goal is set
+  Widget _buildGoalContent(double progress, String progressText, Color goalColor) {
+    final bool isOverBudget = _getRemainingWeight() < 0;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Weight information
+        Row(
+          children: [
+            // Target weight
+            Expanded(
+              child: ValueBuilder.buildValueWithSubtitle(
+                value: _formatWeight(widget.targetWeight),
+                subtitle: 'Goal Weight',
+                valueColor: goalColor,
+                align: TextAlign.start,
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.flag_rounded,
-                      color: AppTheme.primaryBlue,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Weight Goal',
-                      style: AppTextStyles.getSubHeadingStyle().copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryBlue,
-                      ),
-                    ),
-                  ],
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.edit,
-                    color: AppTheme.primaryBlue.withOpacity(0.7),
-                    size: 20,
-                  ),
-                  onPressed: _showTargetWeightDialog,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
+
+            // Current weight
+            Expanded(
+              child: ValueBuilder.buildValueWithSubtitle(
+                value: _formatWeight(widget.currentWeight),
+                subtitle: 'Current Weight',
+                valueColor: AppTheme.primaryBlue,
+                align: TextAlign.end,
+              ),
             ),
-          ),
+          ],
+        ),
 
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Weight information
-                Row(
-                  children: [
-                    // Target weight
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Goal Weight',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _formatWeight(widget.targetWeight),
-                            style: AppTextStyles.getNumericStyle().copyWith(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: hasGoal ? AppTheme.accentColor : Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+        const SizedBox(height: 24),
 
-                    // Current weight
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'Current Weight',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _formatWeight(widget.currentWeight),
-                            style: AppTextStyles.getNumericStyle().copyWith(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryBlue,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+        // Progress bar
+        AnimatedBuilder(
+          animation: _progressAnimation,
+          builder: (context, child) {
+            return ContentLayout.progressBar(
+              progress: progress * _progressAnimation.value,
+              label: '${(progress * 100 * _progressAnimation.value).toInt()}% complete',
+              valueLabel: progressText,
+              color: goalColor,
+              height: 8.0,
+            );
+          },
+        ),
 
-                const SizedBox(height: 24),
+        const SizedBox(height: 16),
 
-                // Progress indicator
-                AnimatedBuilder(
-                  animation: _progressAnimation,
-                  builder: (context, child) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Progress bar
-                        LinearProgressIndicator(
-                          value: hasGoal ? progress * _progressAnimation.value : 0.0,
-                          backgroundColor: Colors.grey[200],
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            hasGoal ? AppTheme.accentColor : Colors.grey,
-                          ),
-                          minHeight: 8,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Progress text
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              hasGoal
-                                  ? '${(progress * 100 * _progressAnimation.value).toInt()}% complete'
-                                  : 'No goal set',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: hasGoal ? AppTheme.accentColor : Colors.grey,
-                              ),
-                            ),
-                            if (hasGoal && widget.currentWeight != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isOverBudget
-                                      ? Colors.red[50]
-                                      : Colors.green[50],
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: isOverBudget
-                                        ? Colors.red[200]!
-                                        : Colors.green[200]!,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  progressText,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: isOverBudget
-                                        ? Colors.red[700]
-                                        : Colors.green[700],
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-                    );
-                  },
-                ),
-
-                // Set goal message (if no goal yet)
-                if (!hasGoal)
-                  Container(
-                    margin: const EdgeInsets.only(top: 12),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AppTheme.primaryBlue.withOpacity(0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          size: 16,
-                          color: AppTheme.primaryBlue,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Tap the edit button to set your weight goal',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.primaryBlue,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
+        // Healthy weight change tip
+        ContentLayout.infoBox(
+          message: _isWeightLossGoal()
+            ? 'Healthy weight loss: 0.5-1 kg (1-2 lbs) per week. Focus on sustainable habits and regular exercise.'
+            : 'Healthy weight gain: 0.25-0.5 kg (0.5-1 lb) per week. Pair with strength training for muscle development.',
+          icon: Icons.tips_and_updates_outlined,
+          color: AppTheme.primaryBlue,
+        ),
+      ],
+    );
+  }
+  
+  // Content when no goal is set
+  Widget _buildNoGoalContent() {
+    return Column(
+      children: [
+        // Info message
+        ContentLayout.infoBox(
+          message: 'Set a weight goal to track your progress',
+          icon: Icons.info_outline, 
+          color: AppTheme.primaryBlue,
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // Set goal button
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _showTargetWeightDialog,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryBlue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
             ),
+            child: const Text('SET WEIGHT GOAL'),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -387,6 +253,15 @@ class _TargetWeightWidgetState extends State<TargetWeightWidget>
     }
 
     return widget.currentWeight! - widget.targetWeight!;
+  }
+  
+  // Check if this is a weight loss goal
+  bool _isWeightLossGoal() {
+    if (widget.targetWeight == null || widget.currentWeight == null) {
+      return true; // Default to weight loss
+    }
+    
+    return widget.currentWeight! > widget.targetWeight!;
   }
 
   // Format weight with proper units

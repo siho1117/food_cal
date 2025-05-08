@@ -1,7 +1,9 @@
+// lib/widgets/progress/target_weight_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../config/theme.dart';
 import '../../config/text_styles.dart';
+import '../../utils/formula.dart';
 
 class TargetWeightDialog extends StatefulWidget {
   final double? initialTargetWeight;
@@ -26,9 +28,6 @@ class _TargetWeightDialogState extends State<TargetWeightDialog> {
   // For wheel picker
   late int _selectedWholeNumber;
   late int _selectedDecimal;
-  
-  // For goal explanation
-  late bool _isLossGoal;
 
   @override
   void initState() {
@@ -49,9 +48,6 @@ class _TargetWeightDialogState extends State<TargetWeightDialog> {
     // Extract whole and decimal parts
     _selectedWholeNumber = _selectedWeight.floor();
     _selectedDecimal = ((_selectedWeight - _selectedWholeNumber) * 10).round();
-    
-    // Default to weight loss goal
-    _isLossGoal = true;
   }
 
   void _toggleUnit() {
@@ -158,119 +154,7 @@ class _TargetWeightDialogState extends State<TargetWeightDialog> {
               ],
             ),
 
-            const SizedBox(height: 24),
-
-            // Goal type toggle
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  // Weight Loss Goal
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _isLossGoal = true;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 12, 
-                          horizontal: 8
-                        ),
-                        decoration: BoxDecoration(
-                          color: _isLossGoal 
-                              ? AppTheme.coralAccent.withOpacity(0.15) 
-                              : Colors.grey.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: _isLossGoal
-                                ? AppTheme.coralAccent
-                                : Colors.grey.withOpacity(0.3),
-                            width: 2,
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.trending_down,
-                              color: _isLossGoal 
-                                  ? AppTheme.coralAccent 
-                                  : Colors.grey,
-                              size: 22,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Weight Loss',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: _isLossGoal
-                                    ? AppTheme.coralAccent
-                                    : Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(width: 12),
-                  
-                  // Weight Gain Goal
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _isLossGoal = false;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 12, 
-                          horizontal: 8
-                        ),
-                        decoration: BoxDecoration(
-                          color: !_isLossGoal 
-                              ? AppTheme.goldAccent.withOpacity(0.15) 
-                              : Colors.grey.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: !_isLossGoal
-                                ? AppTheme.goldAccent
-                                : Colors.grey.withOpacity(0.3),
-                            width: 2,
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.trending_up,
-                              color: !_isLossGoal 
-                                  ? AppTheme.goldAccent 
-                                  : Colors.grey,
-                              size: 22,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Weight Gain',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: !_isLossGoal
-                                    ? AppTheme.goldAccent
-                                    : Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // Target weight display
             Text(
@@ -290,7 +174,7 @@ class _TargetWeightDialogState extends State<TargetWeightDialog> {
               style: AppTextStyles.getNumericStyle().copyWith(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
-                color: _isLossGoal ? AppTheme.coralAccent : AppTheme.goldAccent,
+                color: AppTheme.accentColor,
               ),
             ),
 
@@ -384,31 +268,31 @@ class _TargetWeightDialogState extends State<TargetWeightDialog> {
               ),
             ),
             
-            // Goal explanation
+            const SizedBox(height: 10),
+            
+            // Healthy weight tip
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: (_isLossGoal ? AppTheme.coralAccent : AppTheme.goldAccent).withOpacity(0.1),
+                  color: AppTheme.primaryBlue.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.info_outline,
-                      size: 18,
-                      color: _isLossGoal ? AppTheme.coralAccent : AppTheme.goldAccent,
+                      size: 16,
+                      color: AppTheme.primaryBlue,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        _isLossGoal
-                            ? 'For healthy weight loss, aim for 0.5-1 kg per week (1-2 lbs). This requires a calorie deficit of 500-1000 calories daily.'
-                            : 'For muscle gain, aim for 0.2-0.4 kg per week (0.5-0.9 lbs). This requires a calorie surplus of 250-500 calories daily, plus strength training.',
+                        'Set a goal that is realistic and achievable. A healthy weight loss/gain is 0.5-1kg (1-2lbs) per week.',
                         style: TextStyle(
                           fontSize: 12,
-                          color: _isLossGoal ? AppTheme.coralAccent.withOpacity(0.8) : AppTheme.goldAccent.withOpacity(0.8),
+                          color: Colors.grey[800],
                         ),
                       ),
                     ),
@@ -416,8 +300,6 @@ class _TargetWeightDialogState extends State<TargetWeightDialog> {
                 ),
               ),
             ),
-
-            const SizedBox(height: 24),
 
             // Action buttons
             Padding(
