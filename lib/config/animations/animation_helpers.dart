@@ -122,27 +122,24 @@ class AnimationHelpers {
     double initialScale = 0.9,
     Offset? initialSlide,
   }) {
-    final fadeAnimation = createFadeAnimation(
-      controller: controller,
-      curve: Curves.easeOut,
-    );
-    
-    final scaleAnimation = createScaleAnimation(
-      controller: controller,
-      curve: Curves.easeOutBack,
-      begin: initialScale,
-    );
-    
-    final animations = {
-      'fade': fadeAnimation,
-      'scale': scaleAnimation,
+    final Map<String, Animation<dynamic>> animations = {
+      'fade': createFadeAnimation(
+        controller: controller,
+        curve: Curves.easeOut,
+      ),
+      'scale': createScaleAnimation(
+        controller: controller,
+        curve: Curves.easeOutBack,
+        begin: initialScale,
+      ),
     };
     
     if (initialSlide != null) {
-      animations['slide'] = createSlideAnimation(
+      final slideAnimation = createSlideAnimation(
         controller: controller,
         begin: initialSlide,
       );
+      animations['slide'] = slideAnimation;
     }
     
     return animations;
@@ -184,22 +181,25 @@ class AnimationHelpers {
     
     // Apply animations in the correct order: slide -> scale -> fade
     if (animations.containsKey('slide')) {
+      final slideAnimation = animations['slide'] as Animation<Offset>;
       result = SlideTransition(
-        position: animations['slide'] as Animation<Offset>,
+        position: slideAnimation,
         child: result,
       );
     }
     
     if (animations.containsKey('scale')) {
+      final scaleAnimation = animations['scale'] as Animation<double>;
       result = ScaleTransition(
-        scale: animations['scale'] as Animation<double>,
+        scale: scaleAnimation,
         child: result,
       );
     }
     
     if (animations.containsKey('fade')) {
+      final fadeAnimation = animations['fade'] as Animation<double>;
       result = FadeTransition(
-        opacity: animations['fade'] as Animation<double>,
+        opacity: fadeAnimation,
         child: result,
       );
     }
