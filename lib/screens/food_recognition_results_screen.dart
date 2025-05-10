@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../config/theme.dart';
+import '../config/design_system/theme.dart';
 import '../data/models/food_item.dart';
 import '../data/repositories/food_repository.dart';
 import '../widgets/food/food_item_card.dart';

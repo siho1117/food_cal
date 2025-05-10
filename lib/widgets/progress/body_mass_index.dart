@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../config/theme.dart';
-import '../../config/text_styles.dart';
+import '../../config/design_system/theme.dart';
+import '../../config/design_system/text_styles.dart';
 import '../../config/animations/animation_helpers.dart';
-import '../../config/builders/value_builder.dart';
-import '../../config/layouts/card_layout.dart';
-import '../../config/decorations/box_decorations.dart';
+import '../../config/components/value_builder.dart';
+import '../../config/components/box_decorations.dart';
+import '../../config/widgets/master_widget.dart';
 
 class BMIWidget extends StatefulWidget {
   final double? bmiValue;
@@ -106,40 +106,16 @@ class _BMIWidgetState extends State<BMIWidget>
     final bmiPosition = _getBMIPosition();
     final description = _getBMIDescription();
 
-    return CardLayout.card(
-      header: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecorations.iconContainer(
-                  color: AppTheme.primaryBlue,
-                ),
-                child: Icon(
-                  Icons.monitor_weight_rounded,
-                  color: AppTheme.primaryBlue,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Body Mass Index',
-                style: AppTextStyles.getSubHeadingStyle().copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryBlue,
-                ),
-              ),
-            ],
-          ),
-          ValueBuilder.buildBadge(
-            text: widget.classification,
-            color: primaryColor,
-          ),
-        ],
+    return MasterWidget(
+      title: 'Body Mass Index',
+      icon: Icons.monitor_weight_rounded,
+      accentColor: AppTheme.primaryBlue,
+      badge: ValueBuilder.buildBadge(
+        text: widget.classification,
+        color: primaryColor,
       ),
+      animate: true,
+      animationType: WidgetAnimationType.slideUp,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -202,7 +178,7 @@ class _BMIWidgetState extends State<BMIWidget>
                   builder: (context, child) {
                     return Container(
                       margin: EdgeInsets.only(
-                        left: (MediaQuery.of(context).size.width - 64) * 
+                        left: (MediaQuery.of(context).size.width - 80) * 
                             bmiPosition * _progressAnimation.value,
                       ),
                       child: Column(
@@ -255,7 +231,7 @@ class _BMIWidgetState extends State<BMIWidget>
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 20),
+                margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecorations.infoBox(
                   color: primaryColor,
                   opacity: 0.05,

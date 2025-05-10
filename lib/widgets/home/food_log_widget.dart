@@ -1,7 +1,7 @@
 // lib/widgets/home/food_log_widget.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../../config/theme.dart';
+import '../../config/design_system/theme.dart';
 import '../../data/models/food_item.dart';
 import '../../data/repositories/food_repository.dart';
 

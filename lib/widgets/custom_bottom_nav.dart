@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
-import '../config/theme.dart';
+import '../config/design_system/theme.dart';
 
 class CustomBottomNav extends StatelessWidget {
   final int currentIndex;

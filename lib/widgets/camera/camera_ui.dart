@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'dart:io'; 
 import 'dart:math' as math;
-import '../../config/theme.dart';
+import '../../config/design_system/theme.dart';
 
 /// UI elements for the camera screen
 class CameraUI {

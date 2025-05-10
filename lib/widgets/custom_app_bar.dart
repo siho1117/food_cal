@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../config/theme.dart';
-import '../config/text_styles.dart'; // Import the new text styles
+import '../config/design_system/theme.dart';
+import '../config/design_system/text_styles.dart'; // Import the new text styles
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Function onSettingsTap;

@@ -1,7 +1,7 @@
 // lib/widgets/food/food_entry_form.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../config/theme.dart';
+import '../../config/design_system/theme.dart';
 import '../../data/models/food_item.dart';
 import '../../data/repositories/food_repository.dart';
 

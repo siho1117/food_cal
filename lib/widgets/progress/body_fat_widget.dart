@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../config/theme.dart';
-import '../../config/text_styles.dart';
+import '../../config/design_system/theme.dart';
+import '../../config/design_system/text_styles.dart';
 import '../../config/animations/animation_helpers.dart';
-import '../../config/builders/value_builder.dart';
-import '../../config/layouts/card_layout.dart';
-import '../../config/decorations/box_decorations.dart';
+import '../../config/components/value_builder.dart';
+import '../../config/components/box_decorations.dart';
+import '../../config/widgets/master_widget.dart';
 
 class BodyFatPercentageWidget extends StatefulWidget {
   final double? bodyFatPercentage;
@@ -144,60 +144,41 @@ class _BodyFatPercentageWidgetState extends State<BodyFatPercentageWidget>
     final healthMessage = _getBodyFatMessage();
     final bodyFatPosition = _getBodyFatPosition();
 
-    return CardLayout.card(
-      header: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecorations.iconContainer(
-                  color: AppTheme.primaryBlue,
-                ),
-                child: Icon(
-                  Icons.accessibility_new,
-                  color: AppTheme.primaryBlue,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Body Fat Percentage',
-                style: AppTextStyles.getSubHeadingStyle().copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryBlue,
-                ),
-              ),
-              if (widget.isEstimated)
-                Container(
-                  margin: const EdgeInsets.only(left: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    'Est.',
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                ),
-            ],
+    // Build the "Est." badge for estimated values
+    Widget? estimatedBadge;
+    if (widget.isEstimated) {
+      estimatedBadge = Container(
+        margin: const EdgeInsets.only(left: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 6,
+          vertical: 2,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          'Est.',
+          style: TextStyle(
+            fontSize: 8,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[700],
           ),
-          ValueBuilder.buildBadge(
-            text: widget.classification,
-            color: primaryColor,
-          ),
-        ],
+        ),
+      );
+    }
+
+    return MasterWidget(
+      title: 'Body Fat Percentage',
+      icon: Icons.accessibility_new,
+      badge: ValueBuilder.buildBadge(
+        text: widget.classification,
+        color: primaryColor,
       ),
+      subtitle: widget.isEstimated ? 'Estimated value' : null,
+      accentColor: AppTheme.primaryBlue,
+      animate: true,
+      animationType: WidgetAnimationType.slideUp,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -277,7 +258,7 @@ class _BodyFatPercentageWidgetState extends State<BodyFatPercentageWidget>
                   builder: (context, child) {
                     return Container(
                       margin: EdgeInsets.only(
-                        left: (MediaQuery.of(context).size.width - 64) * 
+                        left: (MediaQuery.of(context).size.width - 80) * 
                             bodyFatPosition * _progressAnimation.value,
                       ),
                       child: Column(
@@ -331,7 +312,7 @@ class _BodyFatPercentageWidgetState extends State<BodyFatPercentageWidget>
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 20),
+                margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecorations.infoBox(
                   color: primaryColor,
                   opacity: 0.05,

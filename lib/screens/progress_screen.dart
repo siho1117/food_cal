@@ -2,14 +2,15 @@
 import 'package:flutter/material.dart';
 import '../widgets/progress/current_weight_widget.dart';
 import '../widgets/progress/target_weight_widget.dart';
-import '../widgets/progress/body_mass_index.dart';
-import '../widgets/progress/body_fat_widget.dart';
-import '../widgets/progress/tdee_calculator_widget.dart';
-import '../widgets/progress/basal_meta_rate.dart';
+// Temporarily comment out problematic widget imports
+// import '../widgets/progress/body_mass_index.dart';
+// import '../widgets/progress/body_fat_widget.dart';
+// import '../widgets/progress/tdee_calculator_widget.dart';
+// import '../widgets/progress/basal_meta_rate.dart';
 import '../data/repositories/user_repository.dart';
 import '../data/models/user_profile.dart';
 import '../utils/formula.dart';
-import '../config/theme.dart';
+import '../config/design_system/theme.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({Key? key}) : super(key: key);
@@ -99,14 +100,59 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
               const SizedBox(height: 24),
 
-              // Current Weight Widget
+              // Message about disabled widgets
+              Container(
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withAlpha((0.1 * 255).toInt()),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.orange.withAlpha((0.3 * 255).toInt()),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.orange[700],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Widgets Temporarily Disabled',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.orange[800],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Most progress tracking widgets have been temporarily disabled while we update the header design. Only the weight tracking widgets are available at this time.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Current Weight Widget (keeping this one)
               CurrentWeightWidget(
                 onWeightUpdated: _onWeightUpdated,
               ),
 
               const SizedBox(height: 20),
 
-              // Target Weight Widget
+              // Target Weight Widget (keeping this one)
               TargetWeightWidget(
                 targetWeight: _targetWeight,
                 currentWeight: _currentWeight,
@@ -131,6 +177,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
                 },
               ),
 
+              // Commented out problematic widgets
+              /*
               const SizedBox(height: 20),
 
               // TDEE Calculator Widget
@@ -149,8 +197,9 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
               const SizedBox(height: 20),
 
-              // BMI and Body Fat widgets now in a column instead of a row for better layout
+              // BMI and Body Fat widgets
               _buildBodyCompositionWidgets(),
+              */
 
               const SizedBox(height: 80), // Extra space for bottom nav
             ],
@@ -160,6 +209,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
     );
   }
 
+  // Commented out this method as well since it's not being used
+  /*
   // Extracted method to build the body composition widgets (BMI and Body Fat)
   Widget _buildBodyCompositionWidgets() {
     return FutureBuilder<double?>(
@@ -216,4 +267,5 @@ class _ProgressScreenState extends State<ProgressScreen> {
       },
     );
   }
+  */
 }

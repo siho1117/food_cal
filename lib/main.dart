@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // For SystemChrome
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'config/theme.dart';
+import 'config/design_system/theme.dart';
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/progress_screen.dart';

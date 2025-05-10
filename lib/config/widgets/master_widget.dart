@@ -1,18 +1,12 @@
-// lib/config/widgets/master_widget.dart
 import 'package:flutter/material.dart';
 import '../design_system/theme.dart';
 import '../design_system/text_styles.dart';
+import '../components/state_builder.dart';
+import '../components/value_builder.dart';
 import '../components/box_decorations.dart';
-import '../components/state_builder.dart';  // Use StateBuilder for state handling
-import '../components/value_builder.dart';  // Added ValueBuilder import
-import '../animations/animation_helpers.dart';
-
-/// Animation style variants for different widget types
-enum WidgetAnimationType {
-  standard, slideUp, slideHorizontal, expand, bounce, none,
-}
 
 /// A master widget template that serves as the foundation for content widgets.
+/// Simplified to focus on structure and layout without animations.
 class MasterWidget extends StatefulWidget {
   // Core properties
   final String title;
@@ -21,11 +15,11 @@ class MasterWidget extends StatefulWidget {
   
   // Header customization
   final Widget? trailing;
-  final String? subtitle;
-  final Widget? badge;
   final VoidCallback? onHeaderTap;
   final Color? iconColor;
   final Color? textColor;
+  final bool showInfoButton;
+  final VoidCallback? onInfoTap;
   
   // Layout customization
   final EdgeInsetsGeometry contentPadding;
@@ -42,11 +36,6 @@ class MasterWidget extends StatefulWidget {
   final bool isEmpty;
   final String? emptyMessage;
   final IconData emptyIcon;
-  
-  // Animation
-  final bool animate;
-  final Duration animationDuration;
-  final WidgetAnimationType animationType;
 
   const MasterWidget({
     Key? key,
@@ -54,11 +43,9 @@ class MasterWidget extends StatefulWidget {
     required this.icon,
     required this.child,
     this.trailing,
-    this.subtitle,
-    this.badge,
     this.onHeaderTap,
-    this.iconColor,
-    this.textColor,
+    this.iconColor = Colors.black,
+    this.textColor = Colors.black,
     this.contentPadding = const EdgeInsets.all(20),
     this.footer,
     this.useGradient = true,
@@ -71,12 +58,11 @@ class MasterWidget extends StatefulWidget {
     this.isEmpty = false,
     this.emptyMessage,
     this.emptyIcon = Icons.inbox,
-    this.animate = true,
-    this.animationDuration = const Duration(milliseconds: 1500),
-    this.animationType = WidgetAnimationType.standard,
+    this.showInfoButton = false,
+    this.onInfoTap,
   }) : super(key: key);
 
-  /// Creates a data-focused widget with appropriate styling and animations
+  /// Creates a data-focused widget with appropriate styling
   static MasterWidget dataWidget({
     required String title,
     required IconData icon,
@@ -86,9 +72,11 @@ class MasterWidget extends StatefulWidget {
     String? errorMessage,
     VoidCallback? onRetry,
     Widget? trailing,
-    String? subtitle,
     Color? accentColor,
-    bool animate = true,
+    Color? textColor = Colors.black,
+    Color? iconColor = Colors.black,
+    bool showInfoButton = false,
+    VoidCallback? onInfoTap,
   }) => MasterWidget(
     title: title,
     icon: icon,
@@ -98,11 +86,12 @@ class MasterWidget extends StatefulWidget {
     errorMessage: errorMessage,
     onRetry: onRetry,
     trailing: trailing,
-    subtitle: subtitle,
     accentColor: accentColor,
     useGradient: true,
-    animate: animate,
-    animationType: WidgetAnimationType.standard,
+    textColor: textColor,
+    iconColor: iconColor,
+    showInfoButton: showInfoButton,
+    onInfoTap: onInfoTap,
   );
   
   /// Creates a metric display widget with value emphasis
@@ -111,22 +100,25 @@ class MasterWidget extends StatefulWidget {
     required IconData icon,
     required Widget valueWidget,
     Color? accentColor,
-    String? subtitle,
+    Color? textColor = Colors.black,
+    Color? iconColor = Colors.black,
     Widget? footer,
-    bool animate = true,
+    bool showInfoButton = false,
+    VoidCallback? onInfoTap,
   }) => MasterWidget(
     title: title,
     icon: icon,
     accentColor: accentColor ?? AppTheme.primaryBlue,
-    subtitle: subtitle,
     footer: footer,
     contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-    animate: animate,
-    animationType: WidgetAnimationType.expand,
     child: Center(child: valueWidget),
+    textColor: textColor,
+    iconColor: iconColor,
+    showInfoButton: showInfoButton,
+    onInfoTap: onInfoTap,
   );
   
-  /// Creates a progress tracking widget with appropriate animations
+  /// Creates a progress tracking widget with appropriate styling
   static MasterWidget progressWidget({
     required String title,
     required IconData icon,
@@ -135,7 +127,10 @@ class MasterWidget extends StatefulWidget {
     String? progressText,
     Color? progressColor,
     Widget? trailing,
-    bool animate = true,
+    Color? textColor = Colors.black,
+    Color? iconColor = Colors.black,
+    bool showInfoButton = false,
+    VoidCallback? onInfoTap,
   }) {
     final Color color = progressColor ?? AppTheme.accentColor;
     
@@ -144,8 +139,6 @@ class MasterWidget extends StatefulWidget {
       icon: icon,
       accentColor: color,
       trailing: trailing,
-      animate: animate,
-      animationType: WidgetAnimationType.slideUp,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -158,157 +151,68 @@ class MasterWidget extends StatefulWidget {
           ),
         ],
       ),
+      textColor: textColor,
+      iconColor: iconColor,
+      showInfoButton: showInfoButton,
+      onInfoTap: onInfoTap,
     );
   }
   
-  /// Creates a comparison widget with horizontal slide animation
+  /// Creates a comparison widget 
   static MasterWidget comparisonWidget({
     required String title,
     required IconData icon,
     required Widget child,
     Widget? trailing,
-    String? subtitle,
     Color? accentColor,
-    bool animate = true,
+    Color? textColor = Colors.black,
+    Color? iconColor = Colors.black,
+    bool showInfoButton = false,
+    VoidCallback? onInfoTap,
   }) => MasterWidget(
     title: title,
     icon: icon,
     child: child,
     trailing: trailing,
-    subtitle: subtitle,
     accentColor: accentColor,
-    animate: animate,
-    animationType: WidgetAnimationType.slideHorizontal,
+    textColor: textColor,
+    iconColor: iconColor,
+    showInfoButton: showInfoButton,
+    onInfoTap: onInfoTap,
   );
   
-  /// Creates a highlight widget with bounce animation for attention
+  /// Creates a highlight widget for important data
   static MasterWidget highlightWidget({
     required String title,
     required IconData icon,
     required Widget child,
-    Widget? badge,
     Color? accentColor,
-    bool animate = true,
+    Color? textColor = Colors.black,
+    Color? iconColor = Colors.black,
+    bool showInfoButton = false,
+    VoidCallback? onInfoTap,
   }) => MasterWidget(
     title: title,
     icon: icon,
     child: child,
-    badge: badge,
     accentColor: accentColor ?? AppTheme.goldAccent,
-    animate: animate,
-    animationType: WidgetAnimationType.bounce,
+    textColor: textColor,
+    iconColor: iconColor,
+    showInfoButton: showInfoButton,
+    onInfoTap: onInfoTap,
   );
 
   @override
   State<MasterWidget> createState() => _MasterWidgetState();
 }
 
-class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Map<String, Animation<dynamic>> _animations;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: widget.animationDuration,
-    );
-    _setupAnimations();
-    
-    if (widget.animate && widget.animationType != WidgetAnimationType.none) {
-      _animationController.forward();
-    } else {
-      _animationController.value = 1.0;
-    }
-  }
-  
-  void _setupAnimations() {
-    switch (widget.animationType) {
-      case WidgetAnimationType.standard:
-        _animations = AnimationHelpers.createEntranceAnimations(
-          controller: _animationController,
-          initialScale: 0.95,
-        );
-        break;
-      case WidgetAnimationType.slideUp:
-        _animations = {
-          'slide': AnimationHelpers.createSlideAnimation(
-            controller: _animationController,
-            begin: const Offset(0, 0.2),
-          ),
-          'fade': AnimationHelpers.createFadeAnimation(controller: _animationController),
-        };
-        break;
-      case WidgetAnimationType.slideHorizontal:
-        _animations = {
-          'slide': AnimationHelpers.createSlideAnimation(
-            controller: _animationController,
-            begin: const Offset(-0.2, 0),
-          ),
-          'fade': AnimationHelpers.createFadeAnimation(controller: _animationController),
-        };
-        break;
-      case WidgetAnimationType.expand:
-        _animations = {
-          'scale': AnimationHelpers.createScaleAnimation(
-            controller: _animationController,
-            begin: 0.8,
-            curve: Curves.easeOutBack,
-          ),
-          'fade': AnimationHelpers.createFadeAnimation(controller: _animationController),
-        };
-        break;
-      case WidgetAnimationType.bounce:
-        _animations = {
-          'scale': AnimationHelpers.createScaleAnimation(
-            controller: _animationController,
-            begin: 0.9,
-            curve: Curves.elasticOut,
-          ),
-          'fade': AnimationHelpers.createFadeAnimation(controller: _animationController),
-        };
-        break;
-      case WidgetAnimationType.none:
-        _animations = {};
-        break;
-    }
-  }
-  
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-  
-  @override
-  void didUpdateWidget(MasterWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    
-    if (oldWidget.isLoading != widget.isLoading || 
-        oldWidget.hasError != widget.hasError ||
-        oldWidget.isEmpty != widget.isEmpty ||
-        oldWidget.animationType != widget.animationType) {
-      
-      if (oldWidget.animationType != widget.animationType) {
-        _setupAnimations();
-      }
-      
-      if (widget.animate && widget.animationType != WidgetAnimationType.none) {
-        _animationController.reset();
-        _animationController.forward();
-      } else {
-        _animationController.value = 1.0;
-      }
-    }
-  }
-
+class _MasterWidgetState extends State<MasterWidget> {
   @override
   Widget build(BuildContext context) {
     final accentColor = widget.accentColor ?? AppTheme.primaryBlue;
     
-    // Create the header widget manually instead of using layout.LayoutBuilder
-    final headerWidget = _buildHeaderWidget(accentColor);
+    // Create the header widget 
+    final headerWidget = _buildHeaderWidget();
     
     // Determine the content based on the state
     Widget content;
@@ -320,7 +224,7 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
     } else if (widget.isEmpty) {
       content = _buildEmptyState();
     } else {
-      content = _buildContent(accentColor);
+      content = _buildContent();
     }
     
     // Create the container using BoxDecorations directly
@@ -350,13 +254,17 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
     );
   }
   
-  // Build header widget directly without using LayoutBuilder
-  Widget _buildHeaderWidget(Color accentColor) {
+  // Build header widget 
+  Widget _buildHeaderWidget() {
+    // Get final colors
+    final textColor = widget.textColor ?? Colors.black;
+    final iconColor = widget.iconColor ?? Colors.black;
+    
     return InkWell(
       onTap: widget.onHeaderTap,
       borderRadius: BorderRadius.circular(16),
-      splashColor: widget.onHeaderTap != null ? accentColor.withOpacity(0.05) : Colors.transparent,
-      highlightColor: widget.onHeaderTap != null ? accentColor.withOpacity(0.05) : Colors.transparent,
+      splashColor: widget.onHeaderTap != null ? Colors.grey.withAlpha((0.05 * 255).toInt()) : Colors.transparent,
+      highlightColor: widget.onHeaderTap != null ? Colors.grey.withAlpha((0.05 * 255).toInt()) : Colors.transparent,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -364,102 +272,89 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
           Expanded(
             child: Row(
               children: [
-                // Icon with background
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecorations.iconContainer(color: widget.iconColor ?? accentColor),
-                  child: Icon(
-                    widget.icon,
-                    color: widget.iconColor ?? accentColor,
-                    size: 20,
-                  ),
+                // Icon with simpler treatment - no background, just the icon
+                Icon(
+                  widget.icon,
+                  color: iconColor,
+                  size: 20,
                 ),
                 
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 
-                // Title and optional subtitle
+                // Title - no subtitle anymore
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title with optional badge
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              widget.title,
-                              style: AppTextStyles.getSubHeadingStyle().copyWith(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: widget.textColor ?? accentColor,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (widget.badge != null) ...[
-                            const SizedBox(width: 8),
-                            widget.badge!,
-                          ],
-                        ],
-                      ),
-                      
-                      // Optional subtitle
-                      if (widget.subtitle != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(
-                            widget.subtitle!,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ),
-                    ],
+                  child: Text(
+                    widget.title,
+                    style: AppTextStyles.getSubHeadingStyle().copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
           ),
           
-          // Optional trailing widget
-          if (widget.trailing != null) widget.trailing!,
+          // Right side with info button and/or trailing widget
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Info button (conditionally shown)
+              if (widget.showInfoButton && widget.onInfoTap != null)
+                GestureDetector(
+                  onTap: widget.onInfoTap,
+                  child: Container(
+                    height: 28, // Fixed height to ensure consistent header height
+                    padding: const EdgeInsets.all(4.0),
+                    child: Icon(
+                      Icons.info_outline,
+                      color: Colors.black54,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              
+              // Optional trailing widget
+              if (widget.trailing != null) 
+                Padding(
+                  padding: EdgeInsets.only(left: widget.showInfoButton ? 8.0 : 0),
+                  child: widget.trailing!,
+                ),
+                
+              // If no info button and no trailing widget, add an empty container 
+              // to maintain consistent header height
+              if (!widget.showInfoButton && widget.trailing == null)
+                const SizedBox(height: 28, width: 28),
+            ],
+          ),
         ],
       ),
     );
   }
   
-  Widget _buildContent(Color accentColor) {
-    if (widget.animate && widget.animationType != WidgetAnimationType.none && _animations.isNotEmpty) {
-      return AnimationHelpers.applyAnimations(
-        animations: _animations,
-        child: Padding(
-          padding: widget.contentPadding,
-          child: widget.child,
-        ),
-      );
-    } else {
-      return Padding(
-        padding: widget.contentPadding,
-        child: widget.child,
-      );
-    }
+  Widget _buildContent() {
+    return Padding(
+      padding: widget.contentPadding,
+      child: widget.child,
+    );
   }
   
-  // Using StateBuilder instead of LayoutBuilder
+  // Using StateBuilder for loading state
   Widget _buildLoadingState() => StateBuilder.loading(
     height: 200,
     padding: const EdgeInsets.all(20),
   );
   
-  // Using StateBuilder instead of LayoutBuilder
+  // Using StateBuilder for error state
   Widget _buildErrorState() => StateBuilder.errorMessage(
     message: widget.errorMessage ?? 'An error occurred',
     actionLabel: widget.onRetry != null ? 'Try Again' : null,
     onAction: widget.onRetry,
   );
   
-  // Using StateBuilder instead of LayoutBuilder
+  // Using StateBuilder for empty state
   Widget _buildEmptyState() => StateBuilder.empty(
     message: widget.emptyMessage ?? 'No data available',
     icon: widget.emptyIcon,

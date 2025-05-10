@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../config/theme.dart';
+import '../../config/design_system/theme.dart';
 
 class ProfilePictureWidget extends StatelessWidget {
   final String? avatarUrl;

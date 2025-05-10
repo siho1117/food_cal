@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme.dart';
+import '../design_system/theme.dart';
 
 /// Extension methods on BuildContext for responsive sizing and theming.
 ///

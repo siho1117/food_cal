@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'dart:typed_data';
-import '../config/theme.dart';
+import '../config/design_system/theme.dart';
 import '../screens/food_recognition_results_screen.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/camera/camera_ui.dart'; // Import camera UI components

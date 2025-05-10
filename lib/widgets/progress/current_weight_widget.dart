@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../config/theme.dart';
-import '../../config/text_styles.dart';
+import '../../config/design_system/theme.dart';
+import '../../config/design_system/text_styles.dart';
 import '../../data/models/weight_entry.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../widgets/settings/weight_entry_dialog.dart';

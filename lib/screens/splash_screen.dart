@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../config/theme.dart';
+import '../config/design_system/theme.dart';
 import '../main.dart'; // Import for MainApp placed at the top
 
 class SplashScreen extends StatefulWidget {

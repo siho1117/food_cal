@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../theme.dart';
-import '../widget_ui_design_standards.dart';
+import '../design_system/theme.dart';
+import '../widgets/widget_ui_design_standards.dart';
 
 /// Collection of standardized BoxDecoration factories
 /// 
@@ -24,7 +24,7 @@ class BoxDecorations {
       borderRadius: BorderRadius.circular(radius),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(shadow * 0.25),
+          color: Colors.black.withAlpha((shadow * 0.25 * 255).toInt()),
           blurRadius: shadow * 10,
           spreadRadius: 0,
           offset: Offset(0, shadow * 2),
@@ -47,7 +47,7 @@ class BoxDecorations {
       borderRadius: BorderRadius.circular(radius),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(shadow * 0.25),
+          color: Colors.black.withAlpha((shadow * 0.25 * 255).toInt()),
           blurRadius: shadow * 10,
           spreadRadius: 0,
           offset: Offset(0, shadow * 2),
@@ -65,17 +65,26 @@ class BoxDecorations {
     );
   }
 
-  /// Header container decoration with subtle background
+  /// Header container decoration - SIMPLIFIED
   static BoxDecoration header({
     Color? backgroundColor,
     double? borderRadius,
     bool topOnly = true,
   }) {
     final radius = borderRadius ?? WidgetUIStandards.containerBorderRadius;
-    final background = backgroundColor ?? AppTheme.primaryBlue.withOpacity(0.02);
+    
+    // Use simpler white background with very subtle grey tint
+    final background = backgroundColor ?? Colors.grey[50];
     
     return BoxDecoration(
       color: background,
+      // Use subtle bottom border instead of background color
+      border: Border(
+        bottom: BorderSide(
+          color: Colors.grey[200]!,
+          width: 1.0,
+        ),
+      ),
       borderRadius: topOnly
           ? BorderRadius.only(
               topLeft: Radius.circular(radius),
@@ -85,26 +94,44 @@ class BoxDecorations {
     );
   }
 
-  /// Decoration for icon containers with color background
+  /// Decoration for icon containers - SIMPLIFIED
   static BoxDecoration iconContainer({
     required Color color,
     double opacity = 0.1,
-    double borderRadius = 10.0,
+    double borderRadius = 8.0,
   }) {
+    // Simplified, minimalist container with subtle background
     return BoxDecoration(
-      color: color.withOpacity(opacity),
+      color: color.withAlpha((opacity * 255).toInt()),
       borderRadius: BorderRadius.circular(borderRadius),
     );
   }
 
-  /// Circle container decoration for rounded icons
+  /// Circle container decoration for rounded icons - SIMPLIFIED
   static BoxDecoration circleIcon({
     required Color color,
     double opacity = 0.1,
   }) {
+    // Simplified circle decoration
     return BoxDecoration(
-      color: color.withOpacity(opacity),
+      color: color.withAlpha((opacity * 255).toInt()),
       shape: BoxShape.circle,
+    );
+  }
+
+  /// NEW: Simple info button decoration
+  static BoxDecoration infoButton({
+    Color? color,
+    double size = 36.0,
+  }) {
+    return BoxDecoration(
+      color: Colors.transparent,
+      shape: BoxShape.circle,
+      // Very subtle border for definition
+      border: Border.all(
+        color: Colors.grey[300]!,
+        width: 1.0,
+      ),
     );
   }
 
@@ -116,10 +143,10 @@ class BoxDecorations {
     double borderRadius = 8.0,
   }) {
     return BoxDecoration(
-      color: color.withOpacity(opacity),
+      color: color.withAlpha((opacity * 255).toInt()),
       borderRadius: BorderRadius.circular(borderRadius),
       border: Border.all(
-        color: color.withOpacity(borderOpacity),
+        color: color.withAlpha((borderOpacity * 255).toInt()),
         width: 1,
       ),
     );
@@ -132,7 +159,7 @@ class BoxDecorations {
     double borderRadius = 12.0,
   }) {
     return BoxDecoration(
-      color: color.withOpacity(opacity),
+      color: color.withAlpha((opacity * 255).toInt()),
       borderRadius: BorderRadius.circular(borderRadius),
     );
   }
@@ -156,7 +183,7 @@ class BoxDecorations {
     return BoxDecoration(
       gradient: LinearGradient(
         colors: [
-          color.withOpacity(0.7),
+          color.withAlpha((0.7 * 255).toInt()),
           color,
         ],
         begin: Alignment.centerLeft,

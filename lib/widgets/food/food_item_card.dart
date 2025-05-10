@@ -1,7 +1,7 @@
 // lib/widgets/food/food_item_card.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../../config/theme.dart';
+import '../../config/design_system/theme.dart';
 import '../../data/models/food_item.dart';
 
 class FoodItemCard extends StatelessWidget {

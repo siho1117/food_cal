@@ -1,8 +1,8 @@
 // lib/widgets/progress/target_weight_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import '../../config/theme.dart';
-import '../../config/text_styles.dart';
+import '../../config/design_system/theme.dart';
+import '../../config/design_system/text_styles.dart';
 import '../../utils/formula.dart';
 
 class TargetWeightDialog extends StatefulWidget {

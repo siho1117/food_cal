@@ -12,7 +12,7 @@ import '../widgets/settings/feedback_widget.dart';
 import '../widgets/settings/monthly_weight_goal_dialog.dart';
 import '../widgets/settings/weight_entry_dialog.dart';
 import '../utils/formula.dart';
-import '../config/theme.dart';
+import '../config/design_system/theme.dart';
 
 class SettingsScreen extends StatefulWidget {
   // New parameter to check if we should show back button

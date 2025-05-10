@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../design_system/theme.dart';
 import '../design_system/text_styles.dart';
 import '../design_system/dimensions.dart';
-import '../utils/decorations/box_decorations.dart';
+import '../components/box_decorations.dart';
 
 /// A unified utility class for building standardized layout components throughout the app.
 ///
@@ -131,10 +131,10 @@ class LayoutBuilder {
   }
   
   //-----------------------------------------------------------------------------
-  // HEADER LAYOUTS
+  // HEADER LAYOUTS - UPDATED FOR SIMPLIFIED DESIGN
   //-----------------------------------------------------------------------------
   
-  /// Creates a standard widget header with icon and title
+  /// Creates a standard widget header with icon and title - SIMPLIFIED
   ///
   /// Replaces: HeaderLayout.standard(), LayoutBuilders.buildHeader()
   static Widget header({
@@ -143,21 +143,18 @@ class LayoutBuilder {
     Color? iconColor,
     Color? textColor,
     Widget? trailing,
-    Widget? badge,
-    String? subtitle,
-    bool useIconBackground = true,
     VoidCallback? onTap,
   }) {
-    // Final colors with defaults
-    final Color finalIconColor = iconColor ?? AppTheme.primaryBlue;
-    final Color finalTextColor = textColor ?? AppTheme.primaryBlue;
+    // Use black as default colors
+    final Color finalIconColor = iconColor ?? Colors.black;
+    final Color finalTextColor = textColor ?? Colors.black;
     
-    // Create the base row structure
+    // Create the simplified header row
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
-      splashColor: onTap != null ? AppTheme.primaryBlue.withOpacity(0.05) : Colors.transparent,
-      highlightColor: onTap != null ? AppTheme.primaryBlue.withOpacity(0.05) : Colors.transparent,
+      splashColor: onTap != null ? Colors.grey.withAlpha((0.05 * 255).toInt()) : Colors.transparent,
+      highlightColor: onTap != null ? Colors.grey.withAlpha((0.05 * 255).toInt()) : Colors.transparent,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -165,65 +162,25 @@ class LayoutBuilder {
           Expanded(
             child: Row(
               children: [
-                // Icon with optional background
-                if (useIconBackground)
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecorations.iconContainer(color: finalIconColor),
-                    child: Icon(
-                      icon,
-                      color: finalIconColor,
-                      size: 20,
-                    ),
-                  )
-                else
-                  Icon(
-                    icon,
-                    color: finalIconColor,
-                    size: 20,
-                  ),
+                // Simple icon without background
+                Icon(
+                  icon,
+                  color: finalIconColor,
+                  size: 20,
+                ),
                 
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 
-                // Title and optional subtitle
+                // Title only (no subtitle)
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title with optional badge
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              title,
-                              style: AppTextStyles.getSubHeadingStyle().copyWith(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: finalTextColor,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (badge != null) ...[
-                            const SizedBox(width: 8),
-                            badge,
-                          ],
-                        ],
-                      ),
-                      
-                      // Optional subtitle
-                      if (subtitle != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(
-                            subtitle,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ),
-                    ],
+                  child: Text(
+                    title,
+                    style: AppTextStyles.getSubHeadingStyle().copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: finalTextColor,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -237,7 +194,7 @@ class LayoutBuilder {
     );
   }
   
-  /// Creates a header with a trailing info button
+  /// Creates a header with a trailing info button - UPDATED
   ///
   /// Replaces: HeaderLayout.withInfo()
   static Widget headerWithInfo({
@@ -245,29 +202,28 @@ class LayoutBuilder {
     required IconData icon,
     required VoidCallback onInfoTap,
     Color? iconColor,
-    String? subtitle,
+    Color? textColor,
   }) {
     return header(
       title: title,
       icon: icon,
-      iconColor: iconColor,
-      subtitle: subtitle,
+      iconColor: iconColor ?? Colors.black,
+      textColor: textColor ?? Colors.black,
       trailing: GestureDetector(
         onTap: onInfoTap,
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecorations.circleIcon(color: AppTheme.primaryBlue),
-          child: const Icon(
+        child: Padding(
+          padding: const EdgeInsets.all(4.0),
+          child: Icon(
             Icons.info_outline,
-            color: AppTheme.primaryBlue,
-            size: 18,
+            color: Colors.black54,
+            size: 20,
           ),
         ),
       ),
     );
   }
   
-  /// Creates a header with a trailing refresh button
+  /// Creates a header with a trailing refresh button - UPDATED
   ///
   /// Replaces: HeaderLayout.withRefresh()
   static Widget headerWithRefresh({
@@ -275,17 +231,17 @@ class LayoutBuilder {
     required IconData icon,
     required VoidCallback onRefresh,
     Color? iconColor,
-    String? subtitle,
+    Color? textColor,
   }) {
     return header(
       title: title,
       icon: icon,
-      iconColor: iconColor,
-      subtitle: subtitle,
+      iconColor: iconColor ?? Colors.black,
+      textColor: textColor ?? Colors.black,
       trailing: IconButton(
         icon: Icon(
           Icons.refresh_rounded,
-          color: AppTheme.primaryBlue.withOpacity(0.7),
+          color: Colors.black54,
           size: 20,
         ),
         onPressed: onRefresh,
@@ -295,15 +251,15 @@ class LayoutBuilder {
     );
   }
   
-  /// Creates a screen header with title and optional action button
+  /// Creates a screen header with title and optional action button - UPDATED
   ///
   /// Replaces: LayoutBuilders.buildScreenHeader()
   static Widget screenHeader({
     required String title,
-    String? subtitle,
     Widget? action,
     CrossAxisAlignment alignment = CrossAxisAlignment.start,
     double titleSize = 22,
+    Color? textColor,
   }) {
     return Column(
       crossAxisAlignment: alignment,
@@ -317,7 +273,7 @@ class LayoutBuilder {
                 style: TextStyle(
                   fontSize: titleSize,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryBlue,
+                  color: textColor ?? Colors.black, // Use black as default
                   letterSpacing: 1.5,
                 ),
               ),
@@ -325,18 +281,6 @@ class LayoutBuilder {
             if (action != null) action,
           ],
         ),
-        
-        // Optional subtitle
-        if (subtitle != null) ...[
-          const SizedBox(height: 5),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
       ],
     );
   }
@@ -427,6 +371,7 @@ class LayoutBuilder {
                         style: const TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: 16,
+                          color: Colors.black, // Updated to use black
                         ),
                       ),
                       
@@ -560,7 +505,7 @@ class LayoutBuilder {
               ElevatedButton(
                 onPressed: onAction,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBlue,
+                  backgroundColor: Colors.black, // Updated to black
                   foregroundColor: Colors.white,
                 ),
                 child: Text(actionLabel),
@@ -611,7 +556,7 @@ class LayoutBuilder {
   // HELPER METHODS
   //-----------------------------------------------------------------------------
   
-  /// Creates a section header with title
+  /// Creates a section header with title - UPDATED
   ///
   /// Replaces: LayoutBuilders.buildSectionHeader(), HeaderLayout.sectionHeader()
   static Widget _buildSectionHeader({
@@ -628,7 +573,7 @@ class LayoutBuilder {
           style: TextStyle(
             fontSize: fontSize,
             fontWeight: FontWeight.bold,
-            color: color ?? AppTheme.primaryBlue,
+            color: color ?? Colors.black, // Updated to black
             letterSpacing: 1.5,
           ),
         ),
@@ -678,7 +623,8 @@ class LayoutBuilder {
             ElevatedButton(
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryBlue,
+                backgroundColor: Colors.black, // Updated to black
+                foregroundColor: Colors.white,
               ),
               child: const Text('Try Again'),
             ),

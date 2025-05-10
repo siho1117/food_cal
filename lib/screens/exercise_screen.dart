@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import '../config/theme.dart';
+import '../config/design_system/theme.dart';
 import '../data/repositories/user_repository.dart';
 import '../data/models/user_profile.dart';
 import '../widgets/exercise/daily_burn_widget.dart';
+// Import the exercise header test widget
+import '../widgets/exercise/exercise_header_test_widget.dart';
 
 class ExerciseScreen extends StatefulWidget {
   const ExerciseScreen({Key? key}) : super(key: key);
@@ -76,8 +78,13 @@ class _ExerciseScreenState extends State<ExerciseScreen> {
                     ),
 
                     const SizedBox(height: 30),
+                    
+                    // The header test widget - use the external widget now
+                    const ExerciseHeaderTestWidget(),
+                    
+                    const SizedBox(height: 20),
 
-                    // Daily Exercise Goal Widget - Now the only widget on this screen
+                    // Daily Exercise Goal Widget
                     DailyBurnWidget(
                       userProfile: _userProfile,
                       currentWeight: _currentWeight,
