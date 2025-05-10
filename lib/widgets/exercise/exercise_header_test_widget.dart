@@ -3,7 +3,7 @@ import '../../config/design_system/theme.dart';
 import '../../config/widgets/master_widget.dart';
 import '../../config/components/state_builder.dart';
 
-/// A test widget for experimenting with the simplified header designs
+/// A test widget for experimenting with the standardized header designs
 class ExerciseHeaderTestWidget extends StatefulWidget {
   const ExerciseHeaderTestWidget({Key? key}) : super(key: key);
 
@@ -14,7 +14,7 @@ class ExerciseHeaderTestWidget extends StatefulWidget {
 class _ExerciseHeaderTestWidgetState extends State<ExerciseHeaderTestWidget> {
   // Test parameters
   int _widgetTypeIndex = 0;
-  bool _showInfoButton = true;
+  bool _showButton = true;
   bool _showErrorState = false;
   bool _showEmptyState = false;
   
@@ -25,6 +25,15 @@ class _ExerciseHeaderTestWidgetState extends State<ExerciseHeaderTestWidget> {
     'Metric Widget',
     'Progress Widget',
   ];
+  
+  // Button types to test
+  final List<String> _buttonTypes = [
+    'Edit Button',
+    'Info Button',
+    'No Button',
+  ];
+  
+  int _buttonTypeIndex = 0;
   
   // Fixed color for title and icons
   final Color _titleColor = AppTheme.textDark;
@@ -50,17 +59,17 @@ class _ExerciseHeaderTestWidgetState extends State<ExerciseHeaderTestWidget> {
     });
   }
   
+  // Toggle button type
+  void _nextButtonType() {
+    setState(() {
+      _buttonTypeIndex = (_buttonTypeIndex + 1) % _buttonTypes.length;
+    });
+  }
+  
   // Toggle accent color
   void _nextAccentColor() {
     setState(() {
       _accentColorIndex = (_accentColorIndex + 1) % 4;
-    });
-  }
-  
-  // Toggle info button visibility
-  void _toggleInfoButton() {
-    setState(() {
-      _showInfoButton = !_showInfoButton;
     });
   }
   
@@ -103,12 +112,32 @@ class _ExerciseHeaderTestWidgetState extends State<ExerciseHeaderTestWidget> {
       ),
     );
   }
+  
+  // Get the appropriate button for the current button type
+  Widget? _getButtonForType() {
+    switch (_buttonTypeIndex) {
+      case 0: // Edit Button
+        return MasterWidget.createEditButton(
+          onPressed: () => print('Edit button pressed'),
+          color: _titleColor,
+        );
+      case 1: // Info Button
+        return MasterWidget.createInfoButton(
+          onPressed: _showInfoDialog,
+          color: _titleColor,
+        );
+      case 2: // No Button
+        return null;
+      default:
+        return null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // The test widget using the modified master_widget
+        // The test widget using the standardized master_widget
         _buildTestWidget(),
         
         // Controls
@@ -120,6 +149,7 @@ class _ExerciseHeaderTestWidgetState extends State<ExerciseHeaderTestWidget> {
   // Build the appropriate test widget based on selected type
   Widget _buildTestWidget() {
     final Color accentColor = _getCurrentAccentColor();
+    final Widget? trailingButton = _getButtonForType();
     
     // Handle error and empty states
     if (_showErrorState) {
@@ -128,10 +158,9 @@ class _ExerciseHeaderTestWidgetState extends State<ExerciseHeaderTestWidget> {
         icon: Icons.fitness_center,
         textColor: _titleColor,
         iconColor: _titleColor,
-        showInfoButton: _showInfoButton,
-        onInfoTap: _showInfoButton ? _showInfoDialog : null,
+        trailing: trailingButton,
         hasError: true,
-        errorMessage: 'This is a test error message to see how error states look with the new header design.',
+        errorMessage: 'This is a test error message to see how error states look with the new standardized header design.',
         onRetry: () {
           setState(() {
             _showErrorState = false;
@@ -147,10 +176,9 @@ class _ExerciseHeaderTestWidgetState extends State<ExerciseHeaderTestWidget> {
         icon: Icons.fitness_center,
         textColor: _titleColor,
         iconColor: _titleColor,
-        showInfoButton: _showInfoButton,
-        onInfoTap: _showInfoButton ? _showInfoDialog : null,
+        trailing: trailingButton,
         isEmpty: true,
-        emptyMessage: 'No exercise data available. This message shows how empty states look with the new header design.',
+        emptyMessage: 'No exercise data available. This message shows how empty states look with the standardized header design.',
         emptyIcon: Icons.directions_run,
         child: const SizedBox(),
       );
@@ -164,8 +192,7 @@ class _ExerciseHeaderTestWidgetState extends State<ExerciseHeaderTestWidget> {
           icon: Icons.fitness_center,
           textColor: _titleColor,
           iconColor: _titleColor,
-          showInfoButton: _showInfoButton,
-          onInfoTap: _showInfoButton ? _showInfoDialog : null,
+          trailing: trailingButton,
           child: _buildSampleContent(accentColor),
         );
       case 2:
@@ -174,8 +201,7 @@ class _ExerciseHeaderTestWidgetState extends State<ExerciseHeaderTestWidget> {
           icon: Icons.local_fire_department,
           textColor: _titleColor,
           iconColor: _titleColor,
-          showInfoButton: _showInfoButton,
-          onInfoTap: _showInfoButton ? _showInfoDialog : null,
+          trailing: trailingButton,
           valueWidget: Center(
             child: Column(
               children: [
@@ -207,8 +233,7 @@ class _ExerciseHeaderTestWidgetState extends State<ExerciseHeaderTestWidget> {
           progress: 0.65,
           progressText: '65% complete',
           progressColor: accentColor,
-          showInfoButton: _showInfoButton,
-          onInfoTap: _showInfoButton ? _showInfoDialog : null,
+          trailing: trailingButton,
           child: _buildSampleContent(accentColor, height: 80),
         );
       case 0:
@@ -218,8 +243,7 @@ class _ExerciseHeaderTestWidgetState extends State<ExerciseHeaderTestWidget> {
           icon: Icons.speed,
           textColor: _titleColor,
           iconColor: _titleColor,
-          showInfoButton: _showInfoButton,
-          onInfoTap: _showInfoButton ? _showInfoDialog : null,
+          trailing: trailingButton,
           child: _buildSampleContent(accentColor),
         );
     }
@@ -258,7 +282,7 @@ class _ExerciseHeaderTestWidgetState extends State<ExerciseHeaderTestWidget> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Simplified Header Design',
+                    'Standardized Header Design',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -282,10 +306,36 @@ class _ExerciseHeaderTestWidgetState extends State<ExerciseHeaderTestWidget> {
           // Add a message explaining header changes
           StateBuilder.infoMessage(
             title: 'Header Design Updates',
-            message: 'The simplified header features fixed dark text, consistent height with/without info button, and no animations.',
+            message: 'The standardized header maintains consistent height and spacing with/without button, ensuring uniform appearance across all widgets.',
             icon: Icons.lightbulb_outline,
             color: accentColor,
           ),
+          
+          // Add message about button types
+          if (_buttonTypeIndex < 2)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.tips_and_updates,
+                    size: 16,
+                    color: accentColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Using standardized ${_buttonTypes[_buttonTypeIndex]} that matches the header text color.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -330,18 +380,18 @@ class _ExerciseHeaderTestWidgetState extends State<ExerciseHeaderTestWidget> {
                 color: AppTheme.textDark,
               ),
               
+              // Button type control
+              _buildControlButton(
+                label: 'Button: ${_buttonTypes[_buttonTypeIndex]}',
+                onPressed: _nextButtonType,
+                color: AppTheme.primaryBlue,
+              ),
+              
               // Accent color control
               _buildControlButton(
                 label: 'Accent Color',
                 onPressed: _nextAccentColor,
                 color: _getCurrentAccentColor(),
-              ),
-              
-              // Info button toggle
-              _buildControlButton(
-                label: 'Info: ${_showInfoButton ? 'On' : 'Off'}',
-                onPressed: _toggleInfoButton,
-                color: Colors.teal,
               ),
               
               // State controls

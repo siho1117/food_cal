@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/design_system/theme.dart';
 import '../../config/design_system/text_styles.dart';
+import '../../config/widgets/master_widget.dart';
 import '../../data/models/weight_entry.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../widgets/settings/weight_entry_dialog.dart';
@@ -100,179 +101,49 @@ class _CurrentWeightWidgetState extends State<CurrentWeightWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return _buildLoadingState();
-    }
+    // Use standard text color
+    final textColor = AppTheme.textDark;
     
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            spreadRadius: 0,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    // Use MasterWidget with standardized header and edit button
+    return MasterWidget(
+      title: 'Current Weight',
+      icon: Icons.monitor_weight_rounded,
+      textColor: textColor,
+      iconColor: textColor,
+      isLoading: _isLoading,
+      // Use the standard edit button helper with matching color
+      trailing: MasterWidget.createEditButton(
+        onPressed: _showWeightEntryDialog,
+        color: textColor,
       ),
+      child: _currentEntry == null 
+          ? _buildEmptyState() 
+          : _buildWeightContent(),
+    );
+  }
+  
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      height: 65, // Fixed height to ensure consistency
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryBlue.withOpacity(0.02),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.monitor_weight_rounded,
-                      color: AppTheme.primaryBlue,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Current Weight',
-                      style: AppTextStyles.getSubHeadingStyle().copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryBlue,
-                      ),
-                    ),
-                  ],
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.refresh_rounded,
-                    color: AppTheme.primaryBlue.withOpacity(0.7),
-                    size: 20,
-                  ),
-                  onPressed: _loadData,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-          ),
-          
-          // Main content
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                // Weight display
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Current weight
-                      Text(
-                        _currentEntry != null 
-                            ? _currentEntry!.formattedWeight(_isMetric)
-                            : 'No data',
-                        style: AppTextStyles.getNumericStyle().copyWith(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryBlue,
-                        ),
-                      ),
-                      
-                      // Weight change
-                      if (_currentEntry != null && _previousEntry != null)
-                        _buildWeightChangeIndicator()
-                    ],
-                  ),
-                ),
-                
-                // Add weight button
-                ElevatedButton.icon(
-                  icon: Icon(
-                    _hasWeightToday ? Icons.edit : Icons.add,
-                    size: 16,
-                  ),
-                  label: Text(_hasWeightToday ? 'Update' : 'Add Weight'),
-                  onPressed: _showWeightEntryDialog,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryBlue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12, 
-                      vertical: 8,
-                    ),
-                    textStyle: const TextStyle(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildWeightChangeIndicator() {
-    if (_currentEntry == null || _previousEntry == null) return const SizedBox.shrink();
-    
-    final weightDiff = _currentEntry!.weight - _previousEntry!.weight;
-    final absWeightDiff = weightDiff.abs();
-    
-    // Format the difference value based on units
-    final diffText = _isMetric
-        ? '${absWeightDiff.toStringAsFixed(1)} kg'
-        : '${(absWeightDiff * 2.20462).toStringAsFixed(1)} lbs';
-        
-    // Determine direction and color
-    final isGain = weightDiff > 0;
-    final isLoss = weightDiff < 0;
-    final noChange = weightDiff == 0;
-    
-    Color indicatorColor;
-    IconData indicatorIcon;
-    String indicatorText;
-    
-    if (isGain) {
-      indicatorColor = Colors.orange;
-      indicatorIcon = Icons.arrow_upward;
-      indicatorText = '$diffText since last entry';
-    } else if (isLoss) {
-      indicatorColor = Colors.green;
-      indicatorIcon = Icons.arrow_downward;
-      indicatorText = '$diffText since last entry';
-    } else {
-      indicatorColor = Colors.grey;
-      indicatorIcon = Icons.remove;
-      indicatorText = 'No change since last entry';
-    }
-    
-    // Build the indicator
-    return Padding(
-      padding: const EdgeInsets.only(top: 6),
-      child: Row(
-        children: [
-          Icon(
-            indicatorIcon,
-            color: indicatorColor,
-            size: 16,
-          ),
-          const SizedBox(width: 4),
           Text(
-            indicatorText,
+            'No weight data recorded',
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: indicatorColor,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Tap the pencil icon to record your weight',
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey[500],
+              fontStyle: FontStyle.italic,
             ),
           ),
         ],
@@ -280,24 +151,106 @@ class _CurrentWeightWidgetState extends State<CurrentWeightWidget> {
     );
   }
   
-  Widget _buildLoadingState() {
+  Widget _buildWeightContent() {
+    // Display either current weight (metric) or converted to imperial
+    final double displayWeight = _isMetric ? 
+      _currentEntry!.weight : 
+      _currentEntry!.weight * 2.20462;
+    
+    // Calculate weight change
+    final bool hasChange = _previousEntry != null;
+    final double weightDiff = hasChange ? 
+      _currentEntry!.weight - _previousEntry!.weight : 0;
+    
+    // Format the weight change
+    final String changePrefix = weightDiff > 0 ? '+' : '';
+    final String changeText = hasChange ? 
+      '$changePrefix${weightDiff.toStringAsFixed(1)} ${_isMetric ? 'kg' : 'lbs'}' : '';
+    
+    // Color for change
+    final Color changeColor = weightDiff > 0 ? 
+      Colors.orange : (weightDiff < 0 ? Colors.green : Colors.grey);
+    
     return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            spreadRadius: 0,
-            offset: const Offset(0, 2),
+      height: 65, // Fixed height to match empty state
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Weight display
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Current weight value
+              Text(
+                '${displayWeight.toStringAsFixed(1)} ${_isMetric ? 'kg' : 'lbs'}',
+                style: AppTextStyles.getNumericStyle().copyWith(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryBlue,
+                ),
+              ),
+              
+              // Last recorded date
+              Text(
+                _getLastUpdatedText(),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
           ),
+          
+          // Weight change indicator (if exists)
+          if (hasChange)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: changeColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    weightDiff > 0 ? Icons.arrow_upward : 
+                      (weightDiff < 0 ? Icons.arrow_downward : Icons.remove),
+                    color: changeColor,
+                    size: 12,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    changeText,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: changeColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
-      child: const Center(
-        child: CircularProgressIndicator(),
-      ),
     );
+  }
+  
+  // Simple format for last updated text
+  String _getLastUpdatedText() {
+    if (_currentEntry == null) return '';
+    
+    final now = DateTime.now();
+    final entryDate = _currentEntry!.timestamp;
+    final difference = now.difference(entryDate);
+    
+    if (difference.inDays == 0) {
+      return 'Today';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else {
+      return '${entryDate.day}/${entryDate.month}/${entryDate.year}';
+    }
   }
 }

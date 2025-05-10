@@ -6,7 +6,7 @@ import '../components/value_builder.dart';
 import '../components/box_decorations.dart';
 
 /// A master widget template that serves as the foundation for content widgets.
-/// Simplified to focus on structure and layout without animations.
+/// Standardized with fixed header height and consistent button placement.
 class MasterWidget extends StatefulWidget {
   // Core properties
   final String title;
@@ -14,12 +14,10 @@ class MasterWidget extends StatefulWidget {
   final Widget child;
   
   // Header customization
-  final Widget? trailing;
+  final Widget? trailing; // Optional trailing widget for the header (button)
   final VoidCallback? onHeaderTap;
   final Color? iconColor;
   final Color? textColor;
-  final bool showInfoButton;
-  final VoidCallback? onInfoTap;
   
   // Layout customization
   final EdgeInsetsGeometry contentPadding;
@@ -36,6 +34,12 @@ class MasterWidget extends StatefulWidget {
   final bool isEmpty;
   final String? emptyMessage;
   final IconData emptyIcon;
+
+  // Standard header dimensions
+  static const double _headerIconSize = 20.0;
+  static const double _headerTitleFontSize = 16.0;
+  static const double _headerButtonSize = 20.0;
+  static const double _headerHeight = 56.0;
 
   const MasterWidget({
     Key? key,
@@ -58,8 +62,6 @@ class MasterWidget extends StatefulWidget {
     this.isEmpty = false,
     this.emptyMessage,
     this.emptyIcon = Icons.inbox,
-    this.showInfoButton = false,
-    this.onInfoTap,
   }) : super(key: key);
 
   /// Creates a data-focused widget with appropriate styling
@@ -75,8 +77,6 @@ class MasterWidget extends StatefulWidget {
     Color? accentColor,
     Color? textColor = AppTheme.textDark,
     Color? iconColor = AppTheme.textDark,
-    bool showInfoButton = false,
-    VoidCallback? onInfoTap,
   }) => MasterWidget(
     title: title,
     icon: icon,
@@ -90,8 +90,6 @@ class MasterWidget extends StatefulWidget {
     useGradient: true,
     textColor: textColor,
     iconColor: iconColor,
-    showInfoButton: showInfoButton,
-    onInfoTap: onInfoTap,
   );
   
   /// Creates a metric display widget with value emphasis
@@ -102,20 +100,18 @@ class MasterWidget extends StatefulWidget {
     Color? accentColor,
     Color? textColor = AppTheme.textDark,
     Color? iconColor = AppTheme.textDark,
+    Widget? trailing,
     Widget? footer,
-    bool showInfoButton = false,
-    VoidCallback? onInfoTap,
   }) => MasterWidget(
     title: title,
     icon: icon,
     accentColor: accentColor ?? AppTheme.primaryBlue,
     footer: footer,
+    trailing: trailing,
     contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
     child: Center(child: valueWidget),
     textColor: textColor,
     iconColor: iconColor,
-    showInfoButton: showInfoButton,
-    onInfoTap: onInfoTap,
   );
   
   /// Creates a progress tracking widget with appropriate styling
@@ -129,8 +125,6 @@ class MasterWidget extends StatefulWidget {
     Widget? trailing,
     Color? textColor = AppTheme.textDark,
     Color? iconColor = AppTheme.textDark,
-    bool showInfoButton = false,
-    VoidCallback? onInfoTap,
   }) {
     final Color color = progressColor ?? AppTheme.accentColor;
     
@@ -153,8 +147,6 @@ class MasterWidget extends StatefulWidget {
       ),
       textColor: textColor,
       iconColor: iconColor,
-      showInfoButton: showInfoButton,
-      onInfoTap: onInfoTap,
     );
   }
   
@@ -167,8 +159,6 @@ class MasterWidget extends StatefulWidget {
     Color? accentColor,
     Color? textColor = AppTheme.textDark,
     Color? iconColor = AppTheme.textDark,
-    bool showInfoButton = false,
-    VoidCallback? onInfoTap,
   }) => MasterWidget(
     title: title,
     icon: icon,
@@ -177,8 +167,6 @@ class MasterWidget extends StatefulWidget {
     accentColor: accentColor,
     textColor: textColor,
     iconColor: iconColor,
-    showInfoButton: showInfoButton,
-    onInfoTap: onInfoTap,
   );
   
   /// Creates a highlight widget for important data
@@ -186,21 +174,65 @@ class MasterWidget extends StatefulWidget {
     required String title,
     required IconData icon,
     required Widget child,
+    Widget? trailing,
     Color? accentColor,
     Color? textColor = AppTheme.textDark,
     Color? iconColor = AppTheme.textDark,
-    bool showInfoButton = false,
-    VoidCallback? onInfoTap,
   }) => MasterWidget(
     title: title,
     icon: icon,
     child: child,
+    trailing: trailing,
     accentColor: accentColor ?? AppTheme.goldAccent,
     textColor: textColor,
     iconColor: iconColor,
-    showInfoButton: showInfoButton,
-    onInfoTap: onInfoTap,
   );
+  
+  /// Helper method to create a standard edit button for the header
+  /// Usage: trailing: MasterWidget.createEditButton(onPressed: _showDialog, color: textColor)
+  static Widget createEditButton({
+    required VoidCallback onPressed,
+    required Color color,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Icon(
+            Icons.edit,
+            size: _headerButtonSize,
+            color: color,
+          ),
+        ),
+      ),
+    );
+  }
+  
+  /// Helper method to create a standard info button for the header
+  /// Usage: trailing: MasterWidget.createInfoButton(onPressed: _showInfoDialog, color: textColor)
+  static Widget createInfoButton({
+    required VoidCallback onPressed,
+    required Color color,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Icon(
+            Icons.info_outline,
+            size: _headerButtonSize,
+            color: color,
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   State<MasterWidget> createState() => _MasterWidgetState();
@@ -210,9 +242,6 @@ class _MasterWidgetState extends State<MasterWidget> {
   @override
   Widget build(BuildContext context) {
     final accentColor = widget.accentColor ?? AppTheme.primaryBlue;
-    
-    // Create the header widget 
-    final headerWidget = _buildHeaderWidget();
     
     // Determine the content based on the state
     Widget content;
@@ -236,12 +265,13 @@ class _MasterWidgetState extends State<MasterWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header section
+          // Header section with fixed height and proper vertical alignment
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+            height: MasterWidget._headerHeight,
             decoration: BoxDecorations.header(),
-            child: headerWidget,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: _buildHeaderWidget(),
           ),
           
           // Content section
@@ -254,7 +284,7 @@ class _MasterWidgetState extends State<MasterWidget> {
     );
   }
   
-  // Build header widget 
+  // Build header widget with vertically centered elements but left-aligned title
   Widget _buildHeaderWidget() {
     // Get final colors
     final textColor = widget.textColor ?? AppTheme.textDark;
@@ -263,32 +293,33 @@ class _MasterWidgetState extends State<MasterWidget> {
     return InkWell(
       onTap: widget.onHeaderTap,
       borderRadius: BorderRadius.circular(16),
-      splashColor: widget.onHeaderTap != null ? Colors.grey.withAlpha((0.05 * 255).toInt()) : Colors.transparent,
-      highlightColor: widget.onHeaderTap != null ? Colors.grey.withAlpha((0.05 * 255).toInt()) : Colors.transparent,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center, // This ensures vertical centering
         children: [
-          // Left side with icon and title
+          // Left-aligned icon and title
           Expanded(
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center, // This ensures vertical centering
               children: [
-                // Icon with simpler treatment - no background, just the icon
+                // Icon
                 Icon(
                   widget.icon,
                   color: iconColor,
-                  size: 20,
+                  size: MasterWidget._headerIconSize,
                 ),
                 
                 const SizedBox(width: 12),
                 
-                // Title - no subtitle anymore
-                Expanded(
+                // Title
+                Flexible(
                   child: Text(
                     widget.title,
                     style: AppTextStyles.getSubHeadingStyle().copyWith(
-                      fontSize: 16,
+                      fontSize: MasterWidget._headerTitleFontSize,
                       fontWeight: FontWeight.bold,
                       color: textColor,
+                      height: 1.3, // Add some line height for better text appearance
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -297,38 +328,9 @@ class _MasterWidgetState extends State<MasterWidget> {
             ),
           ),
           
-          // Right side with info button and/or trailing widget
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Info button (conditionally shown)
-              if (widget.showInfoButton && widget.onInfoTap != null)
-                GestureDetector(
-                  onTap: widget.onInfoTap,
-                  child: Container(
-                    height: 28, // Fixed height to ensure consistent header height
-                    padding: const EdgeInsets.all(4.0),
-                    child: Icon(
-                      Icons.info_outline,
-                      color: Colors.black54,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              
-              // Optional trailing widget
-              if (widget.trailing != null) 
-                Padding(
-                  padding: EdgeInsets.only(left: widget.showInfoButton ? 8.0 : 0),
-                  child: widget.trailing!,
-                ),
-                
-              // If no info button and no trailing widget, add an empty container 
-              // to maintain consistent header height
-              if (!widget.showInfoButton && widget.trailing == null)
-                const SizedBox(height: 28, width: 28),
-            ],
-          ),
+          // Right-aligned button
+          if (widget.trailing != null)
+            widget.trailing!,
         ],
       ),
     );
