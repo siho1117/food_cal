@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../design_system/theme.dart';
 import '../design_system/text_styles.dart';
 import '../components/box_decorations.dart';
+import '../components/layout_builder.dart' as layout;
+import '../components/value_builder.dart';
 import '../animations/animation_helpers.dart';
 
 /// Animation style variants for different widget types
@@ -149,24 +151,10 @@ class MasterWidget extends StatefulWidget {
         children: [
           child,
           const SizedBox(height: 20),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              LinearProgressIndicator(
-                value: progress.clamp(0.0, 1.0),
-                backgroundColor: Colors.grey[200],
-                valueColor: AlwaysStoppedAnimation<Color>(color),
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              if (progressText != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  progressText,
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: color),
-                ),
-              ]
-            ],
+          ValueBuilder.buildProgressBar(
+            progress: progress,
+            valueLabel: progressText,
+            color: color,
           ),
         ],
       ),
@@ -318,113 +306,55 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final accentColor = widget.accentColor ?? AppTheme.primaryBlue;
-    final radius = widget.borderRadius;
     
+    // Create the header widget using layout.header
+    final headerWidget = layout.LayoutBuilder.header(
+      title: widget.title,
+      icon: widget.icon,
+      iconColor: widget.iconColor ?? accentColor,
+      textColor: widget.textColor ?? accentColor,
+      trailing: widget.trailing,
+      badge: widget.badge,
+      subtitle: widget.subtitle,
+      onTap: widget.onHeaderTap,
+    );
+    
+    // Determine the content based on the state
+    Widget content;
+    
+    if (widget.isLoading) {
+      content = _buildLoadingState();
+    } else if (widget.hasError) {
+      content = _buildErrorState();
+    } else if (widget.isEmpty) {
+      content = _buildEmptyState();
+    } else {
+      content = _buildContent(accentColor);
+    }
+    
+    // Create the container using BoxDecorations directly
     return Container(
       decoration: widget.useGradient 
-          ? BoxDecorations.cardGradient(borderRadius: radius)
-          : BoxDecorations.card(borderRadius: radius),
+          ? BoxDecorations.cardGradient(borderRadius: widget.borderRadius)
+          : BoxDecorations.card(borderRadius: widget.borderRadius),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header section
-          _buildHeader(accentColor),
+          // Header section using the layout builder
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+            decoration: BoxDecorations.header(),
+            child: headerWidget,
+          ),
           
           // Content section
-          if (widget.isLoading)
-            _buildLoadingState()
-          else if (widget.hasError)
-            _buildErrorState()
-          else if (widget.isEmpty)
-            _buildEmptyState()
-          else
-            _buildContent(accentColor),
+          content,
           
           // Optional footer
           if (widget.footer != null) widget.footer!,
         ],
-      ),
-    );
-  }
-  
-  Widget _buildHeader(Color accentColor) {
-    return GestureDetector(
-      onTap: widget.onHeaderTap,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
-        decoration: BoxDecorations.header(),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Title section with icon
-            Expanded(
-              child: Row(
-                children: [
-                  // Icon with background
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecorations.iconContainer(
-                      color: widget.iconColor ?? accentColor
-                    ),
-                    child: Icon(
-                      widget.icon,
-                      color: widget.iconColor ?? accentColor,
-                      size: 20,
-                    ),
-                  ),
-                  
-                  const SizedBox(width: 8),
-                  
-                  // Title and optional subtitle
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Title with optional badge
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                widget.title,
-                                style: AppTextStyles.getSubHeadingStyle().copyWith(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: widget.textColor ?? accentColor,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (widget.badge != null) ...[
-                              const SizedBox(width: 8),
-                              widget.badge!,
-                            ],
-                          ],
-                        ),
-                        
-                        // Optional subtitle
-                        if (widget.subtitle != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: Text(
-                              widget.subtitle!,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Optional trailing widget
-            if (widget.trailing != null) widget.trailing!,
-          ],
-        ),
       ),
     );
   }
@@ -446,59 +376,23 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
     }
   }
   
-  Widget _buildLoadingState() {
-    return Container(
-      height: 200,
-      padding: const EdgeInsets.all(20),
-      child: const Center(child: CircularProgressIndicator()),
-    );
-  }
+  // Using standardized loading state from layout builder
+  Widget _buildLoadingState() => Container(
+    height: 200,
+    padding: const EdgeInsets.all(20),
+    child: const Center(child: CircularProgressIndicator()),
+  );
   
-  Widget _buildErrorState() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 48),
-          const SizedBox(height: 16),
-          Text(
-            widget.errorMessage ?? 'An error occurred',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          ),
-          if (widget.onRetry != null) ...[
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: widget.onRetry,
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryBlue),
-              child: const Text('Try Again'),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+  // Using standardized error state
+  Widget _buildErrorState() => layout.LayoutBuilder.errorMessage(
+    message: widget.errorMessage ?? 'An error occurred',
+    actionLabel: widget.onRetry != null ? 'Try Again' : null,
+    onAction: widget.onRetry,
+  );
   
-  Widget _buildEmptyState() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(widget.emptyIcon, color: Colors.grey[400], size: 48),
-          const SizedBox(height: 16),
-          Text(
-            widget.emptyMessage ?? 'No data available',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Using standardized empty state
+  Widget _buildEmptyState() => layout.LayoutBuilder.emptyState(
+    message: widget.emptyMessage ?? 'No data available',
+    icon: widget.emptyIcon,
+  );
 }

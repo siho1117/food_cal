@@ -1,15 +1,14 @@
-// lib/config/builders/value_builder.dart
+// lib/config/components/value_builder.dart
 import 'package:flutter/material.dart';
-import '../theme.dart';
-import '../text_styles.dart';
-import '../widget_ui_design_standards.dart';
+import '../design_system/theme.dart';
+import '../design_system/text_styles.dart';
 import '../decorations/box_decorations.dart';
 
-/// Utility class for building value displays and card layouts throughout the app.
+/// Utility class for building value displays throughout the app.
 ///
 /// This class provides static methods for creating consistent
-/// display of numeric values, stats, and formatted text,
-/// as well as card layouts for content presentation.
+/// presentation of numeric values, stats, and formatted text.
+/// It focuses solely on value presentation rather than layout.
 class ValueBuilder {
   // Private constructor to prevent instantiation
   ValueBuilder._();
@@ -157,15 +156,16 @@ class ValueBuilder {
     required Color color,
     double opacity = 0.1,
     TextStyle? textStyle,
+    EdgeInsetsGeometry padding = const EdgeInsets.symmetric(
+      horizontal: 8,
+      vertical: 4,
+    ),
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 4,
-      ),
-      decoration: BoxDecoration(
-        color: color.withOpacity(opacity),
-        borderRadius: BorderRadius.circular(12),
+      padding: padding,
+      decoration: BoxDecorations.badge(
+        color: color,
+        opacity: opacity,
       ),
       child: Text(
         text,
@@ -228,288 +228,130 @@ class ValueBuilder {
     );
   }
   
-  //-----------------------------------------------------------------------------
-  // CARD LAYOUT UTILITIES
-  //-----------------------------------------------------------------------------
-  
-  /// Creates a standard content card with consistent styling
-  static Widget buildCard({
-    required Widget child,
-    Widget? header,
-    Widget? footer,
-    EdgeInsetsGeometry contentPadding = const EdgeInsets.all(20),
-    bool useGradientBackground = true,
-    bool isLoading = false,
-    bool hasError = false,
-    String? errorMessage,
-    VoidCallback? onRetry,
+  /// Creates a color indicator with label
+  static Widget buildColorIndicator({
+    required String label, 
+    required Color color,
+    double size = 10.0,
+    double spacing = 6.0,
+    TextStyle? labelStyle,
   }) {
-    final radius = WidgetUIStandards.containerBorderRadius;
-    final decoration = useGradientBackground
-        ? BoxDecorations.cardGradient()
-        : BoxDecorations.card();
-    
-    return Container(
-      decoration: decoration,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (header != null)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
-                decoration: BoxDecorations.header(),
-                child: header,
-              ),
-            if (isLoading)
-              _buildLoadingState()
-            else if (hasError)
-              _buildErrorState(errorMessage, onRetry)
-            else
-              Padding(
-                padding: contentPadding,
-                child: child,
-              ),
-            if (footer != null)
-              footer,
-          ],
-        ),
-      ),
-    );
-  }
-  
-  /// Creates a value card for metric displays
-  static Widget buildValueCard({
-    required String title,
-    required IconData icon,
-    required Widget valueWidget,
-    Widget? subtitle,
-    Widget? badge,
-    Widget? trailing,
-    Color? accentColor,
-  }) {
-    final color = accentColor ?? AppTheme.primaryBlue;
-    
-    return buildCard(
-      header: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecorations.iconContainer(color: color),
-                  child: Icon(
-                    icon,
-                    color: color,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: AppTextStyles.getSubHeadingStyle().copyWith(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                if (badge != null)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: badge,
-                  ),
-              ],
-            ),
-          ),
-          if (trailing != null) trailing,
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          valueWidget,
-          if (subtitle != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: subtitle,
-            ),
-        ],
-      ),
-    );
-  }
-  
-  /// Creates a progress card with indicator
-  static Widget buildProgressCard({
-    required String title,
-    required IconData icon,
-    required double progress,
-    String? progressText,
-    Widget? content,
-    Widget? trailing,
-    Color progressColor = AppTheme.accentColor,
-  }) {
-    return buildCard(
-      header: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecorations.iconContainer(color: progressColor),
-                child: Icon(
-                  icon,
-                  color: progressColor,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: AppTextStyles.getSubHeadingStyle().copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryBlue,
-                ),
-              ),
-            ],
-          ),
-          if (trailing != null) trailing,
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (content != null) ...[
-            content,
-            const SizedBox(height: 20),
-          ],
-          buildProgressBar(
-            progress: progress,
-            valueLabel: progressText,
-            color: progressColor,
-          ),
-        ],
-      ),
-    );
-  }
-  
-  /// Creates a message card for info, warning, or error messages
-  static Widget buildMessageCard({
-    required String title,
-    required String message,
-    required IconData icon,
-    Color color = AppTheme.primaryBlue,
-    VoidCallback? onAction,
-    String? actionText,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
             color: color,
-            size: 22,
+            shape: BoxShape.circle,
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: color,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  message,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                if (onAction != null && actionText != null) ...[
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: onAction,
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(0, 36),
-                      foregroundColor: color,
-                    ),
-                    child: Text(actionText),
-                  ),
-                ],
-              ],
-            ),
+        ),
+        SizedBox(width: spacing),
+        Text(
+          label,
+          style: labelStyle ?? TextStyle(
+            fontSize: 12,
+            color: Colors.grey[700],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
   
-  /// Standard loading state widget
-  static Widget _buildLoadingState() {
-    return Container(
-      height: 200,
-      padding: const EdgeInsets.all(20),
-      child: const Center(
-        child: CircularProgressIndicator(),
+  /// Creates a legend with multiple color indicators
+  static Widget buildLegend({
+    required List<String> labels,
+    required List<Color> colors,
+    Axis direction = Axis.horizontal,
+    double spacing = 12.0,
+    double indicatorSize = 10.0,
+    TextStyle? labelStyle,
+    MainAxisAlignment mainAxisAlignment = MainAxisAlignment.center,
+  }) {
+    final indicators = List.generate(
+      labels.length,
+      (index) => buildColorIndicator(
+        label: labels[index],
+        color: colors[index],
+        size: indicatorSize,
+        labelStyle: labelStyle,
       ),
     );
+    
+    return direction == Axis.horizontal
+        ? Row(
+            mainAxisAlignment: mainAxisAlignment,
+            children: indicators.separated(SizedBox(width: spacing)),
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: indicators.separated(SizedBox(height: spacing)),
+          );
   }
   
-  /// Standard error state widget
-  static Widget _buildErrorState(String? message, VoidCallback? onRetry) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  /// Creates a data row with label and value
+  static Widget buildDataRow({
+    required String label,
+    required String value,
+    bool bold = false,
+    Color? valueColor,
+    double fontSize = 14.0,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Icon(
-            Icons.error_outline,
-            color: Colors.red,
-            size: 48,
-          ),
-          const SizedBox(height: 16),
           Text(
-            message ?? 'An error occurred',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+            label,
+            style: TextStyle(
+              fontSize: fontSize,
+              color: Colors.grey[700],
             ),
           ),
-          if (onRetry != null) ...[
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: onRetry,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryBlue,
-              ),
-              child: const Text('Try Again'),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+              color: valueColor,
             ),
-          ],
+          ),
         ],
       ),
+    );
+  }
+  
+  /// Creates a calorie display with optional unit
+  static Widget buildCalorieDisplay({
+    required int calories,
+    Color? color,
+    bool showUnit = true,
+    TextStyle? valueStyle,
+    TextStyle? unitStyle,
+  }) {
+    return buildNumericValue(
+      value: calories.toString(),
+      unit: showUnit ? 'cal' : null,
+      color: color,
+      valueStyle: valueStyle,
+      unitStyle: unitStyle,
+    );
+  }
+}
+
+// Extension to add separated method to lists for easier spacing
+extension ListSpacing<T> on List<T> {
+  List<Widget> separated(Widget separator) {
+    if (isEmpty) return [];
+    if (length == 1) return [this[0] as Widget];
+    
+    return List.generate(
+      length * 2 - 1, 
+      (index) => index.isEven 
+          ? this[index ~/ 2] as Widget
+          : separator,
     );
   }
 }
