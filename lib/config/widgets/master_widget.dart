@@ -44,8 +44,8 @@ class MasterWidget extends StatefulWidget {
     required this.child,
     this.trailing,
     this.onHeaderTap,
-    this.iconColor = Colors.black,
-    this.textColor = Colors.black,
+    this.iconColor = AppTheme.textDark,
+    this.textColor = AppTheme.textDark,
     this.contentPadding = const EdgeInsets.all(20),
     this.footer,
     this.useGradient = true,
@@ -73,8 +73,8 @@ class MasterWidget extends StatefulWidget {
     VoidCallback? onRetry,
     Widget? trailing,
     Color? accentColor,
-    Color? textColor = Colors.black,
-    Color? iconColor = Colors.black,
+    Color? textColor = AppTheme.textDark,
+    Color? iconColor = AppTheme.textDark,
     bool showInfoButton = false,
     VoidCallback? onInfoTap,
   }) => MasterWidget(
@@ -100,8 +100,8 @@ class MasterWidget extends StatefulWidget {
     required IconData icon,
     required Widget valueWidget,
     Color? accentColor,
-    Color? textColor = Colors.black,
-    Color? iconColor = Colors.black,
+    Color? textColor = AppTheme.textDark,
+    Color? iconColor = AppTheme.textDark,
     Widget? footer,
     bool showInfoButton = false,
     VoidCallback? onInfoTap,
@@ -127,8 +127,8 @@ class MasterWidget extends StatefulWidget {
     String? progressText,
     Color? progressColor,
     Widget? trailing,
-    Color? textColor = Colors.black,
-    Color? iconColor = Colors.black,
+    Color? textColor = AppTheme.textDark,
+    Color? iconColor = AppTheme.textDark,
     bool showInfoButton = false,
     VoidCallback? onInfoTap,
   }) {
@@ -165,8 +165,8 @@ class MasterWidget extends StatefulWidget {
     required Widget child,
     Widget? trailing,
     Color? accentColor,
-    Color? textColor = Colors.black,
-    Color? iconColor = Colors.black,
+    Color? textColor = AppTheme.textDark,
+    Color? iconColor = AppTheme.textDark,
     bool showInfoButton = false,
     VoidCallback? onInfoTap,
   }) => MasterWidget(
@@ -187,8 +187,8 @@ class MasterWidget extends StatefulWidget {
     required IconData icon,
     required Widget child,
     Color? accentColor,
-    Color? textColor = Colors.black,
-    Color? iconColor = Colors.black,
+    Color? textColor = AppTheme.textDark,
+    Color? iconColor = AppTheme.textDark,
     bool showInfoButton = false,
     VoidCallback? onInfoTap,
   }) => MasterWidget(
@@ -257,8 +257,8 @@ class _MasterWidgetState extends State<MasterWidget> {
   // Build header widget 
   Widget _buildHeaderWidget() {
     // Get final colors
-    final textColor = widget.textColor ?? Colors.black;
-    final iconColor = widget.iconColor ?? Colors.black;
+    final textColor = widget.textColor ?? AppTheme.textDark;
+    final iconColor = widget.iconColor ?? AppTheme.textDark;
     
     return InkWell(
       onTap: widget.onHeaderTap,
