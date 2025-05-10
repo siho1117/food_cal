@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../design_system/theme.dart';
 import '../design_system/text_styles.dart';
 import '../components/box_decorations.dart';
-import '../components/layout_builder.dart' as layout;
-import '../components/value_builder.dart';
+import '../components/state_builder.dart';  // Use StateBuilder for state handling
+import '../components/value_builder.dart';  // Added ValueBuilder import
 import '../animations/animation_helpers.dart';
 
 /// Animation style variants for different widget types
@@ -307,17 +307,8 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     final accentColor = widget.accentColor ?? AppTheme.primaryBlue;
     
-    // Create the header widget using layout.header
-    final headerWidget = layout.LayoutBuilder.header(
-      title: widget.title,
-      icon: widget.icon,
-      iconColor: widget.iconColor ?? accentColor,
-      textColor: widget.textColor ?? accentColor,
-      trailing: widget.trailing,
-      badge: widget.badge,
-      subtitle: widget.subtitle,
-      onTap: widget.onHeaderTap,
-    );
+    // Create the header widget manually instead of using layout.LayoutBuilder
+    final headerWidget = _buildHeaderWidget(accentColor);
     
     // Determine the content based on the state
     Widget content;
@@ -341,7 +332,7 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header section using the layout builder
+          // Header section
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
@@ -354,6 +345,85 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
           
           // Optional footer
           if (widget.footer != null) widget.footer!,
+        ],
+      ),
+    );
+  }
+  
+  // Build header widget directly without using LayoutBuilder
+  Widget _buildHeaderWidget(Color accentColor) {
+    return InkWell(
+      onTap: widget.onHeaderTap,
+      borderRadius: BorderRadius.circular(16),
+      splashColor: widget.onHeaderTap != null ? accentColor.withOpacity(0.05) : Colors.transparent,
+      highlightColor: widget.onHeaderTap != null ? accentColor.withOpacity(0.05) : Colors.transparent,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Left side with icon and title
+          Expanded(
+            child: Row(
+              children: [
+                // Icon with background
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecorations.iconContainer(color: widget.iconColor ?? accentColor),
+                  child: Icon(
+                    widget.icon,
+                    color: widget.iconColor ?? accentColor,
+                    size: 20,
+                  ),
+                ),
+                
+                const SizedBox(width: 8),
+                
+                // Title and optional subtitle
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title with optional badge
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              widget.title,
+                              style: AppTextStyles.getSubHeadingStyle().copyWith(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: widget.textColor ?? accentColor,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (widget.badge != null) ...[
+                            const SizedBox(width: 8),
+                            widget.badge!,
+                          ],
+                        ],
+                      ),
+                      
+                      // Optional subtitle
+                      if (widget.subtitle != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            widget.subtitle!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Optional trailing widget
+          if (widget.trailing != null) widget.trailing!,
         ],
       ),
     );
@@ -376,22 +446,21 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
     }
   }
   
-  // Using standardized loading state from layout builder
-  Widget _buildLoadingState() => Container(
+  // Using StateBuilder instead of LayoutBuilder
+  Widget _buildLoadingState() => StateBuilder.loading(
     height: 200,
     padding: const EdgeInsets.all(20),
-    child: const Center(child: CircularProgressIndicator()),
   );
   
-  // Using standardized error state
-  Widget _buildErrorState() => layout.LayoutBuilder.errorMessage(
+  // Using StateBuilder instead of LayoutBuilder
+  Widget _buildErrorState() => StateBuilder.errorMessage(
     message: widget.errorMessage ?? 'An error occurred',
     actionLabel: widget.onRetry != null ? 'Try Again' : null,
     onAction: widget.onRetry,
   );
   
-  // Using standardized empty state
-  Widget _buildEmptyState() => layout.LayoutBuilder.emptyState(
+  // Using StateBuilder instead of LayoutBuilder
+  Widget _buildEmptyState() => StateBuilder.empty(
     message: widget.emptyMessage ?? 'No data available',
     icon: widget.emptyIcon,
   );

@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import '../design_system/theme.dart';
 import '../design_system/text_styles.dart';
-import '../decorations/box_decorations.dart';
+import '../components/box_decorations.dart';
 
 /// Utility class for building value displays throughout the app.
 ///
@@ -279,15 +279,33 @@ class ValueBuilder {
       ),
     );
     
-    return direction == Axis.horizontal
-        ? Row(
-            mainAxisAlignment: mainAxisAlignment,
-            children: indicators.separated(SizedBox(width: spacing)),
-          )
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: indicators.separated(SizedBox(height: spacing)),
-          );
+    // Build horizontal or vertical layout with manual spacing
+    if (direction == Axis.horizontal) {
+      return Row(
+        mainAxisAlignment: mainAxisAlignment,
+        children: _addSpacers(indicators, SizedBox(width: spacing)),
+      );
+    } else {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: _addSpacers(indicators, SizedBox(height: spacing)),
+      );
+    }
+  }
+  
+  /// Helper method to add spacers between widgets
+  static List<Widget> _addSpacers(List<Widget> widgets, Widget spacer) {
+    if (widgets.isEmpty) return [];
+    if (widgets.length == 1) return [widgets[0]];
+    
+    final result = <Widget>[];
+    for (int i = 0; i < widgets.length; i++) {
+      result.add(widgets[i]);
+      if (i < widgets.length - 1) {
+        result.add(spacer);
+      }
+    }
+    return result;
   }
   
   /// Creates a data row with label and value
@@ -337,21 +355,6 @@ class ValueBuilder {
       color: color,
       valueStyle: valueStyle,
       unitStyle: unitStyle,
-    );
-  }
-}
-
-// Extension to add separated method to lists for easier spacing
-extension ListSpacing<T> on List<T> {
-  List<Widget> separated(Widget separator) {
-    if (isEmpty) return [];
-    if (length == 1) return [this[0] as Widget];
-    
-    return List.generate(
-      length * 2 - 1, 
-      (index) => index.isEven 
-          ? this[index ~/ 2] as Widget
-          : separator,
     );
   }
 }
