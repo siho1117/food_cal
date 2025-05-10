@@ -1,47 +1,16 @@
 // lib/config/widgets/master_widget.dart
 import 'package:flutter/material.dart';
-import '../theme.dart';
-import '../text_styles.dart';
-import '../widget_ui_design_standards.dart';
-import '../dimensions.dart';
-import '../decorations/box_decorations.dart';
+import '../design_system/theme.dart';
+import '../design_system/text_styles.dart';
+import '../components/box_decorations.dart';
 import '../animations/animation_helpers.dart';
 
-/// Defines different animation styles for different widget types
+/// Animation style variants for different widget types
 enum WidgetAnimationType {
-  /// Standard fade + scale (default)
-  standard,
-  
-  /// Slide up from bottom
-  slideUp,
-  
-  /// Slide in from side
-  slideHorizontal,
-  
-  /// Expand from center
-  expand,
-  
-  /// Emphasize with bounce
-  bounce,
-  
-  /// No animation
-  none,
+  standard, slideUp, slideHorizontal, expand, bounce, none,
 }
 
-/// A master widget template that serves as the foundation for content widgets throughout the app.
-/// 
-/// This widget provides consistent styling, animation, and state handling for all content widgets.
-/// It consolidates functionality from CardLayout, HeaderLayout, and other utilities into a single
-/// comprehensive component.
-/// 
-/// Usage:
-/// ```dart
-/// MasterWidget(
-///   title: 'My Widget',
-///   icon: Icons.star,
-///   child: Text('Content goes here'),
-/// )
-/// ```
+/// A master widget template that serves as the foundation for content widgets.
 class MasterWidget extends StatefulWidget {
   // Core properties
   final String title;
@@ -53,6 +22,8 @@ class MasterWidget extends StatefulWidget {
   final String? subtitle;
   final Widget? badge;
   final VoidCallback? onHeaderTap;
+  final Color? iconColor;
+  final Color? textColor;
   
   // Layout customization
   final EdgeInsetsGeometry contentPadding;
@@ -84,6 +55,8 @@ class MasterWidget extends StatefulWidget {
     this.subtitle,
     this.badge,
     this.onHeaderTap,
+    this.iconColor,
+    this.textColor,
     this.contentPadding = const EdgeInsets.all(20),
     this.footer,
     this.useGradient = true,
@@ -114,26 +87,23 @@ class MasterWidget extends StatefulWidget {
     String? subtitle,
     Color? accentColor,
     bool animate = true,
-  }) {
-    return MasterWidget(
-      title: title,
-      icon: icon,
-      child: child,
-      isLoading: isLoading,
-      hasError: hasError,
-      errorMessage: errorMessage,
-      onRetry: onRetry,
-      trailing: trailing,
-      subtitle: subtitle,
-      accentColor: accentColor,
-      useGradient: true,
-      animate: animate,
-      // Data widgets use standard animation for clean presentation
-      animationType: WidgetAnimationType.standard,
-    );
-  }
+  }) => MasterWidget(
+    title: title,
+    icon: icon,
+    child: child,
+    isLoading: isLoading,
+    hasError: hasError,
+    errorMessage: errorMessage,
+    onRetry: onRetry,
+    trailing: trailing,
+    subtitle: subtitle,
+    accentColor: accentColor,
+    useGradient: true,
+    animate: animate,
+    animationType: WidgetAnimationType.standard,
+  );
   
-  /// Creates a metric display widget with value emphasis and appropriate animations
+  /// Creates a metric display widget with value emphasis
   static MasterWidget metricWidget({
     required String title,
     required IconData icon,
@@ -142,25 +112,17 @@ class MasterWidget extends StatefulWidget {
     String? subtitle,
     Widget? footer,
     bool animate = true,
-  }) {
-    return MasterWidget(
-      title: title,
-      icon: icon,
-      accentColor: accentColor ?? AppTheme.primaryBlue,
-      subtitle: subtitle,
-      footer: footer,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 24,
-      ),
-      animate: animate,
-      // Metric widgets use expand animation to emphasize the value
-      animationType: WidgetAnimationType.expand,
-      child: Center(
-        child: valueWidget,
-      ),
-    );
-  }
+  }) => MasterWidget(
+    title: title,
+    icon: icon,
+    accentColor: accentColor ?? AppTheme.primaryBlue,
+    subtitle: subtitle,
+    footer: footer,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+    animate: animate,
+    animationType: WidgetAnimationType.expand,
+    child: Center(child: valueWidget),
+  );
   
   /// Creates a progress tracking widget with appropriate animations
   static MasterWidget progressWidget({
@@ -181,17 +143,12 @@ class MasterWidget extends StatefulWidget {
       accentColor: color,
       trailing: trailing,
       animate: animate,
-      // Progress widgets slide up to suggest improvement
       animationType: WidgetAnimationType.slideUp,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Child content first
           child,
-          
           const SizedBox(height: 20),
-          
-          // Progress bar
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -202,16 +159,11 @@ class MasterWidget extends StatefulWidget {
                 minHeight: 8,
                 borderRadius: BorderRadius.circular(4),
               ),
-              
               if (progressText != null) ...[
                 const SizedBox(height: 8),
                 Text(
                   progressText,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500, 
-                    color: color,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: color),
                 ),
               ]
             ],
@@ -230,19 +182,16 @@ class MasterWidget extends StatefulWidget {
     String? subtitle,
     Color? accentColor,
     bool animate = true,
-  }) {
-    return MasterWidget(
-      title: title,
-      icon: icon,
-      child: child,
-      trailing: trailing,
-      subtitle: subtitle,
-      accentColor: accentColor,
-      animate: animate,
-      // Comparison widgets slide horizontally to emphasize side-by-side comparison
-      animationType: WidgetAnimationType.slideHorizontal,
-    );
-  }
+  }) => MasterWidget(
+    title: title,
+    icon: icon,
+    child: child,
+    trailing: trailing,
+    subtitle: subtitle,
+    accentColor: accentColor,
+    animate: animate,
+    animationType: WidgetAnimationType.slideHorizontal,
+  );
   
   /// Creates a highlight widget with bounce animation for attention
   static MasterWidget highlightWidget({
@@ -252,18 +201,15 @@ class MasterWidget extends StatefulWidget {
     Widget? badge,
     Color? accentColor,
     bool animate = true,
-  }) {
-    return MasterWidget(
-      title: title,
-      icon: icon,
-      child: child,
-      badge: badge,
-      accentColor: accentColor ?? AppTheme.goldAccent,
-      animate: animate,
-      // Highlight widgets bounce to draw attention
-      animationType: WidgetAnimationType.bounce,
-    );
-  }
+  }) => MasterWidget(
+    title: title,
+    icon: icon,
+    child: child,
+    badge: badge,
+    accentColor: accentColor ?? AppTheme.goldAccent,
+    animate: animate,
+    animationType: WidgetAnimationType.bounce,
+  );
 
   @override
   State<MasterWidget> createState() => _MasterWidgetState();
@@ -276,17 +222,12 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    
-    // Set up animations
     _animationController = AnimationController(
       vsync: this,
       duration: widget.animationDuration,
     );
-    
-    // Create appropriate animations based on type
     _setupAnimations();
     
-    // Start animations if enabled
     if (widget.animate && widget.animationType != WidgetAnimationType.none) {
       _animationController.forward();
     } else {
@@ -294,7 +235,6 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
     }
   }
   
-  /// Sets up animations based on the selected animation type
   void _setupAnimations() {
     switch (widget.animationType) {
       case WidgetAnimationType.standard:
@@ -303,63 +243,46 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
           initialScale: 0.95,
         );
         break;
-        
       case WidgetAnimationType.slideUp:
         _animations = {
           'slide': AnimationHelpers.createSlideAnimation(
             controller: _animationController,
             begin: const Offset(0, 0.2),
-            end: Offset.zero,
           ),
-          'fade': AnimationHelpers.createFadeAnimation(
-            controller: _animationController,
-          ),
+          'fade': AnimationHelpers.createFadeAnimation(controller: _animationController),
         };
         break;
-        
       case WidgetAnimationType.slideHorizontal:
         _animations = {
           'slide': AnimationHelpers.createSlideAnimation(
             controller: _animationController,
             begin: const Offset(-0.2, 0),
-            end: Offset.zero,
           ),
-          'fade': AnimationHelpers.createFadeAnimation(
-            controller: _animationController,
-          ),
+          'fade': AnimationHelpers.createFadeAnimation(controller: _animationController),
         };
         break;
-        
       case WidgetAnimationType.expand:
         _animations = {
           'scale': AnimationHelpers.createScaleAnimation(
             controller: _animationController,
             begin: 0.8,
-            end: 1.0,
             curve: Curves.easeOutBack,
           ),
-          'fade': AnimationHelpers.createFadeAnimation(
-            controller: _animationController,
-          ),
+          'fade': AnimationHelpers.createFadeAnimation(controller: _animationController),
         };
         break;
-        
       case WidgetAnimationType.bounce:
         _animations = {
           'scale': AnimationHelpers.createScaleAnimation(
             controller: _animationController,
             begin: 0.9,
-            end: 1.0,
             curve: Curves.elasticOut,
           ),
-          'fade': AnimationHelpers.createFadeAnimation(
-            controller: _animationController,
-          ),
+          'fade': AnimationHelpers.createFadeAnimation(controller: _animationController),
         };
         break;
-        
       case WidgetAnimationType.none:
-        _animations = {}; // Empty animations map
+        _animations = {};
         break;
     }
   }
@@ -374,18 +297,15 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
   void didUpdateWidget(MasterWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     
-    // Reset and restart animations if key properties change
     if (oldWidget.isLoading != widget.isLoading || 
         oldWidget.hasError != widget.hasError ||
         oldWidget.isEmpty != widget.isEmpty ||
         oldWidget.animationType != widget.animationType) {
       
-      // If animation type changed, recreate animations
       if (oldWidget.animationType != widget.animationType) {
         _setupAnimations();
       }
       
-      // Restart animations
       if (widget.animate && widget.animationType != WidgetAnimationType.none) {
         _animationController.reset();
         _animationController.forward();
@@ -397,8 +317,8 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final radius = widget.borderRadius ?? WidgetUIStandards.containerBorderRadius;
     final accentColor = widget.accentColor ?? AppTheme.primaryBlue;
+    final radius = widget.borderRadius;
     
     return Container(
       decoration: widget.useGradient 
@@ -411,8 +331,15 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
           // Header section
           _buildHeader(accentColor),
           
-          // Content section with states
-          _buildContent(accentColor),
+          // Content section
+          if (widget.isLoading)
+            _buildLoadingState()
+          else if (widget.hasError)
+            _buildErrorState()
+          else if (widget.isEmpty)
+            _buildEmptyState()
+          else
+            _buildContent(accentColor),
           
           // Optional footer
           if (widget.footer != null) widget.footer!,
@@ -421,17 +348,11 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
     );
   }
   
-  /// Builds the header section with title, icon, and optional elements
   Widget _buildHeader(Color accentColor) {
     return GestureDetector(
       onTap: widget.onHeaderTap,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(
-          WidgetUIStandards.headerHorizontalPadding,
-          WidgetUIStandards.headerVerticalPadding,
-          WidgetUIStandards.headerHorizontalPadding,
-          WidgetUIStandards.headerVerticalPadding,
-        ),
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
         decoration: BoxDecorations.header(),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -442,16 +363,18 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
                 children: [
                   // Icon with background
                   Container(
-                    padding: const EdgeInsets.all(WidgetUIStandards.headerIconSpacing),
-                    decoration: BoxDecorations.iconContainer(color: accentColor),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecorations.iconContainer(
+                      color: widget.iconColor ?? accentColor
+                    ),
                     child: Icon(
                       widget.icon,
-                      color: accentColor,
-                      size: WidgetUIStandards.headerIconSize,
+                      color: widget.iconColor ?? accentColor,
+                      size: 20,
                     ),
                   ),
                   
-                  const SizedBox(width: WidgetUIStandards.headerIconSpacing),
+                  const SizedBox(width: 8),
                   
                   // Title and optional subtitle
                   Expanded(
@@ -465,9 +388,9 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
                               child: Text(
                                 widget.title,
                                 style: AppTextStyles.getSubHeadingStyle().copyWith(
-                                  fontSize: WidgetUIStandards.headerFontSize,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: accentColor,
+                                  color: widget.textColor ?? accentColor,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -506,22 +429,7 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
     );
   }
   
-  /// Builds the content section based on current state
   Widget _buildContent(Color accentColor) {
-    // Handle different states
-    if (widget.isLoading) {
-      return _buildLoadingState();
-    } else if (widget.hasError) {
-      return _buildErrorState();
-    } else if (widget.isEmpty) {
-      return _buildEmptyState();
-    } else {
-      return _buildNormalContent();
-    }
-  }
-  
-  /// Builds the normal content with animations
-  Widget _buildNormalContent() {
     if (widget.animate && widget.animationType != WidgetAnimationType.none && _animations.isNotEmpty) {
       return AnimationHelpers.applyAnimations(
         animations: _animations,
@@ -538,45 +446,32 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
     }
   }
   
-  /// Builds the loading state
   Widget _buildLoadingState() {
     return Container(
       height: 200,
       padding: const EdgeInsets.all(20),
-      child: const Center(
-        child: CircularProgressIndicator(),
-      ),
+      child: const Center(child: CircularProgressIndicator()),
     );
   }
   
-  /// Builds the error state
   Widget _buildErrorState() {
     return Container(
       padding: const EdgeInsets.all(20),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.error_outline,
-            color: Colors.red,
-            size: 48,
-          ),
+          const Icon(Icons.error_outline, color: Colors.red, size: 48),
           const SizedBox(height: 16),
           Text(
             widget.errorMessage ?? 'An error occurred',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           if (widget.onRetry != null) ...[
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: widget.onRetry,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryBlue,
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryBlue),
               child: const Text('Try Again'),
             ),
           ],
@@ -585,18 +480,13 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
     );
   }
   
-  /// Builds the empty state
   Widget _buildEmptyState() {
     return Container(
       padding: const EdgeInsets.all(20),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            widget.emptyIcon,
-            color: Colors.grey[400],
-            size: 48,
-          ),
+          Icon(widget.emptyIcon, color: Colors.grey[400], size: 48),
           const SizedBox(height: 16),
           Text(
             widget.emptyMessage ?? 'No data available',
