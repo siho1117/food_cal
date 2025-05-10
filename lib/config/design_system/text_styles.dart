@@ -17,7 +17,7 @@ class AppTextStyles {
   /// Sub-heading font - for section headers and important elements
   /// Recommended for: Section titles, card headers, important UI elements
   static TextStyle getSubHeadingStyle() {
-    return GoogleFonts.raleway();
+    return GoogleFonts.dmSans();
   }
 
   /// Body text font - for regular content

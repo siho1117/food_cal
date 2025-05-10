@@ -319,7 +319,7 @@ class _MasterWidgetState extends State<MasterWidget> {
                       fontSize: MasterWidget._headerTitleFontSize,
                       fontWeight: FontWeight.bold,
                       color: textColor,
-                      height: 1.3, // Add some line height for better text appearance
+                      height: 2, // Add some line height for better text appearance
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),

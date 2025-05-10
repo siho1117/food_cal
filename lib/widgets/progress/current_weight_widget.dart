@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../config/design_system/theme.dart';
-import '../../config/design_system/text_styles.dart';
 import '../../config/widgets/master_widget.dart';
 import '../../data/models/weight_entry.dart';
 import '../../data/repositories/user_repository.dart';
@@ -24,8 +23,6 @@ class _CurrentWeightWidgetState extends State<CurrentWeightWidget> {
   bool _isLoading = true;
   bool _isMetric = true;
   WeightEntry? _currentEntry;
-  WeightEntry? _previousEntry;
-  bool _hasWeightToday = false;
   
   @override
   void initState() {
@@ -48,19 +45,8 @@ class _CurrentWeightWidgetState extends State<CurrentWeightWidget> {
       final entries = await _userRepository.getWeightEntries();
       entries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
       
-      // Check if today already has an entry
-      final today = DateTime.now();
-      final todayDate = DateTime(today.year, today.month, today.day);
-      
-      _hasWeightToday = entries.any((entry) => 
-        entry.timestamp.year == todayDate.year && 
-        entry.timestamp.month == todayDate.month && 
-        entry.timestamp.day == todayDate.day
-      );
-      
-      // Get current and previous entries
+      // Get current entry
       _currentEntry = entries.isNotEmpty ? entries.first : null;
-      _previousEntry = entries.length > 1 ? entries[1] : null;
       
       if (mounted) {
         setState(() {
@@ -111,133 +97,107 @@ class _CurrentWeightWidgetState extends State<CurrentWeightWidget> {
       textColor: textColor,
       iconColor: textColor,
       isLoading: _isLoading,
-      // Use the standard edit button helper with matching color
+      // Use the standard edit button helper
       trailing: MasterWidget.createEditButton(
         onPressed: _showWeightEntryDialog,
         color: textColor,
       ),
+      // Empty state is also tappable to add first weight
+      isEmpty: _currentEntry == null,
       child: _currentEntry == null 
-          ? _buildEmptyState() 
-          : _buildWeightContent(),
+          ? InkWell(
+              onTap: _showWeightEntryDialog,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.monitor_weight_outlined,
+                      size: 48,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Tap to record your weight',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : InkWell(
+              onTap: _showWeightEntryDialog, // Allow tapping anywhere on the widget
+              child: Padding(
+                // Reduced vertical padding to 8px
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Weight value with unit
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          // Current weight value - same size as BMI
+                          Text(
+                            _getFormattedWeight(),
+                            style: const TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                          
+                          // Units - smaller size
+                          Text(
+                            _isMetric ? ' kg' : ' lbs',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      // Last updated text - small and subtle
+                      const SizedBox(height: 4),
+                      Text(
+                        _getLastUpdatedText(),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
     );
   }
   
-  Widget _buildEmptyState() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      height: 65, // Fixed height to ensure consistency
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'No weight data recorded',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Tap the pencil icon to record your weight',
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[500],
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildWeightContent() {
+  // Format the weight value based on metric/imperial
+  String _getFormattedWeight() {
+    if (_currentEntry == null) return '0.0';
+    
     // Display either current weight (metric) or converted to imperial
     final double displayWeight = _isMetric ? 
       _currentEntry!.weight : 
       _currentEntry!.weight * 2.20462;
     
-    // Calculate weight change
-    final bool hasChange = _previousEntry != null;
-    final double weightDiff = hasChange ? 
-      _currentEntry!.weight - _previousEntry!.weight : 0;
-    
-    // Format the weight change
-    final String changePrefix = weightDiff > 0 ? '+' : '';
-    final String changeText = hasChange ? 
-      '$changePrefix${weightDiff.toStringAsFixed(1)} ${_isMetric ? 'kg' : 'lbs'}' : '';
-    
-    // Color for change
-    final Color changeColor = weightDiff > 0 ? 
-      Colors.orange : (weightDiff < 0 ? Colors.green : Colors.grey);
-    
-    return Container(
-      height: 65, // Fixed height to match empty state
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Weight display
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Current weight value
-              Text(
-                '${displayWeight.toStringAsFixed(1)} ${_isMetric ? 'kg' : 'lbs'}',
-                style: AppTextStyles.getNumericStyle().copyWith(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryBlue,
-                ),
-              ),
-              
-              // Last recorded date
-              Text(
-                _getLastUpdatedText(),
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-          
-          // Weight change indicator (if exists)
-          if (hasChange)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: changeColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    weightDiff > 0 ? Icons.arrow_upward : 
-                      (weightDiff < 0 ? Icons.arrow_downward : Icons.remove),
-                    color: changeColor,
-                    size: 12,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    changeText,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: changeColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
+    return displayWeight.toStringAsFixed(1);
   }
   
-  // Simple format for last updated text
+  // Format the last updated text
   String _getLastUpdatedText() {
     if (_currentEntry == null) return '';
     
@@ -249,6 +209,8 @@ class _CurrentWeightWidgetState extends State<CurrentWeightWidget> {
       return 'Today';
     } else if (difference.inDays == 1) {
       return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
     } else {
       return '${entryDate.day}/${entryDate.month}/${entryDate.year}';
     }

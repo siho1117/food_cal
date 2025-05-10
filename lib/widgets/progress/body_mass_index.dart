@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../config/design_system/theme.dart';
-import '../../config/design_system/text_styles.dart';
-import '../../config/animations/animation_helpers.dart';
-import '../../config/components/value_builder.dart';
-import '../../config/components/box_decorations.dart';
 import '../../config/widgets/master_widget.dart';
 
 class BMIWidget extends StatefulWidget {
@@ -20,270 +16,209 @@ class BMIWidget extends StatefulWidget {
   State<BMIWidget> createState() => _BMIWidgetState();
 }
 
-class _BMIWidgetState extends State<BMIWidget>
-    with SingleTickerProviderStateMixin {
-      
-  late AnimationController _animationController;
-  late Animation<double> _progressAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    
-    // Setup animations using the animation helper
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
-    
-    _progressAnimation = AnimationHelpers.createProgressAnimation(
-      controller: _animationController,
-    );
-    
-    // Start animation
-    _animationController.forward();
-  }
-  
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(BMIWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.bmiValue != widget.bmiValue || 
-        oldWidget.classification != widget.classification) {
-      // Reset and restart animation for updated values
-      _animationController.reset();
-      _animationController.forward();
-    }
-  }
-
-  // Get appropriate color based on BMI classification
-  Color _getColorForBMI() {
+class _BMIWidgetState extends State<BMIWidget> {
+  // Get appropriate color based on BMI classification for the badge
+  Color _getColorForBMIBadge() {
     if (widget.bmiValue == null) return Colors.grey;
 
     if (widget.bmiValue! < 18.5) {
-      return AppTheme.goldAccent;     // Gold/Yellow for Underweight
+      return const Color(0xFF90CAF9);     // Light blue for Underweight
     } else if (widget.bmiValue! < 25) {
-      return AppTheme.primaryBlue;    // Primary blue for Normal
+      return const Color(0xFF4CAF50);     // Green for Normal
     } else if (widget.bmiValue! < 30) {
-      return AppTheme.coralAccent;    // Coral for Overweight
+      return const Color(0xFFFFC107);     // Amber for Overweight
     } else {
-      return AppTheme.accentColor;    // Burgundy for Obese
-    }
-  }
-  
-  // Calculate position on the BMI scale (0.0 to 1.0)
-  double _getBMIPosition() {
-    if (widget.bmiValue == null) return 0.5; // Default to center
-    
-    // Map BMI range (15-40) to position (0.0-1.0)
-    final normalizedPosition = (widget.bmiValue! - 15) / 25;
-    return normalizedPosition.clamp(0.0, 1.0);
-  }
-  
-  // Get descriptive text based on BMI classification
-  String _getBMIDescription() {
-    if (widget.bmiValue == null) return "No data available";
-    
-    if (widget.bmiValue! < 18.5) {
-      return "May indicate undernourishment";
-    } else if (widget.bmiValue! < 25) {
-      return "Healthy weight range";
-    } else if (widget.bmiValue! < 30) {
-      return "Higher risk of health issues";
-    } else {
-      return "Increased health risk";
+      return const Color(0xFFF44336);     // Red for Obese
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final primaryColor = _getColorForBMI();
-    final bmiPosition = _getBMIPosition();
-    final description = _getBMIDescription();
-
-    return MasterWidget(
-      title: 'Body Mass Index',
-      icon: Icons.monitor_weight_rounded,
-      accentColor: AppTheme.primaryBlue,
-      badge: ValueBuilder.buildBadge(
-        text: widget.classification,
-        color: primaryColor,
-      ),
-      animate: true,
-      animationType: WidgetAnimationType.slideUp,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // BMI value display
-          Center(
-            child: Column(
-              children: [
-                // Animated BMI value
-                AnimationHelpers.buildAnimatedCounter(
-                  animation: _progressAnimation,
-                  targetValue: widget.bmiValue ?? 0,
-                  style: AppTextStyles.getNumericStyle().copyWith(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    color: primaryColor,
-                  ),
-                  decimalPlaces: 1,
-                ),
-                
-                // "kg/m²" label
-                Text(
-                  'kg/m²',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
+  void _showBMIInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              Icons.info_outline,
+              color: AppTheme.primaryBlue,
             ),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // BMI Range visualization
-          Column(
+            const SizedBox(width: 8),
+            const Text('About BMI'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // BMI Range bar
-              Container(
-                width: double.infinity,
-                height: 8,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
-                  gradient: const LinearGradient(
-                    colors: [
-                      AppTheme.goldAccent,     // Underweight
-                      AppTheme.primaryBlue,    // Normal
-                      AppTheme.coralAccent,    // Overweight
-                      AppTheme.accentColor,    // Obese
-                    ],
-                    stops: [0.15, 0.4, 0.65, 0.9],
-                  ),
-                ),
+              // BMI Definition
+              const Text(
+                'Body Mass Index (BMI) is a measure of body fat based on your weight and height. It is used to screen for weight categories that may lead to health problems.',
+                style: TextStyle(fontSize: 14, height: 1.4),
               ),
-              
-              // Position indicator on the bar
-              if (widget.bmiValue != null)
-                AnimatedBuilder(
-                  animation: _progressAnimation,
-                  builder: (context, child) {
-                    return Container(
-                      margin: EdgeInsets.only(
-                        left: (MediaQuery.of(context).size.width - 80) * 
-                            bmiPosition * _progressAnimation.value,
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.arrow_drop_down,
-                            color: primaryColor,
-                            size: 24,
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8, 
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: primaryColor,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              widget.bmiValue!.toStringAsFixed(1),
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              
-              const SizedBox(height: 8),
-              
-              // Range labels
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildRangeLabel("< 18.5", "Underweight", AppTheme.goldAccent),
-                  _buildRangeLabel("18.5-25", "Normal", AppTheme.primaryBlue),
-                  _buildRangeLabel("25-30", "Overweight", AppTheme.coralAccent),
-                  _buildRangeLabel("> 30", "Obese", AppTheme.accentColor),
-                ],
-              ),
-              
               const SizedBox(height: 16),
               
-              // Description box using BoxDecorations
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecorations.infoBox(
-                  color: primaryColor,
-                  opacity: 0.05,
+              // Current BMI Value
+              Text(
+                'Your BMI: ${widget.bmiValue?.toStringAsFixed(1) ?? "Not calculated"} (${widget.classification})',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: AppTheme.primaryBlue,
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      widget.bmiValue != null && widget.bmiValue! < 25 && widget.bmiValue! >= 18.5
-                          ? Icons.check_circle_outline
-                          : Icons.info_outline,
-                      color: primaryColor,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        description,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ),
+              ),
+              const SizedBox(height: 16),
+              
+              // BMI Categories
+              const Text(
+                'BMI Categories:',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text('• Below 18.5 - Underweight'),
+                    SizedBox(height: 4),
+                    Text('• 18.5 to 24.9 - Normal weight'),
+                    SizedBox(height: 4),
+                    Text('• 25.0 to 29.9 - Overweight'),
+                    SizedBox(height: 4),
+                    Text('• 30.0 and above - Obesity'),
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
+              
+              // BMI Formula
+              const Text(
+                'How BMI is calculated:',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text('BMI = weight(kg) / height(m)²'),
+                    SizedBox(height: 6),
+                    Text('Example: A person weighing 70kg with height 175cm (1.75m)'),
+                    Text('BMI = 70 / (1.75 × 1.75) = 22.9'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Limitations
+              const Text(
+                'Limitations of BMI:',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'BMI does not directly measure body fat and may not be accurate for athletes, the elderly, pregnant women, or highly muscular individuals. It should be used as one of several assessments of health, not the only one.',
+                style: TextStyle(fontSize: 14, height: 1.4),
+              ),
             ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.primaryBlue,
+            ),
+            child: const Text('CLOSE'),
           ),
         ],
       ),
     );
   }
-  
-  Widget _buildRangeLabel(String value, String label, Color color) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            color: color,
+
+  @override
+  Widget build(BuildContext context) {
+    // Create classification badge with improved contrast
+    final Color badgeColor = _getColorForBMIBadge();
+    final Widget classificationBadge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        // Higher opacity background for better contrast
+        color: Color.fromRGBO(
+          badgeColor.red,
+          badgeColor.green,
+          badgeColor.blue,
+          0.2, // Increased from 0.1 to 0.2 for better visibility
+        ),
+        borderRadius: BorderRadius.circular(12),
+        // Add a subtle border for definition
+        border: Border.all(
+          color: Color.fromRGBO(
+            badgeColor.red,
+            badgeColor.green,
+            badgeColor.blue,
+            0.5, // Semi-opaque border for definition
+          ),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        widget.classification,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          // Darker text color for better contrast
+          color: Color.fromRGBO(
+            badgeColor.red ~/ 2,
+            badgeColor.green ~/ 2,
+            badgeColor.blue ~/ 2,
+            1.0, // Make text darker than the badge color
           ),
         ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 8,
-            color: Colors.grey[600],
+      ),
+    );
+
+    return MasterWidget(
+      title: 'Body Mass Index',
+      icon: Icons.monitor_weight_rounded,
+      trailing: MasterWidget.createInfoButton(
+        onPressed: _showBMIInfoDialog,
+        color: AppTheme.textDark,
+      ),
+      child: Padding(
+        // Reduced vertical padding to 8px
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // BMI numerical value - without unit
+              Text(
+                widget.bmiValue?.toStringAsFixed(1) ?? '0.0',
+                style: const TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black, // Standard text color as requested
+                ),
+              ),
+              
+              // Classification badge - reduced spacing
+              const SizedBox(height: 4),
+              classificationBadge,
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }
