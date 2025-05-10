@@ -92,7 +92,7 @@ class _CurrentWeightWidgetState extends State<CurrentWeightWidget> {
     
     // Use MasterWidget with standardized header and edit button
     return MasterWidget(
-      title: 'Current Weight',
+      title: 'Weight',
       icon: Icons.monitor_weight_rounded,
       textColor: textColor,
       iconColor: textColor,

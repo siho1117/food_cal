@@ -188,7 +188,7 @@ class _BMIWidgetState extends State<BMIWidget> {
     );
 
     return MasterWidget(
-      title: 'Body Mass Index',
+      title: 'BMI',
       icon: Icons.monitor_weight_rounded,
       trailing: MasterWidget.createInfoButton(
         onPressed: _showBMIInfoDialog,
