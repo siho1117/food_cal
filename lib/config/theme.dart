@@ -20,6 +20,66 @@ class AppTheme {
   // Font Constants
   static const String fontFamily = 'Montserrat';          // Keeping original font
 
+  // Pre-computed color variants (integrated from color_extensions.dart)
+  static Color primaryBlueLighter = _lighten(primaryBlue, 0.15);
+  static Color primaryBlueDarker = _darken(primaryBlue, 0.15);
+  static Color accentLighter = _lighten(accentColor, 0.15);
+  static Color accentDarker = _darken(accentColor, 0.15);
+  
+  // Background opacity presets
+  static Color primaryBlueBackground = primaryBlue.withOpacity(0.1);
+  static Color accentBackground = accentColor.withOpacity(0.1);
+  static Color goldAccentBackground = goldAccent.withOpacity(0.1);
+  static Color coralAccentBackground = coralAccent.withOpacity(0.1);
+
+  // Semantic background helpers
+  static Color getBackgroundFor(Color color, [double opacity = 0.1]) => color.withOpacity(opacity);
+  static Color getBorderFor(Color color, [double opacity = 0.3]) => color.withOpacity(opacity);
+  
+  // Get appropriate text color based on background color
+  static Color getTextColorFor(Color backgroundColor) {
+    return backgroundColor.computeLuminance() > 0.5 ? textDark : textLight;
+  }
+  
+  // Create a Material Color swatch from a single color
+  static MaterialColor createMaterialColor(Color color) {
+    final strengths = <double>[.05, .1, .2, .3, .4, .5, .6, .7, .8, .9];
+    final swatch = <int, Color>{};
+    final r = color.red, g = color.green, b = color.blue;
+
+    for (final strength in strengths) {
+      final ds = 0.5 - strength;
+      swatch[(strength * 1000).round()] = Color.fromRGBO(
+        r + ((ds < 0 ? r : (255 - r)) * ds).round(),
+        g + ((ds < 0 ? g : (255 - g)) * ds).round(),
+        b + ((ds < 0 ? b : (255 - b)) * ds).round(),
+        1,
+      );
+    }
+    
+    return MaterialColor(color.value, swatch);
+  }
+  
+  // Helper method to lighten colors
+  static Color _lighten(Color color, double amount) {
+    assert(amount >= 0 && amount <= 1);
+    
+    final hsl = HSLColor.fromColor(color);
+    final lightness = (hsl.lightness + amount).clamp(0.0, 1.0);
+    
+    return hsl.withLightness(lightness).toColor();
+  }
+  
+  // Helper method to darken colors
+  static Color _darken(Color color, double amount) {
+    assert(amount >= 0 && amount <= 1);
+    
+    final hsl = HSLColor.fromColor(color);
+    final lightness = (hsl.lightness - amount).clamp(0.0, 1.0);
+    
+    return hsl.withLightness(lightness).toColor();
+  }
+
   // Text Styles
   static const TextStyle headingStyle = TextStyle(
     fontSize: 32,
