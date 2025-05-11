@@ -127,6 +127,24 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       _currentIndex = 4; // Index for settings screen
     });
   }
+  
+  // Method to get the current page subtitle based on the active tab
+  String _getCurrentPageSubtitle() {
+    switch (_currentIndex) {
+      case 0:
+        return 'Daily Summary';
+      case 1:
+        return 'Health Metrics';
+      case 2:
+        return 'Food Recognition';
+      case 3:
+        return 'Activity Tracker';
+      case 4:
+        return 'User Preferences';
+      default:
+        return '';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -136,6 +154,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
           ? null // No app bar for camera screen
           : CustomAppBar(
               onSettingsTap: _navigateToSettings,
+              currentPage: _getCurrentPageSubtitle(), // Pass the current page subtitle
             ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),

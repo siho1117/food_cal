@@ -6,7 +6,8 @@ import '../components/value_builder.dart';
 import '../components/box_decorations.dart';
 
 /// A master widget template that serves as the foundation for content widgets.
-/// Standardized with fixed header height and consistent button placement.
+/// Standardized with fixed header height, consistent button placement, and
+/// optional pull-to-refresh functionality.
 class MasterWidget extends StatefulWidget {
   // Core properties
   final String title;
@@ -34,6 +35,11 @@ class MasterWidget extends StatefulWidget {
   final bool isEmpty;
   final String? emptyMessage;
   final IconData emptyIcon;
+  
+  // Refresh functionality
+  final bool supportRefresh;
+  final Future<void> Function()? onRefresh;
+  final AnimationController? animationController;
 
   // Standard header dimensions
   static const double _headerTitleFontSize = 18.0; // Increased from 16.0
@@ -61,6 +67,9 @@ class MasterWidget extends StatefulWidget {
     this.isEmpty = false,
     this.emptyMessage,
     this.emptyIcon = Icons.inbox,
+    this.supportRefresh = false,
+    this.onRefresh,
+    this.animationController,
   }) : super(key: key);
 
   /// Creates a data-focused widget with appropriate styling
@@ -76,6 +85,9 @@ class MasterWidget extends StatefulWidget {
     Color? accentColor,
     Color? textColor = AppTheme.textDark,
     Color? iconColor = AppTheme.textDark, // Keep for backwards compatibility but not used
+    bool supportRefresh = false,
+    Future<void> Function()? onRefresh,
+    AnimationController? animationController,
   }) => MasterWidget(
     title: title,
     icon: icon, // Keep for backwards compatibility but not used
@@ -89,6 +101,9 @@ class MasterWidget extends StatefulWidget {
     useGradient: true,
     textColor: textColor,
     iconColor: iconColor, // Keep for backwards compatibility but not used
+    supportRefresh: supportRefresh,
+    onRefresh: onRefresh,
+    animationController: animationController,
   );
   
   /// Creates a metric display widget with value emphasis
@@ -101,6 +116,9 @@ class MasterWidget extends StatefulWidget {
     Color? iconColor = AppTheme.textDark, // Keep for backwards compatibility but not used
     Widget? trailing,
     Widget? footer,
+    bool supportRefresh = false,
+    Future<void> Function()? onRefresh,
+    AnimationController? animationController,
   }) => MasterWidget(
     title: title,
     icon: icon, // Keep for backwards compatibility but not used
@@ -111,6 +129,9 @@ class MasterWidget extends StatefulWidget {
     child: Center(child: valueWidget),
     textColor: textColor,
     iconColor: iconColor, // Keep for backwards compatibility but not used
+    supportRefresh: supportRefresh,
+    onRefresh: onRefresh,
+    animationController: animationController,
   );
   
   /// Creates a progress tracking widget with appropriate styling
@@ -124,6 +145,9 @@ class MasterWidget extends StatefulWidget {
     Widget? trailing,
     Color? textColor = AppTheme.textDark,
     Color? iconColor = AppTheme.textDark, // Keep for backwards compatibility but not used
+    bool supportRefresh = false,
+    Future<void> Function()? onRefresh,
+    AnimationController? animationController,
   }) {
     final Color color = progressColor ?? AppTheme.accentColor;
     
@@ -146,6 +170,9 @@ class MasterWidget extends StatefulWidget {
       ),
       textColor: textColor,
       iconColor: iconColor, // Keep for backwards compatibility but not used
+      supportRefresh: supportRefresh,
+      onRefresh: onRefresh,
+      animationController: animationController,
     );
   }
   
@@ -158,6 +185,9 @@ class MasterWidget extends StatefulWidget {
     Color? accentColor,
     Color? textColor = AppTheme.textDark,
     Color? iconColor = AppTheme.textDark, // Keep for backwards compatibility but not used
+    bool supportRefresh = false,
+    Future<void> Function()? onRefresh,
+    AnimationController? animationController,
   }) => MasterWidget(
     title: title,
     icon: icon, // Keep for backwards compatibility but not used
@@ -166,6 +196,9 @@ class MasterWidget extends StatefulWidget {
     accentColor: accentColor,
     textColor: textColor,
     iconColor: iconColor, // Keep for backwards compatibility but not used
+    supportRefresh: supportRefresh,
+    onRefresh: onRefresh,
+    animationController: animationController,
   );
   
   /// Creates a highlight widget for important data
@@ -177,6 +210,9 @@ class MasterWidget extends StatefulWidget {
     Color? accentColor,
     Color? textColor = AppTheme.textDark,
     Color? iconColor = AppTheme.textDark, // Keep for backwards compatibility but not used
+    bool supportRefresh = false,
+    Future<void> Function()? onRefresh,
+    AnimationController? animationController,
   }) => MasterWidget(
     title: title,
     icon: icon, // Keep for backwards compatibility but not used
@@ -185,6 +221,9 @@ class MasterWidget extends StatefulWidget {
     accentColor: accentColor ?? AppTheme.goldAccent,
     textColor: textColor,
     iconColor: iconColor, // Keep for backwards compatibility but not used
+    supportRefresh: supportRefresh,
+    onRefresh: onRefresh,
+    animationController: animationController,
   );
   
   /// Helper method to create a standard edit button for the header
@@ -237,7 +276,91 @@ class MasterWidget extends StatefulWidget {
   State<MasterWidget> createState() => _MasterWidgetState();
 }
 
-class _MasterWidgetState extends State<MasterWidget> {
+class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderStateMixin {
+  // Animation controller for coordinating animations
+  late AnimationController _animationController;
+  bool _usingExternalController = false;
+  
+  // Key for refresh indicator
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Initialize animation controller - use provided one or create our own
+    if (widget.animationController != null) {
+      _animationController = widget.animationController!;
+      _usingExternalController = true;
+    } else {
+      _animationController = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 1500),
+      );
+      
+      // Auto-start if we're creating our own controller
+      _animationController.forward();
+    }
+  }
+  
+  @override
+  void didUpdateWidget(MasterWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // Handle changes in controller provider
+    if (widget.animationController != oldWidget.animationController) {
+      if (!_usingExternalController) {
+        // Dispose old controller if we created it
+        _animationController.dispose();
+      }
+      
+      if (widget.animationController != null) {
+        _animationController = widget.animationController!;
+        _usingExternalController = true;
+      } else {
+        _animationController = AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 1500),
+        );
+        _usingExternalController = false;
+        _animationController.forward();
+      }
+    }
+  }
+  
+  @override
+  void dispose() {
+    // Only dispose if we created the controller
+    if (!_usingExternalController) {
+      _animationController.dispose();
+    }
+    super.dispose();
+  }
+  
+  // Trigger the pull-to-refresh manually
+  void triggerRefresh() {
+    if (widget.supportRefresh && widget.onRefresh != null) {
+      _refreshIndicatorKey.currentState?.show();
+    }
+  }
+  
+  // Handle refresh by calling the provided callback and restarting animations
+  Future<void> _handleRefresh() async {
+    if (widget.onRefresh != null) {
+      await widget.onRefresh!();
+      
+      // Restart animations after data refresh
+      _restartAnimations();
+    }
+    return Future.value();
+  }
+  
+  // Restart animations
+  void _restartAnimations() {
+    _animationController.reset();
+    _animationController.forward();
+  }
+
   @override
   Widget build(BuildContext context) {
     final accentColor = widget.accentColor ?? AppTheme.primaryBlue;
@@ -255,8 +378,8 @@ class _MasterWidgetState extends State<MasterWidget> {
       content = _buildContent();
     }
     
-    // Create the container using BoxDecorations directly
-    return Container(
+    // Create the base widget structure
+    Widget baseWidget = Container(
       decoration: widget.useGradient 
           ? BoxDecorations.cardGradient(borderRadius: widget.borderRadius)
           : BoxDecorations.card(borderRadius: widget.borderRadius),
@@ -281,6 +404,23 @@ class _MasterWidgetState extends State<MasterWidget> {
         ],
       ),
     );
+    
+    // Wrap with refresh indicator if refresh is supported
+    if (widget.supportRefresh && widget.onRefresh != null) {
+      return RefreshIndicator(
+        key: _refreshIndicatorKey,
+        onRefresh: _handleRefresh,
+        color: accentColor,
+        backgroundColor: Colors.white,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: baseWidget,
+        ),
+      );
+    }
+    
+    // Return the base widget without refresh functionality
+    return baseWidget;
   }
   
   // Build header widget with vertically centered elements but left-aligned title

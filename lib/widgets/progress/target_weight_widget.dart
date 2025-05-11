@@ -13,6 +13,8 @@ class TargetWeightWidget extends StatefulWidget {
   final double? currentWeight;
   final bool isMetric;
   final Function(double, bool) onWeightUpdated;
+  // Add optional external animation controller
+  final AnimationController? animationController;
 
   const TargetWeightWidget({
     Key? key,
@@ -20,6 +22,7 @@ class TargetWeightWidget extends StatefulWidget {
     required this.currentWeight,
     required this.isMetric,
     required this.onWeightUpdated,
+    this.animationController, // Optional external controller
   }) : super(key: key);
 
   @override
@@ -32,33 +35,66 @@ class _TargetWeightWidgetState extends State<TargetWeightWidget> with SingleTick
   // Animation controller and animation
   late AnimationController _animationController;
   late Animation<double> _progressAnimation;
+  bool _usingExternalController = false;
 
   @override
   void initState() {
     super.initState();
     
-    // Initialize the animation controller
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
+    // Use external controller if provided, otherwise create our own
+    if (widget.animationController != null) {
+      _animationController = widget.animationController!;
+      _usingExternalController = true;
+    } else {
+      _animationController = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 1500),
+      );
+      // Start the animation if using internal controller
+      _animationController.forward();
+    }
     
     // Use AnimationHelpers for progress animation
     _progressAnimation = AnimationHelpers.createProgressAnimation(
       controller: _animationController,
       curve: Curves.easeOutCubic,
     );
-    
-    // Start the animation
-    _animationController.forward();
   }
   
   @override
   void didUpdateWidget(TargetWeightWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.targetWeight != widget.targetWeight || 
-        oldWidget.currentWeight != widget.currentWeight) {
-      // Reset and restart animation when data changes
+    
+    // Handle changes in external controller
+    if (widget.animationController != oldWidget.animationController) {
+      if (!_usingExternalController) {
+        // Dispose old controller if we created it
+        _animationController.dispose();
+      }
+      
+      if (widget.animationController != null) {
+        _animationController = widget.animationController!;
+        _usingExternalController = true;
+      } else {
+        _animationController = AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 1500),
+        );
+        _usingExternalController = false;
+        _animationController.forward();
+      }
+      
+      // Recreate animation with new controller
+      _progressAnimation = AnimationHelpers.createProgressAnimation(
+        controller: _animationController,
+        curve: Curves.easeOutCubic,
+      );
+    }
+    
+    // Reset and restart animation if data changes and using internal controller
+    if ((oldWidget.targetWeight != widget.targetWeight || 
+        oldWidget.currentWeight != widget.currentWeight) && 
+        !_usingExternalController) {
       _animationController.reset();
       _animationController.forward();
     }
@@ -66,7 +102,10 @@ class _TargetWeightWidgetState extends State<TargetWeightWidget> with SingleTick
   
   @override
   void dispose() {
-    _animationController.dispose();
+    // Only dispose the controller if we created it
+    if (!_usingExternalController) {
+      _animationController.dispose();
+    }
     super.dispose();
   }
 
@@ -89,6 +128,7 @@ class _TargetWeightWidgetState extends State<TargetWeightWidget> with SingleTick
       icon: Icons.flag_rounded,
       textColor: textColor,
       iconColor: textColor,
+      animationController: widget.animationController, // Pass the controller to MasterWidget too
       // Use standardized edit button
       trailing: MasterWidget.createEditButton(
         onPressed: _showTargetWeightDialog,
