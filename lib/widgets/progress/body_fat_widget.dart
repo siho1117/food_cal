@@ -40,15 +40,6 @@ class _BodyFatPercentageWidgetState extends State<BodyFatPercentageWidget> {
         return Colors.grey;
     }
   }
-  
-  // Calculate position on the body fat scale (0.0 to 1.0)
-  double _getBodyFatPosition() {
-    if (widget.bodyFatPercentage == null) return 0.5; // Default to center
-    
-    // Map body fat percentage range (3-50%) to position (0.0-1.0)
-    final normalizedPosition = (widget.bodyFatPercentage! - 3) / 47.0;
-    return normalizedPosition.clamp(0.0, 1.0);
-  }
 
   void _showBodyFatInfoDialog() {
     showDialog(
@@ -170,7 +161,6 @@ class _BodyFatPercentageWidgetState extends State<BodyFatPercentageWidget> {
   @override
   Widget build(BuildContext context) {
     final primaryColor = _getColorForBodyFat();
-    final bodyFatPosition = _getBodyFatPosition();
     
     // Create classification badge
     final Widget classificationBadge = Container(
@@ -180,9 +170,19 @@ class _BodyFatPercentageWidgetState extends State<BodyFatPercentageWidget> {
           primaryColor.red,
           primaryColor.green,
           primaryColor.blue,
-          0.1,
+          0.2, // Increased from 0.1 for better visibility
         ),
         borderRadius: BorderRadius.circular(12),
+        // Add a subtle border for definition
+        border: Border.all(
+          color: Color.fromRGBO(
+            primaryColor.red,
+            primaryColor.green,
+            primaryColor.blue,
+            0.5, // Semi-opaque border for definition
+          ),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -192,7 +192,13 @@ class _BodyFatPercentageWidgetState extends State<BodyFatPercentageWidget> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: primaryColor,
+              // Darker text color for better contrast
+              color: Color.fromRGBO(
+                primaryColor.red ~/ 2,
+                primaryColor.green ~/ 2,
+                primaryColor.blue ~/ 2,
+                1.0, // Make text darker than the badge color
+              ),
             ),
           ),
           if (widget.isEstimated) ...[
@@ -217,151 +223,58 @@ class _BodyFatPercentageWidgetState extends State<BodyFatPercentageWidget> {
       ),
     );
 
+    // Use the updated MasterWidget without icon
     return MasterWidget(
       title: 'Body Fat %',
-      icon: Icons.accessibility_new,
+      icon: Icons.accessibility_new, // Required for backward compatibility but not displayed
       trailing: MasterWidget.createInfoButton(
         onPressed: _showBodyFatInfoDialog,
         color: AppTheme.textDark,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Body Fat value display
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+        // Reduced vertical padding to 8px, matching BMI widget
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Body Fat value with percentage sign - simplified display
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
                 children: [
-                  // Body Fat value with percentage sign
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        widget.bodyFatPercentage?.toStringAsFixed(1) ?? '0.0',
-                        style: TextStyle(
-                          fontSize: 42,
-                          fontWeight: FontWeight.bold,
-                          color: primaryColor,
-                        ),
-                      ),
-                      Text(
-                        '%',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color.fromRGBO(
-                            primaryColor.red,
-                            primaryColor.green,
-                            primaryColor.blue,
-                            0.7,
-                          ),
-                        ),
-                      ),
-                    ],
+                  // Value in reduced font size (from 36 to 30)
+                  Text(
+                    widget.bodyFatPercentage?.toStringAsFixed(1) ?? '0.0',
+                    style: TextStyle(
+                      fontSize: 30, // Reduced from 36
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black, // Standard text color
+                    ),
                   ),
                   
-                  // Classification badge
-                  const SizedBox(height: 10),
-                  classificationBadge,
+                  // Percentage sign
+                  Text(
+                    ' %',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black54,
+                    ),
+                  ),
                 ],
               ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Body Fat Range visualization
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Body Fat Range bar
-                Container(
-                  width: double.infinity,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF90CAF9),  // Light Blue - Essential
-                        Color(0xFF4CAF50),  // Green - Athletic
-                        Color(0xFF8BC34A),  // Light Green - Fitness
-                        Color(0xFFFFC107),  // Amber - Average
-                        Color(0xFFFF9800),  // Orange - Above Average
-                        Color(0xFFF44336),  // Red - Obese
-                      ],
-                      stops: [0.05, 0.15, 0.25, 0.4, 0.6, 0.8],
-                    ),
-                  ),
-                ),
-                
-                // Position indicator on the bar
-                if (widget.bodyFatPercentage != null)
-                  Container(
-                    margin: EdgeInsets.only(
-                      left: (MediaQuery.of(context).size.width - 80) * bodyFatPosition,
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.arrow_drop_down,
-                          color: primaryColor,
-                          size: 24,
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8, 
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: primaryColor,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '${widget.bodyFatPercentage!.toStringAsFixed(1)}%',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                
-                const SizedBox(height: 8),
-                
-                // Range labels
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildRangeLabel("3-5%", const Color(0xFF90CAF9)),  // Essential
-                    _buildRangeLabel("15%", const Color(0xFF4CAF50)),   // Athletic
-                    _buildRangeLabel("25%", const Color(0xFF8BC34A)),   // Fitness
-                    _buildRangeLabel("30%", const Color(0xFFFFC107)),   // Average
-                    _buildRangeLabel("35%", const Color(0xFFFF9800)),   // Above Avg
-                    _buildRangeLabel(">40%", const Color(0xFFF44336)),  // Obese
-                  ],
-                ),
-              ],
-            ),
-          ],
+              
+              // Small space before classification badge
+              const SizedBox(height: 4),
+              
+              // Classification badge
+              classificationBadge,
+            ],
+          ),
         ),
-      ),
-    );
-  }
-  
-  Widget _buildRangeLabel(String value, Color color) {
-    return Text(
-      value,
-      style: TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.bold,
-        color: color,
       ),
     );
   }

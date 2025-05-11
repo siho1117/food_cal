@@ -10,13 +10,13 @@ import '../components/box_decorations.dart';
 class MasterWidget extends StatefulWidget {
   // Core properties
   final String title;
-  final IconData icon;
+  final IconData icon; // Keep for backwards compatibility but not used
   final Widget child;
   
   // Header customization
   final Widget? trailing; // Optional trailing widget for the header (button)
   final VoidCallback? onHeaderTap;
-  final Color? iconColor;
+  final Color? iconColor; // Keep for backwards compatibility but not used
   final Color? textColor;
   
   // Layout customization
@@ -36,19 +36,18 @@ class MasterWidget extends StatefulWidget {
   final IconData emptyIcon;
 
   // Standard header dimensions
-  static const double _headerIconSize = 20.0;
-  static const double _headerTitleFontSize = 16.0;
+  static const double _headerTitleFontSize = 18.0; // Increased from 16.0
   static const double _headerButtonSize = 20.0;
   static const double _headerHeight = 56.0;
 
   const MasterWidget({
     Key? key,
     required this.title,
-    required this.icon,
+    required this.icon, // Keep for backwards compatibility but not used
     required this.child,
     this.trailing,
     this.onHeaderTap,
-    this.iconColor = AppTheme.textDark,
+    this.iconColor = AppTheme.textDark, // Keep for backwards compatibility but not used
     this.textColor = AppTheme.textDark,
     this.contentPadding = const EdgeInsets.all(20),
     this.footer,
@@ -67,7 +66,7 @@ class MasterWidget extends StatefulWidget {
   /// Creates a data-focused widget with appropriate styling
   static MasterWidget dataWidget({
     required String title,
-    required IconData icon,
+    required IconData icon, // Keep for backwards compatibility but not used
     required Widget child,
     bool isLoading = false,
     bool hasError = false,
@@ -76,10 +75,10 @@ class MasterWidget extends StatefulWidget {
     Widget? trailing,
     Color? accentColor,
     Color? textColor = AppTheme.textDark,
-    Color? iconColor = AppTheme.textDark,
+    Color? iconColor = AppTheme.textDark, // Keep for backwards compatibility but not used
   }) => MasterWidget(
     title: title,
-    icon: icon,
+    icon: icon, // Keep for backwards compatibility but not used
     child: child,
     isLoading: isLoading,
     hasError: hasError,
@@ -89,48 +88,48 @@ class MasterWidget extends StatefulWidget {
     accentColor: accentColor,
     useGradient: true,
     textColor: textColor,
-    iconColor: iconColor,
+    iconColor: iconColor, // Keep for backwards compatibility but not used
   );
   
   /// Creates a metric display widget with value emphasis
   static MasterWidget metricWidget({
     required String title,
-    required IconData icon,
+    required IconData icon, // Keep for backwards compatibility but not used
     required Widget valueWidget,
     Color? accentColor,
     Color? textColor = AppTheme.textDark,
-    Color? iconColor = AppTheme.textDark,
+    Color? iconColor = AppTheme.textDark, // Keep for backwards compatibility but not used
     Widget? trailing,
     Widget? footer,
   }) => MasterWidget(
     title: title,
-    icon: icon,
+    icon: icon, // Keep for backwards compatibility but not used
     accentColor: accentColor ?? AppTheme.primaryBlue,
     footer: footer,
     trailing: trailing,
     contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
     child: Center(child: valueWidget),
     textColor: textColor,
-    iconColor: iconColor,
+    iconColor: iconColor, // Keep for backwards compatibility but not used
   );
   
   /// Creates a progress tracking widget with appropriate styling
   static MasterWidget progressWidget({
     required String title,
-    required IconData icon,
+    required IconData icon, // Keep for backwards compatibility but not used
     required double progress,
     required Widget child,
     String? progressText,
     Color? progressColor,
     Widget? trailing,
     Color? textColor = AppTheme.textDark,
-    Color? iconColor = AppTheme.textDark,
+    Color? iconColor = AppTheme.textDark, // Keep for backwards compatibility but not used
   }) {
     final Color color = progressColor ?? AppTheme.accentColor;
     
     return MasterWidget(
       title: title,
-      icon: icon,
+      icon: icon, // Keep for backwards compatibility but not used
       accentColor: color,
       trailing: trailing,
       child: Column(
@@ -146,46 +145,46 @@ class MasterWidget extends StatefulWidget {
         ],
       ),
       textColor: textColor,
-      iconColor: iconColor,
+      iconColor: iconColor, // Keep for backwards compatibility but not used
     );
   }
   
   /// Creates a comparison widget 
   static MasterWidget comparisonWidget({
     required String title,
-    required IconData icon,
+    required IconData icon, // Keep for backwards compatibility but not used
     required Widget child,
     Widget? trailing,
     Color? accentColor,
     Color? textColor = AppTheme.textDark,
-    Color? iconColor = AppTheme.textDark,
+    Color? iconColor = AppTheme.textDark, // Keep for backwards compatibility but not used
   }) => MasterWidget(
     title: title,
-    icon: icon,
+    icon: icon, // Keep for backwards compatibility but not used
     child: child,
     trailing: trailing,
     accentColor: accentColor,
     textColor: textColor,
-    iconColor: iconColor,
+    iconColor: iconColor, // Keep for backwards compatibility but not used
   );
   
   /// Creates a highlight widget for important data
   static MasterWidget highlightWidget({
     required String title,
-    required IconData icon,
+    required IconData icon, // Keep for backwards compatibility but not used
     required Widget child,
     Widget? trailing,
     Color? accentColor,
     Color? textColor = AppTheme.textDark,
-    Color? iconColor = AppTheme.textDark,
+    Color? iconColor = AppTheme.textDark, // Keep for backwards compatibility but not used
   }) => MasterWidget(
     title: title,
-    icon: icon,
+    icon: icon, // Keep for backwards compatibility but not used
     child: child,
     trailing: trailing,
     accentColor: accentColor ?? AppTheme.goldAccent,
     textColor: textColor,
-    iconColor: iconColor,
+    iconColor: iconColor, // Keep for backwards compatibility but not used
   );
   
   /// Helper method to create a standard edit button for the header
@@ -285,10 +284,10 @@ class _MasterWidgetState extends State<MasterWidget> {
   }
   
   // Build header widget with vertically centered elements but left-aligned title
+  // Icon is completely removed from the header
   Widget _buildHeaderWidget() {
-    // Get final colors
+    // Get final color
     final textColor = widget.textColor ?? AppTheme.textDark;
-    final iconColor = widget.iconColor ?? AppTheme.textDark;
     
     return InkWell(
       onTap: widget.onHeaderTap,
@@ -297,34 +296,17 @@ class _MasterWidgetState extends State<MasterWidget> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center, // This ensures vertical centering
         children: [
-          // Left-aligned icon and title
+          // Left-aligned title (icon removed completely)
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center, // This ensures vertical centering
-              children: [
-                // Icon
-                Icon(
-                  widget.icon,
-                  color: iconColor,
-                  size: MasterWidget._headerIconSize,
-                ),
-                
-                const SizedBox(width: 12),
-                
-                // Title
-                Flexible(
-                  child: Text(
-                    widget.title,
-                    style: AppTextStyles.getSubHeadingStyle().copyWith(
-                      fontSize: MasterWidget._headerTitleFontSize,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                      height: 2, // Add some line height for better text appearance
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+            child: Text(
+              widget.title,
+              style: AppTextStyles.getSubHeadingStyle().copyWith(
+                fontSize: MasterWidget._headerTitleFontSize, // Increased font size
+                fontWeight: FontWeight.bold,
+                color: textColor,
+                height: 2, // Add some line height for better text appearance
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           

@@ -180,24 +180,36 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
                     const SizedBox(height: 20),
 
-                    // TDEE Calculator Widget
+                    // Row layout for Body Fat and BMR widgets (two columns)
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Body Fat Widget - half width
+                          Expanded(
+                            child: _buildBodyFatWidget(),
+                          ),
+                          
+                          const SizedBox(width: 16),
+                          
+                          // BMR Widget - half width
+                          Expanded(
+                            child: BasalMetabolicRateWidget(
+                              userProfile: _userProfile,
+                              currentWeight: _currentWeight,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // TDEE Widget (full width)
                     TDEECalculatorWidget(
                       userProfile: _userProfile,
                       currentWeight: _currentWeight,
                     ),
-
-                    const SizedBox(height: 20),
-
-                    // BMR Calculator Widget
-                    BasalMetabolicRateWidget(
-                      userProfile: _userProfile,
-                      currentWeight: _currentWeight,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Body Fat Widget
-                    _buildBodyFatWidget(),
 
                     const SizedBox(height: 80), // Extra space for bottom nav
                   ],
