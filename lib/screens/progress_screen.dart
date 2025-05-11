@@ -1,4 +1,4 @@
-// lib/screens/progress_screen.dart - Final Fix Based on Exercise Screen
+// lib/screens/progress_screen.dart
 import 'package:flutter/material.dart';
 import '../widgets/progress/current_weight_widget.dart';
 import '../widgets/progress/target_weight_widget.dart';
@@ -30,9 +30,6 @@ class _ProgressScreenState extends State<ProgressScreen> with SingleTickerProvid
   
   // Animation controller to coordinate animations across widgets
   late AnimationController _animationController;
-  
-  // Added for pull to refresh
-  final GlobalKey<RefreshIndicatorState> _refreshKey = GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
@@ -119,118 +116,118 @@ class _ProgressScreenState extends State<ProgressScreen> with SingleTickerProvid
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : RefreshIndicator(
-                key: _refreshKey,
-                onRefresh: () async {
-                  await _loadUserData();
-                  
-                  // Restart animations after refresh completes
-                  _animationController.reset();
-                  _animationController.forward();
-                },
-                child: SingleChildScrollView(
-                  // Simply use AlwaysScrollableScrollPhysics without nesting
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Row layout for Current Weight and BMI widgets
-                      IntrinsicHeight(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Current Weight Widget - half width
-                            Expanded(
-                              child: CurrentWeightWidget(
-                                onWeightUpdated: _onWeightUpdated,
-                              ),
-                            ),
-                            
-                            const SizedBox(width: 16),
-                            
-                            // BMI Widget - half width
-                            Expanded(
-                              child: BMIWidget(
-                                bmiValue: _bmiValue,
-                                classification: _bmiClassification,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Target Weight Widget - with animation controller
-                      TargetWeightWidget(
-                        targetWeight: _targetWeight,
-                        currentWeight: _currentWeight,
-                        isMetric: _isMetric,
-                        onWeightUpdated: (weight, isMetric) async {
-                          setState(() {
-                            _targetWeight = weight;
-                            _isMetric = isMetric;
-                          });
-                          
-                          // Update user profile
-                          if (_userProfile != null) {
-                            final updatedProfile = _userProfile!.copyWith(
-                              goalWeight: weight,
-                              isMetric: isMetric,
-                            );
-                            await _userRepository.saveUserProfile(updatedProfile);
-                            setState(() {
-                              _userProfile = updatedProfile;
-                            });
-                          }
-                        },
-                        animationController: _animationController, // Shared animation controller
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Row layout for Body Fat and BMR widgets (two columns)
-                      IntrinsicHeight(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Body Fat Widget - half width
-                            Expanded(
-                              child: _buildBodyFatWidget(),
-                            ),
-                            
-                            const SizedBox(width: 16),
-                            
-                            // BMR Widget - half width
-                            Expanded(
-                              child: BasalMetabolicRateWidget(
-                                userProfile: _userProfile,
-                                currentWeight: _currentWeight,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 20),
-                      
-                      // TDEE Widget (full width)
-                      TDEECalculatorWidget(
-                        userProfile: _userProfile,
-                        currentWeight: _currentWeight,
-                      ),
-
-                      const SizedBox(height: 80), // Extra space for bottom nav
-                    ],
-                  ),
-                ),
-              ),
+            : _buildRefreshableContent(),
       ),
     );
   }
+  
+  // Create a clean, simplified refresh container for all content
+  Widget _buildRefreshableContent() {
+    // Use RefreshIndicator directly here to avoid nesting complexity
+    return RefreshIndicator(
+      onRefresh: _loadUserData,
+      color: AppTheme.primaryBlue,
+      displacement: 50.0,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Row layout for Current Weight and BMI widgets
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Current Weight Widget - half width
+                  Expanded(
+                    child: CurrentWeightWidget(
+                      onWeightUpdated: _onWeightUpdated,
+                    ),
+                  ),
+                  
+                  const SizedBox(width: 16),
+                  
+                  // BMI Widget - half width
+                  Expanded(
+                    child: BMIWidget(
+                      bmiValue: _bmiValue,
+                      classification: _bmiClassification,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-  // Extracted method to build the body fat widget
+            const SizedBox(height: 20),
+
+            // Target Weight Widget - using animation controller
+            TargetWeightWidget(
+              targetWeight: _targetWeight,
+              currentWeight: _currentWeight,
+              isMetric: _isMetric,
+              onWeightUpdated: (weight, isMetric) async {
+                setState(() {
+                  _targetWeight = weight;
+                  _isMetric = isMetric;
+                });
+                
+                // Update user profile
+                if (_userProfile != null) {
+                  final updatedProfile = _userProfile!.copyWith(
+                    goalWeight: weight,
+                    isMetric: isMetric,
+                  );
+                  await _userRepository.saveUserProfile(updatedProfile);
+                  setState(() {
+                    _userProfile = updatedProfile;
+                  });
+                }
+              },
+              animationController: _animationController, // Shared animation controller
+            ),
+
+            const SizedBox(height: 20),
+
+            // Row layout for Body Fat and BMR widgets (two columns)
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Body Fat Widget - half width
+                  Expanded(
+                    child: _buildBodyFatWidget(),
+                  ),
+                  
+                  const SizedBox(width: 16),
+                  
+                  // BMR Widget - half width
+                  Expanded(
+                    child: BasalMetabolicRateWidget(
+                      userProfile: _userProfile,
+                      currentWeight: _currentWeight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // TDEE Widget (full width)
+            TDEECalculatorWidget(
+              userProfile: _userProfile,
+              currentWeight: _currentWeight,
+            ),
+
+            const SizedBox(height: 80), // Extra space for bottom nav
+          ],
+        ),
+      ),
+    );
+  }
+  
+  // Build the body fat widget
   Widget _buildBodyFatWidget() {
     // Extract profile data needed for body fat calculation
     final String? gender = _userProfile?.gender;
