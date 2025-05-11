@@ -4,11 +4,9 @@ import '../design_system/text_styles.dart';
 import '../components/state_builder.dart';
 import '../components/value_builder.dart';
 import '../components/box_decorations.dart';
-import '../animations/animation_helpers.dart';
 
 /// A master widget template that serves as the foundation for content widgets.
-/// Standardized with fixed header height, consistent button placement, and
-/// optional pull-to-refresh functionality.
+/// Standardized with fixed header height, consistent button placement.
 class MasterWidget extends StatefulWidget {
   // Core properties
   final String title;
@@ -37,15 +35,8 @@ class MasterWidget extends StatefulWidget {
   final String? emptyMessage;
   final IconData emptyIcon;
   
-  // Refresh functionality - ENHANCED
-  final bool refreshable;
-  final Future<void> Function()? onRefresh;
+  // Animation controller
   final AnimationController? animationController;
-  final RefreshIndicatorTriggerMode refreshTriggerMode;
-  final double refreshDisplacement;
-  final ScrollPhysics scrollPhysics;
-  final Color? refreshColor;
-  final Widget? refreshBackground;
 
   // Standard header dimensions
   static const double _headerTitleFontSize = 18.0; // Increased from 16.0
@@ -73,15 +64,7 @@ class MasterWidget extends StatefulWidget {
     this.isEmpty = false,
     this.emptyMessage,
     this.emptyIcon = Icons.inbox,
-    // NEW: Enhanced refresh properties
-    this.refreshable = false,
-    this.onRefresh,
     this.animationController,
-    this.refreshTriggerMode = RefreshIndicatorTriggerMode.onEdge,
-    this.refreshDisplacement = 40.0,
-    this.scrollPhysics = const AlwaysScrollableScrollPhysics(),
-    this.refreshColor,
-    this.refreshBackground,
   }) : super(key: key);
 
   /// Creates a data-focused widget with appropriate styling
@@ -97,9 +80,6 @@ class MasterWidget extends StatefulWidget {
     Color? accentColor,
     Color? textColor = AppTheme.textDark,
     Color? iconColor = AppTheme.textDark, // Keep for backwards compatibility but not used
-    // NEW: Enhanced refresh capabilities
-    bool refreshable = false,
-    Future<void> Function()? onRefresh,
     AnimationController? animationController,
   }) => MasterWidget(
     title: title,
@@ -114,8 +94,6 @@ class MasterWidget extends StatefulWidget {
     useGradient: true,
     textColor: textColor,
     iconColor: iconColor, // Keep for backwards compatibility but not used
-    refreshable: refreshable,
-    onRefresh: onRefresh,
     animationController: animationController,
   );
   
@@ -129,9 +107,6 @@ class MasterWidget extends StatefulWidget {
     Color? iconColor = AppTheme.textDark, // Keep for backwards compatibility but not used
     Widget? trailing,
     Widget? footer,
-    // NEW: Enhanced refresh capabilities
-    bool refreshable = false,
-    Future<void> Function()? onRefresh,
     AnimationController? animationController,
   }) => MasterWidget(
     title: title,
@@ -143,8 +118,6 @@ class MasterWidget extends StatefulWidget {
     child: Center(child: valueWidget),
     textColor: textColor,
     iconColor: iconColor, // Keep for backwards compatibility but not used
-    refreshable: refreshable,
-    onRefresh: onRefresh,
     animationController: animationController,
   );
   
@@ -159,9 +132,6 @@ class MasterWidget extends StatefulWidget {
     Widget? trailing,
     Color? textColor = AppTheme.textDark,
     Color? iconColor = AppTheme.textDark, // Keep for backwards compatibility but not used
-    // NEW: Enhanced refresh capabilities
-    bool refreshable = false,
-    Future<void> Function()? onRefresh,
     AnimationController? animationController,
   }) {
     final Color color = progressColor ?? AppTheme.accentColor;
@@ -185,8 +155,6 @@ class MasterWidget extends StatefulWidget {
       ),
       textColor: textColor,
       iconColor: iconColor, // Keep for backwards compatibility but not used
-      refreshable: refreshable,
-      onRefresh: onRefresh,
       animationController: animationController,
     );
   }
@@ -200,9 +168,6 @@ class MasterWidget extends StatefulWidget {
     Color? accentColor,
     Color? textColor = AppTheme.textDark,
     Color? iconColor = AppTheme.textDark, // Keep for backwards compatibility but not used
-    // NEW: Enhanced refresh capabilities
-    bool refreshable = false,
-    Future<void> Function()? onRefresh,
     AnimationController? animationController,
   }) => MasterWidget(
     title: title,
@@ -212,8 +177,6 @@ class MasterWidget extends StatefulWidget {
     accentColor: accentColor,
     textColor: textColor,
     iconColor: iconColor, // Keep for backwards compatibility but not used
-    refreshable: refreshable,
-    onRefresh: onRefresh,
     animationController: animationController,
   );
   
@@ -226,9 +189,6 @@ class MasterWidget extends StatefulWidget {
     Color? accentColor,
     Color? textColor = AppTheme.textDark,
     Color? iconColor = AppTheme.textDark, // Keep for backwards compatibility but not used
-    // NEW: Enhanced refresh capabilities
-    bool refreshable = false,
-    Future<void> Function()? onRefresh,
     AnimationController? animationController,
   }) => MasterWidget(
     title: title,
@@ -238,8 +198,6 @@ class MasterWidget extends StatefulWidget {
     accentColor: accentColor ?? AppTheme.goldAccent,
     textColor: textColor,
     iconColor: iconColor, // Keep for backwards compatibility but not used
-    refreshable: refreshable,
-    onRefresh: onRefresh,
     animationController: animationController,
   );
   
@@ -297,9 +255,6 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
   // Animation controller for coordinating animations
   late AnimationController _animationController;
   bool _usingExternalController = false;
-  
-  // Key for refresh indicator
-  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
@@ -353,28 +308,6 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
     }
     super.dispose();
   }
-  
-  // Trigger the pull-to-refresh manually
-  void triggerRefresh() {
-    if (widget.refreshable && widget.onRefresh != null) {
-      _refreshIndicatorKey.currentState?.show();
-    }
-  }
-  
-  // Enhanced handle refresh with animation coordination
-  Future<void> _handleRefresh() async {
-    if (widget.onRefresh != null) {
-      // Begin the refresh operation
-      await widget.onRefresh!();
-      
-      // Coordinate animations after refresh completes
-      AnimationHelpers.coordinateRefreshAnimations(
-        controller: _animationController,
-        delay: const Duration(milliseconds: 100),
-      );
-    }
-    return Future.value();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -394,7 +327,7 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
     }
     
     // Create the base widget structure
-    Widget baseWidget = Container(
+    return Container(
       decoration: widget.useGradient 
           ? BoxDecorations.cardGradient(borderRadius: widget.borderRadius)
           : BoxDecorations.card(borderRadius: widget.borderRadius),
@@ -418,40 +351,6 @@ class _MasterWidgetState extends State<MasterWidget> with SingleTickerProviderSt
           if (widget.footer != null) widget.footer!,
         ],
       ),
-    );
-    
-    // ENHANCED: Wrap with improved refresh indicator if refresh is supported
-    if (widget.refreshable && widget.onRefresh != null) {
-      return RefreshIndicator(
-        key: _refreshIndicatorKey,
-        onRefresh: _handleRefresh,
-        displacement: widget.refreshDisplacement,
-        color: widget.refreshColor ?? accentColor,
-        backgroundColor: widget.refreshBackground != null ? Colors.transparent : Colors.white,
-        triggerMode: widget.refreshTriggerMode,
-        // ENHANCED: Use staggered animations for smoother refresh experience
-        child: widget.refreshBackground != null
-            ? Stack(
-                children: [
-                  // Optional background widget (like a custom refresh animation)
-                  Positioned.fill(child: widget.refreshBackground!),
-                  // Main content with scroll physics
-                  _buildScrollableContent(baseWidget),
-                ],
-              )
-            : _buildScrollableContent(baseWidget),
-      );
-    }
-    
-    // Return the base widget without refresh functionality
-    return baseWidget;
-  }
-  
-  // ENHANCED: Extract scrollable content builder for cleaner code
-  Widget _buildScrollableContent(Widget content) {
-    return SingleChildScrollView(
-      physics: widget.scrollPhysics,
-      child: content,
     );
   }
   
