@@ -2,17 +2,18 @@
 import 'package:flutter/material.dart';
 import '../widgets/progress/current_weight_widget.dart';
 import '../widgets/progress/target_weight_widget.dart';
-import '../widgets/progress/body_mass_index.dart';
 import '../widgets/progress/body_fat_widget.dart';
 import '../widgets/progress/tdee_calculator_widget.dart';
 import '../widgets/progress/basal_meta_rate.dart';
+// Import body_mass_index.dart instead of trying to create a new one
+import '../widgets/progress/body_mass_index.dart';
 import '../data/repositories/user_repository.dart';
 import '../data/models/user_profile.dart';
 import '../utils/formula.dart';
 import '../config/design_system/theme.dart';
 
 class ProgressScreen extends StatefulWidget {
-  const ProgressScreen({Key? key}) : super(key: key);
+  const ProgressScreen({super.key}); // Fixed key parameter here
 
   @override
   State<ProgressScreen> createState() => _ProgressScreenState();
