@@ -1,218 +1,246 @@
 import 'package:flutter/material.dart';
 import '../../config/design_system/theme.dart';
-import '../../config/widgets/master_widget.dart';
-import '../../data/models/weight_entry.dart';
-import '../../data/repositories/user_repository.dart';
-import '../../widgets/settings/weight_entry_dialog.dart';
 
-class CurrentWeightWidget extends StatefulWidget {
-  final Function() onWeightUpdated;
+class BodyFatPercentageWidget extends StatelessWidget {
+  final double? bodyFatPercentage;
+  final String classification;
+  final bool isEstimated;
 
-  const CurrentWeightWidget({
+  const BodyFatPercentageWidget({
     Key? key,
-    required this.onWeightUpdated,
+    required this.bodyFatPercentage,
+    required this.classification,
+    this.isEstimated = true,
   }) : super(key: key);
 
   @override
-  State<CurrentWeightWidget> createState() => _CurrentWeightWidgetState();
-}
-
-class _CurrentWeightWidgetState extends State<CurrentWeightWidget> {
-  final UserRepository _userRepository = UserRepository();
-  
-  bool _isLoading = true;
-  bool _isMetric = true;
-  WeightEntry? _currentEntry;
-  
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-  
-  Future<void> _loadData() async {
-    if (mounted) {
-      setState(() {
-        _isLoading = true;
-      });
-    }
-
-    try {
-      // Load user profile for unit preference
-      final userProfile = await _userRepository.getUserProfile();
-      
-      // Get weight entries
-      final entries = await _userRepository.getWeightEntries();
-      entries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      
-      // Get current entry
-      _currentEntry = entries.isNotEmpty ? entries.first : null;
-      
-      if (mounted) {
-        setState(() {
-          _isMetric = userProfile?.isMetric ?? true;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Error loading weight data: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-  
-  void _showWeightEntryDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => WeightEntryDialog(
-        initialWeight: _currentEntry?.weight,
-        isMetric: _isMetric,
-        onWeightSaved: (weight, isMetric) async {
-          // Create entry for today
-          final entry = WeightEntry.create(weight: weight);
-          await _userRepository.addWeightEntry(entry);
-          
-          // Refresh data
-          await _loadData();
-          
-          // Notify parent
-          widget.onWeightUpdated();
-        },
+  Widget build(BuildContext context) {
+    final Color bodyFatColor = _getBodyFatColor();
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Body Fat %',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              InkWell(
+                onTap: () => _showInfoDialog(context),
+                child: Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                bodyFatPercentage?.toStringAsFixed(1) ?? '--',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: bodyFatColor,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '%',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: bodyFatColor.withOpacity(0.8),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: bodyFatColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  classification,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: bodyFatColor,
+                  ),
+                ),
+              ),
+              if (isEstimated) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Estimated',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
       ),
     );
   }
+  
+  Color _getBodyFatColor() {
+    if (bodyFatPercentage == null) return Colors.grey;
 
-  @override
-  Widget build(BuildContext context) {
-    // Use standard text color
-    final textColor = AppTheme.textDark;
-    
-    // Use MasterWidget with standardized header and edit button
-    return MasterWidget(
-      title: 'Weight',
-      icon: Icons.monitor_weight_rounded,
-      textColor: textColor,
-      iconColor: textColor,
-      isLoading: _isLoading,
-      // Use the standard edit button helper
-      trailing: MasterWidget.createEditButton(
-        onPressed: _showWeightEntryDialog,
-        color: textColor,
-      ),
-      // Empty state is also tappable to add first weight
-      isEmpty: _currentEntry == null,
-      child: _currentEntry == null 
-          ? InkWell(
-              onTap: _showWeightEntryDialog,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.monitor_weight_outlined,
-                      size: 48,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Tap to record your weight',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : InkWell(
-              onTap: _showWeightEntryDialog, // Allow tapping anywhere on the widget
-              child: Padding(
-                // Reduced vertical padding to 8px
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
+    switch (classification.toLowerCase()) {
+      case 'essential':
+        return const Color(0xFF90CAF9);  // Light Blue
+      case 'athletic':
+        return const Color(0xFF4CAF50);  // Green
+      case 'fitness':
+        return const Color(0xFF8BC34A);  // Light Green
+      case 'average':
+        return const Color(0xFFFFC107);  // Amber
+      case 'above avg':
+        return const Color(0xFFFF9800);  // Orange
+      case 'obese':
+        return const Color(0xFFF44336);  // Red
+      default:
+        return Colors.grey;
+    }
+  }
+  
+  void _showInfoDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Body Fat Percentage',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: _getBodyFatColor(),
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isEstimated) ...[
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
                     children: [
-                      // Weight value with unit
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          // Current weight value - same size as BMI
-                          Text(
-                            _getFormattedWeight(),
-                            style: const TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          
-                          // Units - smaller size
-                          Text(
-                            _isMetric ? ' kg' : ' lbs',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black54,
-                            ),
-                          ),
-                        ],
-                      ),
-                      
-                      // Last updated text - small and subtle
-                      const SizedBox(height: 4),
-                      Text(
-                        _getLastUpdatedText(),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
+                      Icon(Icons.info, size: 16, color: Colors.blue[800]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'This is an estimated value based on your BMI, age, and gender.',
+                          style: TextStyle(fontSize: 12, color: Colors.blue[800]),
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+              ],
+              
+              Text(
+                'Body Fat Categories',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
-            ),
+              const SizedBox(height: 8),
+              
+              // Simple categories table
+              Table(
+                columnWidths: const {
+                  0: FlexColumnWidth(1.5),
+                  1: FlexColumnWidth(1.0),
+                  2: FlexColumnWidth(1.0),
+                },
+                children: [
+                  _buildTableRow('Category', 'Men', 'Women', isHeader: true),
+                  _buildTableRow('Essential', '3-5%', '10-13%', color: const Color(0xFF90CAF9)),
+                  _buildTableRow('Athletic', '6-13%', '14-20%', color: const Color(0xFF4CAF50)),
+                  _buildTableRow('Fitness', '14-17%', '21-24%', color: const Color(0xFF8BC34A)),
+                  _buildTableRow('Average', '18-25%', '25-31%', color: const Color(0xFFFFC107)),
+                  _buildTableRow('Above Avg', '26-30%', '32-37%', color: const Color(0xFFFF9800)),
+                  _buildTableRow('Obese', '31%+', '38%+', color: const Color(0xFFF44336)),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('CLOSE'),
+          ),
+        ],
+      ),
     );
   }
   
-  // Format the weight value based on metric/imperial
-  String _getFormattedWeight() {
-    if (_currentEntry == null) return '0.0';
+  TableRow _buildTableRow(String label, String men, String women, {bool isHeader = false, Color? color}) {
+    final textStyle = TextStyle(
+      fontSize: 14,
+      fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+      color: isHeader ? Colors.black : color ?? Colors.black,
+    );
     
-    // Display either current weight (metric) or converted to imperial
-    final double displayWeight = _isMetric ? 
-      _currentEntry!.weight : 
-      _currentEntry!.weight * 2.20462;
-    
-    return displayWeight.toStringAsFixed(1);
-  }
-  
-  // Format the last updated text
-  String _getLastUpdatedText() {
-    if (_currentEntry == null) return '';
-    
-    final now = DateTime.now();
-    final entryDate = _currentEntry!.timestamp;
-    final difference = now.difference(entryDate);
-    
-    if (difference.inDays == 0) {
-      return 'Today';
-    } else if (difference.inDays == 1) {
-      return 'Yesterday';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} days ago';
-    } else {
-      return '${entryDate.day}/${entryDate.month}/${entryDate.year}';
-    }
+    return TableRow(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(label, style: textStyle),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(men, style: textStyle, textAlign: TextAlign.center),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(women, style: textStyle, textAlign: TextAlign.center),
+        ),
+      ],
+    );
   }
 }

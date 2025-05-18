@@ -1,102 +1,46 @@
-// lib/screens/progress_screen.dart
 import 'package:flutter/material.dart';
-import '../widgets/progress/current_weight_widget.dart';
-import '../widgets/progress/target_weight_widget.dart';
-import '../widgets/progress/body_fat_widget.dart';
-import '../widgets/progress/tdee_calculator_widget.dart';
-import '../widgets/progress/basal_meta_rate.dart';
-// Import body_mass_index.dart instead of trying to create a new one
-import '../widgets/progress/body_mass_index.dart';
-import '../data/repositories/user_repository.dart';
-import '../data/models/user_profile.dart';
-import '../utils/formula.dart';
 import '../config/design_system/theme.dart';
+import '../data/repositories/user_repository.dart';
 
 class ProgressScreen extends StatefulWidget {
-  const ProgressScreen({super.key}); // Fixed key parameter here
+  const ProgressScreen({Key? key}) : super(key: key);
 
   @override
   State<ProgressScreen> createState() => _ProgressScreenState();
 }
 
-class _ProgressScreenState extends State<ProgressScreen> with SingleTickerProviderStateMixin {
-  double _currentWeight = 70.0; // Default in kg
-  double? _targetWeight; // Target weight in kg
-  bool _isMetric = true;
+class _ProgressScreenState extends State<ProgressScreen> {
   final UserRepository _userRepository = UserRepository();
-  UserProfile? _userProfile; // Store user profile
+  
+  // Simple state
   bool _isLoading = true;
   double? _bmiValue;
   String _bmiClassification = "Not set";
   
-  // Animation controller to coordinate animations across widgets
-  late AnimationController _animationController;
-
   @override
   void initState() {
     super.initState();
-    
-    // Initialize animation controller
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
-    
-    _loadUserData();
-  }
-  
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
+    _loadData();
   }
 
-  // Load user data from repositories
-  Future<void> _loadUserData() async {
+  Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
-      // Load user profile for unit preference
-      final userProfile = await _userRepository.getUserProfile();
-
-      // Load latest weight entry
-      final latestWeight = await _userRepository.getLatestWeightEntry();
+      // Load data
+      final profile = await _userRepository.getUserProfile();
+      final weight = await _userRepository.getLatestWeightEntry();
       
-      // Pre-calculate BMI to avoid async loading later
-      final bmiValue = await _userRepository.calculateBMI();
-      String bmiClassification = "Not set";
+      if (profile?.height != null && weight != null) {
+        _bmiValue = _calculateBMI(weight.weight, profile!.height!);
+        _bmiClassification = _getBMIClassification(_bmiValue!);
+      }
       
-      if (bmiValue != null) {
-        bmiClassification = _userRepository.getBMIClassification(bmiValue);
-      }
-
-      if (mounted) {
-        setState(() {
-          _userProfile = userProfile; // Store the user profile
-
-          if (userProfile != null) {
-            _isMetric = userProfile.isMetric;
-            _targetWeight = userProfile.goalWeight; // Load target weight
-          }
-
-          if (latestWeight != null) {
-            _currentWeight = latestWeight.weight; // Always in kg
-          }
-          
-          _bmiValue = bmiValue;
-          _bmiClassification = bmiClassification;
-          
-          _isLoading = false;
-        });
-        
-        // Reset and restart animations when data is loaded
-        _animationController.reset();
-        _animationController.forward();
-      }
     } catch (e) {
-      debugPrint('Error loading user data: $e');
+      print('Error loading data: $e');
+    } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -104,145 +48,234 @@ class _ProgressScreenState extends State<ProgressScreen> with SingleTickerProvid
       }
     }
   }
-
-  // Method to handle weight updates from child widgets
-  void _onWeightUpdated() {
-    _loadUserData();
+  
+  double _calculateBMI(double weight, double height) {
+    // BMI formula: weight (kg) / (height (m) * height (m))
+    // Height is stored in cm, so convert to meters
+    final heightInMeters = height / 100;
+    return weight / (heightInMeters * heightInMeters);
+  }
+  
+  String _getBMIClassification(double bmi) {
+    if (bmi < 18.5) return 'Underweight';
+    if (bmi < 25.0) return 'Normal';
+    if (bmi < 30.0) return 'Overweight';
+    return 'Obese';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.secondaryBeige,
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Row layout for Current Weight and BMI widgets
-                    IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Current Weight Widget - half width
-                          Expanded(
-                            child: CurrentWeightWidget(
-                              onWeightUpdated: _onWeightUpdated,
-                            ),
-                          ),
-                          
-                          const SizedBox(width: 16),
-                          
-                          // BMI Widget - half width
-                          Expanded(
-                            child: BMIWidget(
-                              bmiValue: _bmiValue,
-                              classification: _bmiClassification,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+      body: _isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : ProgressScreenContent(
+              onWeightUpdated: _loadData,
+              bmiValue: _bmiValue,
+              bmiClassification: _bmiClassification,
+            ),
+    );
+  }
+}
 
-                    const SizedBox(height: 20),
+class ProgressScreenContent extends StatelessWidget {
+  final VoidCallback onWeightUpdated;
+  final double? bmiValue;
+  final String bmiClassification;
+  
+  const ProgressScreenContent({
+    Key? key,
+    required this.onWeightUpdated,
+    required this.bmiValue,
+    required this.bmiClassification,
+  }) : super(key: key);
 
-                    // Target Weight Widget - using animation controller
-                    TargetWeightWidget(
-                      targetWeight: _targetWeight,
-                      currentWeight: _currentWeight,
-                      isMetric: _isMetric,
-                      onWeightUpdated: (weight, isMetric) async {
-                        setState(() {
-                          _targetWeight = weight;
-                          _isMetric = isMetric;
-                        });
-                        
-                        // Update user profile
-                        if (_userProfile != null) {
-                          final updatedProfile = _userProfile!.copyWith(
-                            goalWeight: weight,
-                            isMetric: isMetric,
-                          );
-                          await _userRepository.saveUserProfile(updatedProfile);
-                          setState(() {
-                            _userProfile = updatedProfile;
-                          });
-                        }
-                      },
-                      animationController: _animationController, // Shared animation controller
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Row layout for Body Fat and BMR widgets (two columns)
-                    IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Body Fat Widget - half width
-                          Expanded(
-                            child: _buildBodyFatWidget(),
-                          ),
-                          
-                          const SizedBox(width: 16),
-                          
-                          // BMR Widget - half width
-                          Expanded(
-                            child: BasalMetabolicRateWidget(
-                              userProfile: _userProfile,
-                              currentWeight: _currentWeight,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 20),
-                    
-                    // TDEE Widget (full width)
-                    TDEECalculatorWidget(
-                      userProfile: _userProfile,
-                      currentWeight: _currentWeight,
-                    ),
-
-                    const SizedBox(height: 80), // Extra space for bottom nav
-                  ],
-                ),
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            const Text(
+              'HEALTH METRICS',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryBlue,
+                letterSpacing: 1.5,
               ),
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // Row 1: Current Weight and BMI
+            Row(
+              children: [
+                // Current Weight Widget - Simple method implementation
+                Expanded(
+                  child: CurrentWeightWidget(
+                    onWeightUpdated: onWeightUpdated,
+                  ),
+                ),
+                
+                const SizedBox(width: 16),
+                
+                // BMI Widget
+                Expanded(
+                  child: _buildBMIWidget(),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
   
-  // Build the body fat widget
-  Widget _buildBodyFatWidget() {
-    // Extract profile data needed for body fat calculation
-    final String? gender = _userProfile?.gender;
-    final int? age = _userProfile?.age;
-
-    // Calculate body fat using the formula in utils
-    double? bodyFatValue;
-    String bodyFatClassification = "Not set";
-
-    if (_bmiValue != null) {
-      bodyFatValue = Formula.calculateBodyFat(
-        bmi: _bmiValue,
-        age: age,
-        gender: gender,
-      );
-
-      if (bodyFatValue != null) {
-        bodyFatClassification = Formula.getBodyFatClassification(
-          bodyFatValue, gender);
-      }
-    }
-
-    return BodyFatPercentageWidget(
-      bodyFatPercentage: bodyFatValue,
-      classification: bodyFatClassification,
-      isEstimated: true,
+  // Method defined as widget
+  Widget CurrentWeightWidget({required VoidCallback onWeightUpdated}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Weight',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 10),
+          FutureBuilder(
+            future: UserRepository().getLatestWeightEntry(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                );
+              }
+              
+              final weightEntry = snapshot.data;
+              if (weightEntry == null) {
+                return Center(
+                  child: Text(
+                    'No weight data',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                );
+              }
+              
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    weightEntry.weight.toStringAsFixed(1),
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryBlue,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'kg',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.primaryBlue.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
     );
+  }
+  
+  // Simple BMI Widget method
+  Widget _buildBMIWidget() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'BMI',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            bmiValue?.toStringAsFixed(1) ?? '--',
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: _getBMIColor(),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: _getBMIColor().withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              bmiClassification,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: _getBMIColor(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Color _getBMIColor() {
+    if (bmiValue == null) return Colors.grey;
+    if (bmiValue! < 18.5) return Colors.blue;
+    if (bmiValue! < 25.0) return Colors.green;
+    if (bmiValue! < 30.0) return Colors.orange;
+    return Colors.red;
   }
 }
