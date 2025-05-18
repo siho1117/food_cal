@@ -1,27 +1,126 @@
 import 'package:flutter/material.dart';
 import '../../config/design_system/theme.dart';
+import '../../config/design_system/dimensions.dart';
+import '../../config/design_system/text_styles.dart';
+import '../../data/repositories/user_repository.dart';
+import '../../data/models/weight_entry.dart';
+import '../settings/weight_entry_dialog.dart';
 
-class BodyFatPercentageWidget extends StatelessWidget {
-  final double? bodyFatPercentage;
-  final String classification;
-  final bool isEstimated;
+class CurrentWeightWidget extends StatefulWidget {
+  final double? initialWeight;
+  final bool isMetric;
+  final Function(double, bool) onWeightUpdated;
 
-  const BodyFatPercentageWidget({
+  const CurrentWeightWidget({
     Key? key,
-    required this.bodyFatPercentage,
-    required this.classification,
-    this.isEstimated = true,
+    this.initialWeight,
+    required this.isMetric,
+    required this.onWeightUpdated,
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final Color bodyFatColor = _getBodyFatColor();
+  State<CurrentWeightWidget> createState() => _CurrentWeightWidgetState();
+}
+
+class _CurrentWeightWidgetState extends State<CurrentWeightWidget> {
+  final UserRepository _repository = UserRepository();
+  bool _isLoading = true;
+  double? _currentWeight;
+  bool _isMetric = true;
+  DateTime? _lastUpdated;
+
+  @override
+  void initState() {
+    super.initState();
+    _isMetric = widget.isMetric;
+    _loadLatestWeight();
+  }
+
+  /// Load the latest weight entry from the repository
+  Future<void> _loadLatestWeight() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final latestEntry = await _repository.getLatestWeightEntry();
+      
+      if (mounted) {
+        setState(() {
+          if (latestEntry != null) {
+            _currentWeight = latestEntry.weight;
+            _lastUpdated = latestEntry.timestamp;
+          } else {
+            _currentWeight = widget.initialWeight;
+          }
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading weight: $e');
+      if (mounted) {
+        setState(() {
+          _currentWeight = widget.initialWeight;
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  /// Format the date for display
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
     
+    if (difference.inDays == 0) {
+      return 'Today';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
+    } else {
+      // Format as date
+      return '${date.day}/${date.month}/${date.year}';
+    }
+  }
+
+  /// Show the weight entry dialog
+  void _showWeightEntryDialog() async {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => WeightEntryDialog(
+        initialWeight: _currentWeight,
+        isMetric: _isMetric,
+        onWeightSaved: (weight, isMetric) async {
+          // Create new weight entry with current timestamp
+          final entry = WeightEntry.create(weight: weight);
+          
+          // Save the weight entry
+          await _repository.addWeightEntry(entry);
+          
+          // Update state
+          setState(() {
+            _currentWeight = weight;
+            _isMetric = isMetric;
+            _lastUpdated = DateTime.now();
+          });
+          
+          // Notify parent component
+          widget.onWeightUpdated(weight, isMetric);
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(Dimensions.m),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(Dimensions.s),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -33,214 +132,86 @@ class BodyFatPercentageWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header with edit button
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Body Fat %',
-                style: TextStyle(
-                  fontSize: 14,
+                'Current Weight',
+                style: AppTextStyles.getSubHeadingStyle().copyWith(
+                  fontSize: Dimensions.getTextSize(
+                    context, 
+                    size: TextSize.medium
+                  ),
                   color: Colors.grey[600],
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              InkWell(
-                onTap: () => _showInfoDialog(context),
-                child: Icon(
-                  Icons.info_outline,
-                  size: 16,
-                  color: Colors.grey[600],
-                ),
+              IconButton(
+                icon: const Icon(Icons.edit, size: 18),
+                onPressed: _showWeightEntryDialog,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                color: Colors.grey[600],
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                bodyFatPercentage?.toStringAsFixed(1) ?? '--',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: bodyFatColor,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '%',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: bodyFatColor.withOpacity(0.8),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: bodyFatColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  classification,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: bodyFatColor,
+          
+          SizedBox(height: Dimensions.s),
+          
+          // Weight value or loading indicator
+          _isLoading
+              ? const Center(
+                  child: SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   ),
-                ),
-              ),
-              if (isEstimated) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'Estimated',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Color _getBodyFatColor() {
-    if (bodyFatPercentage == null) return Colors.grey;
-
-    switch (classification.toLowerCase()) {
-      case 'essential':
-        return const Color(0xFF90CAF9);  // Light Blue
-      case 'athletic':
-        return const Color(0xFF4CAF50);  // Green
-      case 'fitness':
-        return const Color(0xFF8BC34A);  // Light Green
-      case 'average':
-        return const Color(0xFFFFC107);  // Amber
-      case 'above avg':
-        return const Color(0xFFFF9800);  // Orange
-      case 'obese':
-        return const Color(0xFFF44336);  // Red
-      default:
-        return Colors.grey;
-    }
-  }
-  
-  void _showInfoDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Body Fat Percentage',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: _getBodyFatColor(),
-          ),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (isEstimated) ...[
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info, size: 16, color: Colors.blue[800]),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'This is an estimated value based on your BMI, age, and gender.',
-                          style: TextStyle(fontSize: 12, color: Colors.blue[800]),
-                        ),
+                )
+              : _currentWeight == null
+                  ? Center(
+                      child: Text(
+                        'No weight data',
+                        style: TextStyle(color: Colors.grey[600]),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-              
-              Text(
-                'Body Fat Categories',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          _currentWeight!.toStringAsFixed(1),
+                          style: AppTextStyles.getNumericStyle().copyWith(
+                            fontSize: 34, // Using direct value instead of WidgetUIStandards
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryBlue,
+                          ),
+                        ),
+                        SizedBox(width: Dimensions.xxs),
+                        Text(
+                          _isMetric ? 'kg' : 'lbs',
+                          style: AppTextStyles.getNumericStyle().copyWith(
+                            fontSize: 16, // Using direct value instead of WidgetUIStandards
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.primaryBlue.withOpacity(0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+          // Last updated date - Only show if there's an update timestamp
+          if (_lastUpdated != null) ...[
+            SizedBox(height: Dimensions.xxs),
+            Text(
+              'Last updated: ${_formatDate(_lastUpdated!)}',
+              style: AppTextStyles.getBodyStyle().copyWith(
+                fontSize: 13, // Using direct value instead of WidgetUIStandards
+                color: Colors.grey[500],
               ),
-              const SizedBox(height: 8),
-              
-              // Simple categories table
-              Table(
-                columnWidths: const {
-                  0: FlexColumnWidth(1.5),
-                  1: FlexColumnWidth(1.0),
-                  2: FlexColumnWidth(1.0),
-                },
-                children: [
-                  _buildTableRow('Category', 'Men', 'Women', isHeader: true),
-                  _buildTableRow('Essential', '3-5%', '10-13%', color: const Color(0xFF90CAF9)),
-                  _buildTableRow('Athletic', '6-13%', '14-20%', color: const Color(0xFF4CAF50)),
-                  _buildTableRow('Fitness', '14-17%', '21-24%', color: const Color(0xFF8BC34A)),
-                  _buildTableRow('Average', '18-25%', '25-31%', color: const Color(0xFFFFC107)),
-                  _buildTableRow('Above Avg', '26-30%', '32-37%', color: const Color(0xFFFF9800)),
-                  _buildTableRow('Obese', '31%+', '38%+', color: const Color(0xFFF44336)),
-                ],
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('CLOSE'),
-          ),
+            ),
+          ],
         ],
       ),
-    );
-  }
-  
-  TableRow _buildTableRow(String label, String men, String women, {bool isHeader = false, Color? color}) {
-    final textStyle = TextStyle(
-      fontSize: 14,
-      fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
-      color: isHeader ? Colors.black : color ?? Colors.black,
-    );
-    
-    return TableRow(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Text(label, style: textStyle),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Text(men, style: textStyle, textAlign: TextAlign.center),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Text(women, style: textStyle, textAlign: TextAlign.center),
-        ),
-      ],
     );
   }
 }

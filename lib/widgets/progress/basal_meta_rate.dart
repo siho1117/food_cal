@@ -1,97 +1,123 @@
 import 'package:flutter/material.dart';
 import '../../config/design_system/theme.dart';
 import '../../config/widgets/master_widget.dart';
-import '../../data/models/user_profile.dart';
+import '../../config/components/value_builder.dart';
+import '../../config/components/state_builder.dart';
+import '../../utils/formula.dart';
 
-class BasalMetabolicRateWidget extends StatefulWidget {
-  final UserProfile? userProfile;
-  final double? currentWeight;
+class BMRWidget extends StatefulWidget {
+  final double? height;
+  final double? weight;
+  final int? age;
+  final String? gender;
+  final bool isMetric;
 
-  const BasalMetabolicRateWidget({
+  const BMRWidget({
     Key? key,
-    required this.userProfile,
-    required this.currentWeight,
+    required this.height,
+    required this.weight,
+    required this.age,
+    required this.gender,
+    this.isMetric = true,
   }) : super(key: key);
 
   @override
-  State<BasalMetabolicRateWidget> createState() => _BasalMetabolicRateWidgetState();
+  State<BMRWidget> createState() => _BMRWidgetState();
 }
 
-class _BasalMetabolicRateWidgetState extends State<BasalMetabolicRateWidget> {
-  bool _isLoading = true;
+class _BMRWidgetState extends State<BMRWidget> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _valueAnimation;
+
   double? _bmr;
   List<String> _missingData = [];
-  
+
   @override
   void initState() {
     super.initState();
+    
+    // Setup animation controller
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    
     _calculateBMR();
   }
-  
+
   @override
-  void didUpdateWidget(BasalMetabolicRateWidget oldWidget) {
+  void didUpdateWidget(BMRWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.userProfile != widget.userProfile || 
-        oldWidget.currentWeight != widget.currentWeight) {
+    
+    // Recalculate BMR if any of the inputs change
+    if (oldWidget.height != widget.height ||
+        oldWidget.weight != widget.weight ||
+        oldWidget.age != widget.age ||
+        oldWidget.gender != widget.gender) {
       _calculateBMR();
     }
   }
 
-  // Calculate BMR and check for missing data
-  void _calculateBMR() {
-    setState(() {
-      _isLoading = true;
-    });
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
-    // Calculate BMR using the Mifflin-St Jeor Equation
-    if (widget.currentWeight == null || 
-        widget.userProfile?.height == null || 
-        widget.userProfile?.age == null ||
-        widget.userProfile?.gender == null) {
-      // Check which data is missing
-      _missingData = [];
-      
-      if (widget.userProfile == null) {
-        _missingData.add("Profile");
-      } else {
-        if (widget.currentWeight == null) _missingData.add("Weight");
-        if (widget.userProfile!.height == null) _missingData.add("Height");
-        if (widget.userProfile!.age == null) _missingData.add("Age");
-        if (widget.userProfile!.gender == null) _missingData.add("Gender");
-      }
-      
+  void _calculateBMR() {
+    // Reset missing data
+    _missingData = [];
+    
+    // Check for missing inputs
+    if (widget.weight == null) _missingData.add("Weight");
+    if (widget.height == null) _missingData.add("Height");
+    if (widget.age == null) _missingData.add("Age");
+    if (widget.gender == null) _missingData.add("Gender");
+    
+    // If any data is missing, we can't calculate BMR
+    if (_missingData.isNotEmpty) {
       _bmr = null;
-    } else {
-      // Calculate BMR
-      if (widget.userProfile!.gender == 'Male') {
-        _bmr = (10 * widget.currentWeight!) +
-            (6.25 * widget.userProfile!.height!) -
-            (5 * widget.userProfile!.age!) +
-            5;
-      } else if (widget.userProfile!.gender == 'Female') {
-        _bmr = (10 * widget.currentWeight!) +
-            (6.25 * widget.userProfile!.height!) -
-            (5 * widget.userProfile!.age!) -
-            161;
-      } else {
-        // Average of male and female formulas for other genders
-        final maleBMR = (10 * widget.currentWeight!) +
-            (6.25 * widget.userProfile!.height!) -
-            (5 * widget.userProfile!.age!) +
-            5;
-        final femaleBMR = (10 * widget.currentWeight!) +
-            (6.25 * widget.userProfile!.height!) -
-            (5 * widget.userProfile!.age!) -
-            161;
-        _bmr = (maleBMR + femaleBMR) / 2;
-      }
-      
-      _missingData = [];
+      return;
     }
 
-    setState(() {
-      _isLoading = false;
-    });
+    // Use the Mifflin-St Jeor Equation to calculate BMR
+    if (widget.gender!.toLowerCase() == 'male') {
+      _bmr = (10 * widget.weight!) +
+          (6.25 * widget.height!) -
+          (5 * widget.age!) +
+          5;
+    } else if (widget.gender!.toLowerCase() == 'female') {
+      _bmr = (10 * widget.weight!) +
+          (6.25 * widget.height!) -
+          (5 * widget.age!) -
+          161;
+    } else {
+      // For other genders, use an average of male and female formulas
+      final maleBMR = (10 * widget.weight!) +
+          (6.25 * widget.height!) -
+          (5 * widget.age!) +
+          5;
+      final femaleBMR = (10 * widget.weight!) +
+          (6.25 * widget.height!) -
+          (5 * widget.age!) -
+          161;
+      _bmr = (maleBMR + femaleBMR) / 2;
+    }
+    
+    // Setup animation for BMR value
+    _valueAnimation = Tween<double>(
+      begin: 0.0,
+      end: _bmr,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+    
+    // Reset and play animation
+    _animationController.reset();
+    _animationController.forward();
   }
 
   void _showBMRInfoDialog() {
@@ -197,23 +223,13 @@ class _BasalMetabolicRateWidgetState extends State<BasalMetabolicRateWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // If loading, return the loading state widget
-    if (_isLoading) {
-      return MasterWidget(
-        title: 'BMR',
-        icon: Icons.bolt_rounded, // Required for backward compatibility but not displayed
-        isLoading: true,
-        child: const SizedBox(),
-      );
-    }
-    
-    // If missing data, show error state with warning message
+    // If no valid BMR can be calculated, show missing data state
     if (_missingData.isNotEmpty) {
       return MasterWidget(
         title: 'BMR',
-        icon: Icons.bolt_rounded, // Required for backward compatibility but not displayed
+        icon: Icons.local_fire_department,
         trailing: MasterWidget.createInfoButton(
-          onPressed: _showBMRInfoDialog,
+          onPressed: _showBMRInfoDialog, 
           color: AppTheme.textDark,
         ),
         hasError: true,
@@ -224,46 +240,63 @@ class _BasalMetabolicRateWidgetState extends State<BasalMetabolicRateWidget> {
         child: const SizedBox(),
       );
     }
-    
-    // Main content when we have data - SIMPLIFIED VERSION
+
+    // Main content with valid BMR
     return MasterWidget(
       title: 'BMR',
-      icon: Icons.bolt_rounded, // Required for backward compatibility but not displayed
+      icon: Icons.local_fire_department,
       trailing: MasterWidget.createInfoButton(
         onPressed: _showBMRInfoDialog,
         color: AppTheme.textDark,
       ),
-      child: Padding(
-        // Reduced vertical padding to 8px, matching BMI widget
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child: Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              // BMR numerical value with smaller font size
-              Text(
-                _bmr?.round().toString() ?? '0',
-                style: const TextStyle(
-                  fontSize: 30, // Reduced from 36
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black, // Standard text color
-                ),
-              ),
-              
-              // Unit
-              const Text(
-                ' cal',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black54,
-                ),
-              ),
-            ],
+      animationController: _animationController,
+      contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Animated BMR value display
+          ValueBuilder.buildAnimatedCounter(
+            animation: _valueAnimation,
+            targetValue: _bmr ?? 0,
+            style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryBlue,
+            ),
+            decimalPlaces: 0,
+            suffix: ' cal',
           ),
-        ),
+          
+          const SizedBox(height: 16),
+          
+          // Small info text
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryBlueBackground,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 14,
+                  color: AppTheme.primaryBlue,
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Calories at complete rest',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.primaryBlue,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
