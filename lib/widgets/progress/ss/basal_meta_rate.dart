@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../config/design_system/theme.dart';
-import '../../config/design_system/dimensions.dart';
-import '../../config/design_system/text_styles.dart';
-import '../../utils/formula.dart';
+import '../../../config/design_system/theme.dart';
+import '../../../config/design_system/dimensions.dart';
+import '../../../config/design_system/text_styles.dart';
+import '../../../utils/formula.dart';
 
 class BMRWidget extends StatefulWidget {
   final double? height;

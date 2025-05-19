@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../config/design_system/theme.dart';
-import '../../config/design_system/dimensions.dart';
-import '../../config/design_system/text_styles.dart';
-import '../../data/models/user_profile.dart';
-import '../../utils/formula.dart';
-import '../../data/repositories/user_repository.dart';
-import '../activity_level_info_dialog.dart';
+import '../../../config/design_system/theme.dart';
+import '../../../config/design_system/dimensions.dart';
+import '../../../config/design_system/text_styles.dart';
+import '../../../data/models/user_profile.dart';
+import '../../../utils/formula.dart';
+import '../../../data/repositories/user_repository.dart';
+import '../../activity_level_info_dialog.dart';
 
 class TDEECalculatorWidget extends StatefulWidget {
   final UserProfile? userProfile;

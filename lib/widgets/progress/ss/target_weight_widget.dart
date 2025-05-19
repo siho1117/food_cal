@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../config/design_system/theme.dart';
-import '../../data/repositories/user_repository.dart';
-import '../../utils/formula.dart';
+import '../../../config/design_system/theme.dart';
+import '../../../data/repositories/user_repository.dart';
+import '../../../utils/formula.dart';
 import 'target_weight_dialog.dart';
-import '../../data/models/user_profile.dart';
+import '../../../data/models/user_profile.dart';
 
 class TargetWeightWidget extends StatelessWidget {
   final double? targetWeight;

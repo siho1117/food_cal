@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../config/design_system/theme.dart';
-import '../../config/design_system/dimensions.dart';
-import '../../config/design_system/text_styles.dart';
-import '../../data/repositories/user_repository.dart';
-import '../../data/models/weight_data.dart'; // Changed from weight_entry.dart
-import '../settings/weight_entry_dialog.dart';
+import '../../../config/design_system/theme.dart';
+import '../../../config/design_system/dimensions.dart';
+import '../../../config/design_system/text_styles.dart';
+import '../../../data/repositories/user_repository.dart';
+import '../../../data/models/weight_data.dart'; // Changed from weight_entry.dart
+import '../../settings/weight_entry_dialog.dart';
 
 class CurrentWeightWidget extends StatefulWidget {
   final double? initialWeight;
