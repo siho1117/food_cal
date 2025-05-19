@@ -1,6 +1,6 @@
 // lib/utils/home_statistics_calculator.dart
 import '../data/models/user_profile.dart';
-import '../data/models/weight_entry.dart';
+import '../data/models/weight_data.dart'; // Changed from weight_entry.dart
 import '../data/models/food_item.dart';
 import '../utils/formula.dart';
 

@@ -1,5 +1,5 @@
 import '../models/user_profile.dart';
-import '../models/weight_entry.dart';
+import '../models/weight_data.dart'; // Changed from weight_entry.dart
 import '../storage/local_storage.dart';
 import '../../utils/formula.dart';
 
@@ -49,20 +49,20 @@ class UserRepository {
   }
 
   // Add a new weight entry
-  Future<bool> addWeightEntry(WeightEntry entry) async {
+  Future<bool> addWeightEntry(WeightData entry) async { // Changed from WeightEntry
     final entries = await getWeightEntries();
     entries.add(entry);
     return _saveWeightEntries(entries);
   }
 
   // Get all weight entries
-  Future<List<WeightEntry>> getWeightEntries() async {
+  Future<List<WeightData>> getWeightEntries() async { // Changed from WeightEntry
     final entriesList = await _storage.getObjectList(_weightEntriesKey);
 
     if (entriesList == null || entriesList.isEmpty) return [];
 
     try {
-      return entriesList.map((map) => WeightEntry.fromMap(map)).toList();
+      return entriesList.map((map) => WeightData.fromMap(map)).toList(); // Changed from WeightEntry
     } catch (e) {
       print('Error retrieving weight entries: $e');
       return [];
@@ -70,7 +70,7 @@ class UserRepository {
   }
 
   // Get weight entries within a date range
-  Future<List<WeightEntry>> getWeightEntriesInRange(
+  Future<List<WeightData>> getWeightEntriesInRange( // Changed from WeightEntry
       DateTime startDate, DateTime endDate) async {
     final entries = await getWeightEntries();
 
@@ -81,7 +81,7 @@ class UserRepository {
   }
 
   // Get the latest weight entry
-  Future<WeightEntry?> getLatestWeightEntry() async {
+  Future<WeightData?> getLatestWeightEntry() async { // Changed from WeightEntry
     final entries = await getWeightEntries();
 
     if (entries.isEmpty) return null;
@@ -105,7 +105,7 @@ class UserRepository {
   }
 
   // Internal method to save weight entries
-  Future<bool> _saveWeightEntries(List<WeightEntry> entries) async {
+  Future<bool> _saveWeightEntries(List<WeightData> entries) async { // Changed from WeightEntry
     try {
       final entriesMaps = entries.map((entry) => entry.toMap()).toList();
       return await _storage.setObjectList(_weightEntriesKey, entriesMaps);
@@ -210,7 +210,7 @@ class UserRepository {
     );
 
     // Create weight entry
-    final weightEntry = WeightEntry.create(
+    final weightEntry = WeightData.create( // Changed from WeightEntry
       weight: metricWeight, // Always store weight in kg
     );
 

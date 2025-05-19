@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../data/repositories/user_repository.dart';
 import '../data/models/user_profile.dart';
-import '../data/models/weight_entry.dart';
+import '../data/models/weight_data.dart'; // Changed from weight_entry.dart
 import '../widgets/settings/profile_picture_widget.dart';
 import '../widgets/settings/date_picker_dialog.dart';
 import '../widgets/settings/height_picker_dialog.dart';
@@ -137,7 +137,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }
 
           // Save new weight entry
-          final entry = WeightEntry.create(weight: weight);
+          final entry = WeightData.create(weight: weight); // Changed from WeightEntry
           await _userRepository.addWeightEntry(entry);
         },
       ),

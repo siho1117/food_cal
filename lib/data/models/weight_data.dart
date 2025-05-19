@@ -1,11 +1,11 @@
-class WeightEntry {
+class WeightData {
   final String id; // Unique identifier
   final double
       weight; // Weight in kg (always stored in kg regardless of display preference)
   final DateTime timestamp; // When the entry was recorded
   final String? note; // Optional note for the entry
 
-  WeightEntry({
+  WeightData({
     required this.id,
     required this.weight,
     required this.timestamp,
@@ -29,8 +29,8 @@ class WeightEntry {
   }
 
   // Create from map for retrieval
-  factory WeightEntry.fromMap(Map<String, dynamic> map) {
-    return WeightEntry(
+  factory WeightData.fromMap(Map<String, dynamic> map) {
+    return WeightData(
       id: map['id'],
       weight: map['weight'],
       timestamp: DateTime.fromMillisecondsSinceEpoch(map['timestamp']),
@@ -39,7 +39,7 @@ class WeightEntry {
   }
 
   // Create a new entry with a unique ID
-  factory WeightEntry.create({
+  factory WeightData.create({
     required double weight,
     DateTime? timestamp,
     String? note,
@@ -47,7 +47,7 @@ class WeightEntry {
     final now = timestamp ?? DateTime.now();
     final id = now.millisecondsSinceEpoch.toString();
 
-    return WeightEntry(
+    return WeightData(
       id: id,
       weight: weight,
       timestamp: now,

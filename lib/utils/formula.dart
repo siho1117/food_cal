@@ -1,6 +1,6 @@
 // lib/utils/formula.dart
 import '../data/models/user_profile.dart';
-import '../data/models/weight_entry.dart';
+import '../data/models/weight_data.dart';  // Changed from weight_entry.dart
 
 /// Centralized class for health-related formula calculations
 /// All methods are static to allow easy access without instantiation
@@ -279,20 +279,20 @@ class Formula {
 
   /// Calculate weight change over a time period
   static double? calculateWeightChange({
-    required List<WeightEntry> entries,
+    required List<WeightData> entries,
     required DateTime startDate,
   }) {
     if (entries.isEmpty) return null;
 
     // Sort by timestamp (newest first)
-    final sortedEntries = List<WeightEntry>.from(entries)
+    final sortedEntries = List<WeightData>.from(entries)
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
     // Get latest weight
     final latestWeight = sortedEntries.first.weight;
 
     // Find the closest entry to the start date
-    WeightEntry? startEntry;
+    WeightData? startEntry;
     for (final entry in sortedEntries.reversed) {
       if (entry.timestamp.isAfter(startDate) ||
           entry.timestamp.isAtSameMomentAs(startDate)) {

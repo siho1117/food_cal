@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import '../../data/models/weight_data.dart'; // Updated import
 
 class WeightEntryDialog extends StatefulWidget {
   final double? initialWeight;
