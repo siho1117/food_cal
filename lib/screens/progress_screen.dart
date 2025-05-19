@@ -1,13 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../config/design_system/theme.dart';
+import '../data/models/user_profile.dart';
 import '../widgets/progress/body_mass_index.dart';
 import '../widgets/progress/current_weight_widget.dart';
 import '../widgets/progress/target_weight_widget.dart';
-import '../widgets/progress/basal_meta_rate.dart';
+import '../widgets/progress/tdee_calculator_widget.dart';
 
-class ProgressScreen extends StatelessWidget {
+class ProgressScreen extends StatefulWidget {
   const ProgressScreen({Key? key}) : super(key: key);
 
+  @override
+  State<ProgressScreen> createState() => _ProgressScreenState();
+}
+
+class _ProgressScreenState extends State<ProgressScreen> {
+  UserProfile? _userProfile;
+  double? _currentWeight;
+  double? _targetWeight;
+  
+  void _onTargetWeightUpdated(double weight, bool isMetric) {
+    setState(() {
+      _targetWeight = weight;
+    });
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -18,51 +35,20 @@ class ProgressScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Row 1: Current Weight and BMI
-              Row(
-                children: [
-                  // Current Weight Widget
-                  Expanded(
-                    child: CurrentWeightWidget(
-                      initialWeight: null,
-                      isMetric: true,
-                      onWeightUpdated: (weight, isMetric) {
-                        // Empty callback that does nothing
-                        // This is just to satisfy the parameter requirement
-                      },
-                    ),
-                  ),
-                  
-                  const SizedBox(width: 16),
-                  
-                  // BMI Widget
-                  const Expanded(
-                    child: BMIWidget(
-                      bmiValue: null,
-                      classification: "Not set",
-                    ),
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 20),
-              
               // Row 2: Target Weight Widget
               TargetWeightWidget(
-                targetWeight: null,
-                currentWeight: null,
-                isMetric: true,
-                onWeightUpdated: (weight, isMetric) {
-                  // Empty callback
-                },
+                targetWeight: _targetWeight,
+                currentWeight: _currentWeight,
+                isMetric: _userProfile?.isMetric ?? true,
+                onWeightUpdated: _onTargetWeightUpdated,
               ),
               
               const SizedBox(height: 20),
               
-              // Row 3: Basal Metabolic Rate Widget
-              const BasalMetabolicRateWidget(
-                userProfile: null,
-                currentWeight: null,
+              // Row 3: TDEE Calculator Widget
+              TDEECalculatorWidget(
+                userProfile: _userProfile,
+                currentWeight: _currentWeight,
               ),
               
               // Space for bottom navigation

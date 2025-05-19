@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/design_system/theme.dart';
-import '../../config/widgets/master_widget.dart';
-import '../../config/components/value_builder.dart';
-import '../../config/components/state_builder.dart';
+import '../../config/design_system/dimensions.dart';
+import '../../config/design_system/text_styles.dart';
 import '../../utils/formula.dart';
 
 class BMRWidget extends StatefulWidget {
@@ -11,6 +10,7 @@ class BMRWidget extends StatefulWidget {
   final int? age;
   final String? gender;
   final bool isMetric;
+  final VoidCallback? onSettingsTap;
 
   const BMRWidget({
     Key? key,
@@ -19,29 +19,21 @@ class BMRWidget extends StatefulWidget {
     required this.age,
     required this.gender,
     this.isMetric = true,
+    this.onSettingsTap,
   }) : super(key: key);
 
   @override
   State<BMRWidget> createState() => _BMRWidgetState();
 }
 
-class _BMRWidgetState extends State<BMRWidget> with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _valueAnimation;
-
+class _BMRWidgetState extends State<BMRWidget> {
   double? _bmr;
   List<String> _missingData = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    
-    // Setup animation controller
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
-    
     _calculateBMR();
   }
 
@@ -54,19 +46,17 @@ class _BMRWidgetState extends State<BMRWidget> with SingleTickerProviderStateMix
         oldWidget.weight != widget.weight ||
         oldWidget.age != widget.age ||
         oldWidget.gender != widget.gender) {
+      setState(() {
+        _isLoading = true;
+      });
       _calculateBMR();
     }
   }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
   void _calculateBMR() {
-    // Reset missing data
+    // Reset values
     _missingData = [];
+    _bmr = null;
     
     // Check for missing inputs
     if (widget.weight == null) _missingData.add("Weight");
@@ -74,50 +64,27 @@ class _BMRWidgetState extends State<BMRWidget> with SingleTickerProviderStateMix
     if (widget.age == null) _missingData.add("Age");
     if (widget.gender == null) _missingData.add("Gender");
     
-    // If any data is missing, we can't calculate BMR
-    if (_missingData.isNotEmpty) {
-      _bmr = null;
-      return;
-    }
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          // If any data is missing, we can't calculate BMR
+          if (_missingData.isNotEmpty) {
+            _isLoading = false;
+            return;
+          }
 
-    // Use the Mifflin-St Jeor Equation to calculate BMR
-    if (widget.gender!.toLowerCase() == 'male') {
-      _bmr = (10 * widget.weight!) +
-          (6.25 * widget.height!) -
-          (5 * widget.age!) +
-          5;
-    } else if (widget.gender!.toLowerCase() == 'female') {
-      _bmr = (10 * widget.weight!) +
-          (6.25 * widget.height!) -
-          (5 * widget.age!) -
-          161;
-    } else {
-      // For other genders, use an average of male and female formulas
-      final maleBMR = (10 * widget.weight!) +
-          (6.25 * widget.height!) -
-          (5 * widget.age!) +
-          5;
-      final femaleBMR = (10 * widget.weight!) +
-          (6.25 * widget.height!) -
-          (5 * widget.age!) -
-          161;
-      _bmr = (maleBMR + femaleBMR) / 2;
-    }
-    
-    // Setup animation for BMR value
-    _valueAnimation = Tween<double>(
-      begin: 0.0,
-      end: _bmr,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOutCubic,
-      ),
-    );
-    
-    // Reset and play animation
-    _animationController.reset();
-    _animationController.forward();
+          // Calculate BMR using the Formula utility class
+          _bmr = Formula.calculateBMR(
+            weight: widget.weight,
+            height: widget.height,
+            age: widget.age,
+            gender: widget.gender,
+          );
+          
+          _isLoading = false;
+        });
+      }
+    });
   }
 
   void _showBMRInfoDialog() {
@@ -131,7 +98,14 @@ class _BMRWidgetState extends State<BMRWidget> with SingleTickerProviderStateMix
               color: AppTheme.primaryBlue,
             ),
             const SizedBox(width: 8),
-            const Text('About BMR'),
+            Text(
+              'About BMR',
+              style: AppTextStyles.getSubHeadingStyle().copyWith(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryBlue,
+              ),
+            ),
           ],
         ),
         content: SingleChildScrollView(
@@ -139,72 +113,112 @@ class _BMRWidgetState extends State<BMRWidget> with SingleTickerProviderStateMix
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // BMR Definition
-              const Text(
+              Text(
                 'Your Basal Metabolic Rate (BMR) is the number of calories your body needs to perform basic, life-sustaining functions while at rest. This includes breathing, circulation, cell production, and nutrient processing.',
-                style: TextStyle(fontSize: 14, height: 1.4),
+                style: AppTextStyles.getBodyStyle().copyWith(
+                  fontSize: 14, 
+                  height: 1.4,
+                ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: Dimensions.m),
               
               // Current BMR Value
+              if (_bmr != null)
+                Container(
+                  padding: EdgeInsets.all(Dimensions.s),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBlueBackground,
+                    borderRadius: BorderRadius.circular(Dimensions.xs),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.local_fire_department,
+                        size: 18,
+                        color: AppTheme.primaryBlue,
+                      ),
+                      SizedBox(width: Dimensions.xs),
+                      Text(
+                        'Your BMR: ${_bmr?.round() ?? 0} calories',
+                        style: AppTextStyles.getSubHeadingStyle().copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppTheme.primaryBlue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              SizedBox(height: Dimensions.m),
+              
+              // Daily Calories Information
               Text(
-                'Your BMR: ${_bmr?.round() ?? 0} calories',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
+                'Your actual daily calorie needs are higher than your BMR since you are not always at rest. Your Total Daily Energy Expenditure (TDEE) accounts for your activity level on top of your BMR.',
+                style: AppTextStyles.getBodyStyle().copyWith(
+                  fontSize: 14, 
+                  height: 1.4,
+                ),
+              ),
+              SizedBox(height: Dimensions.m),
+              
+              // Formula Section
+              Text(
+                'The Mifflin-St Jeor Equation:',
+                style: AppTextStyles.getSubHeadingStyle().copyWith(
+                  fontWeight: FontWeight.w500,
                   fontSize: 16,
                 ),
               ),
-              const SizedBox(height: 16),
-              
-              // Daily Calories Information
-              const Text(
-                'Your actual daily calorie needs are higher than your BMR since you are not always at rest. Your Total Daily Energy Expenditure (TDEE) accounts for your activity level on top of your BMR.',
-                style: TextStyle(fontSize: 14, height: 1.4),
-              ),
-              const SizedBox(height: 16),
-              
-              // Formula Section
-              const Text(
-                'The Mifflin-St Jeor Equation:',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 8),
+              SizedBox(height: Dimensions.xs),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(Dimensions.s),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(Dimensions.xs),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'For men:',
-                      style: TextStyle(fontWeight: FontWeight.w500),
+                      style: AppTextStyles.getBodyStyle().copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                    const Text('BMR = (10 × weight) + (6.25 × height) - (5 × age) + 5'),
-                    const SizedBox(height: 12),
-                    const Text(
+                    Text(
+                      'BMR = (10 × weight) + (6.25 × height) - (5 × age) + 5',
+                      style: AppTextStyles.getBodyStyle(),
+                    ),
+                    SizedBox(height: Dimensions.s),
+                    Text(
                       'For women:',
-                      style: TextStyle(fontWeight: FontWeight.w500),
+                      style: AppTextStyles.getBodyStyle().copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                    const Text('BMR = (10 × weight) + (6.25 × height) - (5 × age) - 161'),
+                    Text(
+                      'BMR = (10 × weight) + (6.25 × height) - (5 × age) - 161',
+                      style: AppTextStyles.getBodyStyle(),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: Dimensions.m),
               
               // Weight Management Guidelines
-              const Text(
+              Text(
                 'Using BMR for weight management:',
-                style: TextStyle(fontWeight: FontWeight.w500),
+                style: AppTextStyles.getSubHeadingStyle().copyWith(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 16,
+                ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                '• To lose weight: Consume fewer calories than your TDEE\n'
-                '• To maintain weight: Consume equal calories to your TDEE\n'
-                '• To gain weight: Consume more calories than your TDEE',
-                style: TextStyle(fontSize: 14, height: 1.4),
-              ),
+              SizedBox(height: Dimensions.xs),
+              _buildBulletPoint('To lose weight: Consume fewer calories than your TDEE'),
+              SizedBox(height: Dimensions.xxs),
+              _buildBulletPoint('To maintain weight: Consume equal calories to your TDEE'),
+              SizedBox(height: Dimensions.xxs),
+              _buildBulletPoint('To gain weight: Consume more calories than your TDEE'),
             ],
           ),
         ),
@@ -214,88 +228,201 @@ class _BMRWidgetState extends State<BMRWidget> with SingleTickerProviderStateMix
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.primaryBlue,
             ),
-            child: const Text('CLOSE'),
+            child: Text(
+              'CLOSE',
+              style: AppTextStyles.getBodyStyle().copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
+  Widget _buildBulletPoint(String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '• ',
+          style: AppTextStyles.getBodyStyle().copyWith(
+            color: AppTheme.primaryBlue,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            text,
+            style: AppTextStyles.getBodyStyle().copyWith(
+              fontSize: 14,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // If no valid BMR can be calculated, show missing data state
-    if (_missingData.isNotEmpty) {
-      return MasterWidget(
-        title: 'BMR',
-        icon: Icons.local_fire_department,
-        trailing: MasterWidget.createInfoButton(
-          onPressed: _showBMRInfoDialog, 
-          color: AppTheme.textDark,
-        ),
-        hasError: true,
-        errorMessage: 'To calculate your BMR, please update your profile with: ${_missingData.join(", ")}',
-        onRetry: () {
-          Navigator.of(context).pushNamed('/settings');
-        },
-        child: const SizedBox(),
-      );
-    }
-
-    // Main content with valid BMR
-    return MasterWidget(
-      title: 'BMR',
-      icon: Icons.local_fire_department,
-      trailing: MasterWidget.createInfoButton(
-        onPressed: _showBMRInfoDialog,
-        color: AppTheme.textDark,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      animationController: _animationController,
-      contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Animated BMR value display
-          ValueBuilder.buildAnimatedCounter(
-            animation: _valueAnimation,
-            targetValue: _bmr ?? 0,
-            style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.primaryBlue,
-            ),
-            decimalPlaces: 0,
-            suffix: ' cal',
+          // Header with info button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Basal Metabolic Rate',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.info_outline, size: 18),
+                onPressed: _showBMRInfoDialog,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                color: Colors.grey[600],
+              ),
+            ],
           ),
           
           const SizedBox(height: 16),
           
-          // Small info text
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryBlueBackground,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+          // Content based on state
+          if (_isLoading)
+            // Loading state
+            const Center(
+              child: SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else if (_missingData.isNotEmpty)
+            // Error state - missing data
+            Column(
               children: [
                 Icon(
-                  Icons.info_outline,
-                  size: 14,
-                  color: AppTheme.primaryBlue,
+                  Icons.warning_amber_rounded,
+                  size: 36,
+                  color: Colors.orange,
                 ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Calories at complete rest',
+                const SizedBox(height: 8),
+                Text(
+                  'Missing Information',
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.primaryBlue,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
                   ),
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  'Please update: ${_missingData.join(", ")}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: widget.onSettingsTap ?? () {
+                    Navigator.of(context).pushNamed('/settings');
+                  },
+                  child: Text('Update Profile'),
+                ),
               ],
+            )
+          else
+            // Normal state with BMR value
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // BMR Value
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '${_bmr?.round() ?? 0}',
+                        style: AppTextStyles.getNumericStyle().copyWith(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryBlue,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'cal',
+                        style: AppTextStyles.getNumericStyle().copyWith(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.primaryBlue.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Explanation badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlueBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppTheme.getBorderFor(AppTheme.primaryBlue),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 14,
+                          color: AppTheme.primaryBlue,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Calories needed at complete rest',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.primaryBlue,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );

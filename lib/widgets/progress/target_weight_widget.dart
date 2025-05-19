@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../config/design_system/theme.dart';
 import '../../data/repositories/user_repository.dart';
+import '../../utils/formula.dart';
+import 'target_weight_dialog.dart';
 import '../../data/models/user_profile.dart';
-import '../../widgets/progress/target_weight_dialog.dart';
 
 class TargetWeightWidget extends StatelessWidget {
   final double? targetWeight;
@@ -147,8 +148,13 @@ class TargetWeightWidget extends StatelessWidget {
     final targetDisplay = isMetric ? 
         '${targetWeight?.toStringAsFixed(1)} kg' : 
         '${(targetWeight! * 2.20462).toStringAsFixed(1)} lbs';
-        
-    final directionIcon = currentWeight! > targetWeight! ? Icons.trending_down : Icons.trending_up;
+    
+    // Safe way to determine direction icon with null checks
+    IconData directionIcon = Icons.horizontal_rule; // Default
+    
+    if (currentWeight != null && targetWeight != null) {
+      directionIcon = currentWeight! > targetWeight! ? Icons.trending_down : Icons.trending_up;
+    }
     
     return Column(
       children: [

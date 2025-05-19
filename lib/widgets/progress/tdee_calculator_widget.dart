@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../config/design_system/theme.dart';
-import '../../config/widgets/master_widget.dart';
+import '../../config/design_system/dimensions.dart';
+import '../../config/design_system/text_styles.dart';
 import '../../data/models/user_profile.dart';
 import '../../utils/formula.dart';
 import '../../data/repositories/user_repository.dart';
+import '../activity_level_info_dialog.dart';
 
 class TDEECalculatorWidget extends StatefulWidget {
   final UserProfile? userProfile;
@@ -46,29 +48,44 @@ class _TDEECalculatorWidgetState extends State<TDEECalculatorWidget> {
       _isLoading = true;
     });
 
-    // Calculate BMR first (but don't store it as we show it in a different widget)
-    final bmr = Formula.calculateBMR(
-      weight: widget.currentWeight,
-      height: widget.userProfile?.height,
-      age: widget.userProfile?.age,
-      gender: widget.userProfile?.gender,
-    );
+    // Short delay to prevent UI flicker
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      
+      setState(() {
+        // Reset values
+        _missingData = [];
+        _tdee = null;
+        _calorieGoals = {};
+        
+        // Check for missing data
+        _missingData = Formula.getMissingData(
+          profile: widget.userProfile,
+          currentWeight: widget.currentWeight,
+        );
+        
+        // If no missing data, calculate values
+        if (_missingData.isEmpty) {
+          // Calculate BMR first
+          final bmr = Formula.calculateBMR(
+            weight: widget.currentWeight,
+            height: widget.userProfile?.height,
+            age: widget.userProfile?.age,
+            gender: widget.userProfile?.gender,
+          );
 
-    // Calculate TDEE using the temporary BMR value
-    _tdee = Formula.calculateTDEE(
-      bmr: bmr,
-      activityLevel: widget.userProfile?.activityLevel,
-    );
+          // Calculate TDEE using the BMR value
+          _tdee = Formula.calculateTDEE(
+            bmr: bmr,
+            activityLevel: widget.userProfile?.activityLevel,
+          );
 
-    _missingData = Formula.getMissingData(
-      profile: widget.userProfile,
-      currentWeight: widget.currentWeight,
-    );
-
-    _calorieGoals = Formula.getCalorieTargets(_tdee);
-
-    setState(() {
-      _isLoading = false;
+          // Calculate calorie targets
+          _calorieGoals = Formula.getCalorieTargets(_tdee);
+        }
+        
+        _isLoading = false;
+      });
     });
   }
 
@@ -85,9 +102,10 @@ class _TDEECalculatorWidgetState extends State<TDEECalculatorWidget> {
             const SizedBox(width: 8),
             Text(
               'About TDEE',
-              style: TextStyle(
+              style: AppTextStyles.getSubHeadingStyle().copyWith(
                 color: AppTheme.textDark,
                 fontWeight: FontWeight.bold,
+                fontSize: 18,
               ),
             ),
           ],
@@ -99,97 +117,109 @@ class _TDEECalculatorWidgetState extends State<TDEECalculatorWidget> {
               // TDEE Definition
               Text(
                 'Total Daily Energy Expenditure (TDEE) is the total number of calories you burn each day based on your Basal Metabolic Rate (BMR) and physical activity level.',
-                style: TextStyle(
+                style: AppTextStyles.getBodyStyle().copyWith(
                   fontSize: 14, 
                   height: 1.4,
                   color: AppTheme.textDark,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: Dimensions.m),
               
               // Current TDEE Value
-              Text(
-                'Your TDEE: ${_tdee?.round() ?? 0} calories/day',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: AppTheme.textDark,
+              if (_tdee != null)
+                Container(
+                  padding: EdgeInsets.all(Dimensions.s),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBlueBackground,
+                    borderRadius: BorderRadius.circular(Dimensions.xs),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.local_fire_department,
+                        size: 18,
+                        color: AppTheme.primaryBlue,
+                      ),
+                      SizedBox(width: Dimensions.xs),
+                      Text(
+                        'Your TDEE: ${_tdee?.round() ?? 0} calories/day',
+                        style: AppTextStyles.getSubHeadingStyle().copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppTheme.primaryBlue,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              
-              const SizedBox(height: 16),
+              SizedBox(height: Dimensions.m),
               
               // Activity Level
-              Text(
-                'Activity Level: ${Formula.getActivityLevelText(widget.userProfile?.activityLevel)}',
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                  color: AppTheme.textDark,
+              if (widget.userProfile?.activityLevel != null)
+                Text(
+                  'Activity Level: ${Formula.getActivityLevelText(widget.userProfile?.activityLevel)}',
+                  style: AppTextStyles.getBodyStyle().copyWith(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: AppTheme.textDark,
+                  ),
                 ),
-              ),
-              
-              const SizedBox(height: 20),
+              SizedBox(height: Dimensions.m),
               
               // Calorie Targets Section
               Text(
                 'Calorie Targets:',
-                style: TextStyle(
+                style: AppTextStyles.getSubHeadingStyle().copyWith(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                   color: AppTheme.textDark,
                 ),
               ),
-              
-              const SizedBox(height: 12),
+              SizedBox(height: Dimensions.s),
               
               // Weight Loss Target
               _buildCalorieTargetRow(
                 icon: Icons.trending_down,
                 label: 'Weight Loss',
                 calories: _calorieGoals['lose'] ?? 0,
-                color: AppTheme.textDark,
-                iconColor: Colors.green,
+                color: Colors.green,
               ),
-              
-              const SizedBox(height: 8),
+              SizedBox(height: Dimensions.xs),
               
               // Maintenance Target
               _buildCalorieTargetRow(
                 icon: Icons.horizontal_rule,
                 label: 'Maintenance',
                 calories: _calorieGoals['maintain'] ?? 0,
-                color: AppTheme.textDark,
-                iconColor: AppTheme.primaryBlue,
+                color: AppTheme.primaryBlue,
               ),
-              
-              const SizedBox(height: 8),
+              SizedBox(height: Dimensions.xs),
               
               // Weight Gain Target
               _buildCalorieTargetRow(
                 icon: Icons.trending_up,
                 label: 'Weight Gain',
                 calories: _calorieGoals['gain'] ?? 0,
-                color: AppTheme.textDark,
-                iconColor: const Color(0xFFFFA726), // Orange
+                color: AppTheme.goldAccent,
               ),
               
-              const SizedBox(height: 20),
+              SizedBox(height: Dimensions.m),
               
               // Activity Levels Explanation
               Text(
                 'Activity Levels:',
-                style: TextStyle(
+                style: AppTextStyles.getSubHeadingStyle().copyWith(
                   fontWeight: FontWeight.w500,
+                  fontSize: 16,
                   color: AppTheme.textDark,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: Dimensions.xs),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(Dimensions.s),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(Dimensions.xs),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,31 +229,58 @@ class _TDEECalculatorWidgetState extends State<TDEECalculatorWidget> {
                       'Little or no exercise, desk job',
                       Icons.airline_seat_recline_normal,
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: Dimensions.xs),
                     _buildActivityLevelInfo(
                       'Lightly Active (1.375)',
                       'Light exercise/sports 1-3 days/week',
                       Icons.directions_walk,
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: Dimensions.xs),
                     _buildActivityLevelInfo(
                       'Moderately Active (1.55)',
                       'Moderate exercise/sports 3-5 days/week',
                       Icons.directions_run,
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: Dimensions.xs),
                     _buildActivityLevelInfo(
                       'Very Active (1.725)',
                       'Hard exercise/sports 6-7 days/week',
                       Icons.fitness_center,
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: Dimensions.xs),
                     _buildActivityLevelInfo(
                       'Extra Active (1.9)',
                       'Very hard exercise, physical job or training twice a day',
                       Icons.sports_martial_arts,
                     ),
                   ],
+                ),
+              ),
+              SizedBox(height: Dimensions.m),
+              
+              // Formula
+              Text(
+                'TDEE Formula:',
+                style: AppTextStyles.getSubHeadingStyle().copyWith(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 16,
+                  color: AppTheme.textDark,
+                ),
+              ),
+              SizedBox(height: Dimensions.xs),
+              Container(
+                padding: EdgeInsets.all(Dimensions.s),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(Dimensions.xs),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: Text(
+                  'TDEE = BMR × Activity Multiplier',
+                  style: AppTextStyles.getBodyStyle().copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.textDark,
+                  ),
                 ),
               ),
             ],
@@ -235,7 +292,12 @@ class _TDEECalculatorWidgetState extends State<TDEECalculatorWidget> {
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.primaryBlue,
             ),
-            child: const Text('CLOSE'),
+            child: Text(
+              'CLOSE',
+              style: AppTextStyles.getBodyStyle().copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -247,28 +309,27 @@ class _TDEECalculatorWidgetState extends State<TDEECalculatorWidget> {
     required String label,
     required int calories,
     required Color color,
-    required Color iconColor,
   }) {
     return Row(
       children: [
         Icon(
           icon,
-          color: iconColor,
+          color: color,
           size: 16,
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: Dimensions.xs),
         Expanded(
           child: Text(
             label,
-            style: TextStyle(
+            style: AppTextStyles.getBodyStyle().copyWith(
               fontWeight: FontWeight.w500,
-              color: color,
+              color: AppTheme.textDark,
             ),
           ),
         ),
         Text(
           '$calories cal',
-          style: TextStyle(
+          style: AppTextStyles.getNumericStyle().copyWith(
             fontWeight: FontWeight.bold,
             color: color,
           ),
@@ -286,14 +347,14 @@ class _TDEECalculatorWidgetState extends State<TDEECalculatorWidget> {
           color: AppTheme.primaryBlue,
           size: 16,
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: Dimensions.xs),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
-                style: TextStyle(
+                style: AppTextStyles.getBodyStyle().copyWith(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                   color: AppTheme.textDark,
@@ -301,7 +362,7 @@ class _TDEECalculatorWidgetState extends State<TDEECalculatorWidget> {
               ),
               Text(
                 description,
-                style: TextStyle(
+                style: AppTextStyles.getBodyStyle().copyWith(
                   fontSize: 12,
                   color: AppTheme.textDark,
                 ),
@@ -320,8 +381,7 @@ class _TDEECalculatorWidgetState extends State<TDEECalculatorWidget> {
     if (activityLevel < 1.4) return Icons.battery_1_bar;
     if (activityLevel < 1.6) return Icons.battery_2_bar;
     if (activityLevel < 1.8) return Icons.battery_3_bar;
-    if (activityLevel < 2.0) return Icons.battery_4_bar;
-    return Icons.battery_full;
+    return Icons.battery_4_bar;
   }
   
   // Get activity level color
@@ -330,8 +390,8 @@ class _TDEECalculatorWidgetState extends State<TDEECalculatorWidget> {
     
     if (activityLevel < 1.4) return Colors.grey; // Sedentary
     if (activityLevel < 1.6) return Colors.green; // Lightly active
-    if (activityLevel < 1.8) return const Color(0xFFFFA726); // Moderately active (orange)
-    return AppTheme.primaryBlue; // Very active / Extra active (changed to primaryBlue)
+    if (activityLevel < 1.8) return AppTheme.goldAccent; // Moderately active
+    return AppTheme.primaryBlue; // Very active / Extra active
   }
   
   // Show activity level selection dialog
@@ -385,9 +445,10 @@ class _TDEECalculatorWidgetState extends State<TDEECalculatorWidget> {
             const SizedBox(width: 8),
             Text(
               'Select Activity Level',
-              style: TextStyle(
+              style: AppTextStyles.getSubHeadingStyle().copyWith(
                 color: AppTheme.textDark,
                 fontWeight: FontWeight.bold,
+                fontSize: 18,
               ),
             ),
           ],
@@ -405,14 +466,15 @@ class _TDEECalculatorWidgetState extends State<TDEECalculatorWidget> {
                 ),
                 title: Text(
                   level['text'] as String,
-                  style: TextStyle(
+                  style: AppTextStyles.getBodyStyle().copyWith(
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     color: isSelected ? AppTheme.primaryBlue : AppTheme.textDark,
                   ),
                 ),
                 subtitle: Text(
                   level['desc'] as String,
-                  style: TextStyle(
+                  style: AppTextStyles.getBodyStyle().copyWith(
+                    fontSize: 12,
                     color: Colors.grey[700],
                   ),
                 ),
@@ -433,7 +495,12 @@ class _TDEECalculatorWidgetState extends State<TDEECalculatorWidget> {
             style: TextButton.styleFrom(
               foregroundColor: Colors.grey[700],
             ),
-            child: const Text('CANCEL'),
+            child: Text(
+              'CANCEL',
+              style: AppTextStyles.getBodyStyle().copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -455,138 +522,207 @@ class _TDEECalculatorWidgetState extends State<TDEECalculatorWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // Loading state
-    if (_isLoading) {
-      return MasterWidget(
-        title: 'TDEE',
-        icon: Icons.local_fire_department, // Required for backward compatibility but not displayed
-        isLoading: true,
-        child: const SizedBox(),
-      );
-    }
-
-    // Missing data state
-    if (_missingData.isNotEmpty) {
-      return MasterWidget(
-        title: 'TDEE',
-        icon: Icons.local_fire_department, // Required for backward compatibility but not displayed
-        trailing: MasterWidget.createInfoButton(
-          onPressed: _showTDEEInfoDialog,
-          color: AppTheme.textDark,
-        ),
-        hasError: true,
-        errorMessage: 'To calculate your TDEE, please update your profile with: ${_missingData.join(", ")}',
-        onRetry: () => Navigator.of(context).pushNamed('/settings'),
-        child: const SizedBox(),
-      );
-    }
-
-    // Get activity level text and color
-    final activityText = Formula.getActivityLevelText(widget.userProfile?.activityLevel);
-    final activityColor = _getActivityLevelColor();
-    final activityIcon = _getActivityIcon();
-    
-    // Create activity level badge - tappable
-    final Widget activityBadge = InkWell(
-      onTap: _showActivityLevelDialog,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: Color.fromRGBO(
-            activityColor.red,
-            activityColor.green,
-            activityColor.blue,
-            0.1,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Color.fromRGBO(
-              activityColor.red,
-              activityColor.green,
-              activityColor.blue,
-              0.2,
-            ),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              activityIcon,
-              size: 14,
-              color: activityColor,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              activityText,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: activityColor,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.edit,
-              size: 12,
-              color: activityColor.withOpacity(0.7),
-            ),
-          ],
-        ),
+        ],
       ),
-    );
-    
-    // Normal state with data
-    return MasterWidget(
-      title: 'TDEE',
-      icon: Icons.local_fire_department, // Required for backward compatibility but not displayed
-      trailing: MasterWidget.createInfoButton(
-        onPressed: _showTDEEInfoDialog,
-        color: AppTheme.textDark,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with info button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // TDEE value with cal unit
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
+              Text(
+                'TDEE',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.info_outline, size: 18),
+                onPressed: _showTDEEInfoDialog,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                color: Colors.grey[600],
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Content based on state
+          if (_isLoading) 
+            // Loading state
+            const Center(
+              child: SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else if (_missingData.isNotEmpty) 
+            // Missing data state
+            Column(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  size: 36,
+                  color: Colors.orange,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Missing Information',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'To calculate your TDEE, please update your profile with: ${_missingData.join(", ")}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pushNamed('/settings'),
+                  child: Text('Update Profile'),
+                ),
+              ],
+            )
+          else 
+            // Normal state with TDEE value and activity level
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // TDEE numerical value - reduced size
+                  // TDEE Value
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '${_tdee?.round() ?? 0}',
+                        style: AppTextStyles.getNumericStyle().copyWith(
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryBlue,
+                        ),
+                      ),
+                      SizedBox(width: Dimensions.xxs),
+                      Text(
+                        'cal',
+                        style: AppTextStyles.getNumericStyle().copyWith(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  SizedBox(height: Dimensions.s),
+                  
+                  // Activity level badge - tappable
+                  if (widget.userProfile?.activityLevel != null)
+                    InkWell(
+                      onTap: _showActivityLevelDialog,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: _getActivityLevelColor().withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _getActivityLevelColor().withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _getActivityIcon(),
+                              size: 14,
+                              color: _getActivityLevelColor(),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              Formula.getActivityLevelText(widget.userProfile?.activityLevel),
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: _getActivityLevelColor(),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.edit,
+                              size: 12,
+                              color: _getActivityLevelColor().withOpacity(0.7),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  
+                  SizedBox(height: Dimensions.m),
+                  
+                  // Divider
+                  Divider(color: Colors.grey[300]),
+                  
+                  SizedBox(height: Dimensions.s),
+                  
+                  // Calorie targets (only show two for compact layout)
                   Text(
-                    _tdee?.round().toString() ?? '0',
-                    style: const TextStyle(
-                      fontSize: 30, // Reduced from 36
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                    'Calorie Targets:',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
                     ),
                   ),
                   
-                  // Unit
-                  const Text(
-                    ' cal',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black54,
-                    ),
+                  SizedBox(height: Dimensions.xs),
+                  
+                  // Loss target
+                  _buildCalorieTargetRow(
+                    icon: Icons.trending_down,
+                    label: 'Weight Loss',
+                    calories: _calorieGoals['lose'] ?? 0,
+                    color: Colors.green,
+                  ),
+                  
+                  SizedBox(height: Dimensions.xxs),
+                  
+                  // Maintenance target
+                  _buildCalorieTargetRow(
+                    icon: Icons.horizontal_rule,
+                    label: 'Maintenance',
+                    calories: _calorieGoals['maintain'] ?? 0,
+                    color: AppTheme.primaryBlue,
                   ),
                 ],
               ),
-              
-              // Activity level badge - tappable
-              const SizedBox(height: 8),
-              activityBadge,
-            ],
-          ),
-        ),
+            ),
+        ],
       ),
     );
   }
