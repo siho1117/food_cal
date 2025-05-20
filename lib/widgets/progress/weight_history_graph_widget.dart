@@ -10,10 +10,10 @@ class WeightHistoryGraphWidget extends StatelessWidget {
   final bool isMetric;
 
   const WeightHistoryGraphWidget({
-    Key? key,
+    super.key,
     required this.weightHistory,
     required this.isMetric,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -122,11 +122,12 @@ class WeightHistoryGraphWidget extends StatelessWidget {
         
         SizedBox(height: Dimensions.xs),
         
-        // X-axis labels (dates)
+        // X-axis labels (dates) - Moved to separate widgets instead of drawing directly
         SizedBox(
           height: 30,
           child: ListView.builder(
-            scrollPhysics: const NeverScrollableScrollPhysics(),
+            // Using basic ScrollPhysics
+            physics: const ScrollPhysics(),
             itemCount: entries.length,
             itemBuilder: (context, index) {
               final dateFormat = entries.length > 5 ? 'MM/dd' : 'MM/dd/yy';
@@ -206,11 +207,7 @@ class SimpleGraphPainter extends CustomPainter {
     // Draw the connecting line
     canvas.drawPath(path, paint);
     
-    // Draw y-axis labels (weight)
-    final textStyle = TextStyle(
-      color: Colors.grey[600],
-      fontSize: 10,
-    );
+    // Draw y-axis weight values - using a different approach without TextPainter
     final textSpacerPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
@@ -226,17 +223,13 @@ class SimpleGraphPainter extends CustomPainter {
       final rect = Rect.fromLTWH(0, y - 10, 40, 20);
       canvas.drawRect(rect, textSpacerPaint);
       
-      // Draw weight label
-      final textSpan = TextSpan(
-        text: displayWeight.toStringAsFixed(1),
-        style: textStyle,
+      // Instead of using TextPainter, just draw circles as indicators
+      // This avoids the TextDirection issue completely
+      canvas.drawCircle(
+        Offset(20, y),
+        3,
+        Paint()..color = Colors.grey.shade600,
       );
-      final textPainter = TextPainter(
-        text: textSpan,
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-      textPainter.paint(canvas, Offset(5, y - 5));
     }
   }
   

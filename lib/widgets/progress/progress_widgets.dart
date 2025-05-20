@@ -4,6 +4,7 @@ import '../../data/models/user_profile.dart';
 import '../../data/models/weight_data.dart';
 import '../../utils/formula.dart';
 import '../progress/bmi_widget.dart';
+import '../progress/body_fat_percentage_widget.dart'; // Import the new widget
 import '../progress/weight_entry_widget.dart';
 import '../progress/weight_history_graph_widget.dart';
 
@@ -28,6 +29,10 @@ class _ProgressWidgetsState extends State<ProgressWidgets> {
   // Calculated metrics
   double? _bmiValue;
   String _bmiClassification = 'Not available';
+  
+  // Body fat metrics (newly added)
+  double? _bodyFatValue;
+  String _bodyFatClassification = 'Not available';
   
   // UI state
   bool _isLoading = true;
@@ -66,7 +71,12 @@ class _ProgressWidgetsState extends State<ProgressWidgets> {
       double? bmi;
       String bmiClassification = 'Not available';
       
+      // New: Body fat variables
+      double? bodyFatValue;
+      String bodyFatClassification = 'Not available';
+      
       if (userProfile?.height != null && currentWeight != null) {
+        // Calculate BMI
         bmi = Formula.calculateBMI(
           height: userProfile!.height,
           weight: currentWeight,
@@ -74,6 +84,20 @@ class _ProgressWidgetsState extends State<ProgressWidgets> {
         
         if (bmi != null) {
           bmiClassification = Formula.getBMIClassification(bmi);
+          
+          // Calculate body fat percentage based on BMI
+          bodyFatValue = Formula.calculateBodyFat(
+            bmi: bmi,
+            age: userProfile.age,
+            gender: userProfile.gender,
+          );
+          
+          if (bodyFatValue != null) {
+            bodyFatClassification = Formula.getBodyFatClassification(
+              bodyFatValue, 
+              userProfile.gender,
+            );
+          }
         }
       }
       
@@ -87,6 +111,10 @@ class _ProgressWidgetsState extends State<ProgressWidgets> {
           
           _bmiValue = bmi;
           _bmiClassification = bmiClassification;
+          
+          // Set body fat values in state
+          _bodyFatValue = bodyFatValue;
+          _bodyFatClassification = bodyFatClassification;
           
           _isLoading = false;
         });
@@ -206,6 +234,15 @@ class _ProgressWidgetsState extends State<ProgressWidgets> {
         BMIWidget(
           bmiValue: _bmiValue,
           classification: _bmiClassification,
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // Body Fat Percentage Widget (new)
+        BodyFatPercentageWidget(
+          bodyFatPercentage: _bodyFatValue,
+          classification: _bodyFatClassification,
+          isEstimated: true, // Since it's calculated from BMI, not directly measured
         ),
         
         const SizedBox(height: 30),
