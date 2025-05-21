@@ -43,6 +43,7 @@ dependencies:
   image_gallery_saver: ^2.0.3  # Use the latest version available
   google_fonts: ^6.1.0  # Use the latest version
   percent_indicator: ^4.2.2
+  provider: ^6.0.5 
 
 
 
