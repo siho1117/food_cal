@@ -1,45 +1,21 @@
 // lib/widgets/home/macronutrient_widget.dart
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../config/design_system/theme.dart';
 import '../../config/design_system/text_styles.dart';
-import '../../data/repositories/food_repository.dart';
-import '../../data/repositories/user_repository.dart';
-import '../../utils/home_statistics_calculator.dart';
+import '../../providers/home_provider.dart';
 
 class MacronutrientWidget extends StatefulWidget {
-  final DateTime date;
-
-  const MacronutrientWidget({
-    Key? key,
-    required this.date,
-  }) : super(key: key);
+  const MacronutrientWidget({Key? key}) : super(key: key);
 
   @override
   State<MacronutrientWidget> createState() => _MacronutrientWidgetState();
 }
 
 class _MacronutrientWidgetState extends State<MacronutrientWidget> with SingleTickerProviderStateMixin {
-  final FoodRepository _foodRepository = FoodRepository();
-  final UserRepository _userRepository = UserRepository();
-
   late AnimationController _animationController;
   late Animation<double> _progressAnimation;
-
-  bool _isLoading = true;
-  int _totalCalories = 0;
-  Map<String, double> _consumedMacros = {
-    'protein': 0,
-    'carbs': 0,
-    'fat': 0,
-  };
-  
-  // Target macros in grams (with default values)
-  Map<String, int> _targetMacros = {
-    'protein': 50, // Default non-zero values
-    'carbs': 150,
-    'fat': 50,
-  };
 
   @override
   void initState() {
@@ -59,7 +35,8 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget> with SingleTi
       ),
     );
     
-    _loadData();
+    // Start animation
+    _animationController.forward();
   }
 
   @override
@@ -69,225 +46,159 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget> with SingleTi
   }
 
   @override
-  void didUpdateWidget(MacronutrientWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.date != widget.date) {
-      _loadData();
-    }
-  }
-
-  Future<void> _loadData() async {
-    if (mounted) {
-      setState(() {
-        _isLoading = true;
-      });
-    }
-
-    try {
-      // Load user profile and current weight to calculate targets
-      final userProfile = await _userRepository.getUserProfile();
-      final currentWeight = (await _userRepository.getLatestWeightEntry())?.weight;
-      
-      // Load food entries
-      final entriesByMeal = await _foodRepository.getFoodEntriesByMeal(widget.date);
-      
-      // Use the HomeStatisticsCalculator for all calculations
-      
-      // Calculate calorie goal
-      final calorieGoal = HomeStatisticsCalculator.calculateCalorieGoal(
-        userProfile: userProfile,
-        currentWeight: currentWeight,
-      );
-      
-      // Calculate total calories consumed
-      final totalCalories = HomeStatisticsCalculator.calculateTotalCalories(entriesByMeal);
-      
-      // Calculate macro targets
-      final targetMacros = HomeStatisticsCalculator.calculateMacroTargets(
-        userProfile: userProfile,
-        currentWeight: currentWeight,
-        calorieGoal: calorieGoal,
-      );
-      
-      // Calculate consumed macros
-      final consumedMacros = HomeStatisticsCalculator.calculateConsumedMacros(entriesByMeal);
-
-      if (mounted) {
-        setState(() {
-          _totalCalories = totalCalories;
-          _consumedMacros = consumedMacros;
-          _targetMacros = targetMacros;
-          _isLoading = false;
-          
-          // Reset animation controller and start animation
-          _animationController.reset();
-          _animationController.forward();
-        });
-      }
-    } catch (e) {
-      print('Error loading macronutrient data: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Container(
-        height: 240,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              spreadRadius: 0,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    // Calculate values using the calculator
-    final progressPercentages = HomeStatisticsCalculator.calculateMacroProgressPercentages(
-      consumedMacros: _consumedMacros,
-      targetMacros: _targetMacros,
-    );
-    final targetPercentages = HomeStatisticsCalculator.calculateMacroTargetPercentages(
-      consumedMacros: _consumedMacros,
-      targetMacros: _targetMacros,
-    );
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            spreadRadius: 0,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+    return Consumer<HomeProvider>(
+      builder: (context, homeProvider, child) {
+        if (homeProvider.isLoading) {
+          return Container(
+            height: 240,
             decoration: BoxDecoration(
-              color: AppTheme.primaryBlue.withOpacity(0.02),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  spreadRadius: 0,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        // Get data from provider
+        final consumedMacros = homeProvider.consumedMacros;
+        final targetMacros = homeProvider.targetMacros;
+        final progressPercentages = homeProvider.macroProgressPercentages;
+        final targetPercentages = homeProvider.macroTargetPercentages;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                spreadRadius: 0,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBlue.withOpacity(0.02),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      Icons.donut_large_rounded,
-                      color: AppTheme.primaryBlue,
-                      size: 20,
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.donut_large_rounded,
+                          color: AppTheme.primaryBlue,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Macronutrients',
+                          style: AppTextStyles.getSubHeadingStyle().copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: AppTheme.primaryBlue,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Macronutrients',
-                      style: AppTextStyles.getSubHeadingStyle().copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: AppTheme.primaryBlue,
+                    IconButton(
+                      icon: Icon(
+                        Icons.refresh_rounded,
+                        color: AppTheme.primaryBlue.withOpacity(0.7),
+                        size: 20,
+                      ),
+                      onPressed: () => homeProvider.refreshData(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Main content area
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Left side: Circular chart
+                    SizedBox(
+                      width: 145,
+                      height: 145,
+                      child: AnimatedBuilder(
+                        animation: _progressAnimation,
+                        builder: (context, child) {
+                          return _buildMacroCircularChart(
+                            progressPercentages: progressPercentages,
+                            animationValue: _progressAnimation.value,
+                          );
+                        },
+                      ),
+                    ),
+                    
+                    // Spacing between chart and text
+                    const SizedBox(width: 20),
+                    
+                    // Right side: Macro information
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildMacroInfo(
+                            'Protein',
+                            consumedMacros['protein']!.round(),
+                            targetMacros['protein']!,
+                            targetPercentages['protein']!,
+                            AppTheme.coralAccent,
+                          ),
+                          const SizedBox(height: 15),
+                          _buildMacroInfo(
+                            'Carbs',
+                            consumedMacros['carbs']!.round(),
+                            targetMacros['carbs']!,
+                            targetPercentages['carbs']!,
+                            AppTheme.goldAccent,
+                          ),
+                          const SizedBox(height: 15),
+                          _buildMacroInfo(
+                            'Fat',
+                            consumedMacros['fat']!.round(),
+                            targetMacros['fat']!,
+                            targetPercentages['fat']!,
+                            AppTheme.accentColor,
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                IconButton(
-                  icon: Icon(
-                    Icons.refresh_rounded,
-                    color: AppTheme.primaryBlue.withOpacity(0.7),
-                    size: 20,
-                  ),
-                  onPressed: _loadData,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          
-          // Main content area
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Left side: Circular chart
-                SizedBox(
-                  width: 145,
-                  height: 145,
-                  child: AnimatedBuilder(
-                    animation: _progressAnimation,
-                    builder: (context, child) {
-                      return _buildMacroCircularChart(
-                        progressPercentages: progressPercentages,
-                        animationValue: _progressAnimation.value,
-                      );
-                    },
-                  ),
-                ),
-                
-                // Spacing between chart and text
-                const SizedBox(width: 20),
-                
-                // Right side: Macro information
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildMacroInfo(
-                        'Protein',
-                        _consumedMacros['protein']!.round(),
-                        _targetMacros['protein']!,
-                        targetPercentages['protein']!,
-                        AppTheme.coralAccent,
-                      ),
-                      const SizedBox(height: 15),
-                      _buildMacroInfo(
-                        'Carbs',
-                        _consumedMacros['carbs']!.round(),
-                        _targetMacros['carbs']!,
-                        targetPercentages['carbs']!,
-                        AppTheme.goldAccent,
-                      ),
-                      const SizedBox(height: 15),
-                      _buildMacroInfo(
-                        'Fat',
-                        _consumedMacros['fat']!.round(),
-                        _targetMacros['fat']!,
-                        targetPercentages['fat']!,
-                        AppTheme.accentColor,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

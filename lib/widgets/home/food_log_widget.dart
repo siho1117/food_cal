@@ -1,18 +1,18 @@
 // lib/widgets/home/food_log_widget.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../config/design_system/theme.dart';
 import '../../data/models/food_item.dart';
 import '../../data/repositories/food_repository.dart';
+import '../../providers/home_provider.dart';
 
 class FoodLogWidget extends StatefulWidget {
-  final DateTime date;
   final bool showHeader;
   final VoidCallback? onFoodAdded;
 
   const FoodLogWidget({
     Key? key,
-    required this.date,
     this.showHeader = true,
     this.onFoodAdded,
   }) : super(key: key);
@@ -23,8 +23,6 @@ class FoodLogWidget extends StatefulWidget {
 
 class _FoodLogWidgetState extends State<FoodLogWidget> {
   final FoodRepository _foodRepository = FoodRepository();
-  bool _isLoading = true;
-  Map<String, List<FoodItem>> _foodByMeal = {};
 
   // Track expanded sections
   final Map<String, bool> _expandedSections = {
@@ -34,109 +32,50 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
     'snack': true,
   };
 
-  @override
-  void initState() {
-    super.initState();
-    _loadFoodEntries();
-  }
-
-  @override
-  void didUpdateWidget(FoodLogWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Reload if date changes
-    if (oldWidget.date != widget.date) {
-      _loadFoodEntries();
-    }
-  }
-
-  Future<void> _loadFoodEntries() async {
-    if (mounted) {
-      setState(() {
-        _isLoading = true;
-      });
-    }
-
-    try {
-      final entriesByMeal =
-          await _foodRepository.getFoodEntriesByMeal(widget.date);
-
-      if (mounted) {
-        setState(() {
-          _foodByMeal = entriesByMeal;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Error loading food entries: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
   // Calculate total calories for a meal
   int _calculateMealCalories(List<FoodItem> items) {
     return items.fold(
         0, (sum, item) => sum + (item.calories * item.servingSize).round());
   }
 
-  // Delete a food item locally without waiting for repository
-  void _deleteFoodItemLocally(String id, String mealType) {
-    if (_foodByMeal.containsKey(mealType)) {
-      setState(() {
-        _foodByMeal[mealType] = _foodByMeal[mealType]!
-            .where((item) => item.id != id)
-            .toList();
-      });
-    }
-  }
-
-  // Update a food item locally without waiting for repository
-  void _updateFoodItemLocally(FoodItem updatedItem) {
-    if (_foodByMeal.containsKey(updatedItem.mealType)) {
-      setState(() {
-        final index = _foodByMeal[updatedItem.mealType]!
-            .indexWhere((item) => item.id == updatedItem.id);
-        if (index != -1) {
-          _foodByMeal[updatedItem.mealType]![index] = updatedItem;
-        }
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return _buildLoadingState();
-    }
+    return Consumer<HomeProvider>(
+      builder: (context, homeProvider, child) {
+        if (homeProvider.isLoading) {
+          return _buildLoadingState();
+        }
 
-    // Check if there are any food entries
-    final bool hasEntries = _foodByMeal.values.any((list) => list.isNotEmpty);
+        // Get food entries from provider
+        final foodByMeal = homeProvider.entriesByMeal;
+        
+        // Check if there are any food entries
+        final bool hasEntries = foodByMeal.values.any((list) => list.isNotEmpty);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Optional header
-        if (widget.showHeader) ...[
-          _buildHeader(),
-          const SizedBox(height: 16),
-        ],
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Optional header
+            if (widget.showHeader) ...[
+              _buildHeader(homeProvider),
+              const SizedBox(height: 16),
+            ],
 
-        // No entries message
-        if (!hasEntries)
-          _buildEmptyState(),
+            // No entries message
+            if (!hasEntries)
+              _buildEmptyState(),
 
-        // Food entries by meal type
-        if (hasEntries) ...[
-          ..._buildMealSections(),
-        ],
-      ],
+            // Food entries by meal type
+            if (hasEntries) ...[
+              ..._buildMealSections(foodByMeal, homeProvider),
+            ],
+          ],
+        );
+      },
     );
   }
   
-  Widget _buildHeader() {
+  Widget _buildHeader(HomeProvider homeProvider) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
       decoration: BoxDecoration(
@@ -170,7 +109,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
               color: AppTheme.primaryBlue,
               size: 20,
             ),
-            onPressed: _loadFoodEntries,
+            onPressed: () => homeProvider.refreshData(),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
@@ -247,9 +186,9 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
     );
   }
   
-  List<Widget> _buildMealSections() {
+  List<Widget> _buildMealSections(Map<String, List<FoodItem>> foodByMeal, HomeProvider homeProvider) {
     return ['breakfast', 'lunch', 'dinner', 'snack'].map((mealType) {
-      final mealItems = _foodByMeal[mealType] ?? [];
+      final mealItems = foodByMeal[mealType] ?? [];
 
       // Skip empty meal types
       if (mealItems.isEmpty) {
@@ -276,6 +215,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
           mealType: mealType,
           mealItems: mealItems,
           totalCalories: totalCalories,
+          homeProvider: homeProvider,
         ),
       );
     }).toList();
@@ -285,6 +225,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
     required String mealType,
     required List<FoodItem> mealItems,
     required int totalCalories,
+    required HomeProvider homeProvider,
   }) {
     final isExpanded = _expandedSections[mealType] ?? true;
     
@@ -365,13 +306,13 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
             color: Colors.grey[100],
           ),
           // List of food items
-          ...mealItems.map((item) => _buildFoodItemTile(item, mealType)),
+          ...mealItems.map((item) => _buildFoodItemTile(item, mealType, homeProvider)),
         ],
       ],
     );
   }
   
-  Widget _buildFoodItemTile(FoodItem item, String mealType) {
+  Widget _buildFoodItemTile(FoodItem item, String mealType, HomeProvider homeProvider) {
     // Calculate calories for this item with serving size
     final itemCalories = (item.calories * item.servingSize).round();
 
@@ -385,7 +326,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
     Widget foodItemContent = InkWell(
       onTap: () {
         // Show serving size adjustment dialog
-        _showServingSizeDialog(item);
+        _showServingSizeDialog(item, homeProvider);
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(
@@ -467,19 +408,21 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
         ),
       ),
       direction: DismissDirection.endToStart, // Only right to left swipe
-      onDismissed: (direction) {
-        // First update the UI immediately (optimistic update)
-        _deleteFoodItemLocally(item.id, mealType);
+      onDismissed: (direction) async {
+        // Delete from repository
+        final success = await _foodRepository.deleteFoodEntry(item.id, item.timestamp);
         
-        // Then attempt to delete from repository in the background
-        _foodRepository.deleteFoodEntry(item.id, item.timestamp).then((success) {
-          if (success) {
-            // Notify the parent widget if needed
-            if (widget.onFoodAdded != null) {
-              widget.onFoodAdded!();
-            }
-            
-            // Show a brief snackbar confirmation
+        if (success) {
+          // Refresh the provider data
+          await homeProvider.refreshData();
+          
+          // Notify parent if needed
+          if (widget.onFoodAdded != null) {
+            widget.onFoodAdded!();
+          }
+          
+          // Show a brief snackbar confirmation
+          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: const Text('Item removed'),
@@ -487,11 +430,10 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
                 behavior: SnackBarBehavior.floating,
               ),
             );
-          } else {
-            // If deletion failed, reload the data to restore the correct state
-            _loadFoodEntries();
-            
-            // Show error message
+          }
+        } else {
+          // Show error message
+          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Failed to delete food item'),
@@ -499,7 +441,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
               ),
             );
           }
-        });
+        }
       },
       child: foodItemContent,
     );
@@ -569,7 +511,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
   }
   
   // Serving size adjustment dialog
-  void _showServingSizeDialog(FoodItem item) {
+  void _showServingSizeDialog(FoodItem item, HomeProvider homeProvider) {
     double newServingSize = item.servingSize;
     
     showDialog(
@@ -632,7 +574,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
               child: const Text('CANCEL'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(context).pop();
                 
                 // Create updated food item with new serving size
@@ -651,21 +593,20 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
                   spoonacularId: item.spoonacularId,
                 );
                 
-                // First update the UI immediately (optimistic update)
-                _updateFoodItemLocally(updatedItem);
+                // Update in repository
+                final success = await _foodRepository.updateFoodEntry(updatedItem);
                 
-                // Then update in repository in the background
-                _foodRepository.updateFoodEntry(updatedItem).then((success) {
-                  if (success) {
-                    // Notify the parent widget if needed
-                    if (widget.onFoodAdded != null) {
-                      widget.onFoodAdded!();
-                    }
-                  } else {
-                    // If update failed, reload the data to restore the correct state
-                    _loadFoodEntries();
-                    
-                    // Show error message
+                if (success) {
+                  // Refresh provider data
+                  await homeProvider.refreshData();
+                  
+                  // Notify parent if needed
+                  if (widget.onFoodAdded != null) {
+                    widget.onFoodAdded!();
+                  }
+                } else {
+                  // Show error message
+                  if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Failed to update serving size'),
@@ -673,7 +614,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
                       ),
                     );
                   }
-                });
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryBlue,
