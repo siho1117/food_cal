@@ -1,9 +1,9 @@
 // lib/widgets/progress/progress_data.dart
 import 'package:flutter/foundation.dart';
-import '../../data/repositories/user_repository.dart';
-import '../../data/models/user_profile.dart';
-import '../../data/models/weight_data.dart';
-import '../../utils/formula.dart';
+import '../data/repositories/user_repository.dart';
+import '../data/models/user_profile.dart';
+import '../data/models/weight_data.dart';
+import '../utils/formula.dart';
 
 /// A data provider class that manages progress screen data
 /// Uses ChangeNotifier to inform widgets when data changes
