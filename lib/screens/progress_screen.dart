@@ -1,7 +1,7 @@
 // lib/screens/progress_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../widgets/progress/progress_data.dart';
+import '../providers/progress_provider.dart';
 import '../widgets/progress/bmi_widget.dart';
 import '../widgets/progress/body_fat_percentage_widget.dart';
 import '../widgets/progress/weight_entry_widget.dart';

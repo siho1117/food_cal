@@ -6,7 +6,7 @@ import '../../config/design_system/theme.dart';
 import '../../config/design_system/dimensions.dart';
 import '../../config/design_system/text_styles.dart';
 import '../../utils/formula.dart';
-import '../progress/progress_data.dart';
+import '../../providers/progress_provider.dart';
 
 class TargetWeightWidget extends StatelessWidget {
   const TargetWeightWidget({Key? key}) : super(key: key);

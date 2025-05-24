@@ -4,9 +4,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'config/design_system/theme.dart';
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/progress_screen.dart';
+import 'screens/progress_screen.dart' as progress;
 import 'screens/camera_screen.dart';
-import 'screens/exercise_screen.dart';
+import 'screens/exercise_screen.dart' as exercise;
 import 'screens/settings_screen.dart';
 import 'widgets/custom_bottom_nav.dart';
 import 'widgets/custom_app_bar.dart';
@@ -50,8 +50,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/home': (context) => const MainApp(),
         '/settings': (context) => const SettingsScreen(),
-        '/progress': (context) => const ProgressScreen(),
-        '/exercise': (context) => const ExerciseScreen(),
+        '/progress': (context) => const progress.ProgressScreen(),
+        '/exercise': (context) => const exercise.ExerciseScreen(),
         '/camera': (context) => const CameraScreen(),
       },
     );
@@ -87,9 +87,9 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     // Initialize screens with the camera screen key
     _screens = [
       const HomeScreen(),
-      const ProgressScreen(),
+      const progress.ProgressScreen(),
       CameraScreen(key: _cameraScreenKey),
-      const ExerciseScreen(),
+      const exercise.ExerciseScreen(),
       const SettingsScreen(),
     ];
   }
