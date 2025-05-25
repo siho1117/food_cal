@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../config/design_system/theme.dart';
 import '../providers/exercise_provider.dart';
 import '../widgets/exercise/daily_burn_widget.dart';
+import '../widgets/exercise/exercise_log_widget.dart';
 
 class ExerciseScreen extends StatefulWidget {
   const ExerciseScreen({Key? key}) : super(key: key);
@@ -57,10 +58,21 @@ class _ExerciseScreenState extends State<ExerciseScreen> {
 
                       const SizedBox(height: 30),
                       
-                      // Daily Burn Recommendations Widget (your existing widget)
+                      // Daily Burn Recommendations Widget
                       DailyBurnWidget(
                         userProfile: exerciseProvider.userProfile,
                         currentWeight: exerciseProvider.currentWeight,
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Exercise Log Widget (New!)
+                      ExerciseLogWidget(
+                        showHeader: false, // Header is already shown above
+                        onExerciseAdded: () {
+                          // Optional callback when exercise is added
+                          // Could trigger additional actions if needed
+                        },
                       ),
 
                       const SizedBox(height: 20),
