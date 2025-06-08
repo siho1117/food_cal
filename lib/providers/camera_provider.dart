@@ -6,11 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'dart:typed_data';
-import '../data/repositories/food_repository.dart';
 import '../screens/food_recognition_results_screen.dart';
 
 class CameraProvider extends ChangeNotifier {
-  final FoodRepository _foodRepository = FoodRepository();
   final ImagePicker _picker = ImagePicker();
 
   // Loading state
@@ -20,38 +18,18 @@ class CameraProvider extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
-  // Image state
-  File? _capturedImage;
-  File? get capturedImage => _capturedImage;
-
-  // Meal type selection
-  String _selectedMealType = 'snack';
-  String get selectedMealType => _selectedMealType;
-
-  // Available meal types
-  final List<String> _mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
-  List<String> get mealTypes => _mealTypes;
-
-  /// Set the selected meal type
-  void setMealType(String mealType) {
-    if (_mealTypes.contains(mealType)) {
-      _selectedMealType = mealType;
-      notifyListeners();
-    }
+  /// Capture photo from camera and go directly to analysis
+  Future<void> captureFromCamera(BuildContext context) async {
+    await _captureAndAnalyze(ImageSource.camera, context);
   }
 
-  /// Capture photo from camera
-  Future<void> captureFromCamera() async {
-    await _captureImage(ImageSource.camera);
+  /// Select image from gallery and go directly to analysis
+  Future<void> selectFromGallery(BuildContext context) async {
+    await _captureAndAnalyze(ImageSource.gallery, context);
   }
 
-  /// Select image from gallery
-  Future<void> selectFromGallery() async {
-    await _captureImage(ImageSource.gallery);
-  }
-
-  /// Internal method to handle image capture/selection
-  Future<void> _captureImage(ImageSource source) async {
+  /// Internal method to capture image and immediately analyze
+  Future<void> _captureAndAnalyze(ImageSource source, BuildContext context) async {
     _setLoading(true);
     _clearError();
 
@@ -73,15 +51,37 @@ class CameraProvider extends ChangeNotifier {
           45
         );
 
-        _capturedImage = optimizedFile;
-        _setLoading(false);
-      } else {
-        // User cancelled
-        _setLoading(false);
+        // Navigate directly to analysis screen
+        _navigateToAnalysis(context, optimizedFile);
       }
     } catch (e) {
       _setError('Error capturing image: $e');
+      
+      // Show error to user
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
       _setLoading(false);
+    }
+  }
+
+  /// Navigate to food recognition results screen
+  void _navigateToAnalysis(BuildContext context, File imageFile) {
+    if (context.mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => FoodRecognitionResultsScreen(
+            imageFile: imageFile,
+            mealType: _getSuggestedMealType(),
+          ),
+        ),
+      );
     }
   }
 
@@ -120,45 +120,6 @@ class CameraProvider extends ChangeNotifier {
     }
   }
 
-  /// Analyze the captured image using the food repository
-  Future<void> analyzeImage(BuildContext context) async {
-    if (_capturedImage == null) {
-      _setError('No image to analyze');
-      return;
-    }
-
-    _setLoading(true);
-    _clearError();
-
-    try {
-      // Navigate to recognition results screen
-      // The existing FoodRecognitionResultsScreen will handle the API call
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => FoodRecognitionResultsScreen(
-            imageFile: _capturedImage!,
-            mealType: _selectedMealType,
-          ),
-        ),
-      ).then((_) {
-        // Clear the current image when returning from results
-        clearCurrentImage();
-      });
-
-      _setLoading(false);
-    } catch (e) {
-      _setError('Error analyzing image: $e');
-      _setLoading(false);
-    }
-  }
-
-  /// Clear the current captured image
-  void clearCurrentImage() {
-    _capturedImage = null;
-    _clearError();
-    notifyListeners();
-  }
-
   /// Set loading state
   void _setLoading(bool loading) {
     _isLoading = loading;
@@ -178,25 +139,8 @@ class CameraProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Refresh/reset the provider state
-  void refreshData() {
-    clearCurrentImage();
-    _clearError();
-    _setLoading(false);
-  }
-
-  /// Get formatted meal type for display
-  String getFormattedMealType(String mealType) {
-    if (mealType.isEmpty) return 'Snack';
-    return mealType.substring(0, 1).toUpperCase() + 
-           mealType.substring(1).toLowerCase();
-  }
-
-  /// Check if there's a captured image ready for analysis
-  bool get hasImageToAnalyze => _capturedImage != null && !_isLoading;
-
   /// Get appropriate meal type based on current time
-  String getSuggestedMealType() {
+  String _getSuggestedMealType() {
     final now = DateTime.now();
     final hour = now.hour;
 
@@ -209,10 +153,5 @@ class CameraProvider extends ChangeNotifier {
     } else {
       return 'snack';
     }
-  }
-
-  /// Auto-set meal type based on current time (useful for initialization)
-  void setSuggestedMealType() {
-    setMealType(getSuggestedMealType());
   }
 }

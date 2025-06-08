@@ -25,7 +25,7 @@ class CameraActionsWidget extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: cameraProvider.isLoading 
                         ? null 
-                        : () => cameraProvider.selectFromGallery(),
+                        : () => cameraProvider.selectFromGallery(context),
                     icon: cameraProvider.isLoading
                         ? const SizedBox(
                             width: 32,
@@ -40,7 +40,7 @@ class CameraActionsWidget extends StatelessWidget {
                             size: 36,
                           ),
                     label: Text(
-                      cameraProvider.isLoading ? 'Loading...' : 'Gallery',
+                      cameraProvider.isLoading ? 'Processing...' : 'Gallery',
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -64,7 +64,7 @@ class CameraActionsWidget extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: cameraProvider.isLoading 
                         ? null 
-                        : () => cameraProvider.captureFromCamera(),
+                        : () => cameraProvider.captureFromCamera(context),
                     icon: cameraProvider.isLoading 
                         ? const SizedBox(
                             width: 32,
@@ -79,7 +79,7 @@ class CameraActionsWidget extends StatelessWidget {
                             size: 36,
                           ),
                     label: Text(
-                      cameraProvider.isLoading ? 'Loading...' : 'Camera',
+                      cameraProvider.isLoading ? 'Processing...' : 'Camera',
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -95,51 +95,20 @@ class CameraActionsWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                // Error message display
-                if (cameraProvider.errorMessage != null) ...[
-                  const SizedBox(height: 30),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.red.shade200,
-                        width: 1,
+                
+                // Show error message if any
+                if (cameraProvider.errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: Text(
+                      cameraProvider.errorMessage!,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 14,
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          color: Colors.red.shade600,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            cameraProvider.errorMessage!,
-                            style: TextStyle(
-                              color: Colors.red.shade700,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => cameraProvider.refreshData(),
-                          icon: Icon(
-                            Icons.close,
-                            color: Colors.red.shade600,
-                            size: 18,
-                          ),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
-                      ],
+                      textAlign: TextAlign.center,
                     ),
                   ),
-                ],
               ],
             ),
           ),
