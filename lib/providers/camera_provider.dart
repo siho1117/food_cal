@@ -6,10 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'dart:typed_data';
-import '../screens/food_recognition_results_screen.dart';
+import '../data/repositories/food_repository.dart';
 
 class CameraProvider extends ChangeNotifier {
   final ImagePicker _picker = ImagePicker();
+  final FoodRepository _foodRepository = FoodRepository();
 
   // Loading state
   bool _isLoading = false;
@@ -18,67 +19,124 @@ class CameraProvider extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
-  /// Capture photo from camera and go directly to analysis
+  /// Capture photo from camera and auto-save to food log
   Future<void> captureFromCamera(BuildContext context) async {
-    await _captureAndAnalyze(ImageSource.camera, context);
+    await _captureAnalyzeAndSave(ImageSource.camera, context);
   }
 
-  /// Select image from gallery and go directly to analysis
+  /// Select image from gallery and auto-save to food log
   Future<void> selectFromGallery(BuildContext context) async {
-    await _captureAndAnalyze(ImageSource.gallery, context);
+    await _captureAnalyzeAndSave(ImageSource.gallery, context);
   }
 
-  /// Internal method to capture image and immediately analyze
-  Future<void> _captureAndAnalyze(ImageSource source, BuildContext context) async {
+  /// Complete flow: capture → analyze → save → navigate home
+  Future<void> _captureAnalyzeAndSave(ImageSource source, BuildContext context) async {
     _setLoading(true);
     _clearError();
 
     try {
+      // Step 1: Capture image
       final XFile? pickedFile = await _picker.pickImage(
         source: source,
         imageQuality: 90,
         preferredCameraDevice: CameraDevice.rear,
       );
 
-      if (pickedFile != null) {
-        final File originalFile = File(pickedFile.path);
-        
-        // Process the image (resize and optimize)
-        final File optimizedFile = await _resizeAndOptimizeImage(
-          originalFile, 
-          256, 
-          256, 
-          45
-        );
+      if (pickedFile == null) {
+        // User cancelled
+        _setLoading(false);
+        return;
+      }
 
-        // Navigate directly to analysis screen
-        _navigateToAnalysis(context, optimizedFile);
+      // Step 2: Process image
+      final File originalFile = File(pickedFile.path);
+      final File optimizedFile = await _resizeAndOptimizeImage(
+        originalFile, 
+        256, 
+        256, 
+        45
+      );
+
+      // Step 3: Analyze with API
+      final recognizedItems = await _foodRepository.recognizeFood(
+        optimizedFile,
+        _getSuggestedMealType(),
+      );
+
+      if (recognizedItems.isEmpty) {
+        _showErrorAndReturn(context, 'No food items were detected in the image. Please try again.');
+        return;
       }
-    } catch (e) {
-      _setError('Error capturing image: $e');
+
+      // Step 4: Auto-save to food log
+      final saveSuccess = await _foodRepository.saveFoodEntries(recognizedItems);
       
-      // Show error to user
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      if (!saveSuccess) {
+        _showErrorAndReturn(context, 'Failed to save food items. Please try again.');
+        return;
       }
+
+      // Step 5: Navigate to home page and show success
+      if (context.mounted) {
+        _navigateToHomeWithSuccess(context, recognizedItems.length);
+      }
+
+    } catch (e) {
+      print('Error in camera flow: $e');
+      _showErrorAndReturn(context, 'Error processing image: $e');
     } finally {
       _setLoading(false);
     }
   }
 
-  /// Navigate to food recognition results screen
-  void _navigateToAnalysis(BuildContext context, File imageFile) {
+  /// Navigate to home page and show success message
+  void _navigateToHomeWithSuccess(BuildContext context, int itemCount) {
+    // Navigate to home (index 0 in bottom navigation)
+    Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+    
+    // Show success message
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              itemCount == 1 
+                ? 'Food item added to your log!' 
+                : '$itemCount food items added to your log!',
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'View',
+              textColor: Colors.white,
+              onPressed: () {
+                // Optional: scroll to today's food log section
+              },
+            ),
+          ),
+        );
+      }
+    });
+  }
+
+  /// Show error message and stay on camera page
+  void _showErrorAndReturn(BuildContext context, String message) {
+    _setError(message);
+    
     if (context.mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => FoodRecognitionResultsScreen(
-            imageFile: imageFile,
-            mealType: _getSuggestedMealType(),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
+          action: SnackBarAction(
+            label: 'Retry',
+            textColor: Colors.white,
+            onPressed: () {
+              _clearError();
+            },
           ),
         ),
       );
