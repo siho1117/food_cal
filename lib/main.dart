@@ -1,3 +1,4 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // For SystemChrome
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -52,7 +53,7 @@ class MyApp extends StatelessWidget {
         '/settings': (context) => const SettingsScreen(),
         '/progress': (context) => const progress.ProgressScreen(),
         '/exercise': (context) => const exercise.ExerciseScreen(),
-        '/camera': (context) => const CameraScreen(),
+        // Camera route removed - handled with transparent overlay
       },
     );
   }
@@ -84,13 +85,13 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       duration: const Duration(milliseconds: 500),
     );
 
-    // Initialize screens with the camera screen key
+    // Initialize screens - KEEP ALL 5 SCREENS for simplicity
     _screens = [
-      const HomeScreen(),
-      const progress.ProgressScreen(),
-      CameraScreen(key: _cameraScreenKey),
-      const exercise.ExerciseScreen(),
-      const SettingsScreen(),
+      const HomeScreen(),                    // index 0
+      const progress.ProgressScreen(),       // index 1
+      Container(),                           // index 2 - placeholder for camera (never used)
+      const exercise.ExerciseScreen(),       // index 3
+      const SettingsScreen(),                // index 4
     ];
   }
 
@@ -101,14 +102,13 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   }
 
   void _onItemTapped(int index) {
-    // If we're already on the camera screen (index 2) and user taps camera button again,
-    // trigger the capture method
-    if (_currentIndex == 2 && index == 2) {
-      _onCameraCapture();
-      return;
+    // Handle camera tap (index 2) with transparent navigation
+    if (index == 2) {
+      _navigateToTransparentCamera();
+      return; // DON'T change _currentIndex - this is the key!
     }
 
-    // Reset animation when tab changes
+    // For all other tabs, change normally
     _animationController.reset();
     _animationController.forward();
 
@@ -117,8 +117,29 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     });
   }
 
+  void _navigateToTransparentCamera() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false, // This makes the route transparent
+        barrierDismissible: true, // Allow dismissing by tapping outside
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return CameraScreen(key: _cameraScreenKey);
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+        reverseTransitionDuration: const Duration(milliseconds: 250),
+      ),
+    );
+    // No need for .then() - _currentIndex never changes!
+  }
+
   void _onCameraCapture() {
-    // Call the capture method on the camera screen
+    // Call the capture method on the camera screen if it's currently showing
     _cameraScreenKey.currentState?.capturePhoto();
   }
 
@@ -136,7 +157,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       case 1:
         return 'Health Metrics';
       case 2:
-        return 'Food Recognition';
+        return 'Food Recognition'; // Won't be used since camera doesn't change _currentIndex
       case 3:
         return 'Activity Tracker';
       case 4:
@@ -150,12 +171,10 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      appBar: _currentIndex == 2
-          ? null // No app bar for camera screen
-          : CustomAppBar(
-              onSettingsTap: _navigateToSettings,
-              currentPage: _getCurrentPageSubtitle(), // Pass the current page subtitle
-            ),
+      appBar: CustomAppBar(
+        onSettingsTap: _navigateToSettings,
+        currentPage: _getCurrentPageSubtitle(),
+      ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         transitionBuilder: (Widget child, Animation<double> animation) {
@@ -170,7 +189,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
             ),
           );
         },
-        child: _screens[_currentIndex],
+        child: _screens[_currentIndex], // Direct mapping - no complex logic needed!
       ),
       extendBody: true, // Important for curved navigation bar
       bottomNavigationBar: CustomBottomNav(
