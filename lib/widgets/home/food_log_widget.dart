@@ -12,10 +12,10 @@ class FoodLogWidget extends StatefulWidget {
   final VoidCallback? onFoodAdded;
 
   const FoodLogWidget({
-    Key? key,
+    super.key,
     this.showHeader = true,
     this.onFoodAdded,
-  }) : super(key: key);
+  });
 
   @override
   State<FoodLogWidget> createState() => _FoodLogWidgetState();
@@ -42,9 +42,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
   Widget build(BuildContext context) {
     return Consumer<HomeProvider>(
       builder: (context, homeProvider, child) {
-        if (homeProvider.isLoading) {
-          return _buildLoadingState();
-        }
+        // Removed individual loading state - rely on page-level loading
 
         // Get food entries from provider
         final foodByMeal = homeProvider.entriesByMeal;
@@ -165,26 +163,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
     );
   }
   
-  Widget _buildLoadingState() {
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            spreadRadius: 0,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-  }
+  // Removed individual _buildLoadingState() method since we use page-level loading
   
   List<Widget> _buildMealSections(Map<String, List<FoodItem>> foodByMeal, HomeProvider homeProvider) {
     return ['breakfast', 'lunch', 'dinner', 'snack'].map((mealType) {
@@ -370,10 +349,10 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
                   
                   // Macros
                   Text(
-                    'P: ${protein}g • C: ${carbs}g • F: ${fat}g',
+                    'P: ${protein}g  C: ${carbs}g  F: ${fat}g',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: Colors.grey[500],
                     ),
                   ),
                 ],
@@ -381,249 +360,19 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
             ),
             
             // Calories
-            Text(
-              '$itemCalories cal',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: AppTheme.primaryBlue,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    // Wrap with Dismissible for swipe-to-delete
-    return Dismissible(
-      key: Key(item.id),
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        color: Colors.red[400],
-        child: const Icon(
-          Icons.delete,
-          color: Colors.white,
-          size: 26,
-        ),
-      ),
-      direction: DismissDirection.endToStart, // Only right to left swipe
-      onDismissed: (direction) async {
-        // Delete from repository
-        final success = await _foodRepository.deleteFoodEntry(item.id, item.timestamp);
-        
-        if (success) {
-          // Refresh the provider data
-          await homeProvider.refreshData();
-          
-          // Notify parent if needed
-          if (widget.onFoodAdded != null) {
-            widget.onFoodAdded!();
-          }
-          
-          // Show a brief snackbar confirmation
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Item removed'),
-                duration: const Duration(seconds: 2),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
-        } else {
-          // Show error message
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Failed to delete food item'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
-      },
-      child: foodItemContent,
-    );
-  }
-  
-  // Build food image widget
-  Widget _buildFoodImage(FoodItem item) {
-    if (item.imagePath != null) {
-      // Use actual image if available
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: SizedBox(
-          width: 50,
-          height: 50,
-          child: Image.file(
-            File(item.imagePath!),
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return _buildDefaultFoodIcon();
-            },
-          ),
-        ),
-      );
-    } else {
-      // Use default food icon
-      return _buildDefaultFoodIcon();
-    }
-  }
-  
-  // Default food icon when no image is available
-  Widget _buildDefaultFoodIcon() {
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        color: AppTheme.primaryBlue.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(
-        Icons.fastfood_rounded,
-        color: AppTheme.primaryBlue,
-        size: 24,
-      ),
-    );
-  }
-  
-  IconData _getMealTypeIcon(String mealType) {
-    switch (mealType.toLowerCase()) {
-      case 'breakfast':
-        return Icons.breakfast_dining_rounded;
-      case 'lunch':
-        return Icons.lunch_dining_rounded;
-      case 'dinner':
-        return Icons.dinner_dining_rounded;
-      case 'snack':
-        return Icons.fastfood_rounded;
-      default:
-        return Icons.food_bank_rounded;
-    }
-  }
-
-  String _formatMealType(String mealType) {
-    // Capitalize first letter
-    if (mealType.isEmpty) return 'Snack';
-    return mealType.substring(0, 1).toUpperCase() +
-        mealType.substring(1).toLowerCase();
-  }
-  
-  // Serving size adjustment dialog
-  void _showServingSizeDialog(FoodItem item, HomeProvider homeProvider) {
-    double newServingSize = item.servingSize;
-    
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(
-            item.name,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Current serving information
-              Text(
-                'Current serving: ${item.servingSize} ${item.servingUnit}',
-                style: TextStyle(
-                  color: Colors.grey[700],
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${itemCalories}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Serving size slider
-              Text(
-                'Adjust serving size: ${newServingSize.toStringAsFixed(1)} ${item.servingUnit}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Slider(
-                value: newServingSize,
-                min: 0.1,
-                max: 5.0,
-                divisions: 49,
-                label: newServingSize.toStringAsFixed(1),
-                activeColor: AppTheme.primaryBlue,
-                onChanged: (value) {
-                  setState(() {
-                    newServingSize = value;
-                  });
-                },
-              ),
-              
-              // Display adjusted calories
-              Text(
-                'Calories: ${(item.calories * newServingSize).round()} cal',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryBlue,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('CANCEL'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                
-                // Create updated food item with new serving size
-                final updatedItem = FoodItem(
-                  id: item.id,
-                  name: item.name,
-                  calories: item.calories,
-                  proteins: item.proteins,
-                  carbs: item.carbs,
-                  fats: item.fats,
-                  imagePath: item.imagePath,
-                  mealType: item.mealType,
-                  timestamp: item.timestamp,
-                  servingSize: newServingSize,
-                  servingUnit: item.servingUnit,
-                  spoonacularId: item.spoonacularId,
-                );
-                
-                // Update in repository
-                final success = await _foodRepository.updateFoodEntry(updatedItem);
-                
-                if (success) {
-                  // Refresh provider data
-                  await homeProvider.refreshData();
-                  
-                  // Notify parent if needed
-                  if (widget.onFoodAdded != null) {
-                    widget.onFoodAdded!();
-                  }
-                } else {
-                  // Show error message
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Failed to update serving size'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryBlue,
-              ),
-              child: const Text('SAVE'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+                Text(
+                  'cal',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
