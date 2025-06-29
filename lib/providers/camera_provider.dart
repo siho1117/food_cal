@@ -20,17 +20,21 @@ class CameraProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   /// Capture photo from camera and auto-save to food log
-  Future<void> captureFromCamera(BuildContext context) async {
-    await _captureAnalyzeAndSave(ImageSource.camera, context);
+  Future<void> captureFromCamera(BuildContext context, {VoidCallback? onDismissed}) async {
+    await _captureAnalyzeAndSave(ImageSource.camera, context, onDismissed: onDismissed);
   }
 
   /// Select image from gallery and auto-save to food log
-  Future<void> selectFromGallery(BuildContext context) async {
-    await _captureAnalyzeAndSave(ImageSource.gallery, context);
+  Future<void> selectFromGallery(BuildContext context, {VoidCallback? onDismissed}) async {
+    await _captureAnalyzeAndSave(ImageSource.gallery, context, onDismissed: onDismissed);
   }
 
   /// Complete flow: capture → analyze → save → navigate home
-  Future<void> _captureAnalyzeAndSave(ImageSource source, BuildContext context) async {
+  Future<void> _captureAnalyzeAndSave(
+    ImageSource source, 
+    BuildContext context, 
+    {VoidCallback? onDismissed}
+  ) async {
     _setLoading(true);
     _clearError();
 
@@ -78,7 +82,7 @@ class CameraProvider extends ChangeNotifier {
 
       // Step 5: Navigate to home page and show success
       if (context.mounted) {
-        _navigateToHomeWithSuccess(context, recognizedItems.length);
+        _navigateToHomeWithSuccess(context, recognizedItems.length, onDismissed);
       }
 
     } catch (e) {
@@ -90,7 +94,10 @@ class CameraProvider extends ChangeNotifier {
   }
 
   /// Navigate to home page and show success message
-  void _navigateToHomeWithSuccess(BuildContext context, int itemCount) {
+  void _navigateToHomeWithSuccess(BuildContext context, int itemCount, VoidCallback? onDismissed) {
+    // Call dismissal callback FIRST to update bottom nav immediately
+    onDismissed?.call();
+    
     // Navigate to home (index 0 in bottom navigation)
     Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
     
@@ -156,60 +163,53 @@ class CameraProvider extends ChangeNotifier {
       final Directory tempDir = await getTemporaryDirectory();
       final String targetPath = '${tempDir.path}/optimized_${DateTime.now().millisecondsSinceEpoch}.jpg';
       
-      final Uint8List? compressedBytes = await FlutterImageCompress.compressWithList(
-        originalBytes,
+      final Uint8List? compressedBytes = await FlutterImageCompress.compressWithFile(
+        originalFile.absolute.path,
         minWidth: targetWidth,
         minHeight: targetHeight,
         quality: quality,
         format: CompressFormat.jpeg,
       );
-      
-      if (compressedBytes == null) {
+
+      if (compressedBytes != null) {
+        final File compressedFile = File(targetPath);
+        await compressedFile.writeAsBytes(compressedBytes);
+        return compressedFile;
+      } else {
+        // Fallback to original file if compression fails
         return originalFile;
       }
-      
-      final File compressedFile = File(targetPath);
-      await compressedFile.writeAsBytes(compressedBytes);
-      
-      return compressedFile;
     } catch (e) {
-      print('Error optimizing image: $e');
+      print('Error compressing image: $e');
+      // Fallback to original file if compression fails
       return originalFile;
     }
   }
 
-  /// Set loading state
+  /// Get suggested meal type based on time of day
+  String _getSuggestedMealType() {
+    final hour = DateTime.now().hour;
+    if (hour < 11) return 'breakfast';
+    if (hour < 15) return 'lunch'; 
+    if (hour < 18) return 'snack';
+    return 'dinner';
+  }
+
+  /// Set loading state and notify listeners
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
   }
 
-  /// Set error message
+  /// Set error message and notify listeners
   void _setError(String error) {
     _errorMessage = error;
-    _isLoading = false;
     notifyListeners();
   }
 
-  /// Clear error message
+  /// Clear error message and notify listeners
   void _clearError() {
     _errorMessage = null;
     notifyListeners();
-  }
-
-  /// Get appropriate meal type based on current time
-  String _getSuggestedMealType() {
-    final now = DateTime.now();
-    final hour = now.hour;
-
-    if (hour >= 6 && hour < 11) {
-      return 'breakfast';
-    } else if (hour >= 11 && hour < 16) {
-      return 'lunch';
-    } else if (hour >= 16 && hour < 21) {
-      return 'dinner';
-    } else {
-      return 'snack';
-    }
   }
 }

@@ -38,7 +38,7 @@ Future<void> main() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +60,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MainApp extends StatefulWidget {
-  const MainApp({Key? key}) : super(key: key);
+  const MainApp({super.key});
 
   @override
   State<MainApp> createState() => _MainAppState();
@@ -68,12 +68,9 @@ class MainApp extends StatefulWidget {
 
 class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
+  bool _isCameraOverlayOpen = false; // Track camera overlay state
   late AnimationController _animationController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  // Camera controller reference to call camera capture
-  final GlobalKey<CameraScreenState> _cameraScreenKey =
-      GlobalKey<CameraScreenState>();
 
   late List<Widget> _screens;
 
@@ -114,16 +111,30 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
 
     setState(() {
       _currentIndex = index;
+      _isCameraOverlayOpen = false; // Ensure camera overlay state is cleared
+    });
+  }
+
+  // Callback function to handle camera dismissal
+  void _onCameraDismissed() {
+    setState(() {
+      _isCameraOverlayOpen = false; // Reset camera overlay state immediately
     });
   }
 
   void _navigateToTransparentCamera() {
+    setState(() {
+      _isCameraOverlayOpen = true; // Set camera overlay as open
+    });
+
     Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false, // This makes the route transparent
         barrierDismissible: true, // Allow dismissing by tapping outside
         pageBuilder: (context, animation, secondaryAnimation) {
-          return CameraScreen(key: _cameraScreenKey);
+          return CameraScreen(
+            onDismissed: _onCameraDismissed, // Pass the callback
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
@@ -135,17 +146,13 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
         reverseTransitionDuration: const Duration(milliseconds: 250),
       ),
     );
-    // No need for .then() - _currentIndex never changes!
-  }
-
-  void _onCameraCapture() {
-    // Call the capture method on the camera screen if it's currently showing
-    _cameraScreenKey.currentState?.capturePhoto();
+    // Removed .then() callback - now using direct callback pattern
   }
 
   void _navigateToSettings() {
     setState(() {
       _currentIndex = 4; // Index for settings screen
+      _isCameraOverlayOpen = false; // Ensure camera overlay state is cleared
     });
   }
   
@@ -194,6 +201,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       extendBody: true, // Important for curved navigation bar
       bottomNavigationBar: CustomBottomNav(
         currentIndex: _currentIndex,
+        isCameraOverlayOpen: _isCameraOverlayOpen, // Pass the camera state
         onTap: _onItemTapped,
         onCameraCapture: null,
       ),

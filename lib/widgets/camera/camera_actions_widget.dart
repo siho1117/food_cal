@@ -5,7 +5,12 @@ import '../../config/design_system/theme.dart';
 import '../../providers/camera_provider.dart';
 
 class CameraActionsWidget extends StatelessWidget {
-  const CameraActionsWidget({Key? key}) : super(key: key);
+  final VoidCallback onDismissed; // Add callback parameter
+
+  const CameraActionsWidget({
+    super.key,
+    required this.onDismissed, // Make it required
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +30,10 @@ class CameraActionsWidget extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: cameraProvider.isLoading 
                         ? null 
-                        : () => cameraProvider.selectFromGallery(context),
+                        : () => cameraProvider.selectFromGallery(
+                            context,
+                            onDismissed: onDismissed, // Pass callback to provider
+                          ),
                     icon: cameraProvider.isLoading
                         ? const SizedBox(
                             width: 32,
@@ -64,13 +72,16 @@ class CameraActionsWidget extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: cameraProvider.isLoading 
                         ? null 
-                        : () => cameraProvider.captureFromCamera(context),
+                        : () => cameraProvider.captureFromCamera(
+                            context,
+                            onDismissed: onDismissed, // Pass callback to provider
+                          ),
                     icon: cameraProvider.isLoading 
                         ? const SizedBox(
                             width: 32,
                             height: 32,
                             child: CircularProgressIndicator(
-                              color: Colors.white, 
+                              color: Colors.white,
                               strokeWidth: 3,
                             ),
                           )
@@ -95,20 +106,6 @@ class CameraActionsWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                
-                // Show error message if any
-                if (cameraProvider.errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 20),
-                    child: Text(
-                      cameraProvider.errorMessage!,
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
               ],
             ),
           ),
