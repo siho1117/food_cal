@@ -74,7 +74,18 @@ class HomeProvider extends ChangeNotifier {
   // Initialize and load data
   Future<void> loadData({DateTime? date}) async {
     if (date != null) {
-      _selectedDate = date;
+      // Enforce one week limit (7 days back + today = 8 total days)
+      final now = DateTime.now();
+      final oneWeekAgo = now.subtract(const Duration(days: 7)); // Changed from 6 to 7
+      
+      // Clamp the date to be within the last week
+      if (date.isBefore(oneWeekAgo)) {
+        _selectedDate = oneWeekAgo;
+      } else if (date.isAfter(now)) {
+        _selectedDate = now;
+      } else {
+        _selectedDate = date;
+      }
     }
 
     _isLoading = true;
@@ -117,28 +128,56 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
-  // Change selected date
+  // Change selected date with week limit enforcement
   void changeDate(DateTime newDate) {
-    if (_selectedDate != newDate) {
+    final now = DateTime.now();
+    final oneWeekAgo = now.subtract(const Duration(days: 7));
+    
+    // Normalize dates to midnight for comparison (ignore time components)
+    final normalizedNewDate = DateTime(newDate.year, newDate.month, newDate.day);
+    final normalizedNow = DateTime(now.year, now.month, now.day);
+    final normalizedOneWeekAgo = DateTime(oneWeekAgo.year, oneWeekAgo.month, oneWeekAgo.day);
+    
+    print('Attempting to change date to: ${normalizedNewDate.day}/${normalizedNewDate.month}/${normalizedNewDate.year}');
+    print('Current date: ${normalizedNow.day}/${normalizedNow.month}/${normalizedNow.year}');
+    print('One week ago: ${normalizedOneWeekAgo.day}/${normalizedOneWeekAgo.month}/${normalizedOneWeekAgo.year}');
+    print('Is before one week ago: ${normalizedNewDate.isBefore(normalizedOneWeekAgo)}');
+    print('Is after now: ${normalizedNewDate.isAfter(normalizedNow)}');
+    
+    // Allow dates from one week ago (inclusive) to today (inclusive)
+    if (normalizedNewDate.isBefore(normalizedOneWeekAgo) || normalizedNewDate.isAfter(normalizedNow)) {
+      print('Date change rejected - outside allowed range');
+      return;
+    }
+    
+    if (!_isSameDay(_selectedDate, newDate)) {
+      print('Date change accepted, loading data...');
       loadData(date: newDate);
+    } else {
+      print('Date change ignored - same day selected');
     }
   }
 
-  // Navigate to previous day
+  // Navigate to previous day (with week limit)
   void previousDay() {
-    changeDate(_selectedDate.subtract(const Duration(days: 1)));
+    final previousDay = _selectedDate.subtract(const Duration(days: 1));
+    final now = DateTime.now();
+    final oneWeekAgo = now.subtract(const Duration(days: 7)); // Changed from 6 to 7
+    
+    // Only go back if we're not at the week limit
+    if (!previousDay.isBefore(oneWeekAgo)) {
+      changeDate(previousDay);
+    }
   }
 
-  // Navigate to next day
+  // Navigate to next day (with today limit)
   void nextDay() {
-    final tomorrow = _selectedDate.add(const Duration(days: 1));
+    final nextDay = _selectedDate.add(const Duration(days: 1));
     final now = DateTime.now();
     
     // Don't allow navigating to future dates
-    if (tomorrow.year <= now.year && 
-        tomorrow.month <= now.month && 
-        tomorrow.day <= now.day) {
-      changeDate(tomorrow);
+    if (!nextDay.isAfter(now)) {
+      changeDate(nextDay);
     }
   }
 
@@ -150,13 +189,47 @@ class HomeProvider extends ChangeNotifier {
   // Check if viewing today
   bool get isToday {
     final now = DateTime.now();
-    return _selectedDate.year == now.year &&
-        _selectedDate.month == now.month &&
-        _selectedDate.day == now.day;
+    return _isSameDay(_selectedDate, now);
   }
 
   // Check if can navigate to next day
   bool get canGoToNextDay {
-    return !isToday;
+    final now = DateTime.now();
+    final nextDay = _selectedDate.add(const Duration(days: 1));
+    return !nextDay.isAfter(now);
+  }
+
+  // Check if can navigate to previous day
+  bool get canGoToPreviousDay {
+    final now = DateTime.now();
+    final oneWeekAgo = now.subtract(const Duration(days: 7)); // Changed from 6 to 7
+    final previousDay = _selectedDate.subtract(const Duration(days: 1));
+    return !previousDay.isBefore(oneWeekAgo);
+  }
+
+  // Helper method to check if two dates are the same day
+  bool _isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+           date1.month == date2.month &&
+           date1.day == date2.day;
+  }
+
+  // Get the earliest selectable date (one week ago)
+  DateTime get earliestSelectableDate {
+    final now = DateTime.now();
+    return now.subtract(const Duration(days: 7)); // Changed from 6 to 7
+  }
+
+  // Get the latest selectable date (today)
+  DateTime get latestSelectableDate {
+    return DateTime.now();
+  }
+
+  // Check if a date is within the selectable range
+  bool isDateSelectable(DateTime date) {
+    final earliest = earliestSelectableDate;
+    final latest = latestSelectableDate;
+    
+    return !date.isBefore(earliest) && !date.isAfter(latest);
   }
 }

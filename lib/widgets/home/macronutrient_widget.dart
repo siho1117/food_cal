@@ -1,5 +1,4 @@
 // lib/widgets/home/macronutrient_widget.dart
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/design_system/theme.dart';
@@ -49,8 +48,6 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget> with SingleTi
   Widget build(BuildContext context) {
     return Consumer<HomeProvider>(
       builder: (context, homeProvider, child) {
-        // Removed individual loading state - rely on page-level loading
-        
         // Get data from provider
         final consumedMacros = homeProvider.consumedMacros;
         final targetMacros = homeProvider.targetMacros;
@@ -76,7 +73,9 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget> with SingleTi
               // Header
               Text(
                 'Macronutrients',
-                style: AppTextStyles.heading.copyWith(
+                style: AppTextStyles.getSubHeadingStyle().copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                   color: AppTheme.primaryBlue,
                 ),
               ),
@@ -133,13 +132,13 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget> with SingleTi
           children: [
             Text(
               name,
-              style: AppTextStyles.body.copyWith(
+              style: AppTextStyles.getBodyStyle().copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
             Text(
               '${consumed.toInt()}g / ${target.toInt()}g',
-              style: AppTextStyles.body.copyWith(
+              style: AppTextStyles.getBodyStyle().copyWith(
                 color: Colors.grey[600],
               ),
             ),
