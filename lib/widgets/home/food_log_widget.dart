@@ -258,92 +258,98 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
       child: InkWell(
         onTap: () => _showServingSizeDialog(item, homeProvider),
         child: Container(
-          padding: const EdgeInsets.all(20),
-          margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), // Reduced horizontal padding
+          margin: const EdgeInsets.symmetric(horizontal: 4), // Reduced margin
           child: Row(
             children: [
-              // Food image
+              // Food image (fixed width)
               _buildFoodImage(item),
               
-              const SizedBox(width: 20),
+              const SizedBox(width: 12), // Reduced spacing
               
-              // Food details
-              Expanded(
+              // Food details (flexible)
+              Expanded( // This makes the middle section flexible
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Food name
+                    // Food name with ellipsis overflow
                     Text(
                       item.name,
                       style: AppTextStyles.getSubHeadingStyle().copyWith(
-                        fontSize: 16,
+                        fontSize: 15, // Slightly smaller
                         fontWeight: FontWeight.w600,
                         color: Colors.grey[800],
                       ),
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      overflow: TextOverflow.ellipsis, // Handle long names
                     ),
                     
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     
                     // Time logged
                     Text(
                       _formatTime(item.timestamp),
                       style: AppTextStyles.getBodyStyle().copyWith(
-                        fontSize: 13,
+                        fontSize: 12, // Smaller text
                         color: Colors.grey[500],
                       ),
                     ),
                     
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     
-                    // Macro breakdown
-                    Row(
+                    // Macro breakdown - more compact
+                    Wrap( // Use Wrap instead of Row to handle overflow
+                      spacing: 8, // Reduced spacing
                       children: [
-                        _buildMacroIndicator('${protein}g', Colors.red[400]!),
-                        const SizedBox(width: 12),
-                        _buildMacroIndicator('${carbs}g', Colors.orange[400]!),
-                        const SizedBox(width: 12),
-                        _buildMacroIndicator('${fat}g', Colors.blue[400]!),
+                        _buildCompactMacroIndicator('P', '${protein}g', Colors.red[400]!),
+                        _buildCompactMacroIndicator('C', '${carbs}g', Colors.orange[400]!),
+                        _buildCompactMacroIndicator('F', '${fat}g', Colors.blue[400]!),
                       ],
                     ),
                   ],
                 ),
               ),
               
-              const SizedBox(width: 20),
+              const SizedBox(width: 12), // Reduced spacing
               
-              // Calories with flame icon
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '🔥',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '$itemCalories',
-                        style: AppTextStyles.getNumericStyle().copyWith(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.grey[800],
+              // Calories with flame icon (fixed width)
+              SizedBox(
+                width: 70, // Fixed width to prevent overflow
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          '🔥',
+                          style: const TextStyle(fontSize: 14),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'calories',
-                    style: AppTextStyles.getBodyStyle().copyWith(
-                      fontSize: 12,
-                      color: Colors.grey[500],
+                        const SizedBox(width: 4),
+                        Flexible( // Allow calorie number to shrink if needed
+                          child: Text(
+                            '$itemCalories',
+                            style: AppTextStyles.getNumericStyle().copyWith(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.grey[800],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      'calories',
+                      style: AppTextStyles.getBodyStyle().copyWith(
+                        fontSize: 11, // Smaller text
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -407,6 +413,31 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
           style: AppTextStyles.getBodyStyle().copyWith(
             fontSize: 12,
             color: Colors.grey[600],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactMacroIndicator(String label, String value, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 6, // Smaller dot
+          height: 6,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 3),
+        Text(
+          '$label: $value',
+          style: AppTextStyles.getBodyStyle().copyWith(
+            fontSize: 10, // Smaller text
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
