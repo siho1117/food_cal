@@ -1,94 +1,108 @@
 // lib/providers/home_provider.dart
 import 'package:flutter/foundation.dart';
-import '../data/repositories/food_repository.dart';
 import '../data/repositories/user_repository.dart';
+import '../data/repositories/food_repository.dart';
 import '../data/models/user_profile.dart';
 import '../data/models/food_item.dart';
 import '../utils/home_statistics_calculator.dart';
 
 class HomeProvider extends ChangeNotifier {
-  final FoodRepository _foodRepository = FoodRepository();
   final UserRepository _userRepository = UserRepository();
+  final FoodRepository _foodRepository = FoodRepository();
 
   // Loading state
   bool _isLoading = true;
   bool get isLoading => _isLoading;
 
-  // Date being viewed
+  String? _errorMessage;
+  String? get errorMessage => _errorMessage;
+
+  // FIXED: Initialize selected date to today at startup
   DateTime _selectedDate = DateTime.now();
   DateTime get selectedDate => _selectedDate;
 
   // User data
   UserProfile? _userProfile;
   UserProfile? get userProfile => _userProfile;
-  
+
   double? _currentWeight;
   double? get currentWeight => _currentWeight;
 
-  // Food entries for the day
+  // Food data for the selected date
   Map<String, List<FoodItem>> _entriesByMeal = {};
   Map<String, List<FoodItem>> get entriesByMeal => _entriesByMeal;
 
-  // Calorie data for CalorieSummaryWidget
+  // Calculated values
   int _totalCalories = 0;
   int get totalCalories => _totalCalories;
-  
-  int _calorieGoal = 2000; // Default
-  int get calorieGoal => _calorieGoal;
-  
-  int get caloriesRemaining => _calorieGoal - _totalCalories;
-  bool get isOverBudget => caloriesRemaining < 0;
 
-  // Macro data for MacronutrientWidget
-  Map<String, double> _consumedMacros = {
-    'protein': 0,
-    'carbs': 0,
-    'fat': 0,
-  };
+  int _calorieGoal = 2000;
+  int get calorieGoal => _calorieGoal;
+
+  Map<String, double> _consumedMacros = {'protein': 0, 'carbs': 0, 'fat': 0};
   Map<String, double> get consumedMacros => _consumedMacros;
-  
-  Map<String, int> _targetMacros = {
-    'protein': 50,
-    'carbs': 150,
-    'fat': 50,
-  };
+
+  Map<String, int> _targetMacros = {'protein': 0, 'carbs': 0, 'fat': 0};
   Map<String, int> get targetMacros => _targetMacros;
 
-  // Progress percentages for UI
-  Map<String, double> get macroProgressPercentages => 
-    HomeStatisticsCalculator.calculateMacroProgressPercentages(
-      consumedMacros: _consumedMacros,
-      targetMacros: _targetMacros,
-    );
+  // Progress calculations
+  int get caloriesRemaining => (_calorieGoal - _totalCalories).clamp(0, _calorieGoal);
+  bool get isOverBudget => _totalCalories > _calorieGoal;
   
-  Map<String, int> get macroTargetPercentages =>
-    HomeStatisticsCalculator.calculateMacroTargetPercentages(
-      consumedMacros: _consumedMacros,
-      targetMacros: _targetMacros,
-    );
+  // FIXED: Better expected percentage calculation based on time of day
+  double get expectedDailyPercentage {
+    final now = DateTime.now();
+    
+    // If viewing a past date, return 1.0 (100% - day is complete)
+    if (!_isSameDay(_selectedDate, now)) {
+      return 1.0;
+    }
+    
+    // For today, calculate based on current time
+    final minutesInDay = 24 * 60;
+    final currentMinutes = now.hour * 60 + now.minute;
+    return (currentMinutes / minutesInDay).clamp(0.0, 1.0);
+  }
 
-  // Expected daily percentage based on time of day
-  double get expectedDailyPercentage => 
-    HomeStatisticsCalculator.calculateExpectedDailyPercentage();
+  Map<String, double> get macroProgressPercentages {
+    return {
+      'protein': _targetMacros['protein']! > 0 
+          ? (_consumedMacros['protein']! / _targetMacros['protein']! * 100).clamp(0.0, 200.0)
+          : 0.0,
+      'carbs': _targetMacros['carbs']! > 0 
+          ? (_consumedMacros['carbs']! / _targetMacros['carbs']! * 100).clamp(0.0, 200.0)
+          : 0.0,
+      'fat': _targetMacros['fat']! > 0 
+          ? (_consumedMacros['fat']! / _targetMacros['fat']! * 100).clamp(0.0, 200.0)
+          : 0.0,
+    };
+  }
 
-  // Initialize and load data
+  /// Load all home screen data for the current or specified date
   Future<void> loadData({DateTime? date}) async {
     if (date != null) {
-      // Enforce one week limit (7 days back + today = 8 total days)
+      // FIXED: Better date validation and normalization
       final now = DateTime.now();
-      final oneWeekAgo = now.subtract(const Duration(days: 7)); // Changed from 6 to 7
+      final normalizedNow = DateTime(now.year, now.month, now.day);
+      final normalizedDate = DateTime(date.year, date.month, date.day);
+      final oneWeekAgo = normalizedNow.subtract(const Duration(days: 7));
       
-      // Clamp the date to be within the last week
-      if (date.isBefore(oneWeekAgo)) {
+      // Enforce date limits: not more than 7 days ago, not in the future
+      if (normalizedDate.isBefore(oneWeekAgo)) {
+        print('Date rejected: too far in the past (${normalizedDate} is before ${oneWeekAgo})');
         _selectedDate = oneWeekAgo;
-      } else if (date.isAfter(now)) {
-        _selectedDate = now;
+      } else if (normalizedDate.isAfter(normalizedNow)) {
+        print('Date rejected: in the future (${normalizedDate} is after ${normalizedNow})');
+        _selectedDate = normalizedNow;
       } else {
-        _selectedDate = date;
+        _selectedDate = normalizedDate;
       }
+      
+      print('Selected date set to: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}');
     }
 
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
@@ -123,36 +137,38 @@ class HomeProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print('Error loading home data: $e');
+      _errorMessage = 'Failed to load data. Please try again.';
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Change selected date with week limit enforcement
+  // FIXED: Improved date change method with better validation
   void changeDate(DateTime newDate) {
     final now = DateTime.now();
-    final oneWeekAgo = now.subtract(const Duration(days: 7));
-    
-    // Normalize dates to midnight for comparison (ignore time components)
-    final normalizedNewDate = DateTime(newDate.year, newDate.month, newDate.day);
     final normalizedNow = DateTime(now.year, now.month, now.day);
-    final normalizedOneWeekAgo = DateTime(oneWeekAgo.year, oneWeekAgo.month, oneWeekAgo.day);
+    final normalizedNewDate = DateTime(newDate.year, newDate.month, newDate.day);
+    final oneWeekAgo = normalizedNow.subtract(const Duration(days: 7));
     
     print('Attempting to change date to: ${normalizedNewDate.day}/${normalizedNewDate.month}/${normalizedNewDate.year}');
     print('Current date: ${normalizedNow.day}/${normalizedNow.month}/${normalizedNow.year}');
-    print('One week ago: ${normalizedOneWeekAgo.day}/${normalizedOneWeekAgo.month}/${normalizedOneWeekAgo.year}');
-    print('Is before one week ago: ${normalizedNewDate.isBefore(normalizedOneWeekAgo)}');
-    print('Is after now: ${normalizedNewDate.isAfter(normalizedNow)}');
+    print('One week ago: ${oneWeekAgo.day}/${oneWeekAgo.month}/${oneWeekAgo.year}');
     
-    // Allow dates from one week ago (inclusive) to today (inclusive)
-    if (normalizedNewDate.isBefore(normalizedOneWeekAgo) || normalizedNewDate.isAfter(normalizedNow)) {
-      print('Date change rejected - outside allowed range');
+    // Validate date range: must be within last 7 days including today
+    if (normalizedNewDate.isBefore(oneWeekAgo)) {
+      print('Date change rejected - too far in the past');
       return;
     }
     
-    if (!_isSameDay(_selectedDate, newDate)) {
+    if (normalizedNewDate.isAfter(normalizedNow)) {
+      print('Date change rejected - in the future');
+      return;
+    }
+    
+    // Only reload data if the date actually changed
+    if (!_isSameDay(_selectedDate, normalizedNewDate)) {
       print('Date change accepted, loading data...');
-      loadData(date: newDate);
+      loadData(date: normalizedNewDate);
     } else {
       print('Date change ignored - same day selected');
     }
@@ -162,7 +178,7 @@ class HomeProvider extends ChangeNotifier {
   void previousDay() {
     final previousDay = _selectedDate.subtract(const Duration(days: 1));
     final now = DateTime.now();
-    final oneWeekAgo = now.subtract(const Duration(days: 7)); // Changed from 6 to 7
+    final oneWeekAgo = now.subtract(const Duration(days: 7));
     
     // Only go back if we're not at the week limit
     if (!previousDay.isBefore(oneWeekAgo)) {
@@ -186,6 +202,8 @@ class HomeProvider extends ChangeNotifier {
     await loadData();
   }
 
+  // FIXED: More reliable helper methods
+  
   // Check if viewing today
   bool get isToday {
     final now = DateTime.now();
@@ -196,18 +214,22 @@ class HomeProvider extends ChangeNotifier {
   bool get canGoToNextDay {
     final now = DateTime.now();
     final nextDay = _selectedDate.add(const Duration(days: 1));
-    return !nextDay.isAfter(now);
+    final normalizedNext = DateTime(nextDay.year, nextDay.month, nextDay.day);
+    final normalizedNow = DateTime(now.year, now.month, now.day);
+    return !normalizedNext.isAfter(normalizedNow);
   }
 
   // Check if can navigate to previous day
   bool get canGoToPreviousDay {
     final now = DateTime.now();
-    final oneWeekAgo = now.subtract(const Duration(days: 7)); // Changed from 6 to 7
+    final oneWeekAgo = now.subtract(const Duration(days: 7));
     final previousDay = _selectedDate.subtract(const Duration(days: 1));
-    return !previousDay.isBefore(oneWeekAgo);
+    final normalizedPrevious = DateTime(previousDay.year, previousDay.month, previousDay.day);
+    final normalizedWeekAgo = DateTime(oneWeekAgo.year, oneWeekAgo.month, oneWeekAgo.day);
+    return !normalizedPrevious.isBefore(normalizedWeekAgo);
   }
 
-  // Helper method to check if two dates are the same day
+  // FIXED: Consistent same day comparison
   bool _isSameDay(DateTime date1, DateTime date2) {
     return date1.year == date2.year &&
            date1.month == date2.month &&
@@ -217,7 +239,7 @@ class HomeProvider extends ChangeNotifier {
   // Get the earliest selectable date (one week ago)
   DateTime get earliestSelectableDate {
     final now = DateTime.now();
-    return now.subtract(const Duration(days: 7)); // Changed from 6 to 7
+    return now.subtract(const Duration(days: 7));
   }
 
   // Get the latest selectable date (today)
@@ -229,7 +251,10 @@ class HomeProvider extends ChangeNotifier {
   bool isDateSelectable(DateTime date) {
     final earliest = earliestSelectableDate;
     final latest = latestSelectableDate;
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    final normalizedEarliest = DateTime(earliest.year, earliest.month, earliest.day);
+    final normalizedLatest = DateTime(latest.year, latest.month, latest.day);
     
-    return !date.isBefore(earliest) && !date.isAfter(latest);
+    return !normalizedDate.isBefore(normalizedEarliest) && !normalizedDate.isAfter(normalizedLatest);
   }
 }
