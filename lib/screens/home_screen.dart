@@ -6,7 +6,7 @@ import '../providers/home_provider.dart';
 import '../widgets/home/calorie_summary_widget.dart';
 import '../widgets/home/macronutrient_widget.dart';
 import '../widgets/home/food_log_widget.dart';
-import '../widgets/common/week_navigation_widget.dart'; // Import the new widget
+import '../widgets/common/week_navigation_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -18,7 +18,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
-    // Provide the HomeProvider to the widget tree
     return ChangeNotifierProvider(
       create: (_) => HomeProvider()..loadData(),
       child: Scaffold(
@@ -26,7 +25,6 @@ class _HomeScreenState extends State<HomeScreen> {
         body: SafeArea(
           child: Consumer<HomeProvider>(
             builder: (context, homeProvider, child) {
-              // Show loading state
               if (homeProvider.isLoading) {
                 return const Center(
                   child: CircularProgressIndicator(
@@ -35,7 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               }
               
-              // Show main content with completely custom pull-to-refresh (no visual indicators)
               return NotificationListener<OverscrollIndicatorNotification>(
                 onNotification: (notification) {
                   notification.disallowIndicator();
@@ -48,19 +45,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Week Calendar Navigation - Now using the reusable widget!
+                        // 🔥 FIRST: Calorie Summary Widget (TOP PRIORITY)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                          child: CalorieSummaryWidget(),
+                        ),
+
+                        // Week Calendar Navigation with reduced spacing
                         WeekNavigationWidget(
                           selectedDate: homeProvider.selectedDate,
                           onDateChanged: (date) => homeProvider.changeDate(date),
                           daysToShow: 8, // 7 days back + today
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Calorie Summary Widget
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: CalorieSummaryWidget(),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2), // Reduced from 16 to 8
                         ),
 
                         const SizedBox(height: 20),
