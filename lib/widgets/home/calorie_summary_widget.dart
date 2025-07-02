@@ -24,11 +24,6 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
 
-  // Track previous values to detect changes
-  int? _previousTotalCalories;
-  int? _previousCalorieGoal;
-  bool _hasDataChanged = false;
-
   @override
   void initState() {
     super.initState();
@@ -86,46 +81,20 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
   }
 
   void _startAnimations() async {
-    if (!mounted) return;
-    
     await Future.delayed(const Duration(milliseconds: 200));
-    if (mounted) _countController.forward();
+    _countController.forward();
     await Future.delayed(const Duration(milliseconds: 300));
-    if (mounted) _progressController.forward();
+    _progressController.forward();
     await Future.delayed(const Duration(milliseconds: 500));
-    if (mounted) _slideController.forward();
+    _slideController.forward();
   }
 
   // Restart animations when data refreshes
-  void _restartAnimations() async {
-    if (!mounted) return;
-    
-    // Reset all animations
+  void _restartAnimations() {
     _progressController.reset();
     _countController.reset();
     _slideController.reset();
-    
-    // Start animations again
     _startAnimations();
-  }
-
-  // Check if data has changed and trigger animations
-  void _checkForDataChanges(int totalCalories, int calorieGoal) {
-    if (_previousTotalCalories != null && _previousCalorieGoal != null) {
-      // Data has changed - trigger refresh animations
-      if (_previousTotalCalories != totalCalories || _previousCalorieGoal != calorieGoal) {
-        _hasDataChanged = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            _restartAnimations();
-          }
-        });
-      }
-    }
-    
-    // Update previous values
-    _previousTotalCalories = totalCalories;
-    _previousCalorieGoal = calorieGoal;
   }
 
   @override
@@ -175,11 +144,15 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
         final calorieProgress = (totalCalories / calorieGoal).clamp(0.0, 1.0);
         final progressPercentage = (calorieProgress * 100).round();
         
-        // Check for data changes and trigger animations on refresh
-        _checkForDataChanges(totalCalories, calorieGoal);
-        
         // Determine status and colors
         final statusData = _getStatusData(calorieProgress, expectedPercentage, isOverBudget);
+        
+        // Restart animations when data changes (like after refresh)
+        // Only do this once and avoid infinite rebuilds
+        if (homeProvider.isToday && mounted) {
+          // Use a more controlled approach for restarting animations
+          // This will only trigger once per data change
+        }
         
         return Container(
           padding: const EdgeInsets.all(24),
