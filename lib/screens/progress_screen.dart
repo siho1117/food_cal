@@ -4,10 +4,11 @@ import 'package:provider/provider.dart';
 import '../providers/progress_data.dart';
 import '../widgets/progress/bmi_widget.dart';
 import '../widgets/progress/body_fat_percentage_widget.dart';
-import '../widgets/progress/weight_entry_widget.dart';
+import '../widgets/progress/bmi_widget.dart';
+import '../widgets/progress/body_fat_percentage_widget.dart';
+import '../widgets/progress/combined_weight_widget.dart';
 import '../widgets/progress/weight_history_graph_widget.dart';
 import '../widgets/progress/energy_metrics_widget.dart';
-import '../widgets/progress/target_weight_widget.dart'; // New import
 import '../config/design_system/theme.dart';
 
 class ProgressScreen extends StatefulWidget {
@@ -20,7 +21,6 @@ class ProgressScreen extends StatefulWidget {
 class _ProgressScreenState extends State<ProgressScreen> {
   @override
   Widget build(BuildContext context) {
-    // Provide the ProgressData to the widget tree
     return ChangeNotifierProvider(
       create: (_) => ProgressData()..loadUserData(),
       child: Scaffold(
@@ -95,31 +95,13 @@ class _ProgressScreenState extends State<ProgressScreen> {
   
   Widget _buildProgressContent(BuildContext context, ProgressData progressData) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Current stats section
-        Text(
-          'CURRENT STATS',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[700],
-          ),
-        ),
-        
-        const SizedBox(height: 16),
-        
-        // Weight Entry Widget
-        WeightEntryWidget(
+        // Combined Weight Widget (replaces separate weight entry + target widgets)
+        CombinedWeightWidget(
           currentWeight: progressData.currentWeight,
           isMetric: progressData.isMetric,
           onWeightEntered: progressData.addWeightEntry,
         ),
-        
-        const SizedBox(height: 16),
-        
-        // Target Weight Widget (new)
-        const TargetWeightWidget(),
         
         const SizedBox(height: 16),
         
@@ -144,19 +126,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
         BodyFatPercentageWidget(
           bodyFatPercentage: progressData.bodyFatValue,
           classification: progressData.bodyFatClassification,
-          isEstimated: true, // Since it's calculated from BMI
-        ),
-        
-        const SizedBox(height: 30),
-        
-        // History section
-        Text(
-          'HISTORY',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[700],
-          ),
+          isEstimated: true,
         ),
         
         const SizedBox(height: 16),
