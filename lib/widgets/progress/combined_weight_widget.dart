@@ -1,11 +1,11 @@
 // lib/widgets/progress/combined_weight_widget.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'dart:math' as math;
 import '../../config/design_system/theme.dart';
 import '../../config/design_system/text_styles.dart';
 import '../../providers/progress_data.dart';
-import './weight_input_dialog.dart';
-import './target_weight_dialog.dart';
 
 class CombinedWeightWidget extends StatefulWidget {
   final double? currentWeight;
@@ -25,9 +25,9 @@ class CombinedWeightWidget extends StatefulWidget {
 
 class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
     with TickerProviderStateMixin {
-  late AnimationController _timelineController;
+  late AnimationController _speedometerController;
   late AnimationController _fadeController;
-  late Animation<double> _progressAnimation;
+  late Animation<double> _needleAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
@@ -35,7 +35,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
   void initState() {
     super.initState();
     
-    _timelineController = AnimationController(
+    _speedometerController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     );
@@ -45,10 +45,10 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
       duration: const Duration(milliseconds: 800),
     );
     
-    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _needleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-        parent: _timelineController,
-        curve: const Interval(0.3, 1.0, curve: Curves.easeOutCubic),
+        parent: _speedometerController,
+        curve: const Interval(0.3, 1.0, curve: Curves.elasticOut),
       ),
     );
     
@@ -71,7 +71,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
         _fadeController.forward();
         Future.delayed(const Duration(milliseconds: 400), () {
           if (mounted) {
-            _timelineController.forward();
+            _speedometerController.forward();
           }
         });
       }
@@ -80,7 +80,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
 
   @override
   void dispose() {
-    _timelineController.dispose();
+    _speedometerController.dispose();
     _fadeController.dispose();
     super.dispose();
   }
@@ -90,17 +90,11 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
     return ((current - target).abs() / current * 100);
   }
 
-  double _calculateProgressPercentage(double? current, double? target) {
-    if (current == null || target == null) return 0.0;
-    final remainingPercentage = _calculateRemainingPercentage(current, target);
-    return (100 - remainingPercentage) / 100; // Convert to 0-1 scale
-  }
-
   Color _getProgressColor(double remainingPercentage) {
-    if (remainingPercentage <= 5) return Colors.green[600]!; // Very close
-    if (remainingPercentage <= 10) return Colors.lightGreen[600]!; // Close
-    if (remainingPercentage <= 15) return Colors.orange[500]!; // Moderate
-    return AppTheme.primaryBlue; // Significant
+    if (remainingPercentage <= 5) return Colors.green[600]!;
+    if (remainingPercentage <= 10) return Colors.lightGreen[600]!;
+    if (remainingPercentage <= 15) return Colors.orange[500]!;
+    return AppTheme.primaryBlue;
   }
 
   String _formatWeight(double? weight) {
@@ -121,21 +115,16 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
         final targetWeight = progressData.userProfile?.goalWeight;
         final currentWeight = widget.currentWeight;
         
-        // Calculate remaining percentage and progress
         final remainingPercentage = _calculateRemainingPercentage(currentWeight, targetWeight);
-        final progressValue = _calculateProgressPercentage(currentWeight, targetWeight);
         final progressColor = _getProgressColor(remainingPercentage);
         
-        String remainingText = 'Set a target weight';
         String weightToGoText = '--';
         
         if (targetWeight != null && currentWeight != null) {
           final weightDifference = (currentWeight - targetWeight).abs();
           final unit = widget.isMetric ? 'kg' : 'lbs';
           final displayDifference = widget.isMetric ? weightDifference : weightDifference * 2.20462;
-          
           weightToGoText = '${displayDifference.toStringAsFixed(1)} $unit to go';
-          remainingText = '${remainingPercentage.toStringAsFixed(1)}% of current weight';
         }
 
         return AnimatedBuilder(
@@ -161,11 +150,6 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
                         color: Colors.black.withOpacity(0.06),
                         blurRadius: 20,
                         offset: const Offset(0, 4),
-                      ),
-                      BoxShadow(
-                        color: AppTheme.primaryBlue.withOpacity(0.05),
-                        blurRadius: 40,
-                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
@@ -210,16 +194,10 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
                         
                         const SizedBox(height: 24),
                         
-                        // Timeline
-                        targetWeight != null ? _buildTimeline(
-                          currentWeight!,
-                          targetWeight,
-                          remainingPercentage,
-                          progressValue,
-                          progressColor,
-                          weightToGoText,
-                          remainingText,
-                        ) : _buildEmptyState(),
+                        // Speedometer or Empty State
+                        targetWeight != null 
+                          ? _buildSpeedometerView(currentWeight!, targetWeight, remainingPercentage, progressColor, weightToGoText)
+                          : _buildEmptyState(),
                         
                         const SizedBox(height: 24),
                         
@@ -241,7 +219,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
                                 'Set Target',
                                 Colors.green[600]!,
                                 Icons.flag_outlined,
-                                () => _showTargetDialog(progressData),
+                                () => _showTargetDialog(),
                               ),
                             ),
                           ],
@@ -258,107 +236,62 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
     );
   }
 
-  Widget _buildTimeline(
+  Widget _buildSpeedometerView(
     double currentWeight,
     double targetWeight,
     double remainingPercentage,
-    double progressValue,
     Color progressColor,
     String weightToGoText,
-    String remainingText,
   ) {
     return Column(
       children: [
-        // Timeline Track
-        Container(
-          height: 120,
-          child: Stack(
+        // Speedometer Gauge
+        SizedBox(
+          width: 180,
+          height: 90,
+          child: AnimatedBuilder(
+            animation: _speedometerController,
+            builder: (context, child) {
+              return CustomPaint(
+                size: const Size(180, 90),
+                painter: SpeedometerPainter(
+                  remainingPercentage: remainingPercentage * _needleAnimation.value,
+                  progressColor: progressColor,
+                ),
+              );
+            },
+          ),
+        ),
+        
+        // Speedometer Labels
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Background track
-              Positioned(
-                top: 60,
-                left: 60,
-                right: 60,
-                child: Container(
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+              Text(
+                'Close',
+                style: AppTextStyles.getBodyStyle().copyWith(
+                  fontSize: 11,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              
-              // Progress track
-              Positioned(
-                top: 60,
-                left: 60,
-                right: 60,
-                child: AnimatedBuilder(
-                  animation: _progressAnimation,
-                  builder: (context, child) {
-                    return FractionallySizedBox(
-                      widthFactor: progressValue * _progressAnimation.value,
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        height: 4,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppTheme.primaryBlue,
-                              progressColor,
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              
-              // Timeline Points
-              Positioned(
-                top: 0,
-                left: 0,
-                child: _buildTimelinePoint(
-                  _formatWeight(currentWeight),
-                  'Current Weight',
-                  AppTheme.primaryBlue,
-                  true,
-                ),
-              ),
-              
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: _buildTimelinePoint(
-                    '${remainingPercentage.toStringAsFixed(1)}%',
-                    'Remaining Goal',
-                    progressColor,
-                    false,
-                  ),
-                ),
-              ),
-              
-              Positioned(
-                top: 0,
-                right: 0,
-                child: _buildTimelinePoint(
-                  _formatWeight(targetWeight),
-                  'Target Weight',
-                  Colors.green[600]!,
-                  false,
+              Text(
+                'Far',
+                style: AppTextStyles.getBodyStyle().copyWith(
+                  fontSize: 11,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
         ),
         
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         
-        // Progress Stats
+        // Weight Info Row
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -370,25 +303,49 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
             ),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem(
-                'Progress',
-                '${(progressValue * 100).round()}%',
-                progressColor,
-                Icons.trending_up,
+              // Current Weight
+              Expanded(
+                child: _buildInfoItem(
+                  'Current',
+                  _formatWeight(currentWeight),
+                  AppTheme.primaryBlue,
+                  Icons.monitor_weight_rounded,
+                ),
               ),
-              _buildStatItem(
-                'To Goal',
-                weightToGoText,
-                Colors.grey[600]!,
-                Icons.flag_outlined,
+              
+              // Divider
+              Container(
+                width: 1,
+                height: 40,
+                color: Colors.grey[300],
               ),
-              _buildStatItem(
-                'Remaining',
-                remainingText,
-                progressColor,
-                Icons.percent,
+              
+              // To Goal
+              Expanded(
+                child: _buildInfoItem(
+                  'To Goal',
+                  weightToGoText,
+                  progressColor,
+                  Icons.flag_outlined,
+                ),
+              ),
+              
+              // Divider
+              Container(
+                width: 1,
+                height: 40,
+                color: Colors.grey[300],
+              ),
+              
+              // Target Weight
+              Expanded(
+                child: _buildInfoItem(
+                  'Target',
+                  _formatWeight(targetWeight),
+                  Colors.green[600]!,
+                  Icons.radio_button_checked,
+                ),
               ),
             ],
           ),
@@ -397,99 +354,35 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
     );
   }
 
-  Widget _buildTimelinePoint(String value, String label, Color color, bool isCurrent) {
+  Widget _buildInfoItem(String label, String value, Color color, IconData icon) {
     return Column(
       children: [
-        AnimatedBuilder(
-          animation: _progressAnimation,
-          builder: (context, child) {
-            return Transform.scale(
-              scale: isCurrent ? 1.0 : _progressAnimation.value,
-              child: Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      color,
-                      color.withOpacity(0.8),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: isCurrent ? Border.all(color: Colors.white, width: 4) : null,
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      value,
-                      style: AppTextStyles.getNumericStyle().copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+        Icon(
+          icon,
+          size: 16,
+          color: color.withOpacity(0.7),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: AppTextStyles.getNumericStyle().copyWith(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 2),
         Text(
           label,
           style: AppTextStyles.getBodyStyle().copyWith(
-            fontSize: 10,
+            fontSize: 11,
             color: Colors.grey[600],
             fontWeight: FontWeight.w500,
           ),
           textAlign: TextAlign.center,
         ),
       ],
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, Color color, IconData icon) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: color.withOpacity(0.7),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: AppTextStyles.getNumericStyle().copyWith(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: AppTextStyles.getBodyStyle().copyWith(
-              fontSize: 10,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
     );
   }
 
@@ -584,38 +477,145 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
   void _showWeightDialog() {
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => WeightInputDialog(
-        currentWeight: widget.currentWeight,
-        isMetric: widget.isMetric,
-        onWeightEntered: widget.onWeightEntered,
+      builder: (context) => AlertDialog(
+        title: Text('Update Weight'),
+        content: Text('Weight dialog coming soon!'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
       ),
     );
   }
 
-  void _showTargetDialog(ProgressData progressData) {
-    if (widget.currentWeight == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please set your current weight first'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
+  void _showTargetDialog() {
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => TargetWeightDialog(
-        currentWeight: widget.currentWeight,
-        currentTarget: progressData.userProfile?.goalWeight,
-        isMetric: widget.isMetric,
-        onTargetSet: (targetWeight) {
-          // Here you would integrate with your progress data provider
-          // progressData.setTargetWeight(targetWeight);
-        },
+      builder: (context) => AlertDialog(
+        title: Text('Set Target'),
+        content: Text('Target dialog coming soon!'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
       ),
     );
+  }
+}
+
+// Custom painter for the speedometer
+class SpeedometerPainter extends CustomPainter {
+  final double remainingPercentage;
+  final Color progressColor;
+
+  SpeedometerPainter({
+    required this.remainingPercentage,
+    required this.progressColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height);
+    final radius = size.width / 2 - 20;
+    
+    // Draw the speedometer arc background
+    final backgroundPaint = Paint()
+      ..color = Colors.grey[200]!
+      ..strokeWidth = 12
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      math.pi,
+      math.pi,
+      false,
+      backgroundPaint,
+    );
+    
+    // Draw gradient speedometer arc
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final gradient = SweepGradient(
+      startAngle: math.pi,
+      endAngle: 2 * math.pi,
+      colors: [
+        Colors.green[600]!,
+        Colors.lightGreen[500]!,
+        Colors.yellow[600]!,
+        Colors.orange[500]!,
+        Colors.red[500]!,
+      ],
+    );
+    
+    final speedometerPaint = Paint()
+      ..shader = gradient.createShader(rect)
+      ..strokeWidth = 12
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    
+    canvas.drawArc(
+      rect,
+      math.pi,
+      math.pi,
+      false,
+      speedometerPaint,
+    );
+    
+    // Calculate needle position
+    final normalizedPercentage = (remainingPercentage / 20).clamp(0.0, 1.0);
+    final needleAngle = math.pi + (math.pi * normalizedPercentage);
+    final needleLength = radius - 10;
+    final needleEnd = Offset(
+      center.dx + needleLength * math.cos(needleAngle),
+      center.dy + needleLength * math.sin(needleAngle),
+    );
+    
+    // Draw the needle
+    final needlePaint = Paint()
+      ..color = Colors.grey[800]!
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+    
+    canvas.drawLine(center, needleEnd, needlePaint);
+    
+    // Draw center circle
+    final centerPaint = Paint()
+      ..color = Colors.grey[800]!;
+    
+    canvas.drawCircle(center, 6, centerPaint);
+    
+    // Draw remaining percentage text
+    final textSpan = TextSpan(
+      text: '${remainingPercentage.toStringAsFixed(1)}%',
+      style: TextStyle(
+        color: progressColor,
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+    
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+    
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(
+        center.dx - textPainter.width / 2,
+        center.dy - 35,
+      ),
+    );
+  }
+
+  @override
+  bool shouldRepaint(SpeedometerPainter oldDelegate) {
+    return oldDelegate.remainingPercentage != remainingPercentage || 
+           oldDelegate.progressColor != progressColor;
   }
 }
