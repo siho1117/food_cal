@@ -7,6 +7,7 @@ import '../../config/design_system/text_styles.dart';
 import '../../data/models/food_item.dart';
 import '../../data/repositories/food_repository.dart';
 import '../../providers/home_provider.dart';
+import 'quick_edit_food_dialog.dart';
 
 class FoodLogWidget extends StatefulWidget {
   final bool showHeader;
@@ -149,8 +150,10 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
       final mealItems = foodByMeal[mealType] ?? [];
       allFoodItems.addAll(mealItems);
     }
+
+    // Sort by timestamp (newest first)
     allFoodItems.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    
+
     return Container(
       margin: const EdgeInsets.only(top: 8),
       decoration: BoxDecoration(
@@ -158,30 +161,29 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Card header
+          // Header section
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            padding: const EdgeInsets.all(24),
             child: Row(
               children: [
-                Text('🍽️', style: const TextStyle(fontSize: 20)),
+                Text('📋', style: const TextStyle(fontSize: 20)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Today\'s Food',
+                        'Recent Food Log',
                         style: AppTextStyles.getSubHeadingStyle().copyWith(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.primaryBlue,
                         ),
@@ -208,14 +210,26 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
             color: Colors.grey[100],
           ),
           
-          // Food items list
+          // Food items list with swipe-to-delete and tap-to-edit
           ...allFoodItems.asMap().entries.map((entry) {
             final index = entry.key;
             final item = entry.value;
             
             return Column(
               children: [
-                _buildFoodItem(item, homeProvider),
+                Dismissible(
+                  key: Key(item.id),
+                  direction: DismissDirection.endToStart,
+                  background: _buildDeleteBackground(),
+                  confirmDismiss: (direction) async {
+                    // Show confirmation dialog before dismissing
+                    return await _showDeleteConfirmation(context, item, homeProvider);
+                  },
+                  onDismissed: (direction) async {
+                    await _deleteItem(item, homeProvider);
+                  },
+                  child: _buildFoodItem(item, homeProvider),
+                ),
                 if (index < allFoodItems.length - 1)
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 24),
@@ -232,6 +246,36 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
     );
   }
 
+  Widget _buildDeleteBackground() {
+    return Container(
+      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.only(right: 20),
+      margin: const EdgeInsets.symmetric(horizontal: 0),
+      decoration: BoxDecoration(
+        color: Colors.red[400],
+        borderRadius: BorderRadius.circular(0),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          const Icon(
+            Icons.delete_outline,
+            color: Colors.white,
+            size: 24,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Delete',
+            style: AppTextStyles.getBodyStyle().copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFoodItem(FoodItem item, HomeProvider homeProvider) {
     final itemCalories = (item.calories * item.servingSize).round();
     final nutrition = item.getNutritionForServing();
@@ -240,9 +284,11 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
     final fat = nutrition['fats']!.round();
 
     return GestureDetector(
+      onTap: () => _showQuickEditDialog(item, homeProvider),
       onLongPress: () => _showDeleteConfirmation(context, item, homeProvider),
       child: Container(
         padding: const EdgeInsets.all(20),
+        color: Colors.transparent,
         child: Row(
           children: [
             // Food image (80x80)
@@ -260,24 +306,22 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
                       child: Image.file(
                         File(item.imagePath!),
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Center(
-                          child: Text('🍽️', style: const TextStyle(fontSize: 32)),
-                        ),
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildFoodIcon();
+                        },
                       ),
                     )
-                  : Center(
-                      child: Text('🍽️', style: const TextStyle(fontSize: 32)),
-                    ),
+                  : _buildFoodIcon(),
             ),
             
             const SizedBox(width: 16),
             
-            // OPTION 1 LAYOUT: Food details with calories next to name
+            // Food details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ROW 1: Food name + Calories badge
+                  // ROW 1: Name and calories
                   Row(
                     children: [
                       Expanded(
@@ -286,14 +330,14 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
                           style: AppTextStyles.getSubHeadingStyle().copyWith(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey[800],
+                            color: AppTheme.primaryBlue,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
+                          softWrap: true,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      // CALORIES BADGE HERE
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
@@ -321,14 +365,24 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
                   
                   const SizedBox(height: 6),
                   
-                  // ROW 2: Time and serving info
-                  Text(
-                    '${_formatTime(item.timestamp)} • ${item.servingSize} ${item.servingUnit}',
-                    style: AppTextStyles.getBodyStyle().copyWith(
-                      fontSize: 13,
-                      color: Colors.grey[500],
-                      fontWeight: FontWeight.w500,
-                    ),
+                  // ROW 2: Time and serving info with edit indicator
+                  Row(
+                    children: [
+                      Text(
+                        '${_formatTime(item.timestamp)} • ${item.servingSize} ${item.servingUnit}',
+                        style: AppTextStyles.getBodyStyle().copyWith(
+                          fontSize: 13,
+                          color: Colors.grey[500],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const Spacer(),
+                      Icon(
+                        Icons.edit_outlined,
+                        size: 16,
+                        color: Colors.grey[400],
+                      ),
+                    ],
                   ),
                   
                   const SizedBox(height: 8),
@@ -338,7 +392,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
                   
                   const SizedBox(height: 8),
                   
-                  // ROW 4: Macros only (no calories here)
+                  // ROW 4: Macros
                   Wrap(
                     spacing: 8,
                     children: [
@@ -353,6 +407,14 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFoodIcon() {
+    return Icon(
+      Icons.restaurant,
+      color: AppTheme.primaryBlue.withOpacity(0.6),
+      size: 32,
     );
   }
 
@@ -425,7 +487,20 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
     return '$displayHour:$minute $period';
   }
 
-  Future<void> _showDeleteConfirmation(BuildContext context, FoodItem item, HomeProvider homeProvider) async {
+  Future<void> _showQuickEditDialog(FoodItem item, HomeProvider homeProvider) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => QuickEditFoodDialog(
+        foodItem: item,
+        onUpdated: () {
+          // Single provider update after successful edit
+          homeProvider.refreshData();
+        },
+      ),
+    );
+  }
+
+  Future<bool> _showDeleteConfirmation(BuildContext context, FoodItem item, HomeProvider homeProvider) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -455,9 +530,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
       ),
     );
 
-    if (result == true && mounted) {
-      await _deleteItem(item, homeProvider);
-    }
+    return result ?? false;
   }
 
   Future<void> _deleteItem(FoodItem item, HomeProvider homeProvider) async {
