@@ -24,6 +24,9 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
 
+  // Track previous values for refresh detection
+  String? _previousDataHash;
+
   @override
   void initState() {
     super.initState();
@@ -76,25 +79,37 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
     
     // Start animations after everything is initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startAnimations();
+      if (mounted) {
+        _startAnimations();
+      }
     });
   }
 
   void _startAnimations() async {
     await Future.delayed(const Duration(milliseconds: 200));
-    _countController.forward();
+    if (mounted) _countController.forward();
     await Future.delayed(const Duration(milliseconds: 300));
-    _progressController.forward();
+    if (mounted) _progressController.forward();
     await Future.delayed(const Duration(milliseconds: 500));
-    _slideController.forward();
+    if (mounted) _slideController.forward();
   }
 
   // Restart animations when data refreshes
   void _restartAnimations() {
-    _progressController.reset();
-    _countController.reset();
-    _slideController.reset();
-    _startAnimations();
+    if (mounted) {
+      _progressController.reset();
+      _countController.reset();
+      _slideController.reset();
+      _startAnimations();
+    }
+  }
+
+  void _checkForRefresh(int totalCalories, int calorieGoal, int caloriesRemaining) {
+    final currentHash = '$totalCalories-$calorieGoal-$caloriesRemaining';
+    if (_previousDataHash != null && _previousDataHash != currentHash && mounted) {
+      _restartAnimations();
+    }
+    _previousDataHash = currentHash;
   }
 
   @override
@@ -140,19 +155,15 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
         final isOverBudget = homeProvider.isOverBudget;
         final expectedPercentage = homeProvider.expectedDailyPercentage;
         
+        // Check for data changes and restart animations if needed
+        _checkForRefresh(totalCalories, calorieGoal, caloriesRemaining);
+        
         // Calculate progress
         final calorieProgress = (totalCalories / calorieGoal).clamp(0.0, 1.0);
         final progressPercentage = (calorieProgress * 100).round();
         
         // Determine status and colors
         final statusData = _getStatusData(calorieProgress, expectedPercentage, isOverBudget);
-        
-        // Restart animations when data changes (like after refresh)
-        // Only do this once and avoid infinite rebuilds
-        if (homeProvider.isToday && mounted) {
-          // Use a more controlled approach for restarting animations
-          // This will only trigger once per data change
-        }
         
         return Container(
           padding: const EdgeInsets.all(24),
@@ -177,9 +188,9 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
                 children: [
                   Row(
                     children: [
-                      Text(
+                      const Text(
                         '🔥',
-                        style: const TextStyle(fontSize: 24),
+                        style: TextStyle(fontSize: 24),
                       ),
                       const SizedBox(width: 12),
                       Text(
@@ -295,13 +306,14 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
                           painter: CircularProgressPainter(
                             progress: calorieProgress * _progressAnimation.value,
                             color: statusData['color'],
-                            strokeWidth: 8,
+                            backgroundColor: Colors.grey[300]!,
+                            strokeWidth: 8.0,
                           ),
                           child: Center(
                             child: AnimatedBuilder(
-                              animation: _progressAnimation,
+                              animation: _countAnimation,
                               builder: (context, child) {
-                                final animatedPercentage = (progressPercentage * _progressAnimation.value).round();
+                                final animatedPercentage = (progressPercentage * _countAnimation.value).round();
                                 return Text(
                                   '$animatedPercentage%',
                                   style: AppTextStyles.getNumericStyle().copyWith(
@@ -327,6 +339,10 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
   }
 
   Widget _buildStatusBadge(Map<String, dynamic> statusData, int caloriesRemaining, bool isOverBudget) {
+    final badgeText = isOverBudget 
+        ? '${caloriesRemaining.abs()} over'
+        : '$caloriesRemaining left';
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -341,18 +357,16 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            statusData['icon'],
+            isOverBudget ? Icons.trending_up : Icons.trending_down,
             size: 16,
             color: statusData['color'],
           ),
           const SizedBox(width: 6),
           Text(
-            isOverBudget
-                ? '${caloriesRemaining.abs()} over'
-                : '$caloriesRemaining left',
-            style: AppTextStyles.getNumericStyle().copyWith(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
+            badgeText,
+            style: AppTextStyles.getBodyStyle().copyWith(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
               color: statusData['color'],
             ),
           ),
@@ -361,50 +375,53 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
     );
   }
 
-  Map<String, dynamic> _getStatusData(double progress, double expectedProgress, bool isOverBudget) {
+  Map<String, dynamic> _getStatusData(double progress, double expectedPercentage, bool isOverBudget) {
     if (isOverBudget) {
       return {
-        'color': Colors.red[500]!,
-        'icon': Icons.warning_rounded,
-        'message': '⚠️ Over your daily limit',
-      };
-    } else if (progress > expectedProgress * 1.2) {
-      return {
-        'color': Colors.orange[500]!,
-        'icon': Icons.speed_rounded,
-        'message': '🚀 Ahead of schedule!',
-      };
-    } else if (progress > expectedProgress * 0.8) {
-      return {
-        'color': Colors.green[500]!,
-        'icon': Icons.check_circle_rounded,
-        'message': '⭐ Right on track!',
-      };
-    } else if (progress > 0.1) {
-      return {
-        'color': Colors.blue[500]!,
-        'icon': Icons.trending_up_rounded,
-        'message': '💪 Keep it up!',
-      };
-    } else {
-      return {
-        'color': Colors.grey[500]!,
-        'icon': Icons.restaurant_rounded,
-        'message': '🍽️ Time to fuel up!',
+        'color': Colors.red[600]!,
+        'message': '🚨 Over your daily limit!',
       };
     }
+    
+    if (progress >= 0.9) {
+      return {
+        'color': Colors.orange[600]!,
+        'message': '🎯 Almost reached your goal!',
+      };
+    }
+    
+    if (progress >= 0.7) {
+      return {
+        'color': AppTheme.primaryBlue,
+        'message': '💪 Great progress today!',
+      };
+    }
+    
+    if (progress >= 0.4) {
+      return {
+        'color': Colors.green[600]!,
+        'message': '📈 Keep up the good work!',
+      };
+    }
+    
+    return {
+      'color': Colors.grey[600]!,
+      'message': '🍽️ Time to fuel up!',
+    };
   }
 }
 
-// Custom painter for circular progress
+// Custom painter for the circular progress indicator
 class CircularProgressPainter extends CustomPainter {
   final double progress;
   final Color color;
+  final Color backgroundColor;
   final double strokeWidth;
 
   CircularProgressPainter({
     required this.progress,
     required this.color,
+    required this.backgroundColor,
     required this.strokeWidth,
   });
 
@@ -415,39 +432,35 @@ class CircularProgressPainter extends CustomPainter {
 
     // Background circle
     final backgroundPaint = Paint()
-      ..color = Colors.grey[200]!
-      ..style = PaintingStyle.stroke
+      ..color = backgroundColor
       ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
     canvas.drawCircle(center, radius, backgroundPaint);
 
     // Progress arc
-    if (progress > 0) {
-      final progressPaint = Paint()
-        ..shader = LinearGradient(
-          colors: [
-            color.withOpacity(0.7),
-            color,
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ).createShader(Rect.fromCircle(center: center, radius: radius))
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round;
+    final progressPaint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
 
-      final sweepAngle = 2 * math.pi * progress;
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        -math.pi / 2, // Start from top
-        sweepAngle,
-        false,
-        progressPaint,
-      );
-    }
+    final sweepAngle = 2 * math.pi * progress;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2, // Start from top
+      sweepAngle,
+      false,
+      progressPaint,
+    );
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
+  bool shouldRepaint(CircularProgressPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+           oldDelegate.color != color ||
+           oldDelegate.backgroundColor != backgroundColor ||
+           oldDelegate.strokeWidth != strokeWidth;
+  }
 }

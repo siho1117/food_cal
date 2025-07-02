@@ -136,7 +136,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
       final delay = index * 0.2; // Stagger animation
 
       return Padding(
-        padding: EdgeInsets.only(bottom: index < 2 ? 20 : 0),
+        padding: EdgeInsets.only(bottom: index < 2 ? 16 : 0), // Reduced from 20 to 16
         child: Opacity(
           opacity: (_animation.value - delay).clamp(0.0, 1.0),
           child: _buildMacroRow(
@@ -176,25 +176,26 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
         
         const SizedBox(height: 8),
         
-        // Dot progress
+        // Progress dots in original position, message aligned under values
         Row(
           children: [
-            const SizedBox(width: 30),
-            Expanded(child: _buildDotProgress(progress / 100, color)),
-            const SizedBox(width: 50),
-          ],
-        ),
-        
-        const SizedBox(height: 6),
-        
-        // Message
-        Row(
-          children: [
-            const SizedBox(width: 30),
+            // Progress dots aligned under macro names (original position)
+            const SizedBox(width: 30), // Original 30px margin
             Expanded(
+              child: _buildDotProgress(progress / 100, color),
+            ),
+            
+            // Message aligned under values + percentage
+            SizedBox(
+              width: 120, // Fixed width to align under values area
               child: Text(
                 _getMessage(progress),
-                style: AppTextStyles.getBodyStyle().copyWith(fontSize: 12, fontWeight: FontWeight.w500, color: color, fontStyle: FontStyle.italic),
+                style: AppTextStyles.getBodyStyle().copyWith(
+                  fontSize: 12, 
+                  fontWeight: FontWeight.w500, 
+                  color: color, 
+                  fontStyle: FontStyle.italic
+                ),
               ),
             ),
           ],
