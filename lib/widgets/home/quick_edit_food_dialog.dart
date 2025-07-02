@@ -247,7 +247,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
                     _buildServingAdjustButton(Icons.add, () => _adjustServing(0.1)),
                   ],
                 ),
-                const SizedBox(height: 8), // 8px spacing before unit dropdown
+                const SizedBox(height: 12), // 12 spacing before unit dropdown
                 // Unit Dropdown - Full Width
                 DropdownButtonFormField<String>(
                   value: _selectedUnit,
