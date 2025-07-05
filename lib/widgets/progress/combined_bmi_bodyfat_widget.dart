@@ -1,18 +1,18 @@
-// lib/widgets/progress/circular_bmi_bodyfat_widget.dart
+// lib/widgets/progress/combined_bmi_bodyfat_widget.dart
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../../config/design_system/theme.dart';
 import '../../config/design_system/dimensions.dart';
 import '../../config/design_system/text_styles.dart';
 
-class CircularBMIBodyFatWidget extends StatefulWidget {
+class CombinedBMIBodyFatWidget extends StatefulWidget {
   final double? bmiValue;
   final String bmiClassification;
   final double? bodyFatPercentage;
   final String bodyFatClassification;
   final bool isEstimated;
 
-  const CircularBMIBodyFatWidget({
+  const CombinedBMIBodyFatWidget({
     Key? key,
     required this.bmiValue,
     required this.bmiClassification,
@@ -22,10 +22,10 @@ class CircularBMIBodyFatWidget extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<CircularBMIBodyFatWidget> createState() => _CircularBMIBodyFatWidgetState();
+  State<CombinedBMIBodyFatWidget> createState() => _CombinedBMIBodyFatWidgetState();
 }
 
-class _CircularBMIBodyFatWidgetState extends State<CircularBMIBodyFatWidget>
+class _CombinedBMIBodyFatWidgetState extends State<CombinedBMIBodyFatWidget>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late AnimationController _fadeController;
@@ -127,7 +127,7 @@ class _CircularBMIBodyFatWidgetState extends State<CircularBMIBodyFatWidget>
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Dimensions.s),
+          borderRadius: BorderRadius.circular(12.0),
         ),
         title: Text(
           'Body Composition Info', 
@@ -145,28 +145,28 @@ class _CircularBMIBodyFatWidgetState extends State<CircularBMIBodyFatWidget>
                 'BMI (Body Mass Index)',
                 style: AppTextStyles.getBodyStyle().copyWith(fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: Dimensions.xs),
+              const SizedBox(height: 8),
               Text(
                 'BMI is calculated using weight and height to assess if you\'re in a healthy weight range.',
                 style: AppTextStyles.getBodyStyle(),
               ),
-              SizedBox(height: Dimensions.s),
+              const SizedBox(height: 16),
               Text(
                 'Body Fat Percentage',
                 style: AppTextStyles.getBodyStyle().copyWith(fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: Dimensions.xs),
+              const SizedBox(height: 8),
               Text(
                 'Body fat percentage shows the proportion of fat in your total body mass.',
                 style: AppTextStyles.getBodyStyle(),
               ),
               if (widget.isEstimated) ...[
-                SizedBox(height: Dimensions.s),
+                const SizedBox(height: 16),
                 Container(
-                  padding: EdgeInsets.all(Dimensions.xs),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: const Color(0xFF4299E1).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(Dimensions.xxs),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     'Note: Body fat is estimated based on BMI. For accurate measurements, consider DEXA scans or bioelectrical impedance.',
@@ -208,10 +208,10 @@ class _CircularBMIBodyFatWidgetState extends State<CircularBMIBodyFatWidget>
             child: Card(
               elevation: 4,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(Dimensions.s),
+                borderRadius: BorderRadius.circular(12.0),
               ),
               child: Padding(
-                padding: EdgeInsets.all(Dimensions.m),
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -230,17 +230,17 @@ class _CircularBMIBodyFatWidgetState extends State<CircularBMIBodyFatWidget>
                               child: Icon(
                                 Icons.assessment_rounded,
                                 color: AppTheme.primaryBlue,
-                                size: Dimensions.m,
+                                size: 24,
                               ),
                             ),
-                            SizedBox(width: Dimensions.xs),
+                            const SizedBox(width: 8),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   'Body Composition',
                                   style: AppTextStyles.getSubHeadingStyle().copyWith(
-                                    fontSize: Dimensions.getTextSize(context, size: TextSize.medium),
+                                    fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -256,9 +256,9 @@ class _CircularBMIBodyFatWidgetState extends State<CircularBMIBodyFatWidget>
                           ],
                         ),
                         IconButton(
-                          icon: Icon(
+                          icon: const Icon(
                             Icons.info_outline_rounded, 
-                            size: Dimensions.getIconSize(context, size: IconSize.small),
+                            size: 20,
                           ),
                           onPressed: _showInfoDialog,
                           padding: EdgeInsets.zero,
@@ -268,7 +268,7 @@ class _CircularBMIBodyFatWidgetState extends State<CircularBMIBodyFatWidget>
                       ],
                     ),
                     
-                    SizedBox(height: Dimensions.l),
+                    const SizedBox(height: 24),
                     
                     // Circular Progress Rings with Zone Indicators
                     SizedBox(
@@ -293,18 +293,14 @@ class _CircularBMIBodyFatWidgetState extends State<CircularBMIBodyFatWidget>
                       ),
                     ),
                     
-                    SizedBox(height: Dimensions.l),
+                    const SizedBox(height: 24),
                     
                     // Metrics Summary
                     Container(
-                      padding: EdgeInsets.all(Dimensions.s),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.grey[200]!,
-                          width: 1,
-                        ),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         children: [
@@ -323,7 +319,7 @@ class _CircularBMIBodyFatWidgetState extends State<CircularBMIBodyFatWidget>
                                         shape: BoxShape.circle,
                                       ),
                                     ),
-                                    SizedBox(width: Dimensions.xs),
+                                    const SizedBox(width: 4),
                                     Text(
                                       'BMI',
                                       style: AppTextStyles.getBodyStyle().copyWith(
@@ -334,32 +330,23 @@ class _CircularBMIBodyFatWidgetState extends State<CircularBMIBodyFatWidget>
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: Dimensions.xs),
+                                const SizedBox(height: 4),
                                 Text(
-                                  widget.bmiValue?.toStringAsFixed(1) ?? '--',
-                                  style: AppTextStyles.getNumericStyle().copyWith(
-                                    fontSize: 24,
+                                  widget.bmiValue != null 
+                                    ? widget.bmiValue!.toStringAsFixed(1)
+                                    : '--',
+                                  style: AppTextStyles.getBodyStyle().copyWith(
+                                    fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     color: bmiColor,
                                   ),
                                 ),
-                                SizedBox(height: Dimensions.xxs),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: bmiColor.withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    widget.bmiClassification,
-                                    style: AppTextStyles.getBodyStyle().copyWith(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: bmiColor,
-                                    ),
+                                Text(
+                                  widget.bmiClassification,
+                                  style: AppTextStyles.getBodyStyle().copyWith(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: bmiColor,
                                   ),
                                 ),
                               ],
@@ -388,7 +375,7 @@ class _CircularBMIBodyFatWidgetState extends State<CircularBMIBodyFatWidget>
                                         shape: BoxShape.circle,
                                       ),
                                     ),
-                                    SizedBox(width: Dimensions.xs),
+                                    const SizedBox(width: 4),
                                     Text(
                                       'Body Fat',
                                       style: AppTextStyles.getBodyStyle().copyWith(
@@ -399,34 +386,23 @@ class _CircularBMIBodyFatWidgetState extends State<CircularBMIBodyFatWidget>
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: Dimensions.xs),
+                                const SizedBox(height: 4),
                                 Text(
                                   widget.bodyFatPercentage != null 
                                     ? '${widget.bodyFatPercentage!.toStringAsFixed(1)}%'
-                                    : '--%',
-                                  style: AppTextStyles.getNumericStyle().copyWith(
-                                    fontSize: 24,
+                                    : '--',
+                                  style: AppTextStyles.getBodyStyle().copyWith(
+                                    fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     color: bodyFatColor,
                                   ),
                                 ),
-                                SizedBox(height: Dimensions.xxs),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: bodyFatColor.withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    widget.bodyFatClassification,
-                                    style: AppTextStyles.getBodyStyle().copyWith(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: bodyFatColor,
-                                    ),
+                                Text(
+                                  widget.bodyFatClassification,
+                                  style: AppTextStyles.getBodyStyle().copyWith(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: bodyFatColor,
                                   ),
                                 ),
                               ],
@@ -435,54 +411,6 @@ class _CircularBMIBodyFatWidgetState extends State<CircularBMIBodyFatWidget>
                         ],
                       ),
                     ),
-                    
-                    // Zone Indicator Legend
-                    SizedBox(height: Dimensions.s),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: Colors.green[600],
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        SizedBox(width: Dimensions.xs),
-                        Text(
-                          'Green dots indicate healthy zones',
-                          style: AppTextStyles.getBodyStyle().copyWith(
-                            fontSize: 11,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    if (widget.isEstimated) ...[
-                      SizedBox(height: Dimensions.s),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            size: 14,
-                            color: Colors.grey[500],
-                          ),
-                          SizedBox(width: Dimensions.xs),
-                          Expanded(
-                            child: Text(
-                              'Body fat percentage is estimated based on BMI calculation',
-                              style: AppTextStyles.getBodyStyle().copyWith(
-                                fontSize: 11,
-                                color: Colors.grey[600],
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -494,7 +422,6 @@ class _CircularBMIBodyFatWidgetState extends State<CircularBMIBodyFatWidget>
   }
 }
 
-// Custom Painter for Circular Rings with Zone Indicators
 class CircularRingsZoneIndicatorsPainter extends CustomPainter {
   final double? bmiValue;
   final double bmiProgress;
@@ -515,33 +442,34 @@ class CircularRingsZoneIndicatorsPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final outerRadius = size.width * 0.38; // BMI ring
-    final innerRadius = size.width * 0.27; // Body Fat ring
+    final outerRadius = 75.0; // BMI ring
+    final innerRadius = 50.0; // Body Fat ring
     
-    // Calculate progress values (0.0 to 1.0)
+    // Calculate progress values for visual representation
     final bmiVisualProgress = bmiValue != null 
-      ? math.min((bmiValue! - 15) / 25, 1.0) * bmiProgress
-      : 0.0;
+        ? math.min(1.0, (bmiValue! / 40.0)) * bmiProgress // Max BMI scale of 40
+        : 0.0;
+    
     final bodyFatVisualProgress = bodyFatValue != null 
-      ? math.min(bodyFatValue! / 35, 1.0) * bodyFatProgress
-      : 0.0;
+        ? math.min(1.0, (bodyFatValue! / 50.0)) * bodyFatProgress // Max body fat scale of 50%
+        : 0.0;
 
-    // Paint styles
+    // Paint configurations
     final bmiBackgroundPaint = Paint()
-      ..color = Colors.grey[300]!
-      ..strokeWidth = 14
+      ..color = Colors.grey[200]!
+      ..strokeWidth = 12
       ..style = PaintingStyle.stroke;
-      
-    final bmiProgressPaint = Paint()
-      ..color = bmiColor
-      ..strokeWidth = 14
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
       
     final bodyFatBackgroundPaint = Paint()
       ..color = Colors.grey[200]!
       ..strokeWidth = 12
       ..style = PaintingStyle.stroke;
+      
+    final bmiProgressPaint = Paint()
+      ..color = bmiColor
+      ..strokeWidth = 12
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
       
     final bodyFatProgressPaint = Paint()
       ..color = bodyFatColor
