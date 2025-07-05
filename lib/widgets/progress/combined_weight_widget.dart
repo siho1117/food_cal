@@ -45,6 +45,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
       duration: const Duration(milliseconds: 800),
     );
     
+    // Initialize animations AFTER controllers are created
     _needleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _speedometerController,
@@ -161,66 +162,158 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Weight Journey',
-                              style: AppTextStyles.getSubHeadingStyle().copyWith(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.primaryBlue,
-                              ),
-                            ),
-                            if (targetWeight != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: progressColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: progressColor.withOpacity(0.3),
-                                    width: 1,
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: progressColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
-                                ),
-                                child: Text(
-                                  'Progress toward goal',
-                                  style: AppTextStyles.getBodyStyle().copyWith(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
+                                  child: Icon(
+                                    Icons.monitor_weight_rounded,
                                     color: progressColor,
+                                    size: 24,
                                   ),
                                 ),
-                              ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Current Weight',
+                                      style: AppTextStyles.getSubHeadingStyle().copyWith(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey[800],
+                                      ),
+                                    ),
+                                    Text(
+                                      'Keep going!',
+                                      style: AppTextStyles.getBodyStyle().copyWith(
+                                        fontSize: 12,
+                                        color: progressColor,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.add_circle_outline,
+                                    color: AppTheme.primaryBlue,
+                                    size: 28,
+                                  ),
+                                  onPressed: () {
+                                    // Add weight entry logic here
+                                  },
+                                  tooltip: 'Add Weight Entry',
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.flag_outlined,
+                                    color: Colors.grey[600],
+                                    size: 24,
+                                  ),
+                                  onPressed: () {
+                                    // Set target weight logic here
+                                  },
+                                  tooltip: 'Set Target Weight',
+                                ),
+                              ],
+                            ),
                           ],
+                        ),
+                        
+                        const SizedBox(height: 32),
+                        
+                        // Segmented Progress Arc (replacing speedometer)
+                        SizedBox(
+                          height: 120,
+                          child: AnimatedBuilder(
+                            animation: _speedometerController,
+                            builder: (context, child) {
+                              return CustomPaint(
+                                size: const Size(240, 120),
+                                painter: SegmentedProgressArcPainter(
+                                  progress: remainingPercentage * _needleAnimation.value,
+                                  progressColor: progressColor,
+                                ),
+                              );
+                            },
+                          ),
                         ),
                         
                         const SizedBox(height: 24),
                         
-                        // Speedometer or Empty State
-                        targetWeight != null 
-                          ? _buildSpeedometerView(currentWeight!, targetWeight, remainingPercentage, progressColor, weightToGoText)
-                          : _buildEmptyState(),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Action Buttons
-                        Row(
+                        // Weight Display
+                        Column(
                           children: [
-                            Expanded(
-                              flex: 2,
-                              child: _buildActionButton(
-                                'Update Weight',
-                                AppTheme.primaryBlue,
-                                Icons.add_circle_outline,
-                                () => _showWeightDialog(),
+                            Text(
+                              _formatWeight(currentWeight),
+                              style: AppTextStyles.getNumericStyle().copyWith(
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[800],
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildActionButton(
-                                'Set Target',
-                                Colors.green[600]!,
-                                Icons.flag_outlined,
-                                () => _showTargetDialog(),
+                            const SizedBox(height: 8),
+                            if (targetWeight != null)
+                              Text(
+                                'Target: ${_formatWeight(targetWeight)}',
+                                style: AppTextStyles.getBodyStyle().copyWith(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
                               ),
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: progressColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: progressColor.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                weightToGoText,
+                                style: AppTextStyles.getBodyStyle().copyWith(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: progressColor,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            
+                            // Progress Percentage (using original calculation)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.trending_up,
+                                  size: 18,
+                                  color: progressColor,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '${(100 - remainingPercentage).toInt()}% Complete',
+                                  style: AppTextStyles.getBodyStyle().copyWith(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: progressColor,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -235,387 +328,125 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
       },
     );
   }
-
-  Widget _buildSpeedometerView(
-    double currentWeight,
-    double targetWeight,
-    double remainingPercentage,
-    Color progressColor,
-    String weightToGoText,
-  ) {
-    return Column(
-      children: [
-        // Speedometer Gauge
-        SizedBox(
-          width: 180,
-          height: 90,
-          child: AnimatedBuilder(
-            animation: _speedometerController,
-            builder: (context, child) {
-              return CustomPaint(
-                size: const Size(180, 90),
-                painter: SpeedometerPainter(
-                  remainingPercentage: remainingPercentage * _needleAnimation.value,
-                  progressColor: progressColor,
-                ),
-              );
-            },
-          ),
-        ),
-        
-        // Speedometer Labels
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Close',
-                style: AppTextStyles.getBodyStyle().copyWith(
-                  fontSize: 11,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                'Far',
-                style: AppTextStyles.getBodyStyle().copyWith(
-                  fontSize: 11,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-        
-        const SizedBox(height: 20),
-        
-        // Weight Info Row
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.grey[200]!,
-              width: 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              // Current Weight
-              Expanded(
-                child: _buildInfoItem(
-                  'Current',
-                  _formatWeight(currentWeight),
-                  AppTheme.primaryBlue,
-                  Icons.monitor_weight_rounded,
-                ),
-              ),
-              
-              // Divider
-              Container(
-                width: 1,
-                height: 40,
-                color: Colors.grey[300],
-              ),
-              
-              // To Goal
-              Expanded(
-                child: _buildInfoItem(
-                  'To Goal',
-                  weightToGoText,
-                  progressColor,
-                  Icons.flag_outlined,
-                ),
-              ),
-              
-              // Divider
-              Container(
-                width: 1,
-                height: 40,
-                color: Colors.grey[300],
-              ),
-              
-              // Target Weight
-              Expanded(
-                child: _buildInfoItem(
-                  'Target',
-                  _formatWeight(targetWeight),
-                  Colors.green[600]!,
-                  Icons.radio_button_checked,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInfoItem(String label, String value, Color color, IconData icon) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          size: 16,
-          color: color.withOpacity(0.7),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: AppTextStyles.getNumericStyle().copyWith(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: AppTextStyles.getBodyStyle().copyWith(
-            fontSize: 11,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Container(
-      height: 120,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.grey[300]!,
-                width: 2,
-              ),
-            ),
-            child: Icon(
-              Icons.add,
-              color: Colors.grey[500],
-              size: 24,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Set a target weight to see your journey',
-            style: AppTextStyles.getBodyStyle().copyWith(
-              fontSize: 14,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton(String label, Color color, IconData icon, VoidCallback onTap) {
-    return Container(
-      height: 44,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            color,
-            color.withOpacity(0.8),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                color: Colors.white,
-                size: 16,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: AppTextStyles.getBodyStyle().copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showWeightDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Update Weight'),
-        content: Text('Weight dialog coming soon!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showTargetDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Set Target'),
-        content: Text('Target dialog coming soon!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
-// Custom painter for the speedometer
-class SpeedometerPainter extends CustomPainter {
-  final double remainingPercentage;
+// Custom Painter for Segmented Progress Arc (replacing SpeedometerPainter)
+class SegmentedProgressArcPainter extends CustomPainter {
+  final double progress;
   final Color progressColor;
+  final int segments = 20;
 
-  SpeedometerPainter({
-    required this.remainingPercentage,
+  SegmentedProgressArcPainter({
+    required this.progress,
     required this.progressColor,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height);
-    final radius = size.width / 2 - 20;
+    final center = Offset(size.width / 2, size.height * 0.85);
+    final radius = size.width * 0.32;
+    final segmentAngle = 180 / segments; // 180 degrees total arc (half circle)
+    final startAngle = 180.0; // Start from left side
     
-    // Draw the speedometer arc background
-    final backgroundPaint = Paint()
-      ..color = Colors.grey[200]!
-      ..strokeWidth = 12
-      ..style = PaintingStyle.stroke
+    // Calculate progress (original logic: lower percentage means closer to goal)
+    // For visual: higher progress should fill more segments
+    final visualProgress = (100 - progress) / 100; // Invert for visual progress
+    final activeSegments = (visualProgress * segments).floor();
+    final partialProgress = (visualProgress * segments) - activeSegments;
+
+    // Paint for segments
+    final activePaint = Paint()
+      ..color = progressColor
+      ..strokeWidth = 4
       ..strokeCap = StrokeCap.round;
-    
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      math.pi,
-      math.pi,
-      false,
-      backgroundPaint,
-    );
-    
-    // Draw gradient speedometer arc
-    final rect = Rect.fromCircle(center: center, radius: radius);
-    final gradient = SweepGradient(
-      startAngle: math.pi,
-      endAngle: 2 * math.pi,
-      colors: [
-        Colors.green[600]!,
-        Colors.lightGreen[500]!,
-        Colors.yellow[600]!,
-        Colors.orange[500]!,
-        Colors.red[500]!,
-      ],
-    );
-    
-    final speedometerPaint = Paint()
-      ..shader = gradient.createShader(rect)
-      ..strokeWidth = 12
-      ..style = PaintingStyle.stroke
+      
+    final inactivePaint = Paint()
+      ..color = Colors.grey[300]!
+      ..strokeWidth = 4
       ..strokeCap = StrokeCap.round;
-    
-    canvas.drawArc(
-      rect,
-      math.pi,
-      math.pi,
-      false,
-      speedometerPaint,
-    );
-    
-    // Calculate needle position
-    final normalizedPercentage = (remainingPercentage / 20).clamp(0.0, 1.0);
-    final needleAngle = math.pi + (math.pi * normalizedPercentage);
-    final needleLength = radius - 10;
-    final needleEnd = Offset(
-      center.dx + needleLength * math.cos(needleAngle),
-      center.dy + needleLength * math.sin(needleAngle),
-    );
-    
-    // Draw the needle
-    final needlePaint = Paint()
-      ..color = Colors.grey[800]!
-      ..strokeWidth = 3
+      
+    final nextPaint = Paint()
+      ..color = progressColor.withOpacity(0.5)
+      ..strokeWidth = 4
       ..strokeCap = StrokeCap.round;
-    
-    canvas.drawLine(center, needleEnd, needlePaint);
-    
-    // Draw center circle
+
+    // Draw each segment
+    for (int i = 0; i < segments; i++) {
+      final angle = (startAngle + (i * segmentAngle)) * math.pi / 180;
+      
+      // Calculate start and end points for each segment
+      final innerRadius = radius - 6;
+      final outerRadius = radius + 6;
+      
+      final startInner = Offset(
+        center.dx + innerRadius * math.cos(angle),
+        center.dy + innerRadius * math.sin(angle),
+      );
+      
+      final startOuter = Offset(
+        center.dx + outerRadius * math.cos(angle),
+        center.dy + outerRadius * math.sin(angle),
+      );
+
+      Paint segmentPaint;
+      if (i < activeSegments) {
+        segmentPaint = activePaint;
+      } else if (i == activeSegments && partialProgress > 0) {
+        segmentPaint = nextPaint;
+      } else {
+        segmentPaint = inactivePaint;
+      }
+
+      canvas.drawLine(startInner, startOuter, segmentPaint);
+    }
+
+    // Draw center dot
     final centerPaint = Paint()
-      ..color = Colors.grey[800]!;
+      ..color = progressColor
+      ..style = PaintingStyle.fill;
+      
+    canvas.drawCircle(center, 4, centerPaint);
     
-    canvas.drawCircle(center, 6, centerPaint);
-    
-    // Draw remaining percentage text
-    final textSpan = TextSpan(
-      text: '${remainingPercentage.toStringAsFixed(1)}%',
-      style: TextStyle(
-        color: progressColor,
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-      ),
+    // Draw 0% and 100% markers
+    final textStyle = TextStyle(
+      color: Colors.grey[600],
+      fontSize: 11,
+      fontWeight: FontWeight.w500,
     );
     
-    final textPainter = TextPainter(
-      text: textSpan,
+    // 0% marker (left side)
+    final startTextPainter = TextPainter(
+      text: TextSpan(text: '0%', style: textStyle),
       textDirection: TextDirection.ltr,
     );
+    startTextPainter.layout();
     
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(
-        center.dx - textPainter.width / 2,
-        center.dy - 35,
-      ),
+    final startTextAngle = startAngle * math.pi / 180;
+    final startTextOffset = Offset(
+      center.dx + (radius + 18) * math.cos(startTextAngle) - startTextPainter.width / 2,
+      center.dy + (radius + 18) * math.sin(startTextAngle) - startTextPainter.height / 2,
     );
+    startTextPainter.paint(canvas, startTextOffset);
+    
+    // 100% marker (right side)
+    final endTextPainter = TextPainter(
+      text: TextSpan(text: '100%', style: textStyle),
+      textDirection: TextDirection.ltr,
+    );
+    endTextPainter.layout();
+    
+    final endTextAngle = (startAngle + 180) * math.pi / 180;
+    final endTextOffset = Offset(
+      center.dx + (radius + 18) * math.cos(endTextAngle) - endTextPainter.width / 2,
+      center.dy + (radius + 18) * math.sin(endTextAngle) - endTextPainter.height / 2,
+    );
+    endTextPainter.paint(canvas, endTextOffset);
   }
 
   @override
-  bool shouldRepaint(SpeedometerPainter oldDelegate) {
-    return oldDelegate.remainingPercentage != remainingPercentage || 
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return oldDelegate is! SegmentedProgressArcPainter || 
+           oldDelegate.progress != progress ||
            oldDelegate.progressColor != progressColor;
   }
 }

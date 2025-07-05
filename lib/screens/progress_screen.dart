@@ -2,11 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/progress_data.dart';
-import '../widgets/progress/bmi_widget.dart';
-import '../widgets/progress/body_fat_percentage_widget.dart';
-import '../widgets/progress/bmi_widget.dart';
-import '../widgets/progress/body_fat_percentage_widget.dart';
 import '../widgets/progress/combined_weight_widget.dart';
+import '../widgets/progress/combined_bmi_bodyfat_widget.dart'; // NEW: Combined widget
 import '../widgets/progress/weight_history_graph_widget.dart';
 import '../widgets/progress/energy_metrics_widget.dart';
 import '../config/design_system/theme.dart';
@@ -96,7 +93,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
   Widget _buildProgressContent(BuildContext context, ProgressData progressData) {
     return Column(
       children: [
-        // Combined Weight Widget (replaces separate weight entry + target widgets)
+        // Combined Weight Widget (with segmented progress)
         CombinedWeightWidget(
           currentWeight: progressData.currentWeight,
           isMetric: progressData.isMetric,
@@ -105,10 +102,13 @@ class _ProgressScreenState extends State<ProgressScreen> {
         
         const SizedBox(height: 16),
         
-        // BMI Widget
-        BMIWidget(
+        // UPDATED: Combined BMI & Body Fat Widget (replaces separate widgets)
+        CombinedBMIBodyFatWidget(
           bmiValue: progressData.bmiValue,
-          classification: progressData.bmiClassification,
+          bmiClassification: progressData.bmiClassification,
+          bodyFatPercentage: progressData.bodyFatValue,
+          bodyFatClassification: progressData.bodyFatClassification,
+          isEstimated: true, // Body fat is estimated from BMI
         ),
         
         const SizedBox(height: 16),
@@ -118,15 +118,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
           userProfile: progressData.userProfile,
           currentWeight: progressData.currentWeight,
           onSettingsTap: () => Navigator.of(context).pushNamed('/settings'),
-        ),
-        
-        const SizedBox(height: 16),
-        
-        // Body Fat Percentage Widget
-        BodyFatPercentageWidget(
-          bodyFatPercentage: progressData.bodyFatValue,
-          classification: progressData.bodyFatClassification,
-          isEstimated: true,
         ),
         
         const SizedBox(height: 16),
