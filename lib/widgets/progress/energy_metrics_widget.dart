@@ -6,7 +6,7 @@ import '../../config/design_system/text_styles.dart';
 import '../../data/models/user_profile.dart';
 import '../../utils/formula.dart';
 
-class EnergyMetricsWidget extends StatelessWidget {
+class EnergyMetricsWidget extends StatefulWidget {
   final UserProfile? userProfile;
   final double? currentWeight;
   final VoidCallback? onSettingsTap;
@@ -19,6 +19,50 @@ class EnergyMetricsWidget extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<EnergyMetricsWidget> createState() => _EnergyMetricsWidgetState();
+}
+
+class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  bool _showGoals = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+    
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.2),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
+    
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Calculate BMR & TDEE
     final calculationResults = _calculateEnergy();
@@ -27,278 +71,347 @@ class EnergyMetricsWidget extends StatelessWidget {
     final tdee = calculationResults['tdee'] as double?;
     final activityLevel = calculationResults['activityLevel'] as double?;
     final calorieGoals = calculationResults['calorieGoals'] as Map<String, int>?;
-    
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(Dimensions.s),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(Dimensions.m),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Daily Energy Needs',
-                  style: AppTextStyles.getSubHeadingStyle().copyWith(
-                    fontSize: Dimensions.getTextSize(context, size: TextSize.medium),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.info_outline,
-                    size: Dimensions.getIconSize(context, size: IconSize.small),
-                  ),
-                  onPressed: () => _showInfoDialog(context),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  color: Colors.grey[500],
-                ),
-              ],
-            ),
-            
-            SizedBox(height: Dimensions.s),
-            
-            // Show error state if missing data
-            if (missingData != null && missingData.isNotEmpty)
-              _buildMissingDataState(context, missingData)
-            else
-              _buildEnergyContent(context, bmr, tdee, activityLevel, calorieGoals),
-          ],
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildMissingDataState(BuildContext context, List<String> missingData) {
-    return Column(
-      children: [
-        Icon(
-          Icons.warning_amber_rounded,
-          size: 36,
-          color: Colors.orange,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Missing Information',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Please update: ${missingData.join(", ")}',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[600],
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 12),
-        TextButton(
-          onPressed: onSettingsTap ?? () {
-            Navigator.of(context).pushNamed('/settings');
-          },
-          child: Text('Update Profile'),
-        ),
-      ],
-    );
-  }
-  
-  Widget _buildEnergyContent(
-    BuildContext context, 
-    double? bmr, 
-    double? tdee,
-    double? activityLevel,
-    Map<String, int>? calorieGoals,
-  ) {
-    return Column(
-      children: [
-        // BMR and TDEE overview
-        Row(
-          children: [
-            // BMR metric
-            Expanded(
-              child: _buildEnergyMetric(
-                title: 'BMR',
-                value: bmr?.round() ?? 0,
-                description: 'Calories at rest',
-                color: AppTheme.coralAccent,
-              ),
-            ),
-            
-            // Divider
-            Container(
-              height: 70,
-              width: 1,
-              color: Colors.grey[300],
-            ),
-            
-            // TDEE metric
-            Expanded(
-              child: _buildEnergyMetric(
-                title: 'TDEE',
-                value: tdee?.round() ?? 0,
-                description: 'Daily calories',
-                color: AppTheme.primaryBlue,
-                isPrimary: true,
-              ),
-            ),
-          ],
-        ),
-        
-        SizedBox(height: Dimensions.s),
-        
-        // Activity level indicator
-        if (activityLevel != null)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: _getActivityLevelColor(activityLevel).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: _getActivityLevelColor(activityLevel).withOpacity(0.2),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _getActivityIcon(activityLevel),
-                  size: 14,
-                  color: _getActivityLevelColor(activityLevel),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  Formula.getActivityLevelText(activityLevel),
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: _getActivityLevelColor(activityLevel),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-        SizedBox(height: Dimensions.m),
-          
-        // Divider
-        Divider(color: Colors.grey[300]),
-        
-        SizedBox(height: Dimensions.s),
-        
-        // Calorie targets
-        if (calorieGoals != null) ...[
-          Text(
-            'Calorie Targets',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
-            ),
-          ),
-          
-          SizedBox(height: Dimensions.xs),
-          
-          // Grid of calorie targets for different goals
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            childAspectRatio: 2.5,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            padding: EdgeInsets.zero,
+
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Container(
+          margin: EdgeInsets.symmetric(horizontal: Dimensions.xs),
+          child: Column(
             children: [
-              _buildCalorieTarget('Weight Loss', calorieGoals['lose'] ?? 0, Colors.green, Icons.trending_down),
-              _buildCalorieTarget('Maintain', calorieGoals['maintain'] ?? 0, AppTheme.primaryBlue, Icons.trending_flat),
-              _buildCalorieTarget('Mild Loss', calorieGoals['lose_mild'] ?? 0, Colors.lightGreen, Icons.trending_down),
-              _buildCalorieTarget('Weight Gain', calorieGoals['gain'] ?? 0, AppTheme.goldAccent, Icons.trending_up),
+              // Main split card
+              _buildSplitCard(context, bmr, tdee, activityLevel, missingData),
+              
+              // Expandable goals section
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                height: _showGoals ? null : 0,
+                child: _showGoals
+                    ? _buildGoalsSection(context, calorieGoals)
+                    : null,
+              ),
             ],
           ),
-          
-          SizedBox(height: Dimensions.xs),
-          
-          // Note about calories
-          Container(
-            padding: EdgeInsets.all(Dimensions.xs),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(Dimensions.xxs),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, size: 14, color: Colors.grey[600]),
-                SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    'Weight loss: 500 cal deficit • Mild loss: 250 cal deficit • Gain: 500 cal surplus',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ],
+        ),
+      ),
     );
   }
-  
-  Widget _buildEnergyMetric({
+
+  Widget _buildSplitCard(
+    BuildContext context,
+    double? bmr,
+    double? tdee,
+    double? activityLevel,
+    List<String>? missingData,
+  ) {
+    if (missingData != null && missingData.isNotEmpty) {
+      return _buildMissingDataCard(context, missingData);
+    }
+
+    final activityDiff = (tdee ?? 0) - (bmr ?? 0);
+
+    return Card(
+      elevation: 8,
+      shadowColor: Colors.black.withOpacity(0.15),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Column(
+          children: [
+            // Split metrics section - More compact
+            IntrinsicHeight(
+              child: Row(
+                children: [
+                  // BMR Section (Left)
+                  Expanded(
+                    child: _buildMetricSection(
+                      title: 'BMR',
+                      value: bmr?.round() ?? 0,
+                      description: 'Base metabolism\ncalories per day',
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFFE27069), // coralAccent
+                          Color(0xFFD4605A), // darker coral
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  // BMR Section (Right)
+                  Expanded(
+                    child: _buildMetricSection(
+                      title: 'TDEE',
+                      value: tdee?.round() ?? 0,
+                      description: 'Total daily energy\nexpenditure',
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFFCF9340), // goldAccent
+                          Color(0xFFB8822E), // darker gold
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Footer section - More compact
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryBeige.withOpacity(0.3),
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.grey.withOpacity(0.1),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.flash_on_rounded,
+                        size: 14,
+                        color: AppTheme.goldAccent,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Activity adds +${activityDiff.round()} calories',
+                        style: AppTextStyles.getBodyStyle().copyWith(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primaryBlue,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 8),
+                  
+                  // Tap to expand button
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _showGoals = !_showGoals;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryBlue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppTheme.primaryBlue.withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _showGoals ? 'Hide Goals' : 'View Calorie Goals',
+                            style: AppTextStyles.getBodyStyle().copyWith(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.primaryBlue,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          AnimatedRotation(
+                            turns: _showGoals ? 0.5 : 0,
+                            duration: const Duration(milliseconds: 300),
+                            child: Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 14,
+                              color: AppTheme.primaryBlue,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetricSection({
     required String title,
     required int value,
     required String description,
-    required Color color,
-    bool isPrimary = false,
+    required LinearGradient gradient,
   }) {
-    return Column(
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[700],
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16), // Reduced padding
+      decoration: BoxDecoration(gradient: gradient),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Title
+          Text(
+            title,
+            style: AppTextStyles.getSubHeadingStyle().copyWith(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withOpacity(0.9),
+              letterSpacing: 1,
+            ),
           ),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          '$value',
-          style: AppTextStyles.getNumericStyle().copyWith(
-            fontSize: isPrimary ? 28 : 24,
-            fontWeight: FontWeight.bold,
-            color: color,
+          
+          const SizedBox(height: 8), // Reduced spacing
+          
+          // Value
+          Text(
+            value.toString(),
+            style: AppTextStyles.getNumericStyle().copyWith(
+              fontSize: 36, // Slightly smaller
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              height: 1,
+            ),
           ),
-        ),
-        Text(
-          description,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
+          
+          const SizedBox(height: 6), // Reduced spacing
+          
+          // Description
+          Text(
+            description,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.getBodyStyle().copyWith(
+              fontSize: 12,
+              color: Colors.white.withOpacity(0.8),
+              height: 1.2,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
-  
-  Widget _buildCalorieTarget(String title, int calories, Color color, IconData icon) {
+
+  Widget _buildGoalsSection(BuildContext context, Map<String, int>? calorieGoals) {
+    if (calorieGoals == null) return const SizedBox.shrink();
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      margin: const EdgeInsets.only(top: 8),
+      child: Card(
+        elevation: 4,
+        shadowColor: Colors.black.withOpacity(0.1),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16), // Reduced padding
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Goals header
+              Row(
+                children: [
+                  Icon(
+                    Icons.track_changes_rounded,
+                    size: 16,
+                    color: AppTheme.primaryBlue,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Calorie Goals',
+                    style: AppTextStyles.getSubHeadingStyle().copyWith(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryBlue,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: Icon(
+                      Icons.info_outline_rounded,
+                      size: 16,
+                      color: Colors.grey[600],
+                    ),
+                    onPressed: () => _showInfoDialog(context),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 12),
+              
+              // Goals grid - Fixed overflow
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final availableWidth = constraints.maxWidth;
+                  final cardWidth = (availableWidth - 8) / 2; // Account for gap
+                  
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildGoalCard(
+                        'Weight Loss',
+                        calorieGoals['lose'] ?? 0,
+                        Colors.red[400]!,
+                        Icons.trending_down_rounded,
+                        cardWidth,
+                      ),
+                      _buildGoalCard(
+                        'Maintain',
+                        calorieGoals['maintain'] ?? 0,
+                        AppTheme.primaryBlue,
+                        Icons.trending_flat_rounded,
+                        cardWidth,
+                      ),
+                      _buildGoalCard(
+                        'Mild Loss',
+                        calorieGoals['lose_mild'] ?? 0,
+                        Colors.lightGreen[600]!,
+                        Icons.trending_down_rounded,
+                        cardWidth,
+                      ),
+                      _buildGoalCard(
+                        'Weight Gain',
+                        calorieGoals['gain'] ?? 0,
+                        AppTheme.goldAccent,
+                        Icons.trending_up_rounded,
+                        cardWidth,
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGoalCard(String title, int calories, Color color, IconData icon, double width) {
+    return Container(
+      width: width,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: color.withOpacity(0.2),
           width: 1,
@@ -306,26 +419,32 @@ class EnergyMetricsWidget extends StatelessWidget {
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 14, color: color),
+              Icon(icon, size: 12, color: color),
               const SizedBox(width: 4),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: color,
+              Flexible(
+                child: Text(
+                  title,
+                  style: AppTextStyles.getBodyStyle().copyWith(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 4),
           Text(
             '$calories cal',
-            style: TextStyle(
-              fontSize: 14,
+            style: AppTextStyles.getNumericStyle().copyWith(
+              fontSize: 13,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -334,31 +453,86 @@ class EnergyMetricsWidget extends StatelessWidget {
       ),
     );
   }
-  
-  // Get icon based on activity level
-  IconData _getActivityIcon(double activityLevel) {
-    if (activityLevel < 1.4) return Icons.battery_1_bar;
-    if (activityLevel < 1.6) return Icons.battery_2_bar;
-    if (activityLevel < 1.8) return Icons.battery_3_bar;
-    return Icons.battery_4_bar;
+
+  Widget _buildMissingDataCard(BuildContext context, List<String> missingData) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(20), // Reduced padding
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.orange[300]!,
+              Colors.orange[400]!,
+            ],
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              size: 36, // Smaller icon
+              color: Colors.white,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Missing Information',
+              style: AppTextStyles.getSubHeadingStyle().copyWith(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Please update: ${missingData.join(", ")}',
+              style: AppTextStyles.getBodyStyle().copyWith(
+                fontSize: 13,
+                color: Colors.white.withOpacity(0.9),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: widget.onSettingsTap ?? () {
+                Navigator.of(context).pushNamed('/settings');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.orange[400],
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: Text(
+                'Update Profile',
+                style: AppTextStyles.getBodyStyle().copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
-  
-  // Get activity level color
-  Color _getActivityLevelColor(double activityLevel) {
-    if (activityLevel < 1.4) return Colors.grey; // Sedentary
-    if (activityLevel < 1.6) return Colors.green; // Lightly active
-    if (activityLevel < 1.8) return AppTheme.goldAccent; // Moderately active
-    return AppTheme.primaryBlue; // Very active / Extra active
-  }
-  
+
   // Calculate BMR and TDEE
   Map<String, dynamic> _calculateEnergy() {
     // Check for missing data
     List<String> missingData = [];
-    if (currentWeight == null) missingData.add('Weight');
-    if (userProfile?.height == null) missingData.add('Height');
-    if (userProfile?.age == null) missingData.add('Age');
-    if (userProfile?.gender == null) missingData.add('Gender');
+    if (widget.currentWeight == null) missingData.add('Weight');
+    if (widget.userProfile?.height == null) missingData.add('Height');
+    if (widget.userProfile?.age == null) missingData.add('Age');
+    if (widget.userProfile?.gender == null) missingData.add('Gender');
     
     if (missingData.isNotEmpty) {
       return {'missingData': missingData};
@@ -366,14 +540,14 @@ class EnergyMetricsWidget extends StatelessWidget {
     
     // Calculate BMR (Basal Metabolic Rate)
     final bmr = Formula.calculateBMR(
-      weight: currentWeight,
-      height: userProfile!.height,
-      age: userProfile!.age,
-      gender: userProfile!.gender,
+      weight: widget.currentWeight,
+      height: widget.userProfile!.height,
+      age: widget.userProfile!.age,
+      gender: widget.userProfile!.gender,
     );
     
     // Get activity level
-    final activityLevel = userProfile!.activityLevel ?? 1.2;
+    final activityLevel = widget.userProfile!.activityLevel ?? 1.2;
     
     // Calculate TDEE (Total Daily Energy Expenditure)
     final tdee = bmr! * activityLevel;
@@ -396,16 +570,20 @@ class EnergyMetricsWidget extends StatelessWidget {
       },
     };
   }
-  
+
   void _showInfoDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         title: Row(
           children: [
             Icon(
-              Icons.info_outline,
+              Icons.info_outline_rounded,
               color: AppTheme.primaryBlue,
+              size: 20,
             ),
             const SizedBox(width: 8),
             Text(
@@ -413,6 +591,7 @@ class EnergyMetricsWidget extends StatelessWidget {
               style: AppTextStyles.getSubHeadingStyle().copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppTheme.primaryBlue,
+                fontSize: 16,
               ),
             ),
           ],
@@ -424,64 +603,21 @@ class EnergyMetricsWidget extends StatelessWidget {
             children: [
               _buildInfoSection(
                 'BMR (Basal Metabolic Rate)',
-                'The number of calories your body needs to perform essential life-sustaining functions while at complete rest.',
+                'The calories your body needs for essential functions like breathing, circulation, and cell repair while at complete rest.',
               ),
               
-              SizedBox(height: Dimensions.s),
+              const SizedBox(height: 12),
               
               _buildInfoSection(
                 'TDEE (Total Daily Energy Expenditure)',
-                'Your total daily calorie burn, which combines your BMR with additional calories burned through physical activity and digestion.',
+                'Your complete daily calorie burn including BMR plus calories from physical activity, digestion, and daily movement.',
               ),
               
-              SizedBox(height: Dimensions.s),
+              const SizedBox(height: 12),
               
               _buildInfoSection(
-                'Weight Loss',
-                'To lose weight, consume fewer calories than your TDEE. A deficit of 500 calories per day can lead to approximately 1 pound (0.45 kg) of weight loss per week.',
-              ),
-              
-              SizedBox(height: Dimensions.s),
-              
-              _buildInfoSection(
-                'Weight Gain',
-                'To gain weight, consume more calories than your TDEE. A surplus of 500 calories per day can lead to approximately 1 pound (0.45 kg) of weight gain per week.',
-              ),
-              
-              SizedBox(height: Dimensions.s),
-              
-              _buildInfoSection(
-                'Activity Levels',
-                '• Sedentary: Little to no exercise\n'
-                '• Light: Light exercise 1-3 days/week\n'
-                '• Moderate: Moderate exercise 3-5 days/week\n'
-                '• Active: Hard exercise 6-7 days/week\n'
-                '• Very Active: Very hard daily exercise or physical job',
-              ),
-              
-              SizedBox(height: Dimensions.s),
-              
-              Container(
-                padding: EdgeInsets.all(Dimensions.xs),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(Dimensions.xxs),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.warning_amber, size: 16, color: Colors.orange),
-                    SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'These are estimates. Individual metabolism varies. Consult a healthcare professional for personalized advice.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.orange[800],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                'Calorie Goals',
+                'Weight loss: 500 cal deficit daily can lead to ~1 lb/week loss\nMild loss: 250 cal deficit for gradual weight loss\nGain: 500 cal surplus for healthy weight gain',
               ),
             ],
           ),
@@ -492,13 +628,18 @@ class EnergyMetricsWidget extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.primaryBlue,
             ),
-            child: const Text('CLOSE'),
+            child: Text(
+              'GOT IT',
+              style: AppTextStyles.getBodyStyle().copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildInfoSection(String title, String content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -506,15 +647,18 @@ class EnergyMetricsWidget extends StatelessWidget {
         Text(
           title,
           style: AppTextStyles.getSubHeadingStyle().copyWith(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+            color: AppTheme.primaryBlue,
           ),
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Text(
           content,
           style: AppTextStyles.getBodyStyle().copyWith(
-            fontSize: 13,
+            fontSize: 12,
+            color: Colors.grey[700],
+            height: 1.4,
           ),
         ),
       ],
