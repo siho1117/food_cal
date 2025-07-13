@@ -219,265 +219,172 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
   Widget _buildProgressHeader(ExerciseProvider exerciseProvider) {
     final totalBurned = exerciseProvider.totalCaloriesBurned;
     final burnGoal = exerciseProvider.dailyBurnGoal;
-    final progress = burnGoal > 0 ? (totalBurned / burnGoal) : 0.0;
-    final progressPercentage = (progress * 100).clamp(0, 999).round();
+    final progress = burnGoal > 0 ? (totalBurned / burnGoal).clamp(0.0, 1.0) : 0.0;
 
     return Container(
-      margin: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Today\'s Goal Progress',
-                    style: AppTextStyles.getBodyStyle().copyWith(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white.withValues(alpha: 0.9),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Calories Burned',
+                      style: AppTextStyles.getBodyStyle().copyWith(
+                        fontSize: 14,
+                        color: const Color(0xFF64748B),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: _formatNumber(totalBurned),
-                          style: AppTextStyles.getNumericStyle().copyWith(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                          ),
-                        ),
-                        TextSpan(
-                          text: ' / ${_formatNumber(burnGoal)} cal',
-                          style: AppTextStyles.getNumericStyle().copyWith(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 4),
+                    Text(
+                      '$totalBurned / $burnGoal',
+                      style: AppTextStyles.getSubHeadingStyle().copyWith(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1E293B),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            CustomPaint(
-              size: const Size(60, 60),
-              painter: CircularProgressPainter(
-                progress: progress.clamp(0.0, 1.0),
-                backgroundColor: Colors.white.withValues(alpha: 0.2),
-                progressColor: Colors.white,
-                strokeWidth: 3,
-              ),
-              child: SizedBox(
+              SizedBox(
                 width: 60,
                 height: 60,
-                child: Center(
-                  child: Text(
-                    '$progressPercentage%',
-                    style: AppTextStyles.getBodyStyle().copyWith(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                child: CustomPaint(
+                  painter: CircularProgressPainter(
+                    progress: progress,
+                    backgroundColor: const Color(0xFFE2E8F0),
+                    progressColor: const Color(0xFF667EEA),
+                    strokeWidth: 6,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${(progress * 100).round()}%',
+                      style: AppTextStyles.getBodyStyle().copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF667EEA),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildTimelineContent(ExerciseProvider exerciseProvider) {
-    final exercises = exerciseProvider.exerciseEntries;
-
-    if (exercises.isEmpty) {
+    if (exerciseProvider.exerciseEntries.isEmpty) {
       return _buildEmptyState();
     }
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Stack(
+    return Column(
+      children: [
+        _buildTimeline(exerciseProvider),
+        // ADD EXERCISE BUTTON - This is the key addition!
+        _buildAddExerciseButtonWhenExercisesExist(exerciseProvider),
+      ],
+    );
+  }
+
+  Widget _buildTimeline(ExerciseProvider exerciseProvider) {
+    final exercises = exerciseProvider.exerciseEntries;
+    
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      itemCount: exercises.length,
+      itemBuilder: (context, index) {
+        final exercise = exercises[index];
+        final animation = _itemAnimations![math.min(index, _itemAnimations!.length - 1)];
+        
+        return AnimatedBuilder(
+          animation: animation,
+          builder: (context, child) {
+            return Transform.translate(
+              offset: Offset(0, (1 - animation.value) * 30),
+              child: Opacity(
+                opacity: animation.value,
+                child: _buildTimelineItem(exercise, index == exercises.length - 1),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildTimelineItem(ExerciseEntry exercise, bool isLast) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Timeline line
-          Positioned(
-            left: 12,
-            top: 0,
-            bottom: 20,
-            child: Container(
-              width: 2,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    const Color(0xFF667EEA),
-                    const Color(0xFF94A3B8),
-                    const Color(0xFFE2E8F0),
-                  ],
+          Column(
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF667EEA),
+                  shape: BoxShape.circle,
                 ),
               ),
-            ),
+              if (!isLast)
+                Container(
+                  width: 2,
+                  height: 40,
+                  color: const Color(0xFFE2E8F0),
+                ),
+            ],
           ),
-          // Timeline items
-          Column(
-            children: exercises.asMap().entries.map((entry) {
-              final index = entry.key;
-              final exercise = entry.value;
-              
-              // Check if animations are available
-              if (_itemAnimations == null || _itemAnimations!.isEmpty) {
-                return _buildTimelineItem(exercise, index);
-              }
-              
-              return AnimatedBuilder(
-                animation: _itemAnimations![math.min(index, _itemAnimations!.length - 1)],
-                builder: (context, child) {
-                  final animIndex = math.min(index, _itemAnimations!.length - 1);
-                  return Transform.translate(
-                    offset: Offset(
-                      30 * (1 - _itemAnimations![animIndex].value),
-                      0,
-                    ),
-                    child: Opacity(
-                      opacity: _itemAnimations![animIndex].value,
-                      child: _buildTimelineItem(exercise, index),
-                    ),
-                  );
-                },
-              );
-            }).toList(),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _buildExerciseCard(exercise),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTimelineItem(ExerciseEntry exercise, int index) {
-    final accentColor = _getExerciseAccentColor(exercise, index);
-    final statusInfo = _getExerciseStatus(exercise);
-
+  Widget _buildExerciseCard(ExerciseEntry exercise) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 20, left: 32),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: accentColor.withValues(alpha: 0.1),
-            blurRadius: 8,
-            spreadRadius: 0,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 1,
+        ),
       ),
-      child: Stack(
+      child: Row(
         children: [
-          // Left accent border
-          Positioned(
-            left: 0,
-            top: 0,
-            bottom: 0,
-            child: Container(
-              width: 4,
-              decoration: BoxDecoration(
-                color: accentColor,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  bottomLeft: Radius.circular(12),
-                ),
-              ),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFF667EEA).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.fitness_center,
+              color: const Color(0xFF667EEA),
+              size: 20,
             ),
           ),
-          // Timeline dot
-          Positioned(
-            left: -36,
-            top: 20,
-            child: Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: accentColor,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 3),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFE2E8F0),
-                    blurRadius: 4,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(16),
+          const SizedBox(width: 12),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _formatTime(exercise.timestamp),
-                            style: AppTextStyles.getBodyStyle().copyWith(
-                              fontSize: 11,
-                              color: const Color(0xFF64748B),
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          if (statusInfo['status'] != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              statusInfo['status']!,
-                              style: AppTextStyles.getBodyStyle().copyWith(
-                                fontSize: 10,
-                                color: statusInfo['color'],
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        '${exercise.caloriesBurned} cal',
-                        style: AppTextStyles.getBodyStyle().copyWith(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
                 Text(
                   exercise.name,
                   style: AppTextStyles.getSubHeadingStyle().copyWith(
@@ -488,7 +395,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${exercise.duration} min • ${exercise.intensity} • ${exercise.type}',
+                  '${exercise.duration} min • ${exercise.intensity} • ${exercise.caloriesBurned} cal',
                   style: AppTextStyles.getBodyStyle().copyWith(
                     fontSize: 12,
                     color: const Color(0xFF64748B),
@@ -498,6 +405,49 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // NEW METHOD: Add Exercise Button for when exercises exist
+  Widget _buildAddExerciseButtonWhenExercisesExist(ExerciseProvider exerciseProvider) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFF667EEA), width: 1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => _showExerciseDialog(exerciseProvider),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add,
+                    color: const Color(0xFF667EEA),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Add Another Exercise',
+                    style: AppTextStyles.getBodyStyle().copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF667EEA),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -622,76 +572,38 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
             'Error Loading Exercises',
             style: AppTextStyles.getSubHeadingStyle().copyWith(
               fontSize: 18,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: const Color(0xFF1E293B),
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            exerciseProvider.errorMessage!,
-            textAlign: TextAlign.center,
+            exerciseProvider.errorMessage ?? 'Something went wrong',
             style: AppTextStyles.getBodyStyle().copyWith(
+              fontSize: 14,
               color: const Color(0xFF64748B),
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () => exerciseProvider.refreshData(),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF667EEA),
-              foregroundColor: Colors.white,
             ),
-            child: const Text('Retry'),
+            child: const Text(
+              'Retry',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Color _getExerciseAccentColor(ExerciseEntry exercise, int index) {
-    // Rotate through accent colors based on exercise type and index
-    switch (exercise.type.toLowerCase()) {
-      case 'cardio':
-        return const Color(0xFF667EEA); // Blue
-      case 'strength':
-        return const Color(0xFF10B981); // Green
-      case 'flexibility':
-        return const Color(0xFFF59E0B); // Amber
-      default:
-        // Fallback to index-based rotation
-        final colors = [
-          const Color(0xFF667EEA),
-          const Color(0xFF10B981),
-          const Color(0xFFF59E0B),
-        ];
-        return colors[index % colors.length];
-    }
-  }
-
-  Map<String, dynamic> _getExerciseStatus(ExerciseEntry exercise) {
-    // Determine status based on calories burned
-    if (exercise.caloriesBurned >= 300) {
-      return {
-        'status': 'GOAL EXCEEDED',
-        'color': const Color(0xFF10B981),
-      };
-    } else if (exercise.caloriesBurned >= 200) {
-      return {
-        'status': 'BONUS WORKOUT',
-        'color': const Color(0xFF667EEA),
-      };
-    } else if (exercise.caloriesBurned >= 50) {
-      return {
-        'status': 'RECOVERY',
-        'color': const Color(0xFFF59E0B),
-      };
-    }
-    return {'status': null, 'color': const Color(0xFF64748B)};
-  }
-
-  String _formatTime(DateTime dateTime) {
-    final hour = dateTime.hour;
-    final minute = dateTime.minute;
+  String _formatTime(DateTime time) {
+    final hour = time.hour;
+    final minute = time.minute;
     final period = hour >= 12 ? 'PM' : 'AM';
     final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
     
