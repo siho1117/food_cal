@@ -64,30 +64,81 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
     }
   }
 
+  void _showCustomExerciseOptions(int slotIndex, Map<String, String> exercise) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              exercise['name']!,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _controller.openCustomExerciseModal(slotIndex);
+                    },
+                    icon: const Icon(Icons.edit, color: Colors.white),
+                    label: const Text('Edit', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _controller.deleteCustomExerciseSlot(slotIndex);
+                    },
+                    icon: const Icon(Icons.delete, color: Colors.white),
+                    label: const Text('Delete', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
     
-    return Dialog(
-      insetPadding: EdgeInsets.all(isMobile ? 8 : 16),
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: isMobile ? screenWidth * 0.95 : 800,
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
-        ),
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: Form(
-                key: _formKey,
-                child: isMobile ? _buildMobileLayout() : _buildDesktopLayout(),
-              ),
+    return Stack(
+      children: [
+        Dialog(
+          insetPadding: EdgeInsets.all(isMobile ? 8 : 16),
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: isMobile ? screenWidth * 0.95 : 800,
+              maxHeight: MediaQuery.of(context).size.height * 0.9,
             ),
-          ],
+            child: Column(
+              children: [
+                _buildHeader(),
+                Expanded(
+                  child: Form(
+                    key: _formKey,
+                    child: isMobile ? _buildMobileLayout() : _buildDesktopLayout(),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
+        if (_controller.showCustomExerciseModal) _buildCustomExerciseModal(),
+      ],
     );
   }
 
@@ -209,10 +260,9 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
       children: [
         _buildStepHeader('1', 'Choose Exercise *'),
         const SizedBox(height: 16),
-        if (_controller.hasCustomExercises()) _buildCustomExerciseRow(),
+        _buildCustomExerciseSlots(),
         _buildCoreExerciseGrid(),
         if (_controller.shouldShowRunWalkOptions()) _buildRunWalkOptions(),
-        _buildCustomExerciseInput(),
       ],
     );
   }
@@ -234,86 +284,133 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
     );
   }
 
-  Widget _buildCustomExerciseRow() {
+  Widget _buildCustomExerciseSlots() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('⭐ Your Custom Exercises', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 60,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _controller.savedCustomExercises.length,
-            itemBuilder: (context, index) {
-              final exercise = _controller.savedCustomExercises[index];
-              final isSelected = _controller.isCustomExerciseSelected(exercise);
-              
-              return Container(
-                width: 80,
-                margin: const EdgeInsets.only(right: 8),
-                child: Stack(
-                  children: [
-                    GestureDetector(
-                      onTap: () => _controller.handleExerciseSelect(exercise['name']!),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: isSelected ? Colors.purple : Colors.purple.withOpacity(0.3),
-                            width: 2,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                          color: isSelected ? Colors.purple.withOpacity(0.1) : Colors.white,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(exercise['icon']!, style: const TextStyle(fontSize: 20)),
-                            const SizedBox(height: 4),
-                            Text(
-                              exercise['name']!,
-                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: () => _controller.deleteCustomExercise(exercise),
-                        child: Container(
-                          width: 20,
-                          height: 20,
-                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                          child: const Icon(Icons.close, color: Colors.white, size: 12),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+        const Row(
+          children: [
+            Text('⭐', style: TextStyle(color: Colors.purple)),
+            SizedBox(width: 8),
+            Text('Your Custom Exercises', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            childAspectRatio: 0.9,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+          ),
+          itemCount: 3, // Always 3 slots
+          itemBuilder: (context, index) {
+            final customExercise = _controller.getCustomExerciseAtSlot(index);
+            final isEmpty = customExercise == null;
+            final isSelected = !isEmpty && _controller.isCustomExerciseSelected(index);
+            
+            return GestureDetector(
+              onTap: () {
+                if (isEmpty) {
+                  _controller.openCustomExerciseModal(index);
+                } else {
+                  _controller.handleExerciseSelect(customExercise['name']!);
+                }
+              },
+              onLongPress: isEmpty ? null : () {
+                _showCustomExerciseOptions(index, customExercise!);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: isEmpty 
+                        ? Colors.grey.shade300
+                        : isSelected 
+                            ? Colors.purple 
+                            : Colors.purple.withOpacity(0.3),
+                    width: 2,
+                    style: isEmpty ? BorderStyle.dashed : BorderStyle.solid,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  color: isEmpty 
+                      ? Colors.grey.shade50
+                      : isSelected 
+                          ? Colors.purple.withOpacity(0.1) 
+                          : Colors.white,
+                ),
+                child: isEmpty 
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add, color: Colors.grey.shade400, size: 24),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Add Custom',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey.shade600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          Text(
+                            'Exercise',
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: Colors.grey.shade500,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(customExercise['icon']!, style: const TextStyle(fontSize: 20)),
+                          const SizedBox(height: 4),
+                          Text(
+                            customExercise['name']!,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            customExercise['benefit']!,
+                            style: const TextStyle(
+                              fontSize: 8,
+                              color: Colors.purple,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 20),
       ],
     );
   }
 
   Widget _buildCoreExerciseGrid() {
-    final isMobile = MediaQuery.of(context).size.width < 600;
-    
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3, // Always 3 columns for better layout
-        childAspectRatio: isMobile ? 0.9 : 1.0, // Slightly taller cards on mobile
+        childAspectRatio: 0.9, // Slightly taller cards on mobile
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
       ),
@@ -339,13 +436,13 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
               children: [
                 Text(
                   exercise['icon'] as String, 
-                  style: TextStyle(fontSize: isMobile ? 20 : 24), // Smaller icons
+                  style: const TextStyle(fontSize: 20), // Smaller icons
                 ),
                 const SizedBox(height: 6),
                 Text(
                   exercise['name'] as String,
-                  style: TextStyle(
-                    fontSize: isMobile ? 10 : 11, 
+                  style: const TextStyle(
+                    fontSize: 10, 
                     fontWeight: FontWeight.w600,
                   ),
                   textAlign: TextAlign.center,
@@ -356,7 +453,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
                 Text(
                   exercise['benefit'] as String,
                   style: TextStyle(
-                    fontSize: isMobile ? 8 : 9, 
+                    fontSize: 8, 
                     color: AppTheme.primaryBlue,
                     fontWeight: FontWeight.w500,
                   ),
@@ -418,42 +515,6 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
               );
             }).toList(),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCustomExerciseInput() {
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.add, size: 24),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: _controller.customExerciseController,
-              onChanged: _controller.handleCustomExerciseInput,
-              decoration: const InputDecoration(
-                hintText: 'Enter custom exercise...',
-                border: InputBorder.none,
-              ),
-            ),
-          ),
-          if (_controller.shouldShowCustomExerciseSaveButton())
-            ElevatedButton(
-              onPressed: () async {
-                final success = await _controller.saveCustomExercise();
-                if (success) _showSnackBar('Exercise saved!', Colors.green);
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
-              child: const Text('Save', style: TextStyle(color: Colors.white)),
-            ),
         ],
       ),
     );
@@ -680,6 +741,149 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildCustomExerciseModal() {
+    final isEditing = _controller.editingSlotIndex != null && 
+        _controller.getCustomExerciseAtSlot(_controller.editingSlotIndex!) != null;
+    final existingExercise = isEditing 
+        ? _controller.getCustomExerciseAtSlot(_controller.editingSlotIndex!)! 
+        : null;
+
+    String selectedName = existingExercise?['name'] ?? '';
+    String selectedIcon = existingExercise?['icon'] ?? _controller.getAvailableIcons().first;
+    String selectedBenefit = existingExercise?['benefit'] ?? _controller.getAvailableBenefits().first;
+
+    return Material(
+      color: Colors.black54,
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: StatefulBuilder(
+            builder: (context, setModalState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    isEditing ? 'Edit Custom Exercise' : 'Create Custom Exercise',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Exercise Name
+                  TextField(
+                    decoration: const InputDecoration(
+                      labelText: 'Exercise Name',
+                      border: OutlineInputBorder(),
+                    ),
+                    controller: TextEditingController(text: selectedName),
+                    onChanged: (value) => selectedName = value,
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Icon Selection
+                  const Text('Choose Icon:', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 120,
+                    child: GridView.builder(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 5,
+                        childAspectRatio: 1,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                      ),
+                      itemCount: _controller.getAvailableIcons().length,
+                      itemBuilder: (context, index) {
+                        final icon = _controller.getAvailableIcons()[index];
+                        final isSelected = selectedIcon == icon;
+                        return GestureDetector(
+                          onTap: () => setModalState(() => selectedIcon = icon),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: isSelected ? Colors.purple : Colors.grey.shade300,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                              color: isSelected ? Colors.purple.withOpacity(0.1) : Colors.white,
+                            ),
+                            child: Center(
+                              child: Text(icon, style: const TextStyle(fontSize: 20)),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Benefit Category
+                  DropdownButtonFormField<String>(
+                    value: selectedBenefit,
+                    decoration: const InputDecoration(
+                      labelText: 'Benefit Category',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: _controller.getAvailableBenefits().map((benefit) {
+                      return DropdownMenuItem(value: benefit, child: Text(benefit));
+                    }).toList(),
+                    onChanged: (value) => setModalState(() => selectedBenefit = value!),
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Actions
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: _controller.closeCustomExerciseModal,
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            if (selectedName.trim().isNotEmpty) {
+                              final success = await _controller.saveCustomExerciseToSlot(
+                                name: selectedName,
+                                icon: selectedIcon,
+                                benefit: selectedBenefit,
+                              );
+                              if (success) {
+                                _controller.closeCustomExerciseModal();
+                                _showSnackBar(
+                                  isEditing ? 'Exercise updated!' : 'Exercise created!',
+                                  Colors.green,
+                                );
+                              }
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
+                          child: Text(
+                            isEditing ? 'Update' : 'Create',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 }
