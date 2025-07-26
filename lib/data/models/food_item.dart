@@ -14,6 +14,7 @@ class FoodItem {
   final double servingSize;
   final String servingUnit;
   final int? spoonacularId; // Kept for backward compatibility
+  final double? cost; // NEW: Optional cost field for per-serving cost
 
   FoodItem({
     required this.id,
@@ -28,6 +29,7 @@ class FoodItem {
     required this.servingSize,
     required this.servingUnit,
     this.spoonacularId,
+    this.cost, // NEW: Optional cost parameter
   });
 
   /// Create a FoodItem from API image analysis response (generic format)
@@ -89,70 +91,76 @@ class FoodItem {
         }
       }
 
-      // Extra validation - ensure we have at least some nutritional data
-      // If all macros are zero but we have calories, estimate macros using standard ratios
-      if (proteins == 0.0 && carbs == 0.0 && fats == 0.0 && calories > 0) {
-        // Standard ratio - 20% protein, 50% carbs, 30% fat
-        proteins = (calories * 0.2) / 4; // 4 calories per gram of protein
-        carbs = (calories * 0.5) / 4; // 4 calories per gram of carbs
-        fats = (calories * 0.3) / 9; // 9 calories per gram of fat
-      }
-
-      // Try to extract API-specific ID if provided
-      if (data.containsKey('id')) {
-        if (data['id'] is int) {
-          spoonacularId = data['id'];
-        } else if (data['id'] is String) {
-          spoonacularId = int.tryParse(data['id']);
-        }
-      }
-
-      // Print debug information
-      print(
-          'Creating FoodItem: name=$name, calories=$calories, proteins=$proteins, carbs=$carbs, fats=$fats');
+      // Generate unique ID based on timestamp and name
+      final now = DateTime.now();
+      final id = '${now.millisecondsSinceEpoch}_${name.replaceAll(' ', '_').toLowerCase()}';
 
       return FoodItem(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: id,
         name: name,
         calories: calories,
         proteins: proteins,
         carbs: carbs,
         fats: fats,
         mealType: mealType,
-        timestamp: DateTime.now(),
+        timestamp: now,
         servingSize: 1.0,
         servingUnit: 'serving',
         spoonacularId: spoonacularId,
+        cost: null, // API won't provide cost, so start with null
       );
     } catch (e) {
-      print('Error creating FoodItem from analysis: $e');
-      // Return a default food item if parsing fails
+      print('Error parsing food item from API: $e');
+      
+      // Return a basic fallback item
+      final now = DateTime.now();
       return FoodItem(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: '${now.millisecondsSinceEpoch}_unknown',
         name: 'Unknown Food',
         calories: 0.0,
         proteins: 0.0,
         carbs: 0.0,
         fats: 0.0,
         mealType: mealType,
-        timestamp: DateTime.now(),
+        timestamp: now,
         servingSize: 1.0,
         servingUnit: 'serving',
+        cost: null, // No cost for unknown items
       );
     }
   }
 
-  /// Helper method to extract numeric values from different formats
-  static double? _extractNumericValue(dynamic value) {
-    if (value == null) return null;
-    if (value is num) return value.toDouble();
-    if (value is Map && value.containsKey('value')) {
-      return (value['value'] as num?)?.toDouble();
-    }
-    if (value is String) {
-      return double.tryParse(value);
-    }
-    return null;
+  /// Create a copy of this food item with modified properties
+  FoodItem copyWith({
+    String? id,
+    String? name,
+    double? calories,
+    double? proteins,
+    double? carbs,
+    double? fats,
+    String? imagePath,
+    String? mealType,
+    DateTime? timestamp,
+    double? servingSize,
+    String? servingUnit,
+    int? spoonacularId,
+    double? cost, // NEW: Include cost in copyWith
+  }) {
+    return FoodItem(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      calories: calories ?? this.calories,
+      proteins: proteins ?? this.proteins,
+      carbs: carbs ?? this.carbs,
+      fats: fats ?? this.fats,
+      imagePath: imagePath ?? this.imagePath,
+      mealType: mealType ?? this.mealType,
+      timestamp: timestamp ?? this.timestamp,
+      servingSize: servingSize ?? this.servingSize,
+      servingUnit: servingUnit ?? this.servingUnit,
+      spoonacularId: spoonacularId ?? this.spoonacularId,
+      cost: cost ?? this.cost, // NEW: Include cost in copyWith
+    );
   }
 
   /// Convert to Map for storage
@@ -170,94 +178,131 @@ class FoodItem {
       'servingSize': servingSize,
       'servingUnit': servingUnit,
       'spoonacularId': spoonacularId,
+      'cost': cost, // NEW: Include cost in storage
     };
   }
 
   /// Create from Map for retrieval from storage
   factory FoodItem.fromMap(Map<String, dynamic> map) {
-    // Print debug info for troubleshooting
-    print('Loading FoodItem from map: $map');
-
     return FoodItem(
-      id: map['id'],
-      name: map['name'],
-      calories: map['calories']?.toDouble() ?? 0.0,
-      proteins: map['proteins']?.toDouble() ?? 0.0,
-      carbs: map['carbs']?.toDouble() ?? 0.0,
-      fats: map['fats']?.toDouble() ?? 0.0,
+      id: map['id'] ?? '',
+      name: map['name'] ?? 'Unknown Food',
+      calories: (map['calories'] as num?)?.toDouble() ?? 0.0,
+      proteins: (map['proteins'] as num?)?.toDouble() ?? 0.0,
+      carbs: (map['carbs'] as num?)?.toDouble() ?? 0.0,
+      fats: (map['fats'] as num?)?.toDouble() ?? 0.0,
       imagePath: map['imagePath'],
       mealType: map['mealType'] ?? 'snack',
-      timestamp: DateTime.fromMillisecondsSinceEpoch(map['timestamp']),
-      servingSize: map['servingSize']?.toDouble() ?? 1.0,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(
+        map['timestamp'] ?? DateTime.now().millisecondsSinceEpoch,
+      ),
+      servingSize: (map['servingSize'] as num?)?.toDouble() ?? 1.0,
       servingUnit: map['servingUnit'] ?? 'serving',
       spoonacularId: map['spoonacularId'],
+      cost: (map['cost'] as num?)?.toDouble(), // NEW: Parse cost from storage
     );
   }
 
-  /// Create a copy of this FoodItem with modified properties
-  FoodItem copyWith({
-    String? id,
-    String? name,
-    double? calories,
-    double? proteins,
-    double? carbs,
-    double? fats,
-    String? imagePath,
-    String? mealType,
-    DateTime? timestamp,
-    double? servingSize,
-    String? servingUnit,
-    int? spoonacularId,
-  }) {
-    return FoodItem(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      calories: calories ?? this.calories,
-      proteins: proteins ?? this.proteins,
-      carbs: carbs ?? this.carbs,
-      fats: fats ?? this.fats,
-      imagePath: imagePath ?? this.imagePath,
-      mealType: mealType ?? this.mealType,
-      timestamp: timestamp ?? this.timestamp,
-      servingSize: servingSize ?? this.servingSize,
-      servingUnit: servingUnit ?? this.servingUnit,
-      spoonacularId: spoonacularId ?? this.spoonacularId,
-    );
-  }
-
-  /// Calculate adjusted nutritional values based on serving size
+  /// Get nutrition values adjusted for actual serving size
   Map<String, double> getNutritionForServing() {
-    // Print debug information to check values
-    print(
-        'Nutrition values before adjustment: calories=$calories, proteins=$proteins, carbs=$carbs, fats=$fats');
-    print('Serving size: $servingSize');
-
-    final adjustedCalories = calories * servingSize;
-    final adjustedProteins = proteins * servingSize;
-    final adjustedCarbs = carbs * servingSize;
-    final adjustedFats = fats * servingSize;
-
-    // Print adjusted values
-    print(
-        'Adjusted values: calories=$adjustedCalories, proteins=$adjustedProteins, carbs=$adjustedCarbs, fats=$adjustedFats');
-
     return {
-      'calories': adjustedCalories,
-      'proteins': adjustedProteins,
-      'carbs': adjustedCarbs,
-      'fats': adjustedFats,
+      'calories': calories * servingSize,
+      'proteins': proteins * servingSize,
+      'carbs': carbs * servingSize,
+      'fats': fats * servingSize,
     };
   }
 
-  /// Get formatted string representation of calories (with serving size applied)
-  String getFormattedCalories() {
-    // Updated to remove decimal places
-    return '${(calories * servingSize).round()} cal';
+  /// Get the cost for the actual serving size
+  /// Returns null if no cost is set
+  double? getCostForServing() {
+    if (cost == null) return null;
+    return cost! * servingSize;
   }
 
-  /// Generate a descriptive string for the food item
+  /// Get formatted cost string for display
+  String getFormattedCost() {
+    final servingCost = getCostForServing();
+    if (servingCost == null) return '';
+    return '\$${servingCost.toStringAsFixed(2)}';
+  }
+
+  /// Check if this food item has cost information
+  bool get hasCost => cost != null && cost! > 0;
+
+  /// Get a summary string that includes cost if available
+  String getSummaryWithCost() {
+    final nutrition = getNutritionForServing();
+    final calories = nutrition['calories']!.round();
+    
+    String summary = '$calories cal';
+    if (hasCost) {
+      summary += ' • ${getFormattedCost()}';
+    }
+    
+    return summary;
+  }
+
+  /// Helper method to extract numeric values from various formats
+  static double? _extractNumericValue(dynamic value) {
+    if (value == null) return null;
+    
+    if (value is num) {
+      return value.toDouble();
+    }
+    
+    if (value is String) {
+      // Clean the string and try to parse
+      final cleanValue = value.replaceAll(RegExp(r'[^\d.]'), '');
+      return double.tryParse(cleanValue);
+    }
+    
+    if (value is Map && value.containsKey('amount')) {
+      return _extractNumericValue(value['amount']);
+    }
+    
+    return null;
+  }
+
+  /// Validate that the food item has all required data
+  bool isValid() {
+    return id.isNotEmpty &&
+        name.isNotEmpty &&
+        calories >= 0 &&
+        proteins >= 0 &&
+        carbs >= 0 &&
+        fats >= 0 &&
+        servingSize > 0 &&
+        servingUnit.isNotEmpty &&
+        (cost == null || cost! >= 0); // Cost can be null or non-negative
+  }
+
+  /// Create a formatted string for display purposes
+  String getDisplayString() {
+    final nutrition = getNutritionForServing();
+    final calories = nutrition['calories']!.round();
+    
+    String display = '$name • ${servingSize.toStringAsFixed(servingSize == servingSize.roundToDouble() ? 0 : 1)} $servingUnit • $calories cal';
+    
+    if (hasCost) {
+      display += ' • ${getFormattedCost()}';
+    }
+    
+    return display;
+  }
+
+  /// Check if two food items are equal (by ID)
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is FoodItem && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
+
   @override
   String toString() {
-    return 'FoodItem: $name (${getFormattedCalories()})';
+    return 'FoodItem(id: $id, name: $name, calories: $calories, cost: ${cost ?? 'N/A'})';
   }
 }

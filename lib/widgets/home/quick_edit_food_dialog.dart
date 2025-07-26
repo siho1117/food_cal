@@ -1,4 +1,6 @@
 // lib/widgets/home/quick_edit_food_dialog.dart
+// FIXED VERSION - Resolves late initialization error
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -25,14 +27,16 @@ class QuickEditFoodDialog extends StatefulWidget {
 class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
   final FoodRepository _foodRepository = FoodRepository();
   
-  late TextEditingController _nameController;
-  late TextEditingController _servingSizeController;
-  late TextEditingController _caloriesController;
-  late TextEditingController _proteinController;
-  late TextEditingController _carbsController;
-  late TextEditingController _fatController;
+  // FIXED: Remove 'late' and initialize in initState() instead
+  TextEditingController? _nameController;
+  TextEditingController? _servingSizeController;
+  TextEditingController? _caloriesController;
+  TextEditingController? _proteinController;
+  TextEditingController? _carbsController;
+  TextEditingController? _fatController;
+  TextEditingController? _costController; // FIXED: Remove late keyword
   
-  late String _selectedUnit;
+  String _selectedUnit = 'serving'; // Initialize with default
   bool _isLoading = false;
   
   final List<String> _units = [
@@ -53,16 +57,23 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
     _carbsController = TextEditingController(text: widget.foodItem.carbs.round().toString());
     _fatController = TextEditingController(text: widget.foodItem.fats.round().toString());
     _selectedUnit = widget.foodItem.servingUnit;
+    
+    // FIXED: Proper initialization of cost controller
+    _costController = TextEditingController(
+      text: widget.foodItem.cost != null ? widget.foodItem.cost!.toStringAsFixed(2) : ''
+    );
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _servingSizeController.dispose();
-    _caloriesController.dispose();
-    _proteinController.dispose();
-    _carbsController.dispose();
-    _fatController.dispose();
+    // FIXED: Add null checks before disposing
+    _nameController?.dispose();
+    _servingSizeController?.dispose();
+    _caloriesController?.dispose();
+    _proteinController?.dispose();
+    _carbsController?.dispose();
+    _fatController?.dispose();
+    _costController?.dispose();
     super.dispose();
   }
 
@@ -166,7 +177,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Food Name Section - Label above input
+                // Food Name Section
                 Text(
                   'Food Name:',
                   style: AppTextStyles.getBodyStyle().copyWith(
@@ -177,7 +188,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
                 ),
                 const SizedBox(height: 8),
                 TextField(
-                  controller: _nameController,
+                  controller: _nameController!,
                   maxLength: 100,
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
@@ -218,7 +229,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextField(
-                        controller: _servingSizeController,
+                        controller: _servingSizeController!,
                         decoration: InputDecoration(
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -248,7 +259,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
                 ),
                 const SizedBox(height: 12),
                 
-                // Unit Dropdown - Full Width
+                // Unit Dropdown
                 DropdownButtonFormField<String>(
                   value: _selectedUnit,
                   decoration: InputDecoration(
@@ -277,6 +288,54 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
                       _selectedUnit = value!;
                     });
                   },
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // FIXED: Cost Section with proper null checking
+                Text(
+                  'Cost:',
+                  style: AppTextStyles.getBodyStyle().copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _costController!,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    prefixText: '\$',
+                    prefixStyle: AppTextStyles.getBodyStyle().copyWith(
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                    hintText: '0.00',
+                    hintStyle: AppTextStyles.getBodyStyle().copyWith(
+                      color: Colors.grey[400],
+                      fontSize: 14,
+                    ),
+                    isDense: true,
+                  ),
+                  style: AppTextStyles.getNumericStyle().copyWith(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                    LengthLimitingTextInputFormatter(8),
+                  ],
                 ),
               ],
             ),
@@ -330,9 +389,9 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
                 // Row 1: Calories and Protein
                 Row(
                   children: [
-                    Expanded(child: _buildNutritionField(_caloriesController, 'Calories', 'cal')),
+                    Expanded(child: _buildNutritionField(_caloriesController!, 'Calories', 'cal')),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildNutritionField(_proteinController, 'Protein', 'g')),
+                    Expanded(child: _buildNutritionField(_proteinController!, 'Protein', 'g')),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -340,9 +399,9 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
                 // Row 2: Carbs and Fat
                 Row(
                   children: [
-                    Expanded(child: _buildNutritionField(_carbsController, 'Carbs', 'g')),
+                    Expanded(child: _buildNutritionField(_carbsController!, 'Carbs', 'g')),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildNutritionField(_fatController, 'Fat', 'g')),
+                    Expanded(child: _buildNutritionField(_fatController!, 'Fat', 'g')),
                   ],
                 ),
               ],
@@ -452,9 +511,9 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
   }
 
   void _adjustServing(double adjustment) {
-    final current = double.tryParse(_servingSizeController.text) ?? 1.0;
+    final current = double.tryParse(_servingSizeController!.text) ?? 1.0;
     final newValue = (current + adjustment).clamp(0.1, 99.9);
-    _servingSizeController.text = newValue.toStringAsFixed(1);
+    _servingSizeController!.text = newValue.toStringAsFixed(1);
   }
 
   Future<void> _handleSave() async {
@@ -488,12 +547,13 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
   }
 
   Future<void> _updateFoodItem() async {
-    final name = _nameController.text.trim();
-    final servingSizeText = _servingSizeController.text.trim();
-    final caloriesText = _caloriesController.text.trim();
-    final proteinText = _proteinController.text.trim();
-    final carbsText = _carbsController.text.trim();
-    final fatText = _fatController.text.trim();
+    final name = _nameController!.text.trim();
+    final servingSizeText = _servingSizeController!.text.trim();
+    final caloriesText = _caloriesController!.text.trim();
+    final proteinText = _proteinController!.text.trim();
+    final carbsText = _carbsController!.text.trim();
+    final fatText = _fatController!.text.trim();
+    final costText = _costController!.text.trim(); // FIXED: Add null check
 
     // Validation
     if (name.isEmpty) {
@@ -502,36 +562,42 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
     if (name.length > 100) {
       throw Exception('Food name must be 100 characters or less.');
     }
-    
+
     final servingSize = double.tryParse(servingSizeText);
-    final calories = double.tryParse(caloriesText);
-    final protein = double.tryParse(proteinText);
-    final carbs = double.tryParse(carbsText);
-    final fat = double.tryParse(fatText);
-
     if (servingSize == null || servingSize <= 0) {
-      throw Exception('Serving size must be a positive number.');
+      throw Exception('Please enter a valid serving size.');
     }
+
+    final calories = double.tryParse(caloriesText);
     if (calories == null || calories < 0) {
-      throw Exception('Calories must be a non-negative number.');
+      throw Exception('Please enter valid calories.');
     }
+
+    final protein = double.tryParse(proteinText);
     if (protein == null || protein < 0) {
-      throw Exception('Protein must be a non-negative number.');
+      throw Exception('Please enter valid protein amount.');
     }
+
+    final carbs = double.tryParse(carbsText);
     if (carbs == null || carbs < 0) {
-      throw Exception('Carbs must be a non-negative number.');
+      throw Exception('Please enter valid carbs amount.');
     }
+
+    final fat = double.tryParse(fatText);
     if (fat == null || fat < 0) {
-      throw Exception('Fat must be a non-negative number.');
+      throw Exception('Please enter valid fat amount.');
     }
 
-    // Upper bounds validation
-    if (servingSize > 100) throw Exception('Serving size seems too large (max 100).');
-    if (calories > 10000) throw Exception('Calories seem too high (max 10,000).');
-    if (protein > 1000) throw Exception('Protein amount seems too high (max 1,000g).');
-    if (carbs > 1000) throw Exception('Carbs amount seems too high (max 1,000g).');
-    if (fat > 1000) throw Exception('Fat amount seems too high (max 1,000g).');
+    // Cost validation
+    double? cost;
+    if (costText.isNotEmpty) {
+      cost = double.tryParse(costText);
+      if (cost == null || cost < 0) {
+        throw Exception('Please enter a valid cost (0 or greater).');
+      }
+    }
 
+    // Create updated food item
     final updatedItem = widget.foodItem.copyWith(
       name: name,
       servingSize: servingSize,
@@ -540,12 +606,14 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
       proteins: protein,
       carbs: carbs,
       fats: fat,
+      cost: cost,
     );
 
+    // Update through repository
     final success = await _foodRepository.updateFoodEntry(updatedItem);
     
     if (!success) {
-      throw Exception('Database update failed. Please try again.');
+      throw Exception('Failed to update food item. Please try again.');
     }
   }
 }
