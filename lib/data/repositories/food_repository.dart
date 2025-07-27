@@ -60,148 +60,50 @@ class FoodRepository {
                 proteins: _extractNutrientValue(foodInfo, 'protein') ?? 0.0,
                 carbs: _extractNutrientValue(foodInfo, 'carbs') ?? 0.0,
                 fats: _extractNutrientValue(foodInfo, 'fat') ?? 0.0,
-                imagePath: savedImagePath,
                 mealType: mealType,
                 timestamp: DateTime.now(),
                 servingSize: 1.0,
                 servingUnit: 'serving',
-                spoonacularId: null,
-              );
-
-              recognizedItems.add(item);
-            } else {
-              // Add with limited information if name is missing
-              final item = FoodItem(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
-                name: annotation['description'] ?? 'Unknown Food',
-                // Try to get nutrition info directly from annotation if available
-                calories:
-                    annotation['nutrition']?['calories']?.toDouble() ?? 0.0,
-                proteins:
-                    annotation['nutrition']?['protein']?.toDouble() ?? 0.0,
-                carbs: annotation['nutrition']?['carbs']?.toDouble() ?? 0.0,
-                fats: annotation['nutrition']?['fat']?.toDouble() ?? 0.0,
                 imagePath: savedImagePath,
-                mealType: mealType,
-                timestamp: DateTime.now(),
-                servingSize: 1.0,
-                servingUnit: 'serving',
               );
-
               recognizedItems.add(item);
             }
           } catch (e) {
-            // Add with limited information if detailed call fails
-            final item = FoodItem(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
-              name: annotation['description'] ?? 'Unknown Food',
-              calories: 0.0,
-              proteins: 0.0,
-              carbs: 0.0,
-              fats: 0.0,
-              imagePath: savedImagePath,
-              mealType: mealType,
-              timestamp: DateTime.now(),
-              servingSize: 1.0,
-              servingUnit: 'serving',
-            );
-
-            recognizedItems.add(item);
+            print('Error processing annotation: $e');
+            continue;
           }
         }
-      } else if (analysisResult.containsKey('nutrition') &&
-          analysisResult.containsKey('name')) {
-        // Direct nutritional information with name
-        final calories =
-            _extractNutrientValue(analysisResult, 'calories') ?? 0.0;
-        final proteins =
-            _extractNutrientValue(analysisResult, 'protein') ?? 0.0;
-        final carbs = _extractNutrientValue(analysisResult, 'carbs') ?? 0.0;
-        final fats = _extractNutrientValue(analysisResult, 'fat') ?? 0.0;
-
-        final item = FoodItem(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          name: analysisResult['name'] ?? 'Unknown Food',
-          calories: calories,
-          proteins: proteins,
-          carbs: carbs,
-          fats: fats,
-          imagePath: savedImagePath,
-          mealType: mealType,
-          timestamp: DateTime.now(),
-          servingSize: 1.0,
-          servingUnit: 'serving',
-        );
-
-        recognizedItems.add(item);
-      } else {
-        // If we have no structured information but some text, create a generic food item
-        if (analysisResult.containsKey('text') &&
-            analysisResult['text'] is String) {
-          // Try to extract food name from text
-          final foodName = analysisResult['text'];
-
-          if (foodName.isNotEmpty) {
-            final item = FoodItem(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
-              name: foodName,
-              calories: 0.0, // No nutrition info available
-              proteins: 0.0,
-              carbs: 0.0,
-              fats: 0.0,
-              imagePath: savedImagePath,
-              mealType: mealType,
-              timestamp: DateTime.now(),
-              servingSize: 1.0,
-              servingUnit: 'serving',
-            );
-
-            recognizedItems.add(item);
-            return recognizedItems;
-          }
-        }
-
-        // Fallback if no food is recognized or format is unexpected
-        throw Exception(
-            'No food recognized in the image or unsupported response format');
       }
 
       return recognizedItems;
     } catch (e) {
-      throw Exception('Failed to recognize food: $e');
+      print('Error recognizing food: $e');
+      rethrow;
     }
   }
 
-  /// Helper method to extract nutrient values from API response
-  double? _extractNutrientValue(
-      Map<String, dynamic> data, String nutrientName) {
+  /// Extract nutrient value from food information response
+  double? _extractNutrientValue(Map<String, dynamic> foodInfo, String nutrientName) {
     try {
-      // Direct access if the property exists at top level
-      if (data.containsKey(nutrientName)) {
-        final value = data[nutrientName];
-        if (value is num) {
-          return value.toDouble();
-        } else if (value is String) {
-          return double.tryParse(value);
-        } else if (value is Map && value.containsKey('value')) {
-          final numValue = value['value'];
-          return numValue is num ? numValue.toDouble() : null;
-        }
-      }
+      // Check different possible structures
+      if (foodInfo.containsKey('nutrition')) {
+        final nutrition = foodInfo['nutrition'];
 
-      if (data.containsKey('nutrition')) {
-        final nutrition = data['nutrition'];
-
-        // Direct property access format
+        // Direct value format
         if (nutrition.containsKey(nutrientName)) {
           final value = nutrition[nutrientName];
           if (value is num) {
             return value.toDouble();
-          } else if (value is String) {
-            return double.tryParse(value);
-          } else if (value is Map && value.containsKey('value')) {
-            final numValue = value['value'];
-            return numValue is num ? numValue.toDouble() : null;
+          }
+
+          // String with unit format (e.g., "250 kcal")
+          if (value is String) {
+            final RegExp numberRegex = RegExp(r'\d+\.?\d*');
+            final match = numberRegex.firstMatch(value);
+            if (match != null) {
+              final numValue = double.tryParse(match.group(0)!);
+              return numValue?.toDouble();
+            }
           }
         }
 
@@ -301,6 +203,49 @@ class FoodRepository {
     }
   }
 
+  /// NEW: Get all food entries for a specific date (HomeProvider compatibility)
+  Future<List<FoodItem>> getFoodEntriesForDate(DateTime date) async {
+    try {
+      // Get all food entries from all dates
+      final allEntries = await getAllFoodEntries();
+      
+      // Filter entries for the specific date
+      final dateEntries = allEntries.where((entry) {
+        return _isSameDay(entry.timestamp, date);
+      }).toList();
+      
+      // Sort by timestamp (newest first)
+      dateEntries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      
+      return dateEntries;
+    } catch (e) {
+      print('Error getting food entries for date: $e');
+      return [];
+    }
+  }
+
+  /// NEW: Get all food entries from storage
+  Future<List<FoodItem>> getAllFoodEntries() async {
+    try {
+      final List<FoodItem> allItems = [];
+      
+      // We need to get entries from all stored dates
+      // Since we store by date key, we'll need to iterate through possible dates
+      // For now, let's get entries for the last 365 days
+      final now = DateTime.now();
+      for (int i = 0; i < 365; i++) {
+        final date = now.subtract(Duration(days: i));
+        final entries = await _getFoodEntriesForDate(date);
+        allItems.addAll(entries);
+      }
+      
+      return allItems;
+    } catch (e) {
+      print('Error getting all food entries: $e');
+      return [];
+    }
+  }
+
   /// Get food entries for a specific date (helper method)
   Future<List<FoodItem>> _getFoodEntriesForDate(DateTime date) async {
     final dateKey = _getDateKey(date);
@@ -342,234 +287,72 @@ class FoodRepository {
   /// Update an existing food entry
   Future<bool> updateFoodEntry(FoodItem item) async {
     try {
-      final dateKey = _getDateKey(item.timestamp);
-      final entries = await _getFoodEntriesForDate(item.timestamp);
-
+      final entries = await getFoodEntries(item.timestamp);
+      
+      // Find and replace the entry with matching ID
       final index = entries.indexWhere((entry) => entry.id == item.id);
-
       if (index != -1) {
         entries[index] = item;
-        return _saveFoodEntriesForDate(entries, dateKey);
+        return _saveFoodEntries(entries);
       }
-
-      return false;
+      
+      return false; // Entry not found
     } catch (e) {
       return false;
     }
   }
 
-  /// Delete a food entry by ID and date
-  Future<bool> deleteFoodEntry(String id, DateTime date) async {
+  /// Delete a food entry
+  Future<bool> deleteFoodEntry(String id, DateTime timestamp) async {
     try {
-      final dateKey = _getDateKey(date);
-      final entries = await _getFoodEntriesForDate(date);
-
-      final filtered = entries.where((entry) => entry.id != id).toList();
-
-      if (filtered.length == entries.length) {
-        // No entry was removed
-        return false;
+      final entries = await getFoodEntries(timestamp);
+      
+      // Remove the entry with matching ID
+      final originalLength = entries.length;
+      entries.removeWhere((entry) => entry.id == id);
+      
+      if (entries.length < originalLength) {
+        return _saveFoodEntries(entries);
       }
-
-      return _saveFoodEntriesForDate(filtered, dateKey);
+      
+      return false; // Entry not found
     } catch (e) {
       return false;
-    }
-  }
-
-  /// Delete multiple food entries by IDs for a specific date
-  Future<bool> deleteFoodEntries(List<String> ids, DateTime date) async {
-    try {
-      if (ids.isEmpty) return true;
-
-      final dateKey = _getDateKey(date);
-      final entries = await _getFoodEntriesForDate(date);
-
-      final filtered =
-          entries.where((entry) => !ids.contains(entry.id)).toList();
-
-      if (filtered.length == entries.length) {
-        // No entries were removed
-        return false;
-      }
-
-      return _saveFoodEntriesForDate(filtered, dateKey);
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// Get food entries for all meals on a specific date
-  Future<Map<String, List<FoodItem>>> getFoodEntriesByMeal(
-      DateTime date) async {
-    try {
-      final allEntries = await getFoodEntries(date);
-
-      // Group entries by meal type
-      final Map<String, List<FoodItem>> entriesByMeal = {
-        'breakfast': [],
-        'lunch': [],
-        'dinner': [],
-        'snack': [],
-      };
-
-      for (final entry in allEntries) {
-        final mealType = entry.mealType.toLowerCase();
-        if (entriesByMeal.containsKey(mealType)) {
-          entriesByMeal[mealType]!.add(entry);
-        } else {
-          // Default to snack if meal type is unknown
-          entriesByMeal['snack']!.add(entry);
-        }
-      }
-
-      return entriesByMeal;
-    } catch (e) {
-      return {
-        'breakfast': [],
-        'lunch': [],
-        'dinner': [],
-        'snack': [],
-      };
-    }
-  }
-
-  /// Get food entries for a date range grouped by date
-  Future<Map<String, List<FoodItem>>> getFoodEntriesForDateRange(
-      DateTime startDate, DateTime endDate) async {
-    final Map<String, List<FoodItem>> entriesByDate = {};
-
-    try {
-      // Ensure end date is not before start date
-      if (endDate.isBefore(startDate)) {
-        final temp = startDate;
-        startDate = endDate;
-        endDate = temp;
-      }
-
-      // Create a list of all dates in the range
-      final List<DateTime> dates = [];
-      for (var date = startDate;
-          !date.isAfter(endDate);
-          date = date.add(const Duration(days: 1))) {
-        dates.add(date);
-      }
-
-      // Get entries for each date
-      for (final date in dates) {
-        final dateKey = _getDateKey(date);
-        final entries = await getFoodEntries(date);
-        entriesByDate[dateKey] = entries;
-      }
-
-      return entriesByDate;
-    } catch (e) {
-      return entriesByDate;
-    }
-  }
-
-  /// Get nutrition summary for a specific date
-  Future<Map<String, dynamic>> getNutritionSummary(DateTime date) async {
-    try {
-      final entries = await getFoodEntries(date);
-
-      double totalCalories = 0;
-      double totalProtein = 0;
-      double totalCarbs = 0;
-      double totalFat = 0;
-
-      for (final entry in entries) {
-        final nutritionValues = entry.getNutritionForServing();
-        totalCalories += nutritionValues['calories'] ?? 0;
-        totalProtein += nutritionValues['proteins'] ?? 0;
-        totalCarbs += nutritionValues['carbs'] ?? 0;
-        totalFat += nutritionValues['fats'] ?? 0;
-      }
-
-      return {
-        'calories': totalCalories,
-        'protein': totalProtein,
-        'carbs': totalCarbs,
-        'fat': totalFat,
-        'entryCount': entries.length,
-      };
-    } catch (e) {
-      return {
-        'calories': 0.0,
-        'protein': 0.0,
-        'carbs': 0.0,
-        'fat': 0.0,
-        'entryCount': 0,
-      };
     }
   }
 
   /// Search for foods by name using the API
   Future<List<FoodItem>> searchFoods(String query, String mealType) async {
     try {
-      if (query.trim().isEmpty) {
-        return [];
-      }
+      if (query.trim().isEmpty) return [];
 
-      // Save query to recent searches
+      // Add to recent searches
       await _addToRecentSearches(query);
 
-      final searchResults = await _apiService.searchFoods(query);
-
-      // Convert search results to FoodItem objects
+      // Use the API service to search for foods
+      final results = await _apiService.searchFoods(query);
+      
       final List<FoodItem> foodItems = [];
 
-      for (var result in searchResults) {
+      for (final result in results) {
         try {
-          // Check if result has a valid ID or name
-          if (result.containsKey('name') && result['name'] != null) {
-            // Get detailed information for this food item if needed
-            Map<String, dynamic> foodInfo = result;
-
-            // If the result doesn't have nutrition info, fetch it
-            if (!result.containsKey('nutrition') ||
-                result['nutrition'] == null) {
-              foodInfo = await _apiService.getFoodInformation(result['name']);
-            }
-
-            final calories = _extractNutrientValue(foodInfo, 'calories') ?? 0.0;
-            final proteins = _extractNutrientValue(foodInfo, 'protein') ?? 0.0;
-            final carbs = _extractNutrientValue(foodInfo, 'carbs') ?? 0.0;
-            final fats = _extractNutrientValue(foodInfo, 'fat') ?? 0.0;
-
-            final item = FoodItem(
-              id: DateTime.now().millisecondsSinceEpoch.toString() +
-                  '_${result['name']}',
-              name: result['name'] ?? 'Unknown Food',
-              calories: calories,
-              proteins: proteins,
-              carbs: carbs,
-              fats: fats,
-              mealType: mealType,
-              timestamp: DateTime.now(),
-              servingSize: 1.0,
-              servingUnit: 'serving',
-              spoonacularId: result['id'], // Keep for backward compatibility
-            );
-
-            foodItems.add(item);
-          } else {
-            // Add with limited information if name is missing
-            foodItems.add(FoodItem(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
-              name: result['name'] ?? 'Unknown Food',
-              calories: 0.0,
-              proteins: 0.0,
-              carbs: 0.0,
-              fats: 0.0,
-              mealType: mealType,
-              timestamp: DateTime.now(),
-              servingSize: 1.0,
-              servingUnit: 'serving',
-            ));
-          }
+          // Get detailed nutrition information
+          final foodInfo = await _apiService.getFoodInformation(result['name']);
+          
+          foodItems.add(FoodItem(
+            id: DateTime.now().millisecondsSinceEpoch.toString() + '_${result['name']}',
+            name: result['name'] ?? 'Unknown Food',
+            calories: _extractNutrientValue(foodInfo, 'calories') ?? 0.0,
+            proteins: _extractNutrientValue(foodInfo, 'protein') ?? 0.0,
+            carbs: _extractNutrientValue(foodInfo, 'carbs') ?? 0.0,
+            fats: _extractNutrientValue(foodInfo, 'fat') ?? 0.0,
+            mealType: mealType,
+            timestamp: DateTime.now(),
+            servingSize: 1.0,
+            servingUnit: 'serving',
+          ));
         } catch (e) {
-          // Add with limited information
+          // Add with limited information if detailed lookup fails
           foodItems.add(FoodItem(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
             name: result['name'] ?? 'Unknown Food',
@@ -729,61 +512,80 @@ class FoodRepository {
 
           // Update count
           countMap[key] = (countMap[key] ?? 0) + 1;
-
-          // Store the food item
+          
+          // Store the food item (use latest occurrence)
           foodMap[key] = entry;
         }
       }
 
-      // Sort by frequency
-      final sortedKeys = countMap.keys.toList()
-        ..sort((a, b) => countMap[b]!.compareTo(countMap[a]!));
+      // Sort by frequency and return top items
+      final sortedEntries = countMap.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
 
-      // Create result list
-      final result = <FoodItem>[];
-      for (int i = 0; i < limit && i < sortedKeys.length; i++) {
-        result.add(foodMap[sortedKeys[i]]!.copyWith(
-          timestamp: DateTime.now(),
-        ));
+      final frequentFoods = <FoodItem>[];
+      for (final entry in sortedEntries.take(limit)) {
+        final foodItem = foodMap[entry.key];
+        if (foodItem != null) {
+          frequentFoods.add(foodItem);
+        }
       }
 
-      return result;
+      return frequentFoods;
     } catch (e) {
       return [];
     }
   }
 
-  /// Get remaining API quota for today
-  Future<int> getRemainingApiQuota() async {
-    return _apiService.getRemainingQuota();
+  /// NEW: Helper method to check if two dates are the same day
+  bool _isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+           date1.month == date2.month &&
+           date1.day == date2.day;
   }
 
-  /// Clear all food data for a specific date
-  Future<bool> clearFoodEntriesForDate(DateTime date) async {
+  /// NEW: Get food entries for a specific meal type on a date
+  Future<List<FoodItem>> getFoodEntriesForMeal(DateTime date, String mealType) async {
     try {
-      final dateKey = _getDateKey(date);
-      final key = '${_foodEntriesKey}_$dateKey';
-
-      return await _storage.remove(key);
+      final dateEntries = await getFoodEntriesForDate(date);
+      
+      return dateEntries.where((entry) {
+        return entry.mealType.toLowerCase() == mealType.toLowerCase();
+      }).toList();
     } catch (e) {
-      return false;
+      print('Error getting food entries for meal: $e');
+      return [];
     }
   }
 
-  /// Delete all stored food images
-  Future<bool> clearAllFoodImages() async {
+  /// NEW: Get food entries for a date range
+  Future<List<FoodItem>> getFoodEntriesForDateRange(DateTime startDate, DateTime endDate) async {
     try {
-      final tempDir = await _storage.getTemporaryDirectory();
-      final foodImagesDir = Directory('${tempDir.path}/$_tempImageFolderKey');
-
-      if (await foodImagesDir.exists()) {
-        await foodImagesDir.delete(recursive: true);
-        return true;
-      }
-
-      return false;
+      final allEntries = await getAllFoodEntries();
+      
+      return allEntries.where((entry) {
+        final entryDate = DateTime(entry.timestamp.year, entry.timestamp.month, entry.timestamp.day);
+        final start = DateTime(startDate.year, startDate.month, startDate.day);
+        final end = DateTime(endDate.year, endDate.month, endDate.day);
+        
+        return (entryDate.isAfter(start) || entryDate.isAtSameMomentAs(start)) &&
+               (entryDate.isBefore(end) || entryDate.isAtSameMomentAs(end));
+      }).toList();
     } catch (e) {
-      return false;
+      print('Error getting food entries for date range: $e');
+      return [];
+    }
+  }
+
+  /// NEW: Get recent food entries (last N days)
+  Future<List<FoodItem>> getRecentFoodEntries({int days = 7}) async {
+    try {
+      final now = DateTime.now();
+      final startDate = now.subtract(Duration(days: days));
+      
+      return await getFoodEntriesForDateRange(startDate, now);
+    } catch (e) {
+      print('Error getting recent food entries: $e');
+      return [];
     }
   }
 }

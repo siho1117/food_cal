@@ -56,6 +56,12 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
     final totalCalories = allItems.fold(0, (sum, item) => sum + (item.calories * item.servingSize).round());
     final mealCount = foodByMeal.values.where((list) => list.isNotEmpty).length;
 
+    // NEW: Calculate total cost for the day
+    final totalCost = allItems.fold(0.0, (sum, item) {
+      final itemCost = item.getCostForServing();
+      return sum + (itemCost ?? 0.0);
+    });
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -86,13 +92,36 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  '$mealCount meals • $totalCalories calories',
-                  style: AppTextStyles.getBodyStyle().copyWith(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
+                // UPDATED: Show cost in header if there are any costs
+                Row(
+                  children: [
+                    Text(
+                      '$mealCount meals • $totalCalories calories',
+                      style: AppTextStyles.getBodyStyle().copyWith(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (totalCost > 0) ...[
+                      Text(
+                        ' • ',
+                        style: AppTextStyles.getBodyStyle().copyWith(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        '\$${totalCost.toStringAsFixed(2)}',
+                        style: AppTextStyles.getNumericStyle().copyWith(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
@@ -282,6 +311,9 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
     final protein = nutrition['proteins']!.round();
     final carbs = nutrition['carbs']!.round();
     final fat = nutrition['fats']!.round();
+    
+    // NEW: Get cost for serving
+    final itemCost = item.getCostForServing();
 
     return GestureDetector(
       onTap: () => _showQuickEditDialog(item, homeProvider),
@@ -321,7 +353,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ROW 1: Name and calories
+                  // ROW 1: Name and cost badge only (UPDATED - removed calories, clean layout)
                   Row(
                     children: [
                       Expanded(
@@ -337,35 +369,39 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
                           softWrap: true,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryBlue.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text('🔥', style: const TextStyle(fontSize: 14)),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$itemCalories',
-                              style: AppTextStyles.getNumericStyle().copyWith(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.primaryBlue,
+                      
+                      // Cost badge (only if cost exists)
+                      if (itemCost != null && itemCost > 0) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.green[50],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('💰', style: const TextStyle(fontSize: 14)),
+                              const SizedBox(width: 4),
+                              Text(
+                                itemCost.toStringAsFixed(2),
+                                style: AppTextStyles.getNumericStyle().copyWith(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green[700],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                   
                   const SizedBox(height: 6),
                   
-                  // ROW 2: Time and serving info with edit indicator
+                  // ROW 2: Time and serving info only (UPDATED - removed edit icon)
                   Row(
                     children: [
                       Text(
@@ -376,29 +412,56 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const Spacer(),
-                      Icon(
-                        Icons.edit_outlined,
-                        size: 16,
-                        color: Colors.grey[400],
-                      ),
                     ],
                   ),
                   
                   const SizedBox(height: 8),
                   
-                  // ROW 3: Progress bar
+                  // ROW 3: Progress bar (UNCHANGED)
                   _buildProgressBar(itemCalories, homeProvider.calorieGoal),
                   
                   const SizedBox(height: 8),
                   
-                  // ROW 4: Macros
-                  Wrap(
-                    spacing: 8,
+                  // ROW 4: Macros + Calorie badge (UPDATED - moved calorie badge here)
+                  Row(
                     children: [
-                      _buildMacroChip('🥩', '${protein}g'),
-                      _buildMacroChip('🍞', '${carbs}g'),
-                      _buildMacroChip('🥑', '${fat}g'),
+                      // Macro chips on the left
+                      Expanded(
+                        child: Wrap(
+                          spacing: 8,
+                          children: [
+                            _buildMacroChip('🥩', '${protein}g'),
+                            _buildMacroChip('🍞', '${carbs}g'),
+                            _buildMacroChip('🥑', '${fat}g'),
+                          ],
+                        ),
+                      ),
+                      
+                      const SizedBox(width: 8),
+                      
+                      // Calorie badge on the right (moved from ROW 1) - RESIZED to match macro chips
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), // Reduced from 10,6 to 8,4
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryBlue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8), // Reduced from 12 to 8 to match macros
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('🔥', style: const TextStyle(fontSize: 12)), // Reduced from 14 to 12
+                            const SizedBox(width: 4),
+                            Text(
+                              '$itemCalories',
+                              style: AppTextStyles.getNumericStyle().copyWith(
+                                fontSize: 11, // Reduced from 14 to 11 to match macros
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.primaryBlue,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ],
