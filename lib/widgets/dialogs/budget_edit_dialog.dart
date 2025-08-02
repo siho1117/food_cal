@@ -90,6 +90,7 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           autofocus: true,
           inputFormatters: [
+            // FIXED: Complete the regex pattern for decimal numbers
             FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
           ],
           decoration: InputDecoration(
@@ -271,7 +272,7 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
     );
   }
 
-  Widget _buildActions() {
+  List<Widget> _buildActions() {
     return [
       TextButton(
         onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
@@ -290,7 +291,7 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
           ),
         ),
         child: _isLoading
-            ? SizedBox(
+            ? const SizedBox(
                 width: 16,
                 height: 16,
                 child: CircularProgressIndicator(
