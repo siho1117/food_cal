@@ -5,6 +5,7 @@ import '../config/design_system/theme.dart';
 import '../providers/home_provider.dart';
 import '../widgets/home/calorie_summary_widget.dart';
 import '../widgets/home/macronutrient_widget.dart';
+import '../widgets/home/cost_summary_widget.dart';  // ← NEW IMPORT
 import '../widgets/home/food_log_widget.dart';
 import '../widgets/common/week_navigation_widget.dart';
 
@@ -69,15 +70,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         const SizedBox(height: 20),
 
-                        // Food Log Widget (without header)
+                        // 💰 NEW: Cost Summary Widget (OPTION 3 POSITION)
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: FoodLogWidget(
-                            showHeader: false, // Remove the header
-                          ),
+                          child: CostSummaryWidget(),
                         ),
 
                         const SizedBox(height: 20),
+
+                        // Food Log Widget
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: FoodLogWidget(
+                            onFoodAdded: () => homeProvider.refreshData(),
+                          ),
+                        ),
+
+                        // Bottom padding for better scrolling
+                        const SizedBox(height: 100),
                       ],
                     ),
                   ),
@@ -89,26 +99,25 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+}
 
-  // Custom refresh wrapper that handles pull-to-refresh without any visual indicators
-  Widget _CustomRefreshWrapper({
-    required Future<void> Function() onRefresh,
-    required Widget child,
-  }) {
-    return GestureDetector(
-      onPanUpdate: (details) {
-        // Track downward pan gesture
-        if (details.delta.dy > 0) {
-          // User is pulling down
-        }
-      },
-      onPanEnd: (details) {
-        // Check if it was a significant pull down gesture
-        if (details.velocity.pixelsPerSecond.dy > 300) {
-          // Trigger refresh for fast downward swipe
-          onRefresh();
-        }
-      },
+/// Custom refresh wrapper that handles pull-to-refresh
+class _CustomRefreshWrapper extends StatelessWidget {
+  final Widget child;
+  final Future<void> Function() onRefresh;
+
+  const _CustomRefreshWrapper({
+    required this.child,
+    required this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      color: AppTheme.primaryBlue,
+      backgroundColor: Colors.white,
+      strokeWidth: 2.5,
       child: child,
     );
   }

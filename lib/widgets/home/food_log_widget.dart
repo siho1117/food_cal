@@ -10,12 +10,10 @@ import '../../providers/home_provider.dart';
 import 'quick_edit_food_dialog.dart';
 
 class FoodLogWidget extends StatefulWidget {
-  final bool showHeader;
   final VoidCallback? onFoodAdded;
 
   const FoodLogWidget({
     super.key,
-    this.showHeader = true,
     this.onFoodAdded,
   });
 
@@ -36,10 +34,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (widget.showHeader) ...[
-              _buildHeader(foodByMeal),
-              const SizedBox(height: 16),
-            ],
+            // REMOVED: Today's Food Log header - this was the redundant header
 
             if (!hasEntries)
               _buildEmptyState()
@@ -48,86 +43,6 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildHeader(Map<String, List<FoodItem>> foodByMeal) {
-    final allItems = foodByMeal.values.expand((x) => x).toList();
-    final totalCalories = allItems.fold(0, (sum, item) => sum + (item.calories * item.servingSize).round());
-    final mealCount = foodByMeal.values.where((list) => list.isNotEmpty).length;
-
-    // NEW: Calculate total cost for the day
-    final totalCost = allItems.fold(0.0, (sum, item) {
-      final itemCost = item.getCostForServing();
-      return sum + (itemCost ?? 0.0);
-    });
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Text('🍽️', style: const TextStyle(fontSize: 24)),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Today\'s Food Log',
-                  style: AppTextStyles.getSubHeadingStyle().copyWith(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryBlue,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                // UPDATED: Show cost in header if there are any costs
-                Row(
-                  children: [
-                    Text(
-                      '$mealCount meals • $totalCalories calories',
-                      style: AppTextStyles.getBodyStyle().copyWith(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    if (totalCost > 0) ...[
-                      Text(
-                        ' • ',
-                        style: AppTextStyles.getBodyStyle().copyWith(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        '\$${totalCost.toStringAsFixed(2)}',
-                        style: AppTextStyles.getNumericStyle().copyWith(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -198,7 +113,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
       ),
       child: Column(
         children: [
-          // Header section
+          // Header section - KEPT: Recent Food Log header only
           Padding(
             padding: const EdgeInsets.all(24),
             child: Row(
@@ -232,14 +147,14 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
             ),
           ),
           
-          // Divider
+          // Divider - KEPT: Exact same styling
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 24),
             height: 1,
             color: Colors.grey[100],
           ),
           
-          // Food items list with swipe-to-delete and tap-to-edit
+          // Food items list with IMPROVED swipe-to-delete - KEPT: All existing design
           ...allFoodItems.asMap().entries.map((entry) {
             final index = entry.key;
             final item = entry.value;
@@ -250,6 +165,13 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
                   key: Key(item.id),
                   direction: DismissDirection.endToStart,
                   background: _buildDeleteBackground(),
+                  // IMPROVED: Better dismiss threshold
+                  dismissThresholds: const {
+                    DismissDirection.endToStart: 0.3, // Easier to trigger
+                  },
+                  // IMPROVED: Smoother animation timing
+                  resizeDuration: const Duration(milliseconds: 200),
+                  movementDuration: const Duration(milliseconds: 200),
                   confirmDismiss: (direction) async {
                     // Show confirmation dialog before dismissing
                     return await _showDeleteConfirmation(context, item, homeProvider);
@@ -275,18 +197,34 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
     );
   }
 
+  // IMPROVED: Better delete background with animation hint
   Widget _buildDeleteBackground() {
     return Container(
       alignment: Alignment.centerRight,
-      padding: const EdgeInsets.only(right: 20),
+      padding: const EdgeInsets.only(right: 32), // Increased padding for better UX
       margin: const EdgeInsets.symmetric(horizontal: 0),
       decoration: BoxDecoration(
-        color: Colors.red[400],
+        // IMPROVED: Gradient background for better visual appeal
+        gradient: LinearGradient(
+          colors: [
+            Colors.red.withOpacity(0.1),
+            Colors.red[400]!,
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
         borderRadius: BorderRadius.circular(0),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          // IMPROVED: Add swipe indicator
+          Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white.withOpacity(0.7),
+            size: 16,
+          ),
+          const SizedBox(width: 8),
           const Icon(
             Icons.delete_outline,
             color: Colors.white,
@@ -298,6 +236,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
             style: AppTextStyles.getBodyStyle().copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w600,
+              fontSize: 16,
             ),
           ),
         ],
@@ -305,6 +244,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
     );
   }
 
+  // NEW: 3-row layout food item (removed progress bar and individual macro chips)
   Widget _buildFoodItem(FoodItem item, HomeProvider homeProvider) {
     final itemCalories = (item.calories * item.servingSize).round();
     final nutrition = item.getNutritionForServing();
@@ -312,7 +252,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
     final carbs = nutrition['carbs']!.round();
     final fat = nutrition['fats']!.round();
     
-    // NEW: Get cost for serving
+    // Get cost for serving
     final itemCost = item.getCostForServing();
 
     return GestureDetector(
@@ -348,12 +288,12 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
             
             const SizedBox(width: 16),
             
-            // Food details
+            // Food details - NEW: 3-row layout
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ROW 1: Name and cost badge only (UPDATED - removed calories, clean layout)
+                  // ROW 1: Name and cost badge
                   Row(
                     children: [
                       Expanded(
@@ -401,7 +341,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
                   
                   const SizedBox(height: 6),
                   
-                  // ROW 2: Time and serving info only (UPDATED - removed edit icon)
+                  // ROW 2: Time and serving info
                   Row(
                     children: [
                       Text(
@@ -417,44 +357,77 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
                   
                   const SizedBox(height: 8),
                   
-                  // ROW 3: Progress bar (UNCHANGED)
-                  _buildProgressBar(itemCalories, homeProvider.calorieGoal),
-                  
-                  const SizedBox(height: 8),
-                  
-                  // ROW 4: Macros + Calorie badge (UPDATED - moved calorie badge here)
+                  // ROW 3: Combined nutrition badge + Calorie badge (NEW)
                   Row(
                     children: [
-                      // Macro chips on the left
-                      Expanded(
-                        child: Wrap(
-                          spacing: 8,
-                          children: [
-                            _buildMacroChip('🥩', '${protein}g'),
-                            _buildMacroChip('🍞', '${carbs}g'),
-                            _buildMacroChip('🥑', '${fat}g'),
-                          ],
-                        ),
-                      ),
-                      
-                      const SizedBox(width: 8),
-                      
-                      // Calorie badge on the right (moved from ROW 1) - RESIZED to match macro chips
+                      // Combined nutrition badge with icons
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), // Reduced from 10,6 to 8,4
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryBlue.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8), // Reduced from 12 to 8 to match macros
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[200]!, width: 0.5),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('🔥', style: const TextStyle(fontSize: 12)), // Reduced from 14 to 12
+                            // Protein
+                            Text('🥩', style: const TextStyle(fontSize: 11)),
+                            Text(
+                              '${protein}g',
+                              style: AppTextStyles.getBodyStyle().copyWith(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Carbs
+                            Text('🍞', style: const TextStyle(fontSize: 11)),
+                            Text(
+                              '${carbs}g',
+                              style: AppTextStyles.getBodyStyle().copyWith(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Fat
+                            Text('🥑', style: const TextStyle(fontSize: 11)),
+                            Text(
+                              '${fat}g',
+                              style: AppTextStyles.getBodyStyle().copyWith(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      const Spacer(),
+                      
+                      // Calorie badge on the right
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryBlue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '🔥',
+                              style: const TextStyle(fontSize: 12),
+                            ),
                             const SizedBox(width: 4),
                             Text(
-                              '$itemCalories',
+                              '${itemCalories}cal',
                               style: AppTextStyles.getNumericStyle().copyWith(
-                                fontSize: 11, // Reduced from 14 to 11 to match macros
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: AppTheme.primaryBlue,
                               ),
@@ -473,75 +446,22 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
     );
   }
 
+  // Helper methods
   Widget _buildFoodIcon() {
-    return Icon(
-      Icons.restaurant,
-      color: AppTheme.primaryBlue.withOpacity(0.6),
-      size: 32,
-    );
-  }
-
-  Widget _buildProgressBar(int itemCalories, int calorieGoal) {
-    final progress = (itemCalories / calorieGoal * 100).clamp(0.0, 100.0);
-    
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(2),
-            ),
-            child: FractionallySizedBox(
-              widthFactor: progress / 100,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: progress > 20 ? AppTheme.primaryBlue : Colors.grey[400],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '${progress.round()}% of goal',
-          style: AppTextStyles.getBodyStyle().copyWith(
-            fontSize: 10,
-            color: Colors.grey[500],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMacroChip(String emoji, String value) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(15),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 12)),
-          const SizedBox(width: 4),
-          Text(
-            value,
-            style: AppTextStyles.getNumericStyle().copyWith(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
-            ),
-          ),
-        ],
+      child: Icon(
+        Icons.restaurant,
+        color: Colors.grey[400],
+        size: 32,
       ),
     );
   }
 
+  // Time formatting helper
   String _formatTime(DateTime timestamp) {
     final hour = timestamp.hour;
     final minute = timestamp.minute.toString().padLeft(2, '0');
@@ -550,13 +470,13 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
     return '$displayHour:$minute $period';
   }
 
+  // Dialog and interaction methods
   Future<void> _showQuickEditDialog(FoodItem item, HomeProvider homeProvider) async {
     await showDialog<void>(
       context: context,
       builder: (context) => QuickEditFoodDialog(
         foodItem: item,
         onUpdated: () {
-          // Single provider update after successful edit
           homeProvider.refreshData();
         },
       ),
@@ -602,6 +522,7 @@ class _FoodLogWidgetState extends State<FoodLogWidget> {
       
       if (success && mounted) {
         homeProvider.refreshData();
+        widget.onFoodAdded?.call();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${item.name} removed from food log'),

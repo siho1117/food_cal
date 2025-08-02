@@ -75,7 +75,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 20,
                 offset: const Offset(0, 4),
               ),
@@ -91,12 +91,12 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                   opacity: _animation.value,
                   child: Row(
                     children: [
-                      const Text('💪', style: TextStyle(fontSize: 24)),
-                      const SizedBox(width: 12),
+                      const Text('💪', style: TextStyle(fontSize: 18)),
+                      const SizedBox(width: 10),
                       Text(
                         'Macronutrients',
                         style: AppTextStyles.getSubHeadingStyle().copyWith(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.primaryBlue,
                         ),
@@ -105,15 +105,15 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
-                // Macro rows
-                ..._buildMacroRows(consumed, target, progress),
+                // Hybrid compact macro rows (Option 2 style with mini dots)
+                ..._buildCompactMacroRows(consumed, target, progress),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
 
-                // Balance summary
-                _buildBalanceSummary(consumed),
+                // Option 1 style balance summary
+                _buildCompactBalanceSummary(consumed),
               ],
             ),
           ),
@@ -122,24 +122,24 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
     );
   }
 
-  List<Widget> _buildMacroRows(Map<String, double> consumed, Map<String, int> target, Map<String, double> progress) {
+  List<Widget> _buildCompactMacroRows(Map<String, double> consumed, Map<String, int> target, Map<String, double> progress) {
     final macros = [
       {'key': 'protein', 'symbol': '🥩', 'name': 'Protein', 'color': Colors.red[500]!},
       {'key': 'carbs', 'symbol': '🍞', 'name': 'Carbs', 'color': Colors.blue[500]!},
-      {'key': 'fat', 'symbol': '🥑', 'name': 'Fat', 'color': Colors.orange[500]!},
+      {'key': 'fat', 'symbol': '🧀', 'name': 'Fat', 'color': Colors.orange[500]!},
     ];
 
     return macros.asMap().entries.map((entry) {
       final index = entry.key;
       final macro = entry.value;
       final key = macro['key'] as String;
-      final delay = index * 0.2; // Stagger animation
+      final delay = index * 0.15; // Stagger animation
 
       return Padding(
-        padding: EdgeInsets.only(bottom: index < 2 ? 16 : 0), // Reduced from 20 to 16
+        padding: EdgeInsets.only(bottom: index < 2 ? 8 : 0), // Reduced spacing
         child: Opacity(
           opacity: (_animation.value - delay).clamp(0.0, 1.0),
-          child: _buildMacroRow(
+          child: _buildCompactMacroRow(
             symbol: macro['symbol'] as String,
             name: macro['name'] as String,
             consumed: consumed[key]! * _animation.value,
@@ -152,7 +152,8 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
     }).toList();
   }
 
-  Widget _buildMacroRow({
+  // Hybrid compact row: single line with mini dots (Option 2 style)
+  Widget _buildCompactMacroRow({
     required String symbol,
     required String name,
     required double consumed,
@@ -160,59 +161,71 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
     required double progress,
     required Color color,
   }) {
-    return Column(
+    return Row(
       children: [
-        // Main row
-        Row(
-          children: [
-            Text(symbol, style: const TextStyle(fontSize: 18)),
-            const SizedBox(width: 12),
-            Expanded(child: Text(name, style: AppTextStyles.getBodyStyle().copyWith(fontWeight: FontWeight.w600, fontSize: 16))),
-            Text('${consumed.round()}g / ${target.round()}g', style: AppTextStyles.getNumericStyle().copyWith(color: Colors.grey[600], fontSize: 14)),
-            const SizedBox(width: 12),
-            Text('${progress.round()}%', style: AppTextStyles.getNumericStyle().copyWith(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-          ],
-        ),
-        
-        const SizedBox(height: 8),
-        
-        // Progress dots in original position, message aligned under values
-        Row(
-          children: [
-            // Progress dots aligned under macro names (original position)
-            const SizedBox(width: 30), // Original 30px margin
-            Expanded(
-              child: _buildDotProgress(progress / 100, color),
-            ),
-            
-            // Message aligned under values + percentage
-            SizedBox(
-              width: 120, // Fixed width to align under values area
-              child: Text(
-                _getMessage(progress),
-                style: AppTextStyles.getBodyStyle().copyWith(
-                  fontSize: 12, 
-                  fontWeight: FontWeight.w500, 
-                  color: color, 
-                  fontStyle: FontStyle.italic
+        // Left side: Icon + Name + Values
+        Expanded(
+          child: Row(
+            children: [
+              Text(symbol, style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 60,
+                child: Text(
+                  name,
+                  style: AppTextStyles.getBodyStyle().copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: Colors.grey[800],
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
+              Text(
+                '${consumed.round()}g / ${target.round()}g',
+                style: AppTextStyles.getNumericStyle().copyWith(
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // Right side: Percentage + Mini Dots
+        Row(
+          children: [
+            SizedBox(
+              width: 35,
+              child: Text(
+                '${progress.round()}%',
+                style: AppTextStyles.getNumericStyle().copyWith(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+                textAlign: TextAlign.right,
+              ),
             ),
+            const SizedBox(width: 8),
+            _buildMiniDotProgress(progress / 100, color),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildDotProgress(double progress, Color color) {
-    const dots = 8;
+  // Mini dot progress (Option 2 style with 10 dots, 4px size)
+  Widget _buildMiniDotProgress(double progress, Color color) {
+    const dots = 10; // More dots for better precision
     final filled = (progress * dots).round().clamp(0, dots);
     
     return Row(
       children: List.generate(dots, (i) => Padding(
-        padding: const EdgeInsets.only(right: 4),
+        padding: const EdgeInsets.only(right: 2), // Reduced spacing
         child: Container(
-          width: 8, height: 8,
+          width: 4, // Smaller dots
+          height: 4,
           decoration: BoxDecoration(
             color: i < filled ? color : Colors.grey[300],
             shape: BoxShape.circle,
@@ -222,7 +235,8 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
     );
   }
 
-  Widget _buildBalanceSummary(Map<String, double> consumed) {
+  // Compact balance summary (Option 1 style)
+  Widget _buildCompactBalanceSummary(Map<String, double> consumed) {
     final totalCals = consumed['protein']! * 4 + consumed['carbs']! * 4 + consumed['fat']! * 9;
     if (totalCals == 0) return const SizedBox.shrink();
 
@@ -235,29 +249,40 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
     return Opacity(
       opacity: _animation.value,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12), // Reduced padding
         decoration: BoxDecoration(
           color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey[200]!, width: 1),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
+            // Balance items on the left
+            Expanded(
+              child:               Row(
+                children: [
+                  _buildBalanceItem('🥩', '${percentages['protein']}%', Colors.red[500]!),
+                  const SizedBox(width: 12),
+                  _buildBalanceItem('🍞', '${percentages['carbs']}%', Colors.blue[500]!),
+                  const SizedBox(width: 12),
+                  _buildBalanceItem('🧀', '${percentages['fat']}%', Colors.orange[500]!),
+                ],
+              ),
+            ),
+            
+            // Label on the right
             Row(
               children: [
-                const Text('📊', style: TextStyle(fontSize: 16)),
-                const SizedBox(width: 8),
-                Text('Macro Balance', style: AppTextStyles.getSubHeadingStyle().copyWith(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 16,
-              children: [
-                _buildBalanceItem('🥩 Protein', '${percentages['protein']}%', Colors.red[500]!),
-                _buildBalanceItem('🍞 Carbs', '${percentages['carbs']}%', Colors.blue[500]!),
-                _buildBalanceItem('🥑 Fat', '${percentages['fat']}%', Colors.orange[500]!),
+                const Text('📊', style: TextStyle(fontSize: 12)),
+                const SizedBox(width: 4),
+                Text(
+                  'Macro Balance',
+                  style: AppTextStyles.getBodyStyle().copyWith(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryBlue,
+                  ),
+                ),
               ],
             ),
           ],
@@ -266,23 +291,21 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
     );
   }
 
-  Widget _buildBalanceItem(String label, String percentage, Color color) {
+  Widget _buildBalanceItem(String emoji, String percentage, Color color) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: AppTextStyles.getBodyStyle().copyWith(fontSize: 12, fontWeight: FontWeight.w500, color: color)),
-        const SizedBox(width: 4),
-        Text(percentage, style: AppTextStyles.getNumericStyle().copyWith(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+        Text(emoji, style: const TextStyle(fontSize: 10)),
+        const SizedBox(width: 2),
+        Text(
+          percentage,
+          style: AppTextStyles.getNumericStyle().copyWith(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
       ],
     );
-  }
-
-  String _getMessage(double percentage) {
-    if (percentage >= 100) return '🎯 Mission complete!';
-    if (percentage >= 80) return '⭐ Almost there!';
-    if (percentage >= 60) return '💪 Keep it up!';
-    if (percentage >= 40) return '🚀 Good progress!';
-    if (percentage >= 20) return '📈 Getting started!';
-    return '🍽️ Time to fuel up!';
   }
 }
