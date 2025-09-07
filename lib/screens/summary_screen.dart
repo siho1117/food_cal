@@ -41,8 +41,9 @@ class _SummaryScreenState extends State<SummaryScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: context.read<HomeProvider>(),
+    // FIXED: Create HomeProvider at the SummaryScreen level
+    return ChangeNotifierProvider(
+      create: (_) => HomeProvider()..loadData(),
       child: Scaffold(
         backgroundColor: AppTheme.secondaryBeige,
         body: SafeArea(

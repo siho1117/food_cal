@@ -83,13 +83,13 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       duration: const Duration(milliseconds: 500),
     );
 
-    // FIXED: Initialize screens - Replace SettingsScreen with SummaryScreen
+    // Initialize screens - Replace SettingsScreen with SummaryScreen
     _screens = [
       const HomeScreen(),                    // index 0
       const progress.ProgressScreen(),       // index 1
       Container(),                           // index 2 - placeholder for camera (never used)
       const exercise.ExerciseScreen(),       // index 3
-      const SummaryScreen(),                 // index 4 - FIXED: Now SummaryScreen
+      const SummaryScreen(),                 // index 4 - SummaryScreen instead of SettingsScreen
     ];
   }
 
@@ -106,13 +106,8 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       return; // DON'T change _currentIndex - this is the key!
     }
 
-    // FIXED: Handle Settings tap (index 4) - Navigate to separate settings screen
-    if (index == 4) {
-      _navigateToSettingsOverlay();
-      return; // Don't change _currentIndex - keep showing Summary content
-    }
-
-    // For all other tabs, change normally
+    // FIXED: For all tabs including Settings (index 4), change _currentIndex normally
+    // The Settings tab will now show SummaryScreen content
     _animationController.reset();
     _animationController.forward();
 
@@ -155,18 +150,13 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     );
   }
 
-  // FIXED: Navigate to settings as overlay (separate from bottom nav)
-  void _navigateToSettingsOverlay() {
+  // Navigate to settings as overlay (only used by top app bar settings icon)
+  void _navigateToSettings() {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const SettingsScreen(showBackButton: true),
       ),
     );
-  }
-
-  // FIXED: This method for top app bar settings (same functionality)
-  void _navigateToSettings() {
-    _navigateToSettingsOverlay();
   }
   
   // Method to get the current page subtitle based on the active tab
@@ -181,7 +171,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       case 3:
         return 'Activity Tracker';
       case 4:
-        return 'Analytics Dashboard';  // FIXED: When Settings tab is active, shows Summary content
+        return 'Analytics Dashboard';  // When Settings tab is active, shows Summary content
       default:
         return '';
     }
@@ -192,7 +182,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     return Scaffold(
       key: _scaffoldKey,
       appBar: CustomAppBar(
-        onSettingsTap: _navigateToSettings, // Top bar settings navigation
+        onSettingsTap: _navigateToSettings, // Top bar settings navigation (separate from bottom nav)
         currentPage: _getCurrentPageSubtitle(),
       ),
       body: AnimatedSwitcher(
@@ -209,7 +199,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
             ),
           );
         },
-        child: _screens[_currentIndex], // Direct mapping - index 4 now shows SummaryScreen!
+        child: _screens[_currentIndex], // When _currentIndex = 4, shows SummaryScreen!
       ),
       extendBody: true, // Important for curved navigation bar
       bottomNavigationBar: CustomBottomNav(
