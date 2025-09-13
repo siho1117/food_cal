@@ -107,83 +107,97 @@ class HomeProvider extends ChangeNotifier {
     };
   }
 
-  // NEW: Cost tracking fields
+  // Cost tracking fields
   double? _dailyFoodBudget;
   double get dailyFoodBudget => _dailyFoodBudget ?? 20.0; // Default $20 budget
 
-  // NEW: Calculate total food cost for the selected date
+  // Calculate total food cost for the selected date
   double get totalFoodCost {
     double total = 0.0;
     
-    // Sum costs from all meals for the selected date
-    for (final mealType in ['breakfast', 'lunch', 'dinner', 'snack']) {
-      final mealItems = _entriesByMeal[mealType] ?? [];
-      for (final item in mealItems) {
-        // Check if the item is for the selected date
-        if (_isSameDay(item.timestamp, _selectedDate)) {
-          final itemCost = item.getCostForServing();
-          if (itemCost != null) {
-            total += itemCost;
+    try {
+      // Sum costs from all meals for the selected date
+      for (final mealType in ['breakfast', 'lunch', 'dinner', 'snack']) {
+        final mealItems = _entriesByMeal[mealType] ?? [];
+        for (final item in mealItems) {
+          // Check if the item is for the selected date
+          if (_isSameDay(item.timestamp, _selectedDate)) {
+            final itemCost = item.getCostForServing();
+            if (itemCost != null && itemCost > 0) {
+              total += itemCost;
+            }
           }
         }
       }
+    } catch (e) {
+      print('Error calculating total food cost: $e');
     }
     
     return total;
   }
 
-  // NEW: Calculate remaining budget
+  // Calculate remaining budget
   double get remainingBudget {
     final remaining = dailyFoodBudget - totalFoodCost;
     return remaining.clamp(0.0, dailyFoodBudget);
   }
 
-  // NEW: Check if over food budget
+  // Check if over food budget
   bool get isOverFoodBudget => totalFoodCost > dailyFoodBudget;
 
-  // NEW: Get budget progress (0.0 to 1.0)
+  // Get budget progress (0.0 to 1.0)
   double get budgetProgress {
     if (dailyFoodBudget <= 0) return 0.0;
     return (totalFoodCost / dailyFoodBudget).clamp(0.0, 1.0);
   }
 
-  // NEW: Get weekly cost total
+  // Get weekly cost total
   double get weeklyFoodCost {
     double total = 0.0;
-    final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
     
-    for (final mealType in ['breakfast', 'lunch', 'dinner', 'snack']) {
-      final mealItems = _entriesByMeal[mealType] ?? [];
-      for (final item in mealItems) {
-        if (item.timestamp.isAfter(startOfWeek)) {
-          final itemCost = item.getCostForServing();
-          if (itemCost != null) {
-            total += itemCost;
+    try {
+      final now = DateTime.now();
+      final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+      
+      for (final mealType in ['breakfast', 'lunch', 'dinner', 'snack']) {
+        final mealItems = _entriesByMeal[mealType] ?? [];
+        for (final item in mealItems) {
+          if (item.timestamp.isAfter(startOfWeek) || _isSameDay(item.timestamp, startOfWeek)) {
+            final itemCost = item.getCostForServing();
+            if (itemCost != null && itemCost > 0) {
+              total += itemCost;
+            }
           }
         }
       }
+    } catch (e) {
+      print('Error calculating weekly food cost: $e');
     }
     
     return total;
   }
 
-  // NEW: Get monthly cost total
+  // Get monthly cost total
   double get monthlyFoodCost {
     double total = 0.0;
-    final now = DateTime.now();
-    final startOfMonth = DateTime(now.year, now.month, 1);
     
-    for (final mealType in ['breakfast', 'lunch', 'dinner', 'snack']) {
-      final mealItems = _entriesByMeal[mealType] ?? [];
-      for (final item in mealItems) {
-        if (item.timestamp.isAfter(startOfMonth)) {
-          final itemCost = item.getCostForServing();
-          if (itemCost != null) {
-            total += itemCost;
+    try {
+      final now = DateTime.now();
+      final startOfMonth = DateTime(now.year, now.month, 1);
+      
+      for (final mealType in ['breakfast', 'lunch', 'dinner', 'snack']) {
+        final mealItems = _entriesByMeal[mealType] ?? [];
+        for (final item in mealItems) {
+          if (item.timestamp.isAfter(startOfMonth) || _isSameDay(item.timestamp, startOfMonth)) {
+            final itemCost = item.getCostForServing();
+            if (itemCost != null && itemCost > 0) {
+              total += itemCost;
+            }
           }
         }
       }
+    } catch (e) {
+      print('Error calculating monthly food cost: $e');
     }
     
     return total;
@@ -306,7 +320,7 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
-  /// NEW: Load daily food budget from preferences
+  /// Load daily food budget from preferences
   Future<void> loadFoodBudget() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -316,7 +330,7 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
-  /// NEW: Save daily food budget to preferences
+  /// Save daily food budget to preferences
   Future<void> setDailyFoodBudget(double budget) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -329,7 +343,7 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
-  /// NEW: Get cost statistics for display
+  /// Get cost statistics for display
   Map<String, double> get costStatistics {
     return {
       'today': totalFoodCost,
@@ -340,12 +354,12 @@ class HomeProvider extends ChangeNotifier {
     };
   }
 
-  /// NEW: Format cost for display
+  /// Format cost for display
   String formatCost(double cost) {
     return '\$${cost.toStringAsFixed(2)}';
   }
 
-  /// NEW: Get cost status message
+  /// Get cost status message
   String getCostStatusMessage() {
     final progress = budgetProgress;
     
@@ -431,6 +445,80 @@ class HomeProvider extends ChangeNotifier {
   Future<void> goToToday() async {
     if (!isToday) {
       await changeDate(DateTime.now());
+    }
+  }
+
+  // ADD THESE METHODS FOR FOOD OPERATIONS
+
+  /// Add food item to a meal
+  Future<void> addFoodItem(FoodItem item) async {
+    try {
+      // Save to repository
+      await _foodRepository.saveFoodEntry(item);
+      
+      // Add to local state if it's for the selected date
+      if (_isSameDay(item.timestamp, _selectedDate)) {
+        final mealType = item.mealType.toLowerCase();
+        if (_entriesByMeal.containsKey(mealType)) {
+          _entriesByMeal[mealType]!.add(item);
+          _entriesByMeal[mealType]!.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+          
+          // Recalculate totals
+          _calculateTotals();
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      print('Error adding food item: $e');
+      rethrow;
+    }
+  }
+
+  /// Update existing food item
+  Future<void> updateFoodItem(FoodItem updatedItem) async {
+    try {
+      // Update in repository
+      await _foodRepository.updateFoodEntry(updatedItem);
+      
+      // Update in local state if it's for the selected date
+      if (_isSameDay(updatedItem.timestamp, _selectedDate)) {
+        final mealType = updatedItem.mealType.toLowerCase();
+        if (_entriesByMeal.containsKey(mealType)) {
+          final items = _entriesByMeal[mealType]!;
+          final index = items.indexWhere((item) => item.id == updatedItem.id);
+          
+          if (index != -1) {
+            items[index] = updatedItem;
+            
+            // Recalculate totals
+            _calculateTotals();
+            notifyListeners();
+          }
+        }
+      }
+    } catch (e) {
+      print('Error updating food item: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete food item
+  Future<void> deleteFoodItem(String itemId) async {
+    try {
+      // Delete from repository
+      await _foodRepository.deleteFoodEntry(itemId);
+      
+      // Remove from local state
+      for (final mealType in _entriesByMeal.keys) {
+        _entriesByMeal[mealType]!.removeWhere((item) => item.id == itemId);
+      }
+      
+      // Recalculate totals
+      _calculateTotals();
+      notifyListeners();
+    } catch (e) {
+      print('Error deleting food item: $e');
+      rethrow;
     }
   }
 }
