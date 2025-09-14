@@ -505,17 +505,32 @@ class HomeProvider extends ChangeNotifier {
   /// Delete food item
   Future<void> deleteFoodItem(String itemId) async {
     try {
-      // Delete from repository
-      await _foodRepository.deleteFoodEntry(itemId);
-      
-      // Remove from local state
+      // Find the item first to get its timestamp
+      FoodItem? itemToDelete;
       for (final mealType in _entriesByMeal.keys) {
-        _entriesByMeal[mealType]!.removeWhere((item) => item.id == itemId);
+        final items = _entriesByMeal[mealType]!;
+        for (final item in items) {
+          if (item.id == itemId) {
+            itemToDelete = item;
+            break;
+          }
+        }
+        if (itemToDelete != null) break;
       }
-      
-      // Recalculate totals
-      _calculateTotals();
-      notifyListeners();
+
+      if (itemToDelete != null) {
+        // Delete from repository with both id and timestamp
+        await _foodRepository.deleteFoodEntry(itemId, itemToDelete.timestamp);
+        
+        // Remove from local state
+        for (final mealType in _entriesByMeal.keys) {
+          _entriesByMeal[mealType]!.removeWhere((item) => item.id == itemId);
+        }
+        
+        // Recalculate totals
+        _calculateTotals();
+        notifyListeners();
+      }
     } catch (e) {
       print('Error deleting food item: $e');
       rethrow;

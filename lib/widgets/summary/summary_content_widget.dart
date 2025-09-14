@@ -5,6 +5,7 @@ import '../../config/design_system/theme.dart';
 import '../../config/design_system/text_styles.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/exercise_provider.dart';
+import '../../utils/summary_data_calculator.dart';
 import 'summary_controls_widget.dart';
 
 class SummaryContentWidget extends StatelessWidget {
@@ -19,6 +20,13 @@ class SummaryContentWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer2<HomeProvider, ExerciseProvider>(
       builder: (context, homeProvider, exerciseProvider, child) {
+        // Calculate all data using the separated calculator
+        final keyMetrics = SummaryDataCalculator.calculateKeyMetrics(period, homeProvider, exerciseProvider);
+        final progressData = SummaryDataCalculator.calculateProgressData(period, homeProvider, exerciseProvider);
+        final nutritionData = SummaryDataCalculator.calculateNutritionData(homeProvider);
+        final exerciseData = SummaryDataCalculator.calculateExerciseData(period, exerciseProvider);
+        final statsData = SummaryDataCalculator.calculateSummaryStats(homeProvider, exerciseProvider);
+
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 20),
           padding: const EdgeInsets.all(24),
@@ -42,27 +50,27 @@ class SummaryContentWidget extends StatelessWidget {
               const SizedBox(height: 24),
               
               // Key Metrics Row
-              _buildKeyMetrics(homeProvider, exerciseProvider),
+              _buildKeyMetrics(keyMetrics),
               
               const SizedBox(height: 28),
               
               // Progress Section
-              _buildProgressSection(homeProvider, exerciseProvider),
+              _buildProgressSection(progressData),
               
               const SizedBox(height: 28),
               
               // Nutrition Breakdown
-              _buildNutritionBreakdown(homeProvider),
+              _buildNutritionBreakdown(nutritionData),
               
               const SizedBox(height: 28),
               
               // Exercise Breakdown
-              _buildExerciseBreakdown(exerciseProvider),
+              _buildExerciseBreakdown(exerciseData),
               
               const SizedBox(height: 28),
               
               // Summary Stats
-              _buildSummaryStats(homeProvider, exerciseProvider),
+              _buildSummaryStats(statsData),
             ],
           ),
         );
@@ -71,32 +79,11 @@ class SummaryContentWidget extends StatelessWidget {
   }
 
   Widget _buildHeader() {
-    final now = DateTime.now();
-    String title;
-    String subtitle;
-
-    switch (period) {
-      case SummaryPeriod.daily:
-        title = 'DAILY SUMMARY';
-        subtitle = _formatDate(now);
-        break;
-      case SummaryPeriod.weekly:
-        title = 'WEEKLY SUMMARY';
-        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-        final endOfWeek = startOfWeek.add(const Duration(days: 6));
-        subtitle = '${_formatDate(startOfWeek)} - ${_formatDate(endOfWeek)}';
-        break;
-      case SummaryPeriod.monthly:
-        title = 'MONTHLY SUMMARY';
-        subtitle = _formatMonth(now);
-        break;
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          title,
+          SummaryDataCalculator.getPeriodTitle(period),
           style: AppTextStyles.getHeadingStyle().copyWith(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -106,7 +93,7 @@ class SummaryContentWidget extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          subtitle,
+          SummaryDataCalculator.getPeriodSubtitle(period),
           style: AppTextStyles.getBodyStyle().copyWith(
             fontSize: 14,
             color: Colors.grey[600],
@@ -117,7 +104,7 @@ class SummaryContentWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildKeyMetrics(HomeProvider homeProvider, ExerciseProvider exerciseProvider) {
+  Widget _buildKeyMetrics(Map<String, String> metrics) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -138,7 +125,7 @@ class SummaryContentWidget extends StatelessWidget {
           Expanded(
             child: _buildMetricItem(
               icon: '🔥',
-              value: _getCaloriesValue(homeProvider),
+              value: metrics['calories']!,
               label: 'Calories',
               color: Colors.orange[600]!,
             ),
@@ -151,7 +138,7 @@ class SummaryContentWidget extends StatelessWidget {
           Expanded(
             child: _buildMetricItem(
               icon: '💰',
-              value: _getCostValue(homeProvider),
+              value: metrics['cost']!,
               label: 'Spent',
               color: Colors.green[600]!,
             ),
@@ -164,7 +151,7 @@ class SummaryContentWidget extends StatelessWidget {
           Expanded(
             child: _buildMetricItem(
               icon: '🏃',
-              value: _getExerciseValue(exerciseProvider),
+              value: metrics['burned']!,
               label: 'Burned',
               color: Colors.red[600]!,
             ),
@@ -205,7 +192,7 @@ class SummaryContentWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressSection(HomeProvider homeProvider, ExerciseProvider exerciseProvider) {
+  Widget _buildProgressSection(Map<String, Map<String, dynamic>> progressData) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -220,51 +207,41 @@ class SummaryContentWidget extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         
-        // Calories Consumed Progress
+        // Calories Progress
         _buildProgressBar(
-          label: 'Calories Consumed',
-          value: homeProvider.totalCalories,
-          target: homeProvider.calorieGoal,
-          progress: homeProvider.calorieProgress,
+          data: progressData['calories']!,
           color: Colors.blue[600]!,
-          unit: '',
         ),
         
         const SizedBox(height: 16),
         
-        // Exercise Burned Progress
+        // Exercise Progress
         _buildProgressBar(
-          label: 'Exercise Burned',
-          value: exerciseProvider.totalCaloriesBurned,
-          target: exerciseProvider.dailyBurnGoal,
-          progress: exerciseProvider.burnProgress,
+          data: progressData['exercise']!,
           color: Colors.red[600]!,
-          unit: '',
         ),
         
         const SizedBox(height: 16),
         
         // Budget Progress
         _buildProgressBar(
-          label: 'Budget',
-          value: homeProvider.totalFoodCost,
-          target: homeProvider.dailyFoodBudget,
-          progress: homeProvider.budgetProgress,
+          data: progressData['budget']!,
           color: Colors.green[600]!,
-          unit: '\$',
         ),
       ],
     );
   }
 
   Widget _buildProgressBar({
-    required String label,
-    required num value,
-    required num target,
-    required double progress,
+    required Map<String, dynamic> data,
     required Color color,
-    required String unit,
   }) {
+    final label = data['label'] as String;
+    final value = data['value'] as double;
+    final target = data['target'] as double;
+    final progress = data['progress'] as double;
+    final unit = data['unit'] as String;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -320,10 +297,7 @@ class SummaryContentWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildNutritionBreakdown(HomeProvider homeProvider) {
-    final consumed = homeProvider.consumedMacros;
-    final targets = homeProvider.targetMacros;
-
+  Widget _buildNutritionBreakdown(Map<String, Map<String, dynamic>> nutritionData) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -339,30 +313,21 @@ class SummaryContentWidget extends StatelessWidget {
         const SizedBox(height: 16),
         
         _buildMacroRow(
-          icon: '🍳',
-          name: 'Protein',
-          consumed: consumed['protein']!.round(),
-          target: targets['protein']!,
+          data: nutritionData['protein']!,
           color: Colors.purple[600]!,
         ),
         
         const SizedBox(height: 12),
         
         _buildMacroRow(
-          icon: '🍞',
-          name: 'Carbs',
-          consumed: consumed['carbs']!.round(),
-          target: targets['carbs']!,
+          data: nutritionData['carbs']!,
           color: Colors.orange[600]!,
         ),
         
         const SizedBox(height: 12),
         
         _buildMacroRow(
-          icon: '🥑',
-          name: 'Fat',
-          consumed: consumed['fat']!.round(),
-          target: targets['fat']!,
+          data: nutritionData['fat']!,
           color: Colors.green[600]!,
         ),
       ],
@@ -370,13 +335,14 @@ class SummaryContentWidget extends StatelessWidget {
   }
 
   Widget _buildMacroRow({
-    required String icon,
-    required String name,
-    required int consumed,
-    required int target,
+    required Map<String, dynamic> data,
     required Color color,
   }) {
-    final progress = target > 0 ? (consumed / target).clamp(0.0, 1.0) : 0.0;
+    final icon = data['icon'] as String;
+    final name = data['name'] as String;
+    final consumed = data['consumed'] as int;
+    final target = data['target'] as int;
+    final progress = data['progress'] as double;
     
     return Row(
       children: [
@@ -432,8 +398,12 @@ class SummaryContentWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildExerciseBreakdown(ExerciseProvider exerciseProvider) {
-    final exercises = exerciseProvider.exerciseEntries;
+  Widget _buildExerciseBreakdown(Map<String, dynamic> exerciseData) {
+    final exercises = exerciseData['exercises'] as List;
+    final isEmpty = exerciseData['isEmpty'] as bool;
+    final displayCount = exerciseData['displayCount'] as int;
+    final extraCount = exerciseData['extraCount'] as int;
+    final totalTime = exerciseData['totalTime'] as String;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -449,7 +419,7 @@ class SummaryContentWidget extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         
-        if (exercises.isEmpty) ...[
+        if (isEmpty) ...[
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -462,9 +432,7 @@ class SummaryContentWidget extends StatelessWidget {
                 Icon(Icons.info_outline, color: Colors.grey[600], size: 20),
                 const SizedBox(width: 12),
                 Text(
-                  period == SummaryPeriod.daily 
-                      ? 'No exercises logged today'
-                      : 'No exercises logged this ${period.name}',
+                  SummaryDataCalculator.getEmptyExerciseMessage(period),
                   style: AppTextStyles.getBodyStyle().copyWith(
                     fontSize: 14,
                     color: Colors.grey[600],
@@ -475,11 +443,15 @@ class SummaryContentWidget extends StatelessWidget {
             ),
           ),
         ] else ...[
-          ...exercises.take(3).map((exercise) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildExerciseRow(exercise),
-          )),
-          if (exercises.length > 3) ...[
+          // Show first 3 exercises
+          for (int i = 0; i < displayCount; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildExerciseRow(exercises[i]),
+            ),
+          
+          // Show extra count if more than 3
+          if (extraCount > 0) ...[
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -487,7 +459,7 @@ class SummaryContentWidget extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                '+${exercises.length - 3} more exercises',
+                '+$extraCount more exercises',
                 style: AppTextStyles.getBodyStyle().copyWith(
                   fontSize: 12,
                   color: AppTheme.primaryBlue,
@@ -500,7 +472,8 @@ class SummaryContentWidget extends StatelessWidget {
         
         const SizedBox(height: 12),
         
-        if (exercises.isNotEmpty)
+        // Total exercise time
+        if (!isEmpty)
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -509,7 +482,7 @@ class SummaryContentWidget extends StatelessWidget {
               border: Border.all(color: Colors.red[200]!),
             ),
             child: Text(
-              'Total Exercise Time: ${_getTotalExerciseTime(exercises)}',
+              'Total Exercise Time: $totalTime',
               style: AppTextStyles.getBodyStyle().copyWith(
                 fontSize: 14,
                 color: Colors.red[700],
@@ -543,7 +516,7 @@ class SummaryContentWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                exercise.name ?? 'Unknown Exercise',
+                exercise.name,
                 style: AppTextStyles.getBodyStyle().copyWith(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -551,7 +524,7 @@ class SummaryContentWidget extends StatelessWidget {
                 ),
               ),
               Text(
-                '${exercise.duration ?? 0} min',
+                '${exercise.duration} min',
                 style: AppTextStyles.getBodyStyle().copyWith(
                   fontSize: 12,
                   color: Colors.grey[600],
@@ -561,7 +534,7 @@ class SummaryContentWidget extends StatelessWidget {
           ),
         ),
         Text(
-          '${exercise.caloriesBurned ?? 0} cal',
+          '${exercise.caloriesBurned} cal',
           style: AppTextStyles.getNumericStyle().copyWith(
             fontSize: 14,
             fontWeight: FontWeight.bold,
@@ -572,12 +545,12 @@ class SummaryContentWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryStats(HomeProvider homeProvider, ExerciseProvider exerciseProvider) {
+  Widget _buildSummaryStats(Map<String, String> statsData) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          period == SummaryPeriod.daily ? 'DAILY STATS' : '${period.name.toUpperCase()} STATS',
+          SummaryDataCalculator.getStatsTitle(period),
           style: AppTextStyles.getSubHeadingStyle().copyWith(
             fontSize: 14,
             fontWeight: FontWeight.bold,
@@ -599,7 +572,7 @@ class SummaryContentWidget extends StatelessWidget {
               _buildStatRow(
                 icon: '📊',
                 label: 'Meals Logged',
-                value: homeProvider.mealsCount.toString(),
+                value: statsData['mealsLogged']!,
               ),
               
               const SizedBox(height: 12),
@@ -607,9 +580,7 @@ class SummaryContentWidget extends StatelessWidget {
               _buildStatRow(
                 icon: '💵',
                 label: 'Avg per meal',
-                value: homeProvider.mealsCount > 0 
-                    ? '\$${(homeProvider.totalFoodCost / homeProvider.mealsCount).toStringAsFixed(2)}'
-                    : '\$0.00',
+                value: statsData['avgPerMeal']!,
               ),
               
               const SizedBox(height: 12),
@@ -617,7 +588,7 @@ class SummaryContentWidget extends StatelessWidget {
               _buildStatRow(
                 icon: '🔥',
                 label: 'Net Calories',
-                value: '${homeProvider.totalCalories - exerciseProvider.totalCaloriesBurned}',
+                value: statsData['netCalories']!,
               ),
               
               const SizedBox(height: 12),
@@ -625,7 +596,7 @@ class SummaryContentWidget extends StatelessWidget {
               _buildStatRow(
                 icon: '⏱️',
                 label: 'Exercise Duration',
-                value: _getTotalExerciseTime(exerciseProvider.exerciseEntries),
+                value: statsData['exerciseDuration']!,
               ),
             ],
           ),
@@ -663,70 +634,5 @@ class SummaryContentWidget extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  // Helper methods
-  String _formatDate(DateTime date) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
-
-  String _formatMonth(DateTime date) {
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    return '${months[date.month - 1]} ${date.year}';
-  }
-
-  String _getCaloriesValue(HomeProvider homeProvider) {
-    switch (period) {
-      case SummaryPeriod.daily:
-        return homeProvider.totalCalories.toString();
-      case SummaryPeriod.weekly:
-        return (homeProvider.totalCalories * 7).toStringAsFixed(0);
-      case SummaryPeriod.monthly:
-        return (homeProvider.totalCalories * 30).toStringAsFixed(0);
-    }
-  }
-
-  String _getCostValue(HomeProvider homeProvider) {
-    switch (period) {
-      case SummaryPeriod.daily:
-        return '\${homeProvider.totalFoodCost.toStringAsFixed(2)}';
-      case SummaryPeriod.weekly:
-        return '\${homeProvider.weeklyFoodCost.toStringAsFixed(2)}';
-      case SummaryPeriod.monthly:
-        return '\${homeProvider.monthlyFoodCost.toStringAsFixed(2)}';
-    }
-  }
-
-  String _getExerciseValue(ExerciseProvider exerciseProvider) {
-    switch (period) {
-      case SummaryPeriod.daily:
-        return '${exerciseProvider.totalCaloriesBurned}';
-      case SummaryPeriod.weekly:
-        return '${(exerciseProvider.totalCaloriesBurned * 7).toStringAsFixed(0)}'; // Approximate
-      case SummaryPeriod.monthly:
-        return '${(exerciseProvider.totalCaloriesBurned * 30).toStringAsFixed(0)}'; // Approximate
-    }
-  }
-
-  String _getTotalExerciseTime(List<dynamic> exercises) {
-    final totalMinutes = exercises.fold<int>(
-      0,
-      (sum, exercise) => sum + (exercise.duration ?? 0),
-    );
-    
-    if (totalMinutes < 60) {
-      return '${totalMinutes} min';
-    } else {
-      final hours = totalMinutes ~/ 60;
-      final minutes = totalMinutes % 60;
-      return minutes > 0 ? '${hours}h ${minutes}m' : '${hours}h';
-    }
   }
 }
