@@ -62,13 +62,17 @@ class _SummaryScreenState extends State<SummaryScreen> {
                         isExporting: _isExporting,
                       ),
                       
-                      const SizedBox(height: 16), // Reduced spacing
+                      const SizedBox(height: 16),
                       
                       // Main Summary Content (Wrapped for Export)
+                      // The RepaintBoundary is crucial for capturing the widget
                       RepaintBoundary(
                         key: _summaryKey,
-                        child: SummaryContentWidget(
-                          period: _currentPeriod,
+                        child: Container(
+                          color: AppTheme.secondaryBeige, // Ensure background color
+                          child: SummaryContentWidget(
+                            period: _currentPeriod,
+                          ),
                         ),
                       ),
                       
@@ -84,13 +88,44 @@ class _SummaryScreenState extends State<SummaryScreen> {
     );
   }
 
-  /// Simplified export handler - direct save with feedback
+  /// Enhanced export handler with better error handling and user feedback
   Future<void> _handleExport() async {
+    if (_isExporting) return; // Prevent multiple simultaneous exports
+    
     setState(() {
       _isExporting = true;
     });
 
     try {
+      // Show immediate feedback to user
+      _showInfoMessage('Preparing export...');
+      
+      // Small delay to ensure UI updates
+      await Future.delayed(const Duration(milliseconds: 200));
+      
+      // Ensure the widget is fully rendered
+      final context = _summaryKey.currentContext;
+      if (context == null) {
+        debugPrint('❌ Export failed: Widget context not found');
+        if (mounted) {
+          _showErrorMessage('Widget not ready for export. Please try again.');
+        }
+        return;
+      }
+      
+      // Check if widget is visible and rendered
+      final renderObject = context.findRenderObject();
+      if (renderObject == null || !renderObject.attached) {
+        debugPrint('❌ Export failed: Widget not rendered');
+        if (mounted) {
+          _showErrorMessage('Widget not visible. Please ensure the summary is fully loaded.');
+        }
+        return;
+      }
+
+      debugPrint('🔄 Starting export with key: ${_summaryKey.toString()}');
+      debugPrint('📊 Current period: ${_currentPeriod.name}');
+      
       // Direct export to device storage
       final success = await ExportHelper.exportSummary(
         _summaryKey,
@@ -99,14 +134,15 @@ class _SummaryScreenState extends State<SummaryScreen> {
 
       if (mounted) {
         if (success) {
-          _showSuccessMessage('Summary saved to device storage!');
+          _showSuccessMessage('Summary exported successfully!');
         } else {
-          _showErrorMessage('Failed to export summary. Please try again.');
+          _showErrorMessage('Failed to export summary. Please check permissions and try again.');
         }
       }
     } catch (e) {
+      debugPrint('❌ Export exception: $e');
       if (mounted) {
-        _showErrorMessage('Export error: Please try again.');
+        _showErrorMessage('Export error: ${e.toString()}');
       }
     } finally {
       if (mounted) {
@@ -117,8 +153,38 @@ class _SummaryScreenState extends State<SummaryScreen> {
     }
   }
 
+  /// Show info message during export process
+  void _showInfoMessage(String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(message),
+          ],
+        ),
+        backgroundColor: Colors.blue[600],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   /// Show success message with optional "View Saved" action
   void _showSuccessMessage(String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -140,20 +206,32 @@ class _SummaryScreenState extends State<SummaryScreen> {
             ExportHelper.showSavedFiles(context);
           },
         ),
-        duration: const Duration(seconds: 4),
+        duration: const Duration(seconds: 5),
       ),
     );
   }
 
-  /// Show error message
+  /// Show error message with helpful information
   void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.error_outline, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Text(message),
+            Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text(message)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Tip: Ensure app has storage permissions',
+              style: TextStyle(fontSize: 12, color: Colors.white70),
+            ),
           ],
         ),
         backgroundColor: Colors.red[600],
@@ -161,7 +239,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 4),
       ),
     );
   }
