@@ -2,17 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Photo Library permissions for export functionality -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to your photo library to save exported summaries and select photos.</string>
+	
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>This app saves exported summaries to your photo library.</string>
-
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs access to your photo library to save and select photos.</string>
-
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs access to save and access photos in your gallery</string>
 	
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs access to photo library to save exported summaries.</string>
+	<!-- Camera permissions -->
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to take photos of food for calorie tracking.</string>
+	
+	<!-- App configuration -->
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -37,10 +38,6 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSCameraUsageDescription</key>
-	<string>This app needs camera access to take photos</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs access to save photos to your gallery</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
