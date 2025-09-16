@@ -48,7 +48,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      const SizedBox(height: 10), // Small top padding
+                      const SizedBox(height: 10),
                       
                       // Period Switcher + Export Controls
                       SummaryControlsWidget(
@@ -65,11 +65,10 @@ class _SummaryScreenState extends State<SummaryScreen> {
                       const SizedBox(height: 16),
                       
                       // Main Summary Content (Wrapped for Export)
-                      // The RepaintBoundary is crucial for capturing the widget
                       RepaintBoundary(
                         key: _summaryKey,
                         child: Container(
-                          color: AppTheme.secondaryBeige, // Ensure background color
+                          color: AppTheme.secondaryBeige,
                           child: SummaryContentWidget(
                             period: _currentPeriod,
                           ),
@@ -88,45 +87,22 @@ class _SummaryScreenState extends State<SummaryScreen> {
     );
   }
 
-  /// Enhanced export handler with better error handling and user feedback
+  /// Handle export with clean user feedback
   Future<void> _handleExport() async {
-    if (_isExporting) return; // Prevent multiple simultaneous exports
+    if (_isExporting) return;
     
     setState(() {
       _isExporting = true;
     });
 
     try {
-      // Show immediate feedback to user
-      _showInfoMessage('Preparing export...');
+      // Show export progress
+      _showMessage('Exporting summary...', isLoading: true);
       
-      // Small delay to ensure UI updates
-      await Future.delayed(const Duration(milliseconds: 200));
+      // Small delay for UI feedback
+      await Future.delayed(const Duration(milliseconds: 300));
       
-      // Ensure the widget is fully rendered
-      final context = _summaryKey.currentContext;
-      if (context == null) {
-        debugPrint('❌ Export failed: Widget context not found');
-        if (mounted) {
-          _showErrorMessage('Widget not ready for export. Please try again.');
-        }
-        return;
-      }
-      
-      // Check if widget is visible and rendered
-      final renderObject = context.findRenderObject();
-      if (renderObject == null || !renderObject.attached) {
-        debugPrint('❌ Export failed: Widget not rendered');
-        if (mounted) {
-          _showErrorMessage('Widget not visible. Please ensure the summary is fully loaded.');
-        }
-        return;
-      }
-
-      debugPrint('🔄 Starting export with key: ${_summaryKey.toString()}');
-      debugPrint('📊 Current period: ${_currentPeriod.name}');
-      
-      // Direct export to device storage
+      // Export the summary
       final success = await ExportHelper.exportSummary(
         _summaryKey,
         _currentPeriod,
@@ -134,15 +110,15 @@ class _SummaryScreenState extends State<SummaryScreen> {
 
       if (mounted) {
         if (success) {
-          _showSuccessMessage('Summary exported successfully!');
+          _showMessage('Summary saved to Photos! 📸', isSuccess: true);
         } else {
-          _showErrorMessage('Failed to export summary. Please check permissions and try again.');
+          _showMessage('Export failed. Please try again.', isError: true);
         }
       }
+
     } catch (e) {
-      debugPrint('❌ Export exception: $e');
       if (mounted) {
-        _showErrorMessage('Export error: ${e.toString()}');
+        _showMessage('Export error occurred. Please try again.', isError: true);
       }
     } finally {
       if (mounted) {
@@ -153,93 +129,77 @@ class _SummaryScreenState extends State<SummaryScreen> {
     }
   }
 
-  /// Show info message during export process
-  void _showInfoMessage(String message) {
+  /// Unified message display method
+  void _showMessage(String message, {
+    bool isLoading = false,
+    bool isSuccess = false,
+    bool isError = false,
+  }) {
+    if (!mounted) return;
+    
     ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(message),
-          ],
-        ),
-        backgroundColor: Colors.blue[600],
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
+    
+    Color backgroundColor;
+    Widget icon;
+    Duration duration;
+    SnackBarAction? action;
 
-  /// Show success message with optional "View Saved" action
-  void _showSuccessMessage(String message) {
-    ScaffoldMessenger.of(context).clearSnackBars();
+    if (isLoading) {
+      backgroundColor = Colors.blue[600]!;
+      icon = const SizedBox(
+        width: 16,
+        height: 16,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        ),
+      );
+      duration = const Duration(seconds: 2);
+    } else if (isSuccess) {
+      backgroundColor = Colors.green[600]!;
+      icon = const Icon(Icons.check_circle, color: Colors.white, size: 20);
+      duration = const Duration(seconds: 3);
+      action = SnackBarAction(
+        label: 'View',
+        textColor: Colors.white,
+        onPressed: () {
+          // iOS will handle opening Photos
+        },
+      );
+    } else if (isError) {
+      backgroundColor = Colors.red[600]!;
+      icon = const Icon(Icons.error_outline, color: Colors.white, size: 20);
+      duration = const Duration(seconds: 4);
+      action = SnackBarAction(
+        label: 'Retry',
+        textColor: Colors.white,
+        onPressed: () {
+          ScaffoldMessenger.of(context).clearSnackBars();
+          _handleExport();
+        },
+      );
+    } else {
+      backgroundColor = Colors.grey[600]!;
+      icon = const Icon(Icons.info_outline, color: Colors.white, size: 20);
+      duration = const Duration(seconds: 2);
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
+            icon,
+            const SizedBox(width: 12),
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: Colors.green[600],
+        backgroundColor: backgroundColor,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
-        action: SnackBarAction(
-          label: 'View Saved',
-          textColor: Colors.white,
-          onPressed: () {
-            ExportHelper.showSavedFiles(context);
-          },
-        ),
-        duration: const Duration(seconds: 5),
-      ),
-    );
-  }
-
-  /// Show error message with helpful information
-  void _showErrorMessage(String message) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white, size: 20),
-                const SizedBox(width: 8),
-                Expanded(child: Text(message)),
-              ],
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Tip: Ensure app has storage permissions',
-              style: TextStyle(fontSize: 12, color: Colors.white70),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.red[600],
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        duration: const Duration(seconds: 4),
+        duration: duration,
+        action: action,
       ),
     );
   }
