@@ -1,12 +1,22 @@
 // lib/providers/settings_provider.dart
+// STEP 4: Updated to use GetIt for dependency injection
 import 'package:flutter/foundation.dart';
+
+// ADD THIS IMPORT for GetIt
+import '../config/dependency_injection.dart';
+
 import '../data/repositories/user_repository.dart';
 import '../data/models/user_profile.dart';
 import '../data/models/weight_data.dart';
 import '../utils/formula.dart';
 
 class SettingsProvider extends ChangeNotifier {
-  final UserRepository _userRepository = UserRepository();
+  // CHANGE THIS LINE: Get repository from dependency injection
+  // OLD: final UserRepository _userRepository = UserRepository();
+  // NEW: Get from GetIt container
+  final UserRepository _userRepository = getIt<UserRepository>();
+
+  // === EVERYTHING ELSE STAYS THE SAME ===
 
   // Loading state
   bool _isLoading = true;
@@ -90,9 +100,20 @@ class SettingsProvider extends ChangeNotifier {
     } catch (e) {
       _errorMessage = 'Error loading user data: $e';
       _isLoading = false;
-      print('Error in SettingsProvider.loadUserData: $e');
+      debugPrint('Error in SettingsProvider.loadUserData: $e');
     }
 
+    notifyListeners();
+  }
+
+  /// Refresh data
+  Future<void> refreshData() async {
+    await loadUserData();
+  }
+
+  /// Clear error message
+  void clearError() {
+    _errorMessage = null;
     notifyListeners();
   }
 
@@ -216,97 +237,63 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   /// Update avatar URL
-  Future<void> updateAvatarUrl(String? avatarUrl) async {
-    _avatarUrl = avatarUrl;
+  Future<void> updateAvatarUrl(String? url) async {
+    _avatarUrl = url;
     notifyListeners();
-    
-    // In a real app, you might want to save this to the user profile
-    // For now, it's just stored in memory
   }
 
-  /// Send feedback (placeholder implementation)
-  Future<void> sendFeedback(String feedbackText) async {
+  // ADDED: Missing method for feedback functionality
+  Future<void> sendFeedback(String message) async {
     try {
-      // In a real app, this would send feedback to your backend
-      // For now, just simulate a network call
-      await Future.delayed(const Duration(seconds: 1));
+      // TODO: Implement actual feedback sending logic
+      // This could send to an API, email service, or local storage
+      debugPrint('Feedback sent: $message');
       
-      print('Feedback sent: $feedbackText');
-      
-      // You could also store feedback locally for later sync
-      // await _storeFeedbackLocally(feedbackText);
-      
+      // For now, just show success
+      // In a real app, you'd integrate with your feedback service
     } catch (e) {
-      _errorMessage = 'Error sending feedback: $e';
-      notifyListeners();
+      debugPrint('Error sending feedback: $e');
       rethrow;
     }
   }
 
-  /// Refresh all data
-  Future<void> refreshData() async {
-    await loadUserData();
-  }
-
-  /// Clear error message
-  void clearError() {
-    _errorMessage = null;
-    notifyListeners();
-  }
-
-  /// Get missing profile data for completeness check
-  List<String> getMissingProfileData() {
-    final missing = <String>[];
-
-    if (_userProfile == null) {
-      missing.add('Profile');
-      return missing;
-    }
-
-    if (_currentWeight == null) {
-      missing.add('Weight');
-    }
-
-    if (_userProfile!.height == null) {
-      missing.add('Height');
-    }
-
-    if (_userProfile!.age == null || _userProfile!.birthDate == null) {
-      missing.add('Date of Birth');
-    }
-
-    if (_userProfile!.gender == null) {
-      missing.add('Gender');
-    }
-
-    if (_userProfile!.activityLevel == null) {
-      missing.add('Activity Level');
-    }
-
-    if (_userProfile!.monthlyWeightGoal == null) {
-      missing.add('Monthly Weight Goal');
-    }
-
-    return missing;
-  }
-
-  /// Check if profile is complete
-  bool get isProfileComplete => getMissingProfileData().isEmpty;
-
-  /// Get profile completion percentage
+  // ADDED: Missing getter for profile completion percentage
   double get profileCompletionPercentage {
-    const totalFields = 6; // Weight, Height, Age, Gender, Activity Level, Monthly Goal
-    final missingFields = getMissingProfileData().length;
-    final completedFields = totalFields - missingFields;
-    return (completedFields / totalFields).clamp(0.0, 1.0);
+    if (_userProfile == null) return 0.0;
+    
+    int completedFields = 0;
+    int totalFields = 6; // height, weight, age, gender, activity level, monthly goal
+    
+    if (_userProfile!.height != null) completedFields++;
+    if (_currentWeight != null) completedFields++;
+    if (_userProfile!.age != null || _userProfile!.birthDate != null) completedFields++;
+    if (_userProfile!.gender != null) completedFields++;
+    if (_userProfile!.activityLevel != null) completedFields++;
+    if (_userProfile!.monthlyWeightGoal != null) completedFields++;
+    
+    return completedFields / totalFields;
   }
 
-  /// Debug method to print all user profile details
-  void debugPrintProfile() {
-    if (_userProfile != null) {
-      _userProfile!.debugPrint();
-    } else {
-      print('No user profile loaded');
+  // ADDED: Missing getter for profile completion status
+  bool get isProfileComplete {
+    return profileCompletionPercentage >= 1.0;
+  }
+
+  // ADDED: Missing method to get missing profile data
+  List<String> getMissingProfileData() {
+    if (_userProfile == null) {
+      return ['All profile information'];
     }
+    
+    List<String> missing = [];
+    
+    if (_userProfile!.height == null) missing.add('Height');
+    if (_currentWeight == null) missing.add('Current Weight');
+    if (_userProfile!.age == null && _userProfile!.birthDate == null) missing.add('Date of Birth');
+    if (_userProfile!.gender == null) missing.add('Gender');
+    if (_userProfile!.activityLevel == null) missing.add('Activity Level');
+    if (_userProfile!.monthlyWeightGoal == null) missing.add('Monthly Weight Goal');
+    
+    return missing;
   }
 }

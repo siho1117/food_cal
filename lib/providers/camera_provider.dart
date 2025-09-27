@@ -1,14 +1,26 @@
-// lib/providers/camera_provider.dart - REMOVE DEBUG PRINTS
+// lib/providers/camera_provider.dart
+// STEP 4: Updated to use GetIt for dependency injection
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+
+// ADD THIS IMPORT for GetIt
+import '../config/dependency_injection.dart';
+
 import '../data/repositories/food_repository.dart';
 
 class CameraProvider extends ChangeNotifier {
   final ImagePicker _picker = ImagePicker();
-  final FoodRepository _foodRepository = FoodRepository();
+  
+  // CHANGE THIS LINE: Get repository from dependency injection
+  // OLD: final FoodRepository _foodRepository = FoodRepository();
+  // NEW: Get from GetIt container
+  final FoodRepository _foodRepository = getIt<FoodRepository>();
+
+  // === EVERYTHING ELSE STAYS THE SAME ===
 
   // Loading state
   bool _isLoading = false;
@@ -81,9 +93,6 @@ class CameraProvider extends ChangeNotifier {
         }
         return;
       }
-
-      // REMOVED: Excessive debug workflow that was causing performance issues
-      // The debug methods were printing hundreds of log entries after every photo
 
       // Step 5: Navigate to home page and show success
       if (context.mounted) {

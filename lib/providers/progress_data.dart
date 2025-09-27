@@ -1,5 +1,10 @@
-// lib/widgets/progress/progress_data.dart
+// lib/providers/progress_data.dart
+// STEP 5: Updated to use GetIt for dependency injection
 import 'package:flutter/foundation.dart';
+
+// ADD THIS IMPORT for GetIt
+import '../config/dependency_injection.dart';
+
 import '../data/repositories/user_repository.dart';
 import '../data/models/user_profile.dart';
 import '../data/models/weight_data.dart';
@@ -8,7 +13,12 @@ import '../utils/formula.dart';
 /// A data provider class that manages progress screen data
 /// Uses ChangeNotifier to inform widgets when data changes
 class ProgressData extends ChangeNotifier {
-  final UserRepository _userRepository = UserRepository();
+  // CHANGE THIS LINE: Get repository from dependency injection
+  // OLD: final UserRepository _userRepository = UserRepository();
+  // NEW: Get from GetIt container
+  final UserRepository _userRepository = getIt<UserRepository>();
+
+  // === EVERYTHING ELSE STAYS THE SAME ===
   
   // User data
   UserProfile? _userProfile;
@@ -83,17 +93,17 @@ class ProgressData extends ChangeNotifier {
       double? tdee;
       Map<String, int> calorieGoals = {};
       
-      if (userProfile?.height != null && currentWeight != null) {
+      if (userProfile != null && currentWeight != null && userProfile.height != null) {
         // Calculate BMI
         bmi = Formula.calculateBMI(
-          height: userProfile!.height,
+          height: userProfile.height,
           weight: currentWeight,
         );
         
         if (bmi != null) {
           bmiClassification = Formula.getBMIClassification(bmi);
           
-          // Calculate body fat percentage based on BMI
+          // Calculate body fat percentage
           bodyFatValue = Formula.calculateBodyFat(
             bmi: bmi,
             age: userProfile.age,
@@ -102,51 +112,40 @@ class ProgressData extends ChangeNotifier {
           
           if (bodyFatValue != null) {
             bodyFatClassification = Formula.getBodyFatClassification(
-              bodyFatValue, 
+              bodyFatValue,
               userProfile.gender,
             );
           }
         }
         
-        // Calculate BMR and TDEE if we have all the necessary data
-        if (userProfile.age != null && userProfile.gender != null) {
-          // Calculate BMR
-          bmr = Formula.calculateBMR(
-            weight: currentWeight,
-            height: userProfile.height,
-            age: userProfile.age,
-            gender: userProfile.gender,
-          );
+        // Calculate BMR and TDEE
+        bmr = Formula.calculateBMR(
+          weight: currentWeight,
+          height: userProfile.height,
+          age: userProfile.age,
+          gender: userProfile.gender,
+        );
+        
+        if (bmr != null && userProfile.activityLevel != null) {
+          tdee = bmr * userProfile.activityLevel!;
           
-          if (bmr != null) {
-            // Calculate TDEE
-            final activityLevel = userProfile.activityLevel ?? 1.2;
-            tdee = bmr * activityLevel;
-            
-            // Calculate calorie targets
-            final maintenance = tdee.round();
-            calorieGoals = {
-              'maintain': maintenance,
-              'lose': (maintenance - 500).round(),
-              'lose_mild': (maintenance - 250).round(),
-              'gain': (maintenance + 500).round(),
-            };
-          }
+          // Calculate different calorie goals
+          calorieGoals = Formula.calculateDailyCalorieNeeds(
+            profile: userProfile,
+            currentWeight: currentWeight,
+          );
         }
       }
       
-      // Update the state with loaded and calculated data
+      // Update all instance variables
       _userProfile = userProfile;
       _currentWeight = currentWeight;
       _isMetric = isMetric;
       _weightHistory = weightHistory;
-      
       _bmiValue = bmi;
       _bmiClassification = bmiClassification;
-      
       _bodyFatValue = bodyFatValue;
       _bodyFatClassification = bodyFatClassification;
-      
       _bmrValue = bmr;
       _tdeeValue = tdee;
       _calorieGoals = calorieGoals;
@@ -154,11 +153,11 @@ class ProgressData extends ChangeNotifier {
       _isLoading = false;
       _errorMessage = null;
     } catch (e) {
-      _errorMessage = 'Error loading data: $e';
+      _errorMessage = 'Error loading progress data: $e';
       _isLoading = false;
+      debugPrint('Error in ProgressData.loadUserData: $e');
     }
-    
-    // Notify UI of changes
+
     notifyListeners();
   }
   
@@ -233,5 +232,18 @@ class ProgressData extends ChangeNotifier {
   /// Manually refresh all data
   Future<void> refreshData() async {
     await loadUserData();
+  }
+
+  /// Clear error message
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
+
+  /// Dispose method to clean up
+  @override
+  void dispose() {
+    // Clean up any resources if needed
+    super.dispose();
   }
 }

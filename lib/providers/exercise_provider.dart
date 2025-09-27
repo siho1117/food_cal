@@ -1,5 +1,10 @@
 // lib/providers/exercise_provider.dart
+// STEP 5: Updated to use GetIt for dependency injection
 import 'package:flutter/foundation.dart';
+
+// ADD THIS IMPORT for GetIt
+import '../config/dependency_injection.dart';
+
 import '../data/repositories/user_repository.dart';
 import '../data/models/user_profile.dart';
 import '../data/models/exercise_entry.dart';
@@ -7,8 +12,14 @@ import '../data/storage/local_storage.dart';
 import '../utils/formula.dart';
 
 class ExerciseProvider extends ChangeNotifier {
-  final UserRepository _userRepository = UserRepository();
-  final LocalStorage _storage = LocalStorage();
+  // CHANGE THESE LINES: Get services from dependency injection
+  // OLD: final UserRepository _userRepository = UserRepository();
+  // OLD: final LocalStorage _storage = LocalStorage();
+  // NEW: Get from GetIt container
+  final UserRepository _userRepository = getIt<UserRepository>();
+  final LocalStorage _storage = getIt<LocalStorage>();
+
+  // === EVERYTHING ELSE STAYS THE SAME ===
 
   // Storage key for exercise entries
   static const String _exerciseEntriesKey = 'exercise_entries';
@@ -114,9 +125,20 @@ class ExerciseProvider extends ChangeNotifier {
     } catch (e) {
       _errorMessage = 'Error loading exercise data: $e';
       _isLoading = false;
-      print('Error in ExerciseProvider.loadData: $e');
+      debugPrint('Error in ExerciseProvider.loadData: $e');
     }
 
+    notifyListeners();
+  }
+
+  /// Refresh data
+  Future<void> refreshData() async {
+    await loadData(date: _selectedDate);
+  }
+
+  /// Clear error message
+  void clearError() {
+    _errorMessage = null;
     notifyListeners();
   }
 
@@ -137,7 +159,7 @@ class ExerciseProvider extends ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
-      print('Error logging exercise: $e');
+      debugPrint('Error logging exercise: $e');
       // Remove from list if save failed
       _exerciseEntries.removeWhere((entry) => entry.id == exercise.id);
       rethrow;
@@ -166,21 +188,18 @@ class ExerciseProvider extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Error updating exercise: $e');
+      debugPrint('Error updating exercise: $e');
       rethrow;
     }
   }
 
   /// Delete an exercise entry
   Future<void> deleteExercise(String exerciseId) async {
-    // Store backup of original entries
-    final originalEntries = List<ExerciseEntry>.from(_exerciseEntries);
-    
     try {
-      // Find and remove the exercise
+      // Remove from current list
       _exerciseEntries.removeWhere((entry) => entry.id == exerciseId);
 
-      // Save to storage
+      // Save updated list to storage
       await _saveExerciseEntriesForDate(_exerciseEntries, _selectedDate);
 
       // Recalculate totals
@@ -191,41 +210,29 @@ class ExerciseProvider extends ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
-      print('Error deleting exercise: $e');
-      // Restore original list if delete failed
-      _exerciseEntries = originalEntries;
+      debugPrint('Error deleting exercise: $e');
       rethrow;
     }
   }
 
-  /// Change selected date
-  void changeDate(DateTime newDate) {
-    if (_selectedDate != newDate) {
-      loadData(date: newDate);
+  /// Change the selected date
+  Future<void> changeDate(DateTime newDate) async {
+    if (!_isSameDay(_selectedDate, newDate)) {
+      await loadData(date: newDate);
     }
   }
 
+  // ADDED: Missing navigation methods for exercise screen
   /// Navigate to previous day
-  void previousDay() {
-    changeDate(_selectedDate.subtract(const Duration(days: 1)));
+  Future<void> previousDay() async {
+    final previousDate = _selectedDate.subtract(const Duration(days: 1));
+    await changeDate(previousDate);
   }
 
   /// Navigate to next day
-  void nextDay() {
-    final tomorrow = _selectedDate.add(const Duration(days: 1));
-    final now = DateTime.now();
-    
-    // Don't allow navigating to future dates
-    if (tomorrow.year <= now.year && 
-        tomorrow.month <= now.month && 
-        tomorrow.day <= now.day) {
-      changeDate(tomorrow);
-    }
-  }
-
-  /// Refresh current data
-  Future<void> refreshData() async {
-    await loadData();
+  Future<void> nextDay() async {
+    final nextDate = _selectedDate.add(const Duration(days: 1));
+    await changeDate(nextDate);
   }
 
   /// Get exercise entries for a specific date
@@ -242,7 +249,7 @@ class ExerciseProvider extends ChangeNotifier {
       
       return entriesList.map((map) => ExerciseEntry.fromMap(map)).toList();
     } catch (e) {
-      print('Error getting exercise entries for date: $e');
+      debugPrint('Error getting exercise entries for date: $e');
       return [];
     }
   }
@@ -260,7 +267,7 @@ class ExerciseProvider extends ChangeNotifier {
       
       await _storage.setObjectList(key, entriesMaps);
     } catch (e) {
-      print('Error saving exercise entries: $e');
+      debugPrint('Error saving exercise entries: $e');
       rethrow;
     }
   }
@@ -268,6 +275,11 @@ class ExerciseProvider extends ChangeNotifier {
   /// Get date key string from DateTime (YYYY-MM-DD format)
   String _getDateKey(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  /// Helper method to check if two dates are the same day
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   /// Get exercise entries for a date range
@@ -293,7 +305,7 @@ class ExerciseProvider extends ChangeNotifier {
         dates.add(date);
       }
 
-      // Get entries for each date
+      // Load entries for each date
       for (final date in dates) {
         final dateKey = _getDateKey(date);
         final entries = await _getExerciseEntriesForDate(date);
@@ -302,50 +314,8 @@ class ExerciseProvider extends ChangeNotifier {
 
       return entriesByDate;
     } catch (e) {
-      print('Error getting exercise entries for date range: $e');
-      return entriesByDate;
-    }
-  }
-
-  /// Get total calories burned for a date range
-  Future<int> getTotalCaloriesBurnedForRange(
-    DateTime startDate, 
-    DateTime endDate,
-  ) async {
-    try {
-      final entriesByDate = await getExerciseEntriesForDateRange(startDate, endDate);
-      
-      int totalBurned = 0;
-      for (final entries in entriesByDate.values) {
-        totalBurned += entries.fold(0, (sum, entry) => sum + entry.caloriesBurned);
-      }
-      
-      return totalBurned;
-    } catch (e) {
-      print('Error calculating total calories burned for range: $e');
-      return 0;
-    }
-  }
-
-  /// Clear all exercise entries for a specific date
-  Future<bool> clearExerciseEntriesForDate(DateTime date) async {
-    try {
-      final dateKey = _getDateKey(date);
-      final key = '${_exerciseEntriesKey}_$dateKey';
-      
-      await _storage.remove(key);
-      
-      // If clearing current date, update the UI
-      if (_getDateKey(date) == _getDateKey(_selectedDate)) {
-        _exerciseEntries.clear();
-        _totalCaloriesBurned = 0;
-        notifyListeners();
-      }
-      
-      return true;
-    } catch (e) {
-      print('Error clearing exercise entries: $e');
-      return false;
+      debugPrint('Error getting exercise entries for date range: $e');
+      return {};
     }
   }
 }

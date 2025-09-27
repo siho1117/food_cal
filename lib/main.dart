@@ -1,38 +1,62 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // For SystemChrome
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+// App configuration
 import 'config/design_system/theme.dart';
+import 'config/dependency_injection.dart';
+
+// Screens
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/progress_screen.dart' as progress;
 import 'screens/camera_screen.dart';
 import 'screens/exercise_screen.dart' as exercise;
 import 'screens/settings_screen.dart';
-import 'screens/summary_screen.dart';  // ADDED: Import SummaryScreen
+import 'screens/summary_screen.dart';
+
+// Widgets
 import 'widgets/custom_bottom_nav.dart';
 import 'widgets/custom_app_bar.dart';
-import 'data/services/api_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-// Load environment variables before the app starts
 Future<void> main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set preferred orientations to portrait only - most important line for fixing orientation issues!
+  // CRITICAL: Lock app to portrait mode only - prevents landscape rotation
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
   ]);
 
-  // Load .env file
-  await dotenv.load();
+  try {
+    // Load .env file with error handling
+    await dotenv.load(fileName: '.env');
+    debugPrint('✅ Environment file loaded successfully');
+  } catch (e) {
+    debugPrint('⚠️ Warning: Could not load .env file: $e');
+    // Continue execution - app should work without .env in production
+  }
 
-  // Initialize SharedPreferences
-  await SharedPreferences.getInstance();
+  try {
+    // Initialize SharedPreferences
+    await SharedPreferences.getInstance();
+    debugPrint('✅ SharedPreferences initialized successfully');
+  } catch (e) {
+    debugPrint('❌ Error initializing SharedPreferences: $e');
+    // This is more critical - you might want to show an error screen
+  }
 
-  // Pre-initialize the API service singleton
-  FoodApiService();
+  try {
+    // 🚀 SETUP DEPENDENCY INJECTION
+    await setupDependencyInjection();
+    debugPrint('✅ Dependency injection setup complete');
+  } catch (e) {
+    debugPrint('❌ Error setting up dependency injection: $e');
+    // This is critical - the app won't work without DI
+  }
 
   // Run the app
   runApp(const MyApp());
@@ -44,17 +68,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FOOD CAL',
+      title: 'FOOD LLM',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const SplashScreen(),
-      // Define routes for navigation
       routes: {
         '/home': (context) => const MainApp(),
         '/settings': (context) => const SettingsScreen(),
         '/progress': (context) => const progress.ProgressScreen(),
         '/exercise': (context) => const exercise.ExerciseScreen(),
-        // Camera route removed - handled with transparent overlay
       },
     );
   }
@@ -69,7 +91,7 @@ class MainApp extends StatefulWidget {
 
 class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
-  bool _isCameraOverlayOpen = false; // Track camera overlay state
+  bool _isCameraOverlayOpen = false;
   late AnimationController _animationController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -83,13 +105,13 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       duration: const Duration(milliseconds: 500),
     );
 
-    // Initialize screens - Replace SettingsScreen with SummaryScreen
+    // Initialize screens
     _screens = [
       const HomeScreen(),                    // index 0
       const progress.ProgressScreen(),       // index 1
-      Container(),                           // index 2 - placeholder for camera (never used)
+      Container(),                           // index 2 - camera placeholder
       const exercise.ExerciseScreen(),       // index 3
-      const SummaryScreen(),                 // index 4 - SummaryScreen instead of SettingsScreen
+      const SummaryScreen(),                 // index 4 - Summary instead of Settings
     ];
   }
 
@@ -100,78 +122,65 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   }
 
   void _onItemTapped(int index) {
-    // Handle camera tap (index 2) with transparent navigation
     if (index == 2) {
       _navigateToTransparentCamera();
-      return; // DON'T change _currentIndex - this is the key!
+      return;
     }
-
-    // FIXED: For all tabs including Settings (index 4), change _currentIndex normally
-    // The Settings tab will now show SummaryScreen content
-    _animationController.reset();
-    _animationController.forward();
 
     setState(() {
       _currentIndex = index;
-      _isCameraOverlayOpen = false; // Ensure camera overlay state is cleared
-    });
-  }
-
-  // Callback function to handle camera dismissal
-  void _onCameraDismissed() {
-    setState(() {
-      _isCameraOverlayOpen = false; // Reset camera overlay state immediately
     });
   }
 
   void _navigateToTransparentCamera() {
     setState(() {
-      _isCameraOverlayOpen = true; // Set camera overlay as open
+      _isCameraOverlayOpen = true;
     });
-
+    
     Navigator.of(context).push(
       PageRouteBuilder(
-        opaque: false, // This makes the route transparent
-        barrierDismissible: true, // Allow dismissing by tapping outside
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return CameraScreen(
-            onDismissed: _onCameraDismissed, // Pass the callback
-          );
-        },
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
-        },
+        pageBuilder: (context, animation, secondaryAnimation) => CameraScreen(
+          onDismissed: () {
+            // This callback will be called when the camera screen is dismissed
+            setState(() {
+              _isCameraOverlayOpen = false;
+            });
+          },
+        ),
+        opaque: false, // Transparent background
         transitionDuration: const Duration(milliseconds: 300),
-        reverseTransitionDuration: const Duration(milliseconds: 250),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
       ),
-    );
+    ).then((_) {
+      // Reset camera overlay state when returning (backup)
+      if (mounted) {
+        setState(() {
+          _isCameraOverlayOpen = false;
+        });
+      }
+    });
   }
 
-  // Navigate to settings as overlay (only used by top app bar settings icon)
   void _navigateToSettings() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const SettingsScreen(showBackButton: true),
+        builder: (context) => const SettingsScreen(),
       ),
     );
   }
-  
-  // Method to get the current page subtitle based on the active tab
+
   String _getCurrentPageSubtitle() {
     switch (_currentIndex) {
       case 0:
-        return 'Daily Summary';
+        return 'Daily Nutrition';
       case 1:
-        return 'Health Metrics';
-      case 2:
-        return 'Food Recognition'; // Won't be used since camera doesn't change _currentIndex
+        return 'Progress Tracker';
       case 3:
-        return 'Activity Tracker';
+        return 'Exercise Tracker';
       case 4:
-        return 'Analytics Dashboard';  // When Settings tab is active, shows Summary content
+        return 'Analytics Dashboard';
       default:
         return '';
     }
@@ -182,7 +191,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     return Scaffold(
       key: _scaffoldKey,
       appBar: CustomAppBar(
-        onSettingsTap: _navigateToSettings, // Top bar settings navigation (separate from bottom nav)
+        onSettingsTap: _navigateToSettings,
         currentPage: _getCurrentPageSubtitle(),
       ),
       body: AnimatedSwitcher(
@@ -199,12 +208,12 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
             ),
           );
         },
-        child: _screens[_currentIndex], // When _currentIndex = 4, shows SummaryScreen!
+        child: _screens[_currentIndex],
       ),
-      extendBody: true, // Important for curved navigation bar
+      extendBody: true,
       bottomNavigationBar: CustomBottomNav(
         currentIndex: _currentIndex,
-        isCameraOverlayOpen: _isCameraOverlayOpen, // Pass the camera state
+        isCameraOverlayOpen: _isCameraOverlayOpen,
         onTap: _onItemTapped,
         onCameraCapture: null,
       ),

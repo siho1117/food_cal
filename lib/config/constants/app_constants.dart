@@ -58,6 +58,8 @@ class AppConstants {
     'slice',
     'tbsp',
     'tsp',
+    'kg',          // ADDED: Missing from your current file
+    'lb',          // ADDED: Missing from your current file
   ];
 
   static const int maxFoodNameLength = 100;
@@ -119,6 +121,16 @@ class AppConstants {
   static const String favoriteFoodsKey = 'favorite_foods';
   static const String errorLogKey = 'error_log';
 
+  // ADDED: Missing storage keys your code is using
+  static const String userWeightKey = 'user_weight';
+  static const String userHeightKey = 'user_height';
+  static const String userAgeKey = 'user_age';
+  static const String userGenderKey = 'user_gender';
+  static const String isMetricKey = 'is_metric';
+  static const String dailyBudgetKey = 'daily_budget';
+  static const String targetWeightKey = 'target_weight';
+  static const String activityLevelKey = 'activity_level';
+
   // === UI TEXT ===
   static const String appName = 'FOOD LLM';
   
@@ -171,9 +183,56 @@ class AppConstants {
   static const String excellentBudget = '🎯 Excellent budget management!';
 
   // === REGEX PATTERNS ===
-  static const String decimalNumberPattern = r'^\d*\.?\d{0,2}';
+  static const String decimalNumberPattern = r'[0-9.,]';  // FIXED: Your code expects this pattern
   static const String numberOnlyPattern = r'[0-9.]';
   static const String integerOnlyPattern = r'[0-9]';
+
+  // === NUTRITIONAL VALIDATION RANGES ===
+  // ADDED: Missing validation constants your forms are using
+  static const double minCaloriesValue = 0.0;
+  static const double maxCaloriesValue = 9999.0;
+  static const double minNutrientValue = 0.0;
+  static const double maxNutrientValue = 999.0;
+
+  // === API CONSTANTS ===
+  // ADDED: Missing API constants 
+  static const String apiBaseUrl = 'https://api.edamam.com/api/food-database/v2';
+  static const int apiTimeoutSeconds = 30;
+  static const int maxRetryAttempts = 3;
+  static const int dailyQuotaLimit = 100;
+
+  // === BMI CATEGORIES ===
+  // ADDED: Missing BMI constants
+  static const double bmiUnderweight = 18.5;
+  static const double bmiNormal = 24.9;
+  static const double bmiOverweight = 29.9;
+  // Above 30 is obese
+
+  // === ACTIVITY LEVELS ===
+  // ADDED: Missing activity multipliers
+  static const Map<String, double> activityMultipliers = {
+    'Sedentary': 1.2,
+    'Lightly Active': 1.375,
+    'Moderately Active': 1.55,
+    'Very Active': 1.725,
+    'Extremely Active': 1.9,
+  };
+
+  // === DEBOUNCE DURATIONS ===
+  // ADDED: Missing debounce constants
+  static const Duration searchDebounce = Duration(milliseconds: 500);
+  static const Duration apiDebounce = Duration(milliseconds: 1000);
+
+  // === NUTRITIONAL DEFAULTS ===
+  // ADDED: Missing nutritional constants
+  static const double defaultCaloriesPerGram = 4.0; // For carbs/protein
+  static const double fatCaloriesPerGram = 9.0;
+  static const double alcoholCaloriesPerGram = 7.0;
+
+  // === IMAGE CONSTANTS ===
+  // ADDED: Missing image constants
+  static const int maxImageSizeBytes = 5 * 1024 * 1024; // 5MB
+  static const double imageCompressionQuality = 0.8;
 
   // === ASSET PATHS ===
   // Add any asset paths here when you have them

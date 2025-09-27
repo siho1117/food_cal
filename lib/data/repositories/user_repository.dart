@@ -1,13 +1,24 @@
+// lib/data/repositories/user_repository.dart
+// STEP 5: Updated to use GetIt for dependency injection
+import 'package:flutter/foundation.dart';
+
+// ADD THIS IMPORT for GetIt
+import '../../config/dependency_injection.dart';
+
 import '../models/user_profile.dart';
-import '../models/weight_data.dart'; // Changed from weight_entry.dart
+import '../models/weight_data.dart';
 import '../storage/local_storage.dart';
-import '../../utils/formula.dart';
 
 class UserRepository {
   static const String _userProfileKey = 'user_profile';
   static const String _weightEntriesKey = 'weight_entries';
 
-  final LocalStorage _storage = LocalStorage();
+  // CHANGE THIS LINE: Get storage from dependency injection
+  // OLD: final LocalStorage _storage = LocalStorage();
+  // NEW: Get from GetIt container
+  final LocalStorage _storage = getIt<LocalStorage>();
+
+  // === EVERYTHING ELSE STAYS THE SAME ===
 
   // Get the user profile
   Future<UserProfile?> getUserProfile() async {
@@ -18,7 +29,7 @@ class UserRepository {
     try {
       return UserProfile.fromMap(profileMap);
     } catch (e) {
-      print('Error retrieving user profile: $e');
+      debugPrint('Error retrieving user profile: $e');
       return null;
     }
   }
@@ -28,7 +39,7 @@ class UserRepository {
     try {
       return await _storage.setObject(_userProfileKey, profile.toMap());
     } catch (e) {
-      print('Error saving user profile: $e');
+      debugPrint('Error saving user profile: $e');
       return false;
     }
   }
@@ -49,175 +60,83 @@ class UserRepository {
   }
 
   // Add a new weight entry
-  Future<bool> addWeightEntry(WeightData entry) async { // Changed from WeightEntry
+  Future<bool> addWeightEntry(WeightData entry) async {
     final entries = await getWeightEntries();
     entries.add(entry);
     return _saveWeightEntries(entries);
   }
 
   // Get all weight entries
-  Future<List<WeightData>> getWeightEntries() async { // Changed from WeightEntry
+  Future<List<WeightData>> getWeightEntries() async {
     final entriesList = await _storage.getObjectList(_weightEntriesKey);
 
-    if (entriesList == null || entriesList.isEmpty) return [];
+    if (entriesList == null || entriesList.isEmpty) {
+      return [];
+    }
 
     try {
-      return entriesList.map((map) => WeightData.fromMap(map)).toList(); // Changed from WeightEntry
+      return entriesList.map((map) => WeightData.fromMap(map)).toList();
     } catch (e) {
-      print('Error retrieving weight entries: $e');
+      debugPrint('Error parsing weight entries: $e');
       return [];
     }
   }
 
-  // Get weight entries within a date range
-  Future<List<WeightData>> getWeightEntriesInRange( // Changed from WeightEntry
-      DateTime startDate, DateTime endDate) async {
-    final entries = await getWeightEntries();
-
-    return entries.where((entry) {
-      return entry.timestamp.isAfter(startDate) &&
-          entry.timestamp.isBefore(endDate.add(const Duration(days: 1)));
-    }).toList();
-  }
-
   // Get the latest weight entry
-  Future<WeightData?> getLatestWeightEntry() async { // Changed from WeightEntry
+  Future<WeightData?> getLatestWeightEntry() async {
     final entries = await getWeightEntries();
-
     if (entries.isEmpty) return null;
 
-    // Sort by timestamp (newest first)
+    // Sort by timestamp descending and return the most recent
     entries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     return entries.first;
   }
 
-  // Delete a weight entry
-  Future<bool> deleteWeightEntry(String id) async {
-    final entries = await getWeightEntries();
-    final filtered = entries.where((entry) => entry.id != id).toList();
-
-    if (filtered.length == entries.length) {
-      // No entry was removed
-      return false;
-    }
-
-    return _saveWeightEntries(filtered);
-  }
-
-  // Internal method to save weight entries
-  Future<bool> _saveWeightEntries(List<WeightData> entries) async { // Changed from WeightEntry
+  // Save weight entries to storage
+  Future<bool> _saveWeightEntries(List<WeightData> entries) async {
     try {
       final entriesMaps = entries.map((entry) => entry.toMap()).toList();
       return await _storage.setObjectList(_weightEntriesKey, entriesMaps);
     } catch (e) {
-      print('Error saving weight entries: $e');
+      debugPrint('Error saving weight entries: $e');
       return false;
     }
   }
 
-  // Calculate BMI using Formula utility
-  Future<double?> calculateBMI() async {
-    final profile = await getUserProfile();
-    final weightEntry = await getLatestWeightEntry();
-
-    if (profile == null || weightEntry == null) {
-      return null;
+  // Delete a specific weight entry
+  Future<bool> deleteWeightEntry(String entryId) async {
+    try {
+      final entries = await getWeightEntries();
+      entries.removeWhere((entry) => entry.id == entryId);
+      return await _saveWeightEntries(entries);
+    } catch (e) {
+      debugPrint('Error deleting weight entry: $e');
+      return false;
     }
-
-    return Formula.calculateBMI(
-      height: profile.height,
-      weight: weightEntry.weight,
-    );
   }
 
-  // Get BMI classification using Formula utility
-  String getBMIClassification(double bmi) {
-    return Formula.getBMIClassification(bmi);
+  // Get weight entries for a specific date range
+  Future<List<WeightData>> getWeightEntriesForDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    final allEntries = await getWeightEntries();
+    
+    return allEntries.where((entry) {
+      return entry.timestamp.isAfter(startDate.subtract(const Duration(days: 1))) &&
+             entry.timestamp.isBefore(endDate.add(const Duration(days: 1)));
+    }).toList();
   }
 
-  // Track weight change over a period
-  Future<double?> getWeightChangeSince(DateTime startDate) async {
-    final entries = await getWeightEntries();
-    return Formula.calculateWeightChange(
-        entries: entries, startDate: startDate);
-  }
-
-  // Calculate progress percentage toward goal weight
-  Future<double> calculateGoalProgress() async {
-    final profile = await getUserProfile();
-    final latestEntry = await getLatestWeightEntry();
-
-    if (profile?.goalWeight == null || latestEntry == null) {
-      return 0.0;
+  // Clear all user data (for testing or reset purposes)
+  Future<bool> clearAllUserData() async {
+    try {
+      await _storage.remove(_userProfileKey);
+      await _storage.remove(_weightEntriesKey);
+      return true;
+    } catch (e) {
+      debugPrint('Error clearing user data: $e');
+      return false;
     }
-
-    return Formula.calculateGoalProgress(
-      currentWeight: latestEntry.weight,
-      targetWeight: profile!.goalWeight,
-    );
-  }
-
-  // Get remaining weight to goal
-  Future<double?> getRemainingWeightToGoal() async {
-    final profile = await getUserProfile();
-    final latestEntry = await getLatestWeightEntry();
-
-    if (profile?.goalWeight == null || latestEntry == null) {
-      return null;
-    }
-
-    return Formula.getRemainingWeightToGoal(
-      currentWeight: latestEntry.weight,
-      targetWeight: profile!.goalWeight,
-    );
-  }
-
-  // Check if this is the first time the user is using the app
-  Future<bool> isFirstTimeUser() async {
-    final profile = await getUserProfile();
-    return profile == null;
-  }
-
-  // Create initial user profile with a first weight entry
-  Future<bool> createInitialProfile({
-    required String name,
-    required int age,
-    required double height,
-    required double weight,
-    required bool isMetric,
-    required String gender,
-    double? goalWeight,
-  }) async {
-    // If not in metric, convert to metric
-    final metricHeight =
-        isMetric ? height : height * 2.54; // Convert inches to cm
-    final metricWeight =
-        isMetric ? weight : weight / 2.20462; // Convert lbs to kg
-    final metricGoalWeight = goalWeight != null
-        ? (isMetric ? goalWeight : goalWeight / 2.20462)
-        : null;
-
-    // Create user profile
-    final userId = DateTime.now().millisecondsSinceEpoch.toString();
-    final profile = UserProfile(
-      id: userId,
-      name: name,
-      age: age,
-      height: metricHeight, // Always store height in cm
-      isMetric: isMetric, // Store user's preferred unit system
-      gender: gender,
-      goalWeight: metricGoalWeight, // Store goal weight if provided
-    );
-
-    // Create weight entry
-    final weightEntry = WeightData.create( // Changed from WeightEntry
-      weight: metricWeight, // Always store weight in kg
-    );
-
-    // Save both
-    final profileSaved = await saveUserProfile(profile);
-    final weightSaved = await addWeightEntry(weightEntry);
-
-    return profileSaved && weightSaved;
   }
 }

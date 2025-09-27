@@ -1,16 +1,15 @@
 // lib/screens/camera_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../config/design_system/theme.dart';
 import '../providers/camera_provider.dart';
 import '../widgets/camera/camera_actions_widget.dart';
 
 class CameraScreen extends StatefulWidget {
-  final VoidCallback onDismissed; // Add callback parameter
+  final VoidCallback onDismissed;
 
   const CameraScreen({
     super.key,
-    required this.onDismissed, // Make it required
+    required this.onDismissed,
   });
 
   @override
@@ -34,10 +33,10 @@ class CameraScreenState extends State<CameraScreen> {
         extendBodyBehindAppBar: true,
         body: GestureDetector(
           // Tap anywhere on background to go back
-          onTap: _handleDismissal, // Use helper method instead of direct Navigator.pop()
+          onTap: _handleDismissal,
           child: Container(
-            // Semi-transparent dark overlay
-            color: Colors.black.withOpacity(0.7),
+            // FIXED: Use withValues instead of deprecated withOpacity
+            color: Colors.black.withValues(alpha: 0.7),
             child: SafeArea(
               child: Column(
                 children: [
@@ -55,7 +54,7 @@ class CameraScreenState extends State<CameraScreen> {
                             color: Colors.white,
                             size: 28,
                           ),
-                          onPressed: _handleDismissal, // Use helper method
+                          onPressed: _handleDismissal,
                         ),
                         // Title
                         const Text(
@@ -86,7 +85,7 @@ class CameraScreenState extends State<CameraScreen> {
                       // Prevent background tap when tapping on buttons area
                       onTap: () {}, // Empty onTap blocks the parent GestureDetector
                       child: CameraActionsWidget(
-                        onDismissed: widget.onDismissed, // Pass callback to actions widget
+                        onDismissed: widget.onDismissed,
                       ),
                     ),
                   ),
