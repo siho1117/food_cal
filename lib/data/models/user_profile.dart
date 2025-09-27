@@ -1,4 +1,5 @@
-// lib/data/models/user_profile.dart - REMOVE DEBUG PRINTS
+// lib/data/models/user_profile.dart
+import 'package:flutter/foundation.dart'; // Added for debugPrint
 
 class UserProfile {
   final String id;
@@ -69,7 +70,6 @@ class UserProfile {
 
   // Convert to map for storage
   Map<String, dynamic> toMap() {
-    // REMOVED: Debug print that was causing excessive logging
     return {
       'id': id,
       'name': name,
@@ -98,8 +98,6 @@ class UserProfile {
       }
     }
 
-    // REMOVED: Debug print that was causing excessive logging
-
     final profile = UserProfile(
       id: map['id'],
       name: map['name'],
@@ -115,27 +113,39 @@ class UserProfile {
       monthlyWeightGoal: map['monthlyWeightGoal'],
     );
 
-    // REMOVED: Auto debug print that was causing excessive logging
-    // Only call debugPrint manually when needed for troubleshooting
-
     return profile;
   }
 
   // Debug method to print all user profile details - USE MANUALLY ONLY
-  void debugPrint() {
-    // Using print for debug method since it's called manually, not automatically
-    print("\n===== USER PROFILE DEBUG INFO =====");
-    print("ID: $id");
-    print("Name: $name");
-    print("Age: $age");
-    print("Height: ${height != null ? '$height cm' : 'Not set'}");
-    print("Gender: ${gender ?? 'Not set'}");
-    print("Is Metric: $isMetric");
-    print("Goal Weight: ${goalWeight != null ? '$goalWeight kg' : 'Not set'}");
-    print("Monthly Weight Goal: ${monthlyWeightGoal != null ? '$monthlyWeightGoal kg' : 'Not set'}");
-    print("Activity Level: ${activityLevel ?? 'Not set'}");
-    print("Birth Date: ${birthDate != null ? birthDate.toString() : 'Not set'}");
-    print("Complete Map: ${toMap()}");
-    print("===================================\n");
+  void debugUserProfile() {
+    // ✅ FIXED: Replace all print statements with debugPrint
+    debugPrint("\n===== USER PROFILE DEBUG INFO =====");
+    debugPrint("ID: $id");
+    debugPrint("Name: $name");
+    debugPrint("Age: $age");
+    debugPrint("Height: ${height != null ? '$height cm' : 'Not set'}");
+    debugPrint("Gender: ${gender ?? 'Not set'}");
+    debugPrint("Is Metric: $isMetric");
+    debugPrint("Goal Weight: ${goalWeight != null ? '$goalWeight kg' : 'Not set'}");
+    debugPrint("Monthly Weight Goal: ${monthlyWeightGoal != null ? '$monthlyWeightGoal kg' : 'Not set'}");
+    debugPrint("Activity Level: ${activityLevel ?? 'Not set'}");
+    debugPrint("Birth Date: ${birthDate != null ? birthDate.toString() : 'Not set'}");
+    debugPrint("Complete Map: ${toMap()}");
+    debugPrint("===================================\n");
   }
+
+  @override
+  String toString() {
+    return 'UserProfile(id: $id, name: $name, age: $age, height: $height, isMetric: $isMetric)';
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UserProfile &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

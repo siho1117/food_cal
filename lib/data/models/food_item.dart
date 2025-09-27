@@ -1,4 +1,5 @@
 // lib/data/models/food_item.dart
+import 'package:flutter/foundation.dart'; // Added for debugPrint
 
 /// Model class representing a food item recognized from an image or added manually
 class FoodItem {
@@ -110,7 +111,8 @@ class FoodItem {
         cost: null, // API won't provide cost, so start with null
       );
     } catch (e) {
-      print('Error parsing food item from API: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error parsing food item from API: $e');
       
       // Return a basic fallback item
       final now = DateTime.now();
@@ -230,79 +232,31 @@ class FoodItem {
   /// Check if this food item has cost information
   bool get hasCost => cost != null && cost! > 0;
 
-  /// Get a summary string that includes cost if available
-  String getSummaryWithCost() {
-    final nutrition = getNutritionForServing();
-    final calories = nutrition['calories']!.round();
-    
-    String summary = '$calories cal';
-    if (hasCost) {
-      summary += ' • ${getFormattedCost()}';
-    }
-    
-    return summary;
-  }
-
-  /// Helper method to extract numeric values from various formats
+  /// Helper method to extract numeric values from API response
   static double? _extractNumericValue(dynamic value) {
     if (value == null) return null;
-    
-    if (value is num) {
-      return value.toDouble();
+    if (value is num) return value.toDouble();
+    if (value is Map && value.containsKey('value')) {
+      return (value['value'] as num?)?.toDouble();
     }
-    
     if (value is String) {
-      // Clean the string and try to parse
-      final cleanValue = value.replaceAll(RegExp(r'[^\d.]'), '');
-      return double.tryParse(cleanValue);
+      return double.tryParse(value);
     }
-    
-    if (value is Map && value.containsKey('amount')) {
-      return _extractNumericValue(value['amount']);
-    }
-    
     return null;
   }
 
-  /// Validate that the food item has all required data
-  bool isValid() {
-    return id.isNotEmpty &&
-        name.isNotEmpty &&
-        calories >= 0 &&
-        proteins >= 0 &&
-        carbs >= 0 &&
-        fats >= 0 &&
-        servingSize > 0 &&
-        servingUnit.isNotEmpty &&
-        (cost == null || cost! >= 0); // Cost can be null or non-negative
-  }
-
-  /// Create a formatted string for display purposes
-  String getDisplayString() {
-    final nutrition = getNutritionForServing();
-    final calories = nutrition['calories']!.round();
-    
-    String display = '$name • ${servingSize.toStringAsFixed(servingSize == servingSize.roundToDouble() ? 0 : 1)} $servingUnit • $calories cal';
-    
-    if (hasCost) {
-      display += ' • ${getFormattedCost()}';
-    }
-    
-    return display;
-  }
-
-  /// Check if two food items are equal (by ID)
   @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is FoodItem && other.id == id;
+  String toString() {
+    return 'FoodItem(id: $id, name: $name, calories: $calories, mealType: $mealType, servingSize: $servingSize $servingUnit)';
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FoodItem &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
 
   @override
   int get hashCode => id.hashCode;
-
-  @override
-  String toString() {
-    return 'FoodItem(id: $id, name: $name, calories: $calories, cost: ${cost ?? 'N/A'})';
-  }
 }
