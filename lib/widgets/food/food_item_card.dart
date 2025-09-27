@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../config/design_system/theme.dart';
 import '../../data/models/food_item.dart';
+import '../../data/services/image_storage_service.dart';
 
 class FoodItemCard extends StatelessWidget {
   final FoodItem foodItem;
@@ -10,11 +11,11 @@ class FoodItemCard extends StatelessWidget {
   final VoidCallback? onDelete;
 
   const FoodItemCard({
-    Key? key,
+    super.key,
     required this.foodItem,
     this.onTap,
     this.onDelete,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,17 +24,14 @@ class FoodItemCard extends StatelessWidget {
 
     // Extract values and log them for debugging
     final calories = nutritionValues['calories']!.round();
-    // Updated to remove decimal places for macronutrients
     final protein = nutritionValues['proteins']!.round().toString();
     final carbs = nutritionValues['carbs']!.round().toString();
     final fat = nutritionValues['fats']!.round().toString();
 
     // Print for debugging
-    print(
-        'FoodItemCard - ${foodItem.name}: calories=$calories, protein=$protein, carbs=$carbs, fat=$fat');
-    print(
-        'Original values - calories: ${foodItem.calories}, proteins: ${foodItem.proteins}, carbs: ${foodItem.carbs}, fats: ${foodItem.fats}');
-    print('Serving size: ${foodItem.servingSize}');
+    debugPrint('FoodItemCard - ${foodItem.name}: calories=$calories, protein=$protein, carbs=$carbs, fat=$fat');
+    debugPrint('Original values - calories: ${foodItem.calories}, proteins: ${foodItem.proteins}, carbs: ${foodItem.carbs}, fats: ${foodItem.fats}');
+    debugPrint('Serving size: ${foodItem.servingSize}');
 
     return Card(
       elevation: 2,
@@ -48,35 +46,49 @@ class FoodItemCard extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              // Food image or icon
+              // FIXED: Food image with proper async loading
               Container(
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withOpacity(0.1),
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: foodItem.imagePath != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          File(foodItem.imagePath!),
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            print('Error loading image: $error');
-                            return const Icon(
-                              Icons.fastfood,
-                              color: AppTheme.primaryBlue,
-                              size: 30,
-                            );
+                        child: FutureBuilder<File?>(
+                          future: _getImageFile(foodItem.imagePath!),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                                  ),
+                                ),
+                              );
+                            }
+                            
+                            if (snapshot.hasData && snapshot.data != null) {
+                              return Image.file(
+                                snapshot.data!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  debugPrint('Error loading image ${foodItem.imagePath}: $error');
+                                  return _buildFallbackIcon();
+                                },
+                              );
+                            }
+                            
+                            return _buildFallbackIcon();
                           },
                         ),
                       )
-                    : const Icon(
-                        Icons.fastfood,
-                        color: AppTheme.primaryBlue,
-                        size: 30,
-                      ),
+                    : _buildFallbackIcon(),
               ),
 
               const SizedBox(width: 12),
@@ -106,19 +118,33 @@ class FoodItemCard extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: _getMealTypeColor(foodItem.mealType)
-                                .withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(10),
+                            color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            _formatMealType(foodItem.mealType),
+                            foodItem.mealType.toUpperCase(),
                             style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: _getMealTypeColor(foodItem.mealType),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryBlue,
                             ),
                           ),
                         ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Nutrition info
+                    Row(
+                      children: [
+                        _buildNutritionChip('🔥', '${calories}cal'),
+                        const SizedBox(width: 8),
+                        _buildNutritionChip('💪', '${protein}g'),
+                        const SizedBox(width: 8),
+                        _buildNutritionChip('🍞', '${carbs}g'),
+                        const SizedBox(width: 8),
+                        _buildNutritionChip('🥑', '${fat}g'),
                       ],
                     ),
 
@@ -128,46 +154,24 @@ class FoodItemCard extends StatelessWidget {
                     Text(
                       '${foodItem.servingSize} ${foodItem.servingUnit}',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         color: Colors.grey[600],
                       ),
-                    ),
-
-                    const SizedBox(height: 6),
-
-                    // Macro info
-                    Row(
-                      children: [
-                        _buildMacroInfo('P', protein, Colors.red),
-                        _buildMacroInfo('C', carbs, Colors.green),
-                        _buildMacroInfo('F', fat, Colors.blue),
-                        const Spacer(),
-                        Text(
-                          '$calories cal',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: AppTheme.primaryBlue,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
               ),
 
-              // Delete button if provided
-              if (onDelete != null) ...[
-                const SizedBox(width: 8),
+              // Delete button
+              if (onDelete != null)
                 IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  color: Colors.grey[600],
                   onPressed: onDelete,
-                  iconSize: 20,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.red,
+                    size: 20,
+                  ),
                 ),
-              ],
             ],
           ),
         ),
@@ -175,24 +179,23 @@ class FoodItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMacroInfo(String label, String value, Color color) {
+  Widget _buildNutritionChip(String emoji, String value) {
     return Container(
-      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 4),
+          Text(emoji, style: const TextStyle(fontSize: 10)),
+          const SizedBox(width: 2),
           Text(
-            '$label: $value g',
+            value,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -200,25 +203,21 @@ class FoodItemCard extends StatelessWidget {
     );
   }
 
-  String _formatMealType(String mealType) {
-    // Capitalize first letter
-    if (mealType.isEmpty) return 'Snack';
-    return mealType.substring(0, 1).toUpperCase() +
-        mealType.substring(1).toLowerCase();
+  Future<File?> _getImageFile(String imagePath) async {
+    try {
+      final ImageStorageService imageService = ImageStorageService();
+      return await imageService.getImageFile(imagePath);
+    } catch (e) {
+      debugPrint('Error getting image file: $e');
+      return null;
+    }
   }
 
-  Color _getMealTypeColor(String mealType) {
-    switch (mealType.toLowerCase()) {
-      case 'breakfast':
-        return Colors.orange;
-      case 'lunch':
-        return Colors.green;
-      case 'dinner':
-        return Colors.indigo;
-      case 'snack':
-        return Colors.purple;
-      default:
-        return Colors.grey;
-    }
+  Widget _buildFallbackIcon() {
+    return Icon(
+      Icons.fastfood,
+      color: AppTheme.primaryBlue,
+      size: 30,
+    );
   }
 }
