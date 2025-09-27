@@ -1,14 +1,16 @@
 // lib/widgets/dialogs/budget_edit_dialog.dart
+// UPDATED VERSION - Now uses AppConstants
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../config/design_system/theme.dart';
 import '../../config/design_system/text_styles.dart';
+import '../../config/constants/app_constants.dart';  // NEW IMPORT
 import '../../providers/home_provider.dart';
 
 class BudgetEditDialog extends StatefulWidget {
   final double currentBudget;
-  final HomeProvider? homeProvider; // Optional for direct provider updates
-  final Function(double)? onBudgetSaved; // Optional callback for manual handling
+  final HomeProvider? homeProvider;
+  final Function(double)? onBudgetSaved;
   final String? title;
   final bool showAdvancedOptions;
 
@@ -33,7 +35,7 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
   void initState() {
     super.initState();
     _budgetController = TextEditingController(
-      text: widget.currentBudget.toStringAsFixed(2),
+      text: widget.currentBudget.toStringAsFixed(AppConstants.maxDecimalPlaces),
     );
   }
 
@@ -46,7 +48,7 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge)),
       title: _buildTitle(),
       content: _buildContent(),
       actions: _buildActions(),
@@ -56,14 +58,14 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
   Widget _buildTitle() {
     return Row(
       children: [
-        const Text('💰', style: TextStyle(fontSize: 20)),
-        const SizedBox(width: 8),
+        const Text('💰', style: TextStyle(fontSize: AppConstants.emojiSize)),
+        const SizedBox(width: AppConstants.spacingSmall),
         Text(
           widget.title ?? 'Set Daily Budget',
           style: AppTextStyles.getSubHeadingStyle().copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.green[700],
-            fontSize: 18,
+            fontSize: AppConstants.fontSizeXLarge,
           ),
         ),
       ],
@@ -76,13 +78,13 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'How much do you want to spend on food per day?',
+          AppConstants.budgetQuestion,
           style: AppTextStyles.getBodyStyle().copyWith(
             color: Colors.grey[600],
-            fontSize: 14,
+            fontSize: AppConstants.fontSizeMedium,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppConstants.spacingMedium),
         
         // Budget input field
         TextField(
@@ -90,52 +92,51 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           autofocus: true,
           inputFormatters: [
-            // FIXED: Complete the regex pattern for decimal numbers
-            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+            FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
           ],
           decoration: InputDecoration(
             labelText: 'Daily Budget',
             prefixText: '\$',
             hintText: '20.00',
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
               borderSide: BorderSide(color: Colors.green[600]!, width: 2),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
               borderSide: const BorderSide(color: Colors.red, width: 2),
             ),
           ),
           onSubmitted: (_) => _handleSave(),
         ),
         
-        const SizedBox(height: 12),
+        const SizedBox(height: AppConstants.spacingMedium),
         
         // Quick preset buttons
         _buildPresetButtons(),
         
-        const SizedBox(height: 12),
+        const SizedBox(height: AppConstants.spacingMedium),
         
         // Helpful tip
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppConstants.paddingMedium),
           decoration: BoxDecoration(
             color: Colors.green[50],
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
             border: Border.all(color: Colors.green[200]!, width: 1),
           ),
           child: Row(
             children: [
-              Icon(Icons.lightbulb_outline, color: Colors.green[600], size: 16),
-              const SizedBox(width: 8),
+              Icon(Icons.lightbulb_outline, color: Colors.green[600], size: AppConstants.iconSizeSmall),
+              const SizedBox(width: AppConstants.spacingSmall),
               Expanded(
                 child: Text(
-                  'Consider your food goals and spending habits',
+                  AppConstants.budgetAdvice,
                   style: AppTextStyles.getBodyStyle().copyWith(
-                    fontSize: 11,
+                    fontSize: AppConstants.fontSizeSmall,
                     color: Colors.green[700],
                     fontWeight: FontWeight.w500,
                   ),
@@ -147,7 +148,7 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
         
         // Advanced options (for settings page)
         if (widget.showAdvancedOptions) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: AppConstants.spacingMedium),
           _buildAdvancedOptions(),
         ],
       ],
@@ -155,38 +156,33 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
   }
 
   Widget _buildPresetButtons() {
-    final presets = [
-      {'label': 'Frugal', 'amount': 15.0, 'color': Colors.blue[600]!},
-      {'label': 'Moderate', 'amount': 25.0, 'color': Colors.green[600]!},
-      {'label': 'Generous', 'amount': 40.0, 'color': Colors.orange[600]!},
-    ];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Quick presets:',
           style: AppTextStyles.getBodyStyle().copyWith(
-            fontSize: 12,
+            fontSize: AppConstants.fontSizeMedium,
             color: Colors.grey[600],
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppConstants.spacingSmall),
         Row(
-          children: presets.map((preset) {
+          children: AppConstants.budgetPresets.map((preset) {
+            final color = _getPresetColor(preset['label'] as String);
             return Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 2),
                 child: OutlinedButton(
                   onPressed: () {
-                    _budgetController.text = (preset['amount'] as double).toStringAsFixed(2);
+                    _budgetController.text = (preset['amount'] as double).toStringAsFixed(AppConstants.maxDecimalPlaces);
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: preset['color'] as Color,
-                    side: BorderSide(color: preset['color'] as Color),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    foregroundColor: color,
+                    side: BorderSide(color: color),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.spacingSmall)),
+                    padding: const EdgeInsets.symmetric(vertical: AppConstants.spacingSmall),
                   ),
                   child: Column(
                     children: [
@@ -196,7 +192,7 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
                       ),
                       Text(
                         '\$${(preset['amount'] as double).toStringAsFixed(0)}',
-                        style: const TextStyle(fontSize: 11),
+                        style: const TextStyle(fontSize: AppConstants.fontSizeSmall),
                       ),
                     ],
                   ),
@@ -209,12 +205,25 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
     );
   }
 
+  Color _getPresetColor(String label) {
+    switch (label) {
+      case 'Frugal':
+        return Colors.blue[600]!;
+      case 'Moderate':
+        return Colors.green[600]!;
+      case 'Generous':
+        return Colors.orange[600]!;
+      default:
+        return Colors.grey[600]!;
+    }
+  }
+
   Widget _buildAdvancedOptions() {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
         color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
         border: Border.all(color: Colors.grey[200]!, width: 1),
       ),
       child: Column(
@@ -223,12 +232,12 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
           Text(
             'Budget Overview',
             style: AppTextStyles.getBodyStyle().copyWith(
-              fontSize: 12,
+              fontSize: AppConstants.fontSizeMedium,
               fontWeight: FontWeight.bold,
               color: Colors.grey[700],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppConstants.spacingSmall),
           _buildBudgetCalculation(),
         ],
       ),
@@ -256,14 +265,14 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
         Text(
           period,
           style: AppTextStyles.getBodyStyle().copyWith(
-            fontSize: 11,
+            fontSize: AppConstants.fontSizeSmall,
             color: Colors.grey[600],
           ),
         ),
         Text(
           '\$${amount.toStringAsFixed(0)}',
           style: AppTextStyles.getNumericStyle().copyWith(
-            fontSize: 11,
+            fontSize: AppConstants.fontSizeSmall,
             fontWeight: FontWeight.w600,
             color: Colors.grey[700],
           ),
@@ -277,7 +286,7 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
       TextButton(
         onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
         child: Text(
-          'Cancel',
+          AppConstants.cancelLabel,
           style: TextStyle(color: Colors.grey[600]),
         ),
       ),
@@ -287,13 +296,13 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
           backgroundColor: Colors.green[600],
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
           ),
         ),
         child: _isLoading
             ? const SizedBox(
-                width: 16,
-                height: 16,
+                width: AppConstants.iconSizeSmall,
+                height: AppConstants.iconSizeSmall,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -308,14 +317,14 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
     final budgetText = _budgetController.text.trim();
     final budget = double.tryParse(budgetText);
 
-    // Validation
+    // Validation using constants
     if (budget == null || budget <= 0) {
-      _showErrorSnackBar('Please enter a valid budget amount');
+      _showErrorSnackBar(AppConstants.invalidBudget);
       return;
     }
 
-    if (budget > 1000) {
-      _showErrorSnackBar('Budget seems high. Please check the amount.');
+    if (budget > AppConstants.maxBudgetAmount) {
+      _showErrorSnackBar(AppConstants.budgetTooHigh);
       return;
     }
 
@@ -336,22 +345,14 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Daily budget set to \$${budget.toStringAsFixed(2)}'),
-            backgroundColor: Colors.green[600],
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        _showSuccessSnackBar(AppConstants.budgetUpdateSuccess);
       }
     } catch (e) {
-      _showErrorSnackBar('Failed to save budget. Please try again.');
-    } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
+        _showErrorSnackBar('Failed to save budget: $e');
       }
     }
   }
@@ -361,7 +362,19 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: Colors.red[400],
+          backgroundColor: Colors.red[600],
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _showSuccessSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green[600],
           behavior: SnackBarBehavior.floating,
         ),
       );

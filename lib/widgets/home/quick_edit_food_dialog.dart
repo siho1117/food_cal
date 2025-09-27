@@ -1,14 +1,13 @@
 // lib/widgets/home/quick_edit_food_dialog.dart
-// FIXED VERSION - Resolves late initialization error
+// UPDATED VERSION - Now uses AppConstants
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import '../../config/design_system/theme.dart';
 import '../../config/design_system/text_styles.dart';
+import '../../config/constants/app_constants.dart';  // NEW IMPORT
 import '../../data/models/food_item.dart';
 import '../../data/repositories/food_repository.dart';
-import '../../providers/home_provider.dart';
 
 class QuickEditFoodDialog extends StatefulWidget {
   final FoodItem foodItem;
@@ -27,29 +26,23 @@ class QuickEditFoodDialog extends StatefulWidget {
 class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
   final FoodRepository _foodRepository = FoodRepository();
   
-  // FIXED: Remove 'late' and initialize in initState() instead
-  TextEditingController? _nameController;
-  TextEditingController? _servingSizeController;
-  TextEditingController? _caloriesController;
-  TextEditingController? _proteinController;
-  TextEditingController? _carbsController;
-  TextEditingController? _fatController;
-  TextEditingController? _costController; // FIXED: Remove late keyword
+  // PROPER FIX: Initialize controllers directly
+  late final TextEditingController _nameController;
+  late final TextEditingController _servingSizeController;
+  late final TextEditingController _caloriesController;
+  late final TextEditingController _proteinController;
+  late final TextEditingController _carbsController;
+  late final TextEditingController _fatController;
+  late final TextEditingController _costController;
   
-  String _selectedUnit = 'serving'; // Initialize with default
+  late String _selectedUnit;
   bool _isLoading = false;
-  
-  final List<String> _units = [
-    'serving', 'cup', 'gram', 'oz', 'piece', 'slice', 'tbsp', 'tsp'
-  ];
 
   @override
   void initState() {
     super.initState();
-    _initializeControllers();
-  }
-
-  void _initializeControllers() {
+    
+    // PROPER INITIALIZATION: Initialize all controllers in initState
     _nameController = TextEditingController(text: widget.foodItem.name);
     _servingSizeController = TextEditingController(text: widget.foodItem.servingSize.toString());
     _caloriesController = TextEditingController(text: widget.foodItem.calories.round().toString());
@@ -58,113 +51,95 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
     _fatController = TextEditingController(text: widget.foodItem.fats.round().toString());
     _selectedUnit = widget.foodItem.servingUnit;
     
-    // FIXED: Proper initialization of cost controller
+    // PROPER COST INITIALIZATION: Handle null cost properly
     _costController = TextEditingController(
-      text: widget.foodItem.cost != null ? widget.foodItem.cost!.toStringAsFixed(2) : ''
+      text: widget.foodItem.cost?.toStringAsFixed(AppConstants.maxDecimalPlaces) ?? ''
     );
   }
 
   @override
   void dispose() {
-    // FIXED: Add null checks before disposing
-    _nameController?.dispose();
-    _servingSizeController?.dispose();
-    _caloriesController?.dispose();
-    _proteinController?.dispose();
-    _carbsController?.dispose();
-    _fatController?.dispose();
-    _costController?.dispose();
+    // CRITICAL: Dispose all controllers to prevent memory leaks
+    _nameController.dispose();
+    _servingSizeController.dispose();
+    _caloriesController.dispose();
+    _proteinController.dispose();
+    _carbsController.dispose();
+    _fatController.dispose();
+    _costController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      contentPadding: const EdgeInsets.all(0),
-      titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      title: _buildDialogTitle(),
-      content: _isLoading ? _buildLoadingContent() : _buildEditContent(),
-      actions: _buildDialogActions(),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge)),
+      title: _buildTitle(),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildBasicInfo(),
+            const SizedBox(height: AppConstants.spacingLarge),
+            _buildNutritionInfo(),
+            if (widget.foodItem.cost != null) ...[
+              const SizedBox(height: AppConstants.spacingLarge),
+              _buildCostInfo(),
+            ],
+          ],
+        ),
+      ),
+      actions: _buildActions(),
     );
   }
 
-  Widget _buildDialogTitle() {
+  Widget _buildTitle() {
     return Row(
       children: [
-        Text('✏️', style: const TextStyle(fontSize: 20)),
-        const SizedBox(width: 8),
+        const Text('🍽️', style: TextStyle(fontSize: AppConstants.emojiSize)),
+        const SizedBox(width: AppConstants.spacingSmall),
         Text(
-          'Edit Food',
+          'Edit Food Item',
           style: AppTextStyles.getSubHeadingStyle().copyWith(
-            fontSize: 18,
             fontWeight: FontWeight.bold,
             color: AppTheme.primaryBlue,
+            fontSize: AppConstants.fontSizeXLarge,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildLoadingContent() {
-    return const SizedBox(
-      height: 300,
-      child: Center(child: CircularProgressIndicator()),
-    );
-  }
-
-  Widget _buildEditContent() {
-    return Container(
-      width: double.maxFinite,
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.6,
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildBasicInfoSection(),
-            const SizedBox(height: 16),
-            _buildNutritionSection(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBasicInfoSection() {
+  Widget _buildBasicInfo() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+        border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Section Header
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppConstants.paddingMedium),
             decoration: BoxDecoration(
-              color: AppTheme.primaryBlue.withOpacity(0.05),
+              color: AppTheme.primaryBlue.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
+                topLeft: Radius.circular(AppConstants.borderRadiusMedium),
+                topRight: Radius.circular(AppConstants.borderRadiusMedium),
               ),
             ),
             child: Row(
               children: [
-                Icon(Icons.keyboard_arrow_down, size: 20, color: AppTheme.primaryBlue),
-                const SizedBox(width: 8),
+                Icon(Icons.edit, color: AppTheme.primaryBlue, size: AppConstants.iconSizeMedium),
+                const SizedBox(width: AppConstants.spacingSmall),
                 Text(
                   'Basic Information',
                   style: AppTextStyles.getBodyStyle().copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppTheme.primaryBlue,
-                    fontSize: 15,
+                    fontSize: AppConstants.fontSizeMedium + 1, // 15
                   ),
                 ),
               ],
@@ -173,168 +148,70 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
           
           // Section Content
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppConstants.paddingMedium),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Food Name Section
-                Text(
-                  'Food Name:',
-                  style: AppTextStyles.getBodyStyle().copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _nameController!,
-                  maxLength: 100,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    isDense: true,
-                    counterText: '',
-                  ),
-                  style: AppTextStyles.getBodyStyle().copyWith(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  inputFormatters: [
-                    LengthLimitingTextInputFormatter(100),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                // Food Name
+                _buildTextField(_nameController, 'Food Name', 'e.g., Grilled Chicken'),
                 
-                // Serving Size Section
-                Text(
-                  'Serving Size:',
-                  style: AppTextStyles.getBodyStyle().copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppConstants.spacingMedium),
+                
+                // Serving Size and Unit
                 Row(
                   children: [
-                    _buildServingAdjustButton(Icons.remove, () => _adjustServing(-0.1)),
-                    const SizedBox(width: 12),
+                    // Serving Size
                     Expanded(
-                      child: TextField(
-                        controller: _servingSizeController!,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
+                      flex: 2,
+                      child: _buildTextField(_servingSizeController, 'Serving Size', AppConstants.defaultServingSize.toString()),
+                    ),
+                    const SizedBox(width: AppConstants.spacingMedium),
+                    
+                    // Unit Dropdown
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Unit:',
+                            style: AppTextStyles.getBodyStyle().copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[700],
+                              fontSize: AppConstants.fontSizeMedium,
+                            ),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
+                          const SizedBox(height: AppConstants.spacingSmall),
+                          DropdownButtonFormField<String>(
+                            value: _selectedUnit,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+                                borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: AppConstants.paddingMedium,
+                                vertical: AppConstants.paddingSmall,
+                              ),
+                              isDense: true,
+                            ),
+                            items: AppConstants.servingUnits.map((unit) => DropdownMenuItem(
+                              value: unit,
+                              child: Text(unit),
+                            )).toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  _selectedUnit = value;
+                                });
+                              }
+                            },
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          isDense: true,
-                        ),
-                        style: AppTextStyles.getNumericStyle().copyWith(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    _buildServingAdjustButton(Icons.add, () => _adjustServing(0.1)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                
-                // Unit Dropdown
-                DropdownButtonFormField<String>(
-                  value: _selectedUnit,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    isDense: true,
-                    labelText: 'Unit',
-                    labelStyle: AppTextStyles.getBodyStyle().copyWith(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  items: _units.map((unit) => DropdownMenuItem(
-                    value: unit,
-                    child: Text(unit, style: AppTextStyles.getBodyStyle().copyWith(fontSize: 14)),
-                  )).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedUnit = value!;
-                    });
-                  },
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // FIXED: Cost Section with proper null checking
-                Text(
-                  'Cost:',
-                  style: AppTextStyles.getBodyStyle().copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _costController!,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    prefixText: '\$',
-                    prefixStyle: AppTextStyles.getBodyStyle().copyWith(
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                    ),
-                    hintText: '0.00',
-                    hintStyle: AppTextStyles.getBodyStyle().copyWith(
-                      color: Colors.grey[400],
-                      fontSize: 14,
-                    ),
-                    isDense: true,
-                  ),
-                  style: AppTextStyles.getNumericStyle().copyWith(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-                    LengthLimitingTextInputFormatter(8),
                   ],
                 ),
               ],
@@ -345,36 +222,36 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
     );
   }
 
-  Widget _buildNutritionSection() {
+  Widget _buildNutritionInfo() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+        border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Section Header
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppConstants.paddingMedium),
             decoration: BoxDecoration(
-              color: AppTheme.primaryBlue.withOpacity(0.05),
+              color: AppTheme.primaryBlue.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
+                topLeft: Radius.circular(AppConstants.borderRadiusMedium),
+                topRight: Radius.circular(AppConstants.borderRadiusMedium),
               ),
             ),
             child: Row(
               children: [
-                Icon(Icons.keyboard_arrow_down, size: 20, color: AppTheme.primaryBlue),
-                const SizedBox(width: 8),
+                Icon(Icons.restaurant, color: AppTheme.primaryBlue, size: AppConstants.iconSizeMedium),
+                const SizedBox(width: AppConstants.spacingSmall),
                 Text(
                   'Nutrition Information',
                   style: AppTextStyles.getBodyStyle().copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppTheme.primaryBlue,
-                    fontSize: 15,
+                    fontSize: AppConstants.fontSizeMedium + 1, // 15
                   ),
                 ),
               ],
@@ -383,25 +260,25 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
           
           // Section Content
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppConstants.paddingMedium),
             child: Column(
               children: [
                 // Row 1: Calories and Protein
                 Row(
                   children: [
-                    Expanded(child: _buildNutritionField(_caloriesController!, 'Calories', 'cal')),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildNutritionField(_proteinController!, 'Protein', 'g')),
+                    Expanded(child: _buildNutritionField(_caloriesController, 'Calories', 'cal')),
+                    const SizedBox(width: AppConstants.spacingMedium),
+                    Expanded(child: _buildNutritionField(_proteinController, 'Protein', 'g')),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppConstants.spacingMedium),
                 
                 // Row 2: Carbs and Fat
                 Row(
                   children: [
-                    Expanded(child: _buildNutritionField(_carbsController!, 'Carbs', 'g')),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildNutritionField(_fatController!, 'Fat', 'g')),
+                    Expanded(child: _buildNutritionField(_carbsController, 'Carbs', 'g')),
+                    const SizedBox(width: AppConstants.spacingMedium),
+                    Expanded(child: _buildNutritionField(_fatController, 'Fat', 'g')),
                   ],
                 ),
               ],
@@ -409,6 +286,96 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCostInfo() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header
+          Container(
+            padding: const EdgeInsets.all(AppConstants.paddingMedium),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.1),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(AppConstants.borderRadiusMedium),
+                topRight: Radius.circular(AppConstants.borderRadiusMedium),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.attach_money, color: Colors.green[700], size: AppConstants.iconSizeMedium),
+                const SizedBox(width: AppConstants.spacingSmall),
+                Text(
+                  'Cost Information',
+                  style: AppTextStyles.getBodyStyle().copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.green[700],
+                    fontSize: AppConstants.fontSizeMedium + 1, // 15
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Section Content
+          Padding(
+            padding: const EdgeInsets.all(AppConstants.paddingMedium),
+            child: _buildTextField(_costController, 'Cost per serving', '0.00', prefix: '\$'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label, String hint, {String? prefix}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$label:',
+          style: AppTextStyles.getBodyStyle().copyWith(
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[700],
+            fontSize: AppConstants.fontSizeMedium,
+          ),
+        ),
+        const SizedBox(height: AppConstants.spacingSmall),
+        TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+              borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppConstants.paddingMedium,
+              vertical: AppConstants.paddingSmall,
+            ),
+            hintText: hint,
+            prefixText: prefix,
+            isDense: true,
+          ),
+          style: AppTextStyles.getBodyStyle().copyWith(
+            fontSize: AppConstants.fontSizeMedium,
+            fontWeight: FontWeight.w600,
+          ),
+          inputFormatters: controller == _nameController 
+            ? [LengthLimitingTextInputFormatter(AppConstants.maxFoodNameLength)]
+            : [FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern))],
+        ),
+      ],
     );
   }
 
@@ -421,86 +388,65 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
           style: AppTextStyles.getBodyStyle().copyWith(
             fontWeight: FontWeight.w600,
             color: Colors.grey[700],
-            fontSize: 14,
+            fontSize: AppConstants.fontSizeMedium,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppConstants.spacingSmall),
         TextField(
           controller: controller,
           decoration: InputDecoration(
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
               borderSide: BorderSide(color: Colors.grey[300]!),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
               borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppConstants.paddingMedium,
+              vertical: AppConstants.paddingSmall,
+            ),
             suffixText: unit,
             suffixStyle: AppTextStyles.getBodyStyle().copyWith(
               color: Colors.grey[600],
               fontWeight: FontWeight.w500,
-              fontSize: 14,
+              fontSize: AppConstants.fontSizeMedium,
             ),
             isDense: true,
           ),
           style: AppTextStyles.getNumericStyle().copyWith(
-            fontSize: 14,
+            fontSize: AppConstants.fontSizeMedium,
             fontWeight: FontWeight.w600,
           ),
           inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-            LengthLimitingTextInputFormatter(8),
+            FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildServingAdjustButton(IconData icon, VoidCallback onPressed) {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: IconButton(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 18, color: AppTheme.primaryBlue),
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(),
-      ),
-    );
-  }
-
-  List<Widget> _buildDialogActions() {
+  List<Widget> _buildActions() {
     return [
       TextButton(
         onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        ),
         child: Text(
-          'Cancel',
+          AppConstants.cancelLabel,
           style: AppTextStyles.getBodyStyle().copyWith(
             color: Colors.grey[600],
             fontWeight: FontWeight.w600,
           ),
         ),
       ),
-      const SizedBox(width: 8),
       ElevatedButton(
         onPressed: _isLoading ? null : _handleSave,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.primaryBlue,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall)),
         ),
         child: Text(
-          _isLoading ? 'Saving...' : 'Save',
+          _isLoading ? AppConstants.savingMessage : AppConstants.saveLabel,
           style: AppTextStyles.getBodyStyle().copyWith(
             color: Colors.white,
             fontWeight: FontWeight.w600,
@@ -508,12 +454,6 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
         ),
       ),
     ];
-  }
-
-  void _adjustServing(double adjustment) {
-    final current = double.tryParse(_servingSizeController!.text) ?? 1.0;
-    final newValue = (current + adjustment).clamp(0.1, 99.9);
-    _servingSizeController!.text = newValue.toStringAsFixed(1);
   }
 
   Future<void> _handleSave() async {
@@ -547,58 +487,52 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
   }
 
   Future<void> _updateFoodItem() async {
-    final name = _nameController!.text.trim();
-    final servingSizeText = _servingSizeController!.text.trim();
-    final caloriesText = _caloriesController!.text.trim();
-    final proteinText = _proteinController!.text.trim();
-    final carbsText = _carbsController!.text.trim();
-    final fatText = _fatController!.text.trim();
-    final costText = _costController!.text.trim(); // FIXED: Add null check
-
-    // Validation
+    // Validation using constants
+    final name = _nameController.text.trim();
     if (name.isEmpty) {
-      throw Exception('Food name cannot be empty.');
+      throw Exception(AppConstants.nameRequired);
     }
-    if (name.length > 100) {
-      throw Exception('Food name must be 100 characters or less.');
+    if (name.length > AppConstants.maxFoodNameLength) {
+      throw Exception(AppConstants.nameTooLong);
     }
 
-    final servingSize = double.tryParse(servingSizeText);
+    final servingSize = double.tryParse(_servingSizeController.text.trim());
     if (servingSize == null || servingSize <= 0) {
-      throw Exception('Please enter a valid serving size.');
+      throw Exception(AppConstants.invalidServingSize);
     }
 
-    final calories = double.tryParse(caloriesText);
+    final calories = double.tryParse(_caloriesController.text.trim());
     if (calories == null || calories < 0) {
-      throw Exception('Please enter valid calories.');
+      throw Exception(AppConstants.invalidCalories);
     }
 
-    final protein = double.tryParse(proteinText);
+    final protein = double.tryParse(_proteinController.text.trim());
     if (protein == null || protein < 0) {
-      throw Exception('Please enter valid protein amount.');
+      throw Exception(AppConstants.invalidProtein);
     }
 
-    final carbs = double.tryParse(carbsText);
+    final carbs = double.tryParse(_carbsController.text.trim());
     if (carbs == null || carbs < 0) {
-      throw Exception('Please enter valid carbs amount.');
+      throw Exception(AppConstants.invalidCarbs);
     }
 
-    final fat = double.tryParse(fatText);
+    final fat = double.tryParse(_fatController.text.trim());
     if (fat == null || fat < 0) {
-      throw Exception('Please enter valid fat amount.');
+      throw Exception(AppConstants.invalidFat);
     }
 
-    // Cost validation
+    // Cost validation (optional field)
     double? cost;
+    final costText = _costController.text.trim();
     if (costText.isNotEmpty) {
       cost = double.tryParse(costText);
       if (cost == null || cost < 0) {
-        throw Exception('Please enter a valid cost (0 or greater).');
+        throw Exception(AppConstants.invalidCost);
       }
     }
 
     // Create updated food item
-    final updatedItem = widget.foodItem.copyWith(
+    final updatedFoodItem = widget.foodItem.copyWith(
       name: name,
       servingSize: servingSize,
       servingUnit: _selectedUnit,
@@ -609,9 +543,8 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
       cost: cost,
     );
 
-    // Update through repository
-    final success = await _foodRepository.updateFoodEntry(updatedItem);
-    
+    // Save to repository
+    final success = await _foodRepository.updateFoodEntry(updatedFoodItem);
     if (!success) {
       throw Exception('Failed to update food item. Please try again.');
     }
