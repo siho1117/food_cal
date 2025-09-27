@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/progress_data.dart';
 import '../widgets/progress/combined_weight_widget.dart';
-import '../widgets/progress/combined_bmi_bodyfat_widget.dart'; // NEW: Combined widget
+import '../widgets/progress/combined_bmi_bodyfat_widget.dart';
 import '../widgets/progress/weight_history_graph_widget.dart';
 import '../widgets/progress/energy_metrics_widget.dart';
 import '../config/design_system/theme.dart';
@@ -16,10 +16,42 @@ class ProgressScreen extends StatefulWidget {
 }
 
 class _ProgressScreenState extends State<ProgressScreen> {
+  // FIXED: Create the provider once and manage its lifecycle properly
+  late ProgressData _progressData;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // FIXED: Create provider once in initState
+    _progressData = ProgressData();
+    _initializeData();
+  }
+
+  @override
+  void dispose() {
+    // FIXED: Properly dispose of the provider
+    _progressData.dispose();
+    super.dispose();
+  }
+
+  // FIXED: Load data only once during initialization
+  Future<void> _initializeData() async {
+    if (!_isInitialized) {
+      await _progressData.loadUserData();
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ProgressData()..loadUserData(),
+    // FIXED: Use existing provider instead of creating new one
+    return ChangeNotifierProvider<ProgressData>.value(
+      value: _progressData,
       child: Scaffold(
         backgroundColor: AppTheme.secondaryBeige,
         body: SafeArea(
@@ -102,7 +134,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
         
         const SizedBox(height: 16),
         
-        // UPDATED: Combined BMI & Body Fat Widget (replaces separate widgets)
+        // Combined BMI & Body Fat Widget
         CombinedBMIBodyFatWidget(
           bmiValue: progressData.bmiValue,
           bmiClassification: progressData.bmiClassification,

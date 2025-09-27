@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import '../config/design_system/theme.dart';
+import '../config/constants/app_constants.dart';  // ADDED: Import for constants
 
 class CustomBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -30,12 +31,12 @@ class CustomBottomNav extends StatelessWidget {
 
     return CurvedNavigationBar(
       index: visualIndex, // Use visualIndex instead of currentIndex
-      height: 75, // Maintained height
+      height: AppConstants.bottomNavHeight, // FIXED: Use constant instead of hardcoded 75
       backgroundColor: Colors.transparent,
       color: navBarColor, // Use theme color for nav bar 
       buttonBackgroundColor: selectedButtonColor, // Use accent color for selected button
-      animationCurve: Curves.easeOutCubic,
-      animationDuration: const Duration(milliseconds: 400),
+      animationCurve: AppConstants.animationCurve, // FIXED: Use constant instead of hardcoded curve
+      animationDuration: AppConstants.bottomNavAnimationDuration, // FIXED: Use constant instead of hardcoded 400ms
       items: [
         _buildNavItem(Icons.home_rounded, 'Home', 0, visualIndex),
         _buildNavItem(Icons.bar_chart_rounded, 'Progress', 1, visualIndex),
@@ -52,81 +53,45 @@ class CustomBottomNav extends StatelessWidget {
 
     return Padding(
       padding: isSelected
-          ? const EdgeInsets.all(10.0) // Regular padding for selected items
+          ? const EdgeInsets.all(AppConstants.paddingSmall + 2) // FIXED: Use constant-based padding
           : const EdgeInsets.fromLTRB(
-              10, 16, 10, 5), // More top padding for unselected
+              AppConstants.paddingSmall + 2, // FIXED: Use constant instead of hardcoded 10
+              AppConstants.paddingMedium,     // FIXED: Use constant instead of hardcoded 16
+              AppConstants.paddingSmall + 2,  // FIXED: Use constant instead of hardcoded 10
+              5), // Keep small bottom padding for visual balance
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             icon,
-            size: isSelected ? 28 : 24,
-            color: Colors.white,
+            size: isSelected ? AppConstants.iconSizeLarge : AppConstants.iconSizeMedium, // FIXED: Use constants
+            color: isSelected ? Colors.white : Colors.white70,
           ),
-          // Only show label if not selected (as selected items move up)
-          if (!isSelected)
+          if (!isSelected) ...[
+            const SizedBox(height: 2), // Small spacing between icon and text
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: AppConstants.fontSizeSmall, // FIXED: Use constant instead of hardcoded size
                 fontWeight: FontWeight.w500,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildCameraNavItem(bool isCameraOverlayOpen) {
-    // If camera overlay is open, show a custom thin plus icon (selected state)
-    if (isCameraOverlayOpen) {
-      return Center(
-        child: Container(
-          width: 48,
-          height: 48,
-          alignment: Alignment.center,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Horizontal line
-              Container(
-                width: 32,
-                height: 2, // Very thin line
-                color: Colors.white,
-              ),
-              // Vertical line
-              Container(
-                width: 2, // Very thin line
-                height: 32,
-                color: Colors.white,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // If camera overlay is not open, show the regular camera icon and text
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 16, 10, 5),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: const [
-          Icon(
-            Icons.camera_alt_rounded, // Camera icon
-            size: 24,
-            color: Colors.white,
-          ),
-          Text(
-            'Camera',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
+  Widget _buildCameraNavItem(bool isCameraOpen) {
+    return Container(
+      padding: const EdgeInsets.all(AppConstants.paddingSmall), // FIXED: Use constant
+      child: Icon(
+        Icons.camera_alt_rounded,
+        size: AppConstants.iconSizeXLarge, // FIXED: Use constant instead of hardcoded size
+        color: isCameraOpen ? AppTheme.primaryBlue : Colors.white,
       ),
     );
   }

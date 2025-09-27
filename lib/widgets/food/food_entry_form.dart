@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../config/design_system/theme.dart';
+import '../../config/design_system/text_styles.dart';
+import '../../config/constants/app_constants.dart';  // ADDED: Import for constants
 import '../../data/models/food_item.dart';
 import '../../data/repositories/food_repository.dart';
 
@@ -36,26 +38,9 @@ class _FoodEntryFormState extends State<FoodEntryForm> {
   late String _servingUnit;
   late String _selectedMealType;
 
-  // Serving unit options
-  final List<String> _servingUnits = [
-    'serving',
-    'g',
-    'ml',
-    'oz',
-    'cup',
-    'tbsp',
-    'tsp',
-    'piece',
-    'slice',
-  ];
-
-  // Meal type options
-  final List<String> _mealTypes = [
-    'breakfast',
-    'lunch',
-    'dinner',
-    'snack',
-  ];
+  // FIXED: Use AppConstants instead of hardcoded arrays
+  final List<String> _servingUnits = AppConstants.servingUnits;
+  final List<String> _mealTypes = AppConstants.mealTypes;
 
   @override
   void initState() {
@@ -84,8 +69,8 @@ class _FoodEntryFormState extends State<FoodEntryForm> {
       _proteinsController = TextEditingController();
       _carbsController = TextEditingController();
       _fatsController = TextEditingController();
-      _servingSizeController = TextEditingController(text: '1.0');
-      _servingUnit = 'serving';
+      _servingSizeController = TextEditingController(text: AppConstants.defaultServingSize.toString());
+      _servingUnit = AppConstants.servingUnits[0]; // FIXED: Use AppConstants
       _selectedMealType = widget.mealType;
     }
   }
@@ -103,75 +88,61 @@ class _FoodEntryFormState extends State<FoodEntryForm> {
 
   Future<void> _saveFood() async {
     if (_formKey.currentState?.validate() ?? false) {
-      setState(() {
-        _isLoading = true;
-      });
+      setState(() => _isLoading = true);
 
       try {
         // Create food item from form data
         final foodItem = FoodItem(
-          id: widget.initialFoodItem?.id ??
-              DateTime.now().millisecondsSinceEpoch.toString(),
+          id: widget.initialFoodItem?.id ?? 
+              '${DateTime.now().millisecondsSinceEpoch}_${_nameController.text}',
           name: _nameController.text.trim(),
-          calories: double.parse(_caloriesController.text),
-          proteins: double.parse(_proteinsController.text),
-          carbs: double.parse(_carbsController.text),
-          fats: double.parse(_fatsController.text),
-          imagePath: widget.initialFoodItem?.imagePath,
-          mealType: _selectedMealType,
-          timestamp: DateTime.now(),
-          servingSize: double.parse(_servingSizeController.text),
+          calories: double.tryParse(_caloriesController.text) ?? 0.0,
+          proteins: double.tryParse(_proteinsController.text) ?? 0.0,
+          carbs: double.tryParse(_carbsController.text) ?? 0.0,
+          fats: double.tryParse(_fatsController.text) ?? 0.0,
+          servingSize: double.tryParse(_servingSizeController.text) ?? AppConstants.defaultServingSize,
           servingUnit: _servingUnit,
+          mealType: _selectedMealType,
+          timestamp: widget.initialFoodItem?.timestamp ?? DateTime.now(),
+          imagePath: widget.initialFoodItem?.imagePath,
         );
 
-        // Save to repository
+        // Save or update the food item
         bool success;
         if (widget.initialFoodItem != null) {
-          // Update existing item
           success = await _repository.updateFoodEntry(foodItem);
         } else {
-          // Add new item
-          success = await _repository.saveFoodEntry(foodItem);
+          success = await _repository.saveFoodEntries([foodItem]);
         }
 
-        if (success && mounted) {
-          // Close the form and notify parent
-          Navigator.of(context).pop();
+        if (success) {
           widget.onSaved();
-
-          // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '${widget.initialFoodItem != null ? 'Updated' : 'Added'} ${foodItem.name}',
+          if (mounted) {
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(widget.initialFoodItem != null 
+                    ? AppConstants.updateSuccess 
+                    : AppConstants.saveSuccess),
+                backgroundColor: Colors.green,
               ),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else if (mounted) {
-          // Show error message
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to save food item'),
-              backgroundColor: Colors.red,
-            ),
-          );
+            );
+          }
+        } else {
+          throw Exception('Failed to save food item');
         }
       } catch (e) {
-        print('Error saving food: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error: $e'),
+              content: Text('Error: ${e.toString()}'),
               backgroundColor: Colors.red,
             ),
           );
         }
       } finally {
         if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
+          setState(() => _isLoading = false);
         }
       }
     }
@@ -183,289 +154,283 @@ class _FoodEntryFormState extends State<FoodEntryForm> {
       appBar: AppBar(
         title: Text(
           widget.initialFoodItem != null ? 'Edit Food' : 'Add Food',
-          style: const TextStyle(color: AppTheme.primaryBlue),
+          style: AppTextStyles.getSubHeadingStyle().copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryBlue,
+          ),
         ),
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.secondaryBeige,
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppTheme.primaryBlue),
       ),
       backgroundColor: AppTheme.secondaryBeige,
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Food name
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Food Name',
-                        border: OutlineInputBorder(),
-                      ),
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppConstants.paddingLarge),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Food Name
+              _buildTextField(
+                controller: _nameController,
+                label: 'Food Name',
+                validator: (value) {
+                  if (value?.trim().isEmpty ?? true) {
+                    return AppConstants.nameRequired;
+                  }
+                  if (value!.length > AppConstants.maxFoodNameLength) {
+                    return AppConstants.nameTooLong;
+                  }
+                  return null;
+                },
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(AppConstants.maxFoodNameLength),
+                ],
+              ),
+
+              const SizedBox(height: AppConstants.spacingLarge),
+
+              // Meal Type Dropdown
+              _buildDropdown(
+                label: 'Meal Type',
+                value: _selectedMealType,
+                items: _mealTypes,
+                onChanged: (value) => setState(() => _selectedMealType = value!),
+              ),
+
+              const SizedBox(height: AppConstants.spacingLarge),
+
+              // Serving Information
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: _buildTextField(
+                      controller: _servingSizeController,
+                      label: 'Serving Size',
+                      keyboardType: TextInputType.number,
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a food name';
+                        final parsed = double.tryParse(value ?? '');
+                        if (parsed == null || parsed <= 0) {
+                          return AppConstants.invalidServingSize;
                         }
                         return null;
                       },
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Meal type dropdown
-                    DropdownButtonFormField<String>(
-                      value: _selectedMealType,
-                      decoration: const InputDecoration(
-                        labelText: 'Meal Type',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: _mealTypes.map((mealType) {
-                        return DropdownMenuItem<String>(
-                          value: mealType,
-                          child: Text(
-                            mealType.substring(0, 1).toUpperCase() +
-                                mealType.substring(1),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _selectedMealType = value;
-                          });
-                        }
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Serving information
-                    Row(
-                      children: [
-                        // Serving size
-                        Expanded(
-                          flex: 3,
-                          child: TextFormField(
-                            controller: _servingSizeController,
-                            decoration: const InputDecoration(
-                              labelText: 'Serving Size',
-                              border: OutlineInputBorder(),
-                            ),
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                  RegExp(r'[0-9.]')),
-                            ],
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Required';
-                              }
-                              try {
-                                final size = double.parse(value);
-                                if (size <= 0) {
-                                  return 'Must be > 0';
-                                }
-                              } catch (e) {
-                                return 'Invalid number';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-
-                        const SizedBox(width: 8),
-
-                        // Serving unit
-                        Expanded(
-                          flex: 2,
-                          child: DropdownButtonFormField<String>(
-                            value: _servingUnit,
-                            decoration: const InputDecoration(
-                              labelText: 'Unit',
-                              border: OutlineInputBorder(),
-                            ),
-                            items: _servingUnits.map((unit) {
-                              return DropdownMenuItem<String>(
-                                value: unit,
-                                child: Text(unit),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              if (value != null) {
-                                setState(() {
-                                  _servingUnit = value;
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Nutritional information section
-                    const Text(
-                      'NUTRITIONAL INFORMATION',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Calories
-                    TextFormField(
-                      controller: _caloriesController,
-                      decoration: const InputDecoration(
-                        labelText: 'Calories',
-                        helperText: 'Per serving',
-                        border: OutlineInputBorder(),
-                        suffixText: 'cal',
-                      ),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-                      ],
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Required';
-                        }
-                        try {
-                          double.parse(value);
-                        } catch (e) {
-                          return 'Invalid number';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Macronutrients
-                    Row(
-                      children: [
-                        // Protein
-                        Expanded(
-                          child: TextFormField(
-                            controller: _proteinsController,
-                            decoration: const InputDecoration(
-                              labelText: 'Protein',
-                              border: OutlineInputBorder(),
-                              suffixText: 'g',
-                            ),
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                  RegExp(r'[0-9]')),
-                            ],
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Required';
-                              }
-                              try {
-                                double.parse(value);
-                              } catch (e) {
-                                return 'Invalid';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-
-                        const SizedBox(width: 8),
-
-                        // Carbs
-                        Expanded(
-                          child: TextFormField(
-                            controller: _carbsController,
-                            decoration: const InputDecoration(
-                              labelText: 'Carbs',
-                              border: OutlineInputBorder(),
-                              suffixText: 'g',
-                            ),
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                  RegExp(r'[0-9]')),
-                            ],
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Required';
-                              }
-                              try {
-                                double.parse(value);
-                              } catch (e) {
-                                return 'Invalid';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-
-                        const SizedBox(width: 8),
-
-                        // Fat
-                        Expanded(
-                          child: TextFormField(
-                            controller: _fatsController,
-                            decoration: const InputDecoration(
-                              labelText: 'Fat',
-                              border: OutlineInputBorder(),
-                              suffixText: 'g',
-                            ),
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                  RegExp(r'[0-9]')),
-                            ],
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Required';
-                              }
-                              try {
-                                double.parse(value);
-                              } catch (e) {
-                                return 'Invalid';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
+                        FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
                       ],
                     ),
-
-                    const SizedBox(height: 32),
-
-                    // Save button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _saveFood,
-                        child: Text(
-                          widget.initialFoodItem != null
-                              ? 'Update Food'
-                              : 'Add Food',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ),
+                  ),
+                  const SizedBox(width: AppConstants.spacingMedium),
+                  Expanded(
+                    flex: 1,
+                    child: _buildDropdown(
+                      label: 'Unit',
+                      value: _servingUnit,
+                      items: _servingUnits,
+                      onChanged: (value) => setState(() => _servingUnit = value!),
                     ),
-                  ],
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: AppConstants.spacingLarge),
+
+              // Nutrition Information
+              Text(
+                'Nutrition Information',
+                style: AppTextStyles.getSubHeadingStyle().copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryBlue,
                 ),
               ),
+
+              const SizedBox(height: AppConstants.spacingMedium),
+
+              // Calories
+              _buildTextField(
+                controller: _caloriesController,
+                label: 'Calories',
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  final parsed = double.tryParse(value ?? '');
+                  if (parsed == null || parsed < 0) {
+                    return AppConstants.invalidCalories;
+                  }
+                  return null;
+                },
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
+                ],
+              ),
+
+              const SizedBox(height: AppConstants.spacingMedium),
+
+              // Macronutrients Row
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      controller: _proteinsController,
+                      label: 'Protein (g)',
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        final parsed = double.tryParse(value ?? '');
+                        if (parsed == null || parsed < 0) {
+                          return AppConstants.invalidProtein;
+                        }
+                        return null;
+                      },
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppConstants.spacingMedium),
+                  Expanded(
+                    child: _buildTextField(
+                      controller: _carbsController,
+                      label: 'Carbs (g)',
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        final parsed = double.tryParse(value ?? '');
+                        if (parsed == null || parsed < 0) {
+                          return AppConstants.invalidCarbs;
+                        }
+                        return null;
+                      },
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppConstants.spacingMedium),
+                  Expanded(
+                    child: _buildTextField(
+                      controller: _fatsController,
+                      label: 'Fat (g)',
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        final parsed = double.tryParse(value ?? '');
+                        if (parsed == null || parsed < 0) {
+                          return AppConstants.invalidFat;
+                        }
+                        return null;
+                      },
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: AppConstants.spacingXLarge),
+
+              // Save Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _saveFood,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: AppConstants.paddingMedium),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          widget.initialFoodItem != null ? 'Update Food' : 'Save Food',
+                          style: AppTextStyles.getBodyStyle().copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      validator: validator,
+      inputFormatters: inputFormatters,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+          borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
+        ),
+      ),
+      style: AppTextStyles.getBodyStyle(),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String label,
+    required String value,
+    required List<String> items,
+    required void Function(String?) onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.getBodyStyle().copyWith(
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[700],
+          ),
+        ),
+        const SizedBox(height: AppConstants.spacingSmall),
+        DropdownButtonFormField<String>(
+          value: value,
+          onChanged: onChanged,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
             ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+              borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
+            ),
+          ),
+          items: items.map((String item) {
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(
+                item.capitalized, // Uses extension from AppConstants
+                style: AppTextStyles.getBodyStyle(),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }

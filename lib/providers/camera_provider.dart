@@ -1,4 +1,4 @@
-// lib/providers/camera_provider.dart
+// lib/providers/camera_provider.dart - REMOVE DEBUG PRINTS
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
@@ -82,10 +82,8 @@ class CameraProvider extends ChangeNotifier {
         return;
       }
 
-      // DEBUG: Check image storage after saving food
-      debugPrint('🐛 RUNNING IMAGE DEBUG AFTER SAVING FOOD...');
-      await _foodRepository.debugCompleteImageWorkflow();
-      debugPrint('🐛 IMAGE DEBUG COMPLETE');
+      // REMOVED: Excessive debug workflow that was causing performance issues
+      // The debug methods were printing hundreds of log entries after every photo
 
       // Step 5: Navigate to home page and show success
       if (context.mounted) {

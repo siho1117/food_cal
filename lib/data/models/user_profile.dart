@@ -1,5 +1,4 @@
-// lib/data/models/user_profile.dart
-import '../../utils/formula.dart';
+// lib/data/models/user_profile.dart - REMOVE DEBUG PRINTS
 
 class UserProfile {
   final String id;
@@ -11,8 +10,7 @@ class UserProfile {
   final double? goalWeight; // Stored in kg
   final double? activityLevel; // 1.2 (sedentary) - 1.9 (very active)
   final DateTime? birthDate; // New field for date of birth
-  final double?
-      monthlyWeightGoal; // New field for monthly weight change goal in kg
+  final double? monthlyWeightGoal; // New field for monthly weight change goal in kg
 
   UserProfile({
     required this.id,
@@ -71,7 +69,7 @@ class UserProfile {
 
   // Convert to map for storage
   Map<String, dynamic> toMap() {
-    print('Saving UserProfile with age: $age'); // Debug print
+    // REMOVED: Debug print that was causing excessive logging
     return {
       'id': id,
       'name': name,
@@ -100,8 +98,7 @@ class UserProfile {
       }
     }
 
-    // Debug print
-    print('Loading UserProfile with age: $ageValue');
+    // REMOVED: Debug print that was causing excessive logging
 
     final profile = UserProfile(
       id: map['id'],
@@ -118,14 +115,15 @@ class UserProfile {
       monthlyWeightGoal: map['monthlyWeightGoal'],
     );
 
-    // Add debug print after creating the profile
-    profile.debugPrint();
+    // REMOVED: Auto debug print that was causing excessive logging
+    // Only call debugPrint manually when needed for troubleshooting
 
     return profile;
   }
 
-  // Debug method to print all user profile details
+  // Debug method to print all user profile details - USE MANUALLY ONLY
   void debugPrint() {
+    // Using print for debug method since it's called manually, not automatically
     print("\n===== USER PROFILE DEBUG INFO =====");
     print("ID: $id");
     print("Name: $name");
@@ -134,11 +132,9 @@ class UserProfile {
     print("Gender: ${gender ?? 'Not set'}");
     print("Is Metric: $isMetric");
     print("Goal Weight: ${goalWeight != null ? '$goalWeight kg' : 'Not set'}");
-    print(
-        "Monthly Weight Goal: ${monthlyWeightGoal != null ? '$monthlyWeightGoal kg' : 'Not set'}");
+    print("Monthly Weight Goal: ${monthlyWeightGoal != null ? '$monthlyWeightGoal kg' : 'Not set'}");
     print("Activity Level: ${activityLevel ?? 'Not set'}");
-    print(
-        "Birth Date: ${birthDate != null ? birthDate.toString() : 'Not set'}");
+    print("Birth Date: ${birthDate != null ? birthDate.toString() : 'Not set'}");
     print("Complete Map: ${toMap()}");
     print("===================================\n");
   }
