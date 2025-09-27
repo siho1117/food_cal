@@ -1,13 +1,15 @@
 // lib/data/repositories/food_repository.dart
 // REFACTORED VERSION - Now uses FoodStorageService and ImageStorageService
+// INCLUDES DEBUG METHODS for image storage troubleshooting
 import 'dart:io';
 import 'dart:async';
 import '../models/food_item.dart';
 import '../services/api_service.dart';
 import '../services/food_storage_service.dart';
-import '../services/image_storage_service.dart';  // NEW: Use image service
+import '../services/image_storage_service.dart';
 import '../storage/local_storage.dart';
 import '../../config/constants/app_constants.dart';
+import 'package:flutter/foundation.dart';
 
 /// Repository for managing food data from API and local storage
 /// Acts as a single access point for all food-related operations
@@ -15,12 +17,14 @@ import '../../config/constants/app_constants.dart';
 class FoodRepository {
   final FoodApiService _apiService = FoodApiService();
   final FoodStorageService _storageService = FoodStorageService();
-  final ImageStorageService _imageService = ImageStorageService();  // NEW: Use image service
-  final LocalStorage _storage = LocalStorage();  // Still used for search/favorites temporarily
+  final ImageStorageService _imageService = ImageStorageService();
+  final LocalStorage _storage = LocalStorage();
 
   // Storage keys for search and favorites (TODO: Move to FoodSearchService)
   static const String _recentSearchesKey = 'recent_food_searches';
   static const String _favoriteFoodsKey = 'favorite_foods';
+
+  // === FOOD RECOGNITION AND API OPERATIONS ===
 
   /// Recognize food from an image and return results
   /// Takes an image file and meal type (breakfast, lunch, dinner, snack)
@@ -64,50 +68,31 @@ class FoodRepository {
                 mealType: mealType,
                 timestamp: DateTime.now(),
                 servingSize: AppConstants.defaultServingSize,
-                servingUnit: AppConstants.servingUnits[0], // 'serving'
+                servingUnit: AppConstants.servingUnits[0],
                 imagePath: savedImagePath,
               );
-
               recognizedItems.add(item);
             }
           } catch (e) {
-            // Continue with other annotations if one fails
-            continue;
+            debugPrint('Error processing annotation: $e');
           }
         }
       }
 
       return recognizedItems;
     } catch (e) {
-      throw Exception('Failed to recognize food: $e');
+      debugPrint('Error recognizing food: $e');
+      rethrow;
     }
   }
 
-  /// Extract a specific nutrient value from API response
+  /// Extract nutrient value from API response
   double? _extractNutrientValue(Map<String, dynamic> foodInfo, String nutrientName) {
     try {
-      // Check if there's a nutrition section
-      if (foodInfo.containsKey('nutrition')) {
-        final nutrition = foodInfo['nutrition'];
-
-        // Direct property format (e.g., nutrition.calories)
-        if (nutrition.containsKey(nutrientName)) {
-          final value = nutrition[nutrientName];
-          if (value is num) {
-            return value.toDouble();
-          } else if (value is String) {
-            final numValue = double.tryParse(value);
-            if (numValue != null) {
-              return numValue.toDouble();
-            }
-          }
-        }
-
-        // Nutrients array format
-        if (nutrition.containsKey('nutrients') &&
-            nutrition['nutrients'] is List) {
-          for (var nutrient in nutrition['nutrients']) {
-            // Case-insensitive comparison
+      if (foodInfo.containsKey('nutrients') && foodInfo['nutrients'] is List) {
+        final nutrients = foodInfo['nutrients'] as List;
+        for (var nutrient in nutrients) {
+          if (nutrient is Map<String, dynamic> && nutrient.containsKey('name')) {
             final name = nutrient['name']?.toString().toLowerCase() ?? '';
             if (name == nutrientName.toLowerCase()) {
               final amount = nutrient['amount'];
@@ -260,7 +245,7 @@ class FoodRepository {
             mealType: mealType,
             timestamp: DateTime.now(),
             servingSize: AppConstants.defaultServingSize,
-            servingUnit: AppConstants.servingUnits[0], // 'serving'
+            servingUnit: AppConstants.servingUnits[0],
           ));
         } catch (e) {
           // Add with limited information if detailed lookup fails
@@ -274,14 +259,15 @@ class FoodRepository {
             mealType: mealType,
             timestamp: DateTime.now(),
             servingSize: AppConstants.defaultServingSize,
-            servingUnit: AppConstants.servingUnits[0], // 'serving'
+            servingUnit: AppConstants.servingUnits[0],
           ));
         }
       }
 
       return foodItems;
     } catch (e) {
-      throw Exception('Failed to search foods: $e');
+      debugPrint('Error searching foods: $e');
+      return [];
     }
   }
 
@@ -290,28 +276,29 @@ class FoodRepository {
     try {
       final recentSearches = await getRecentSearches();
       
-      // Remove if already exists to avoid duplicates
-      recentSearches.removeWhere((search) => search.toLowerCase() == query.toLowerCase());
+      // Remove if already exists
+      recentSearches.remove(query);
       
       // Add to beginning
       recentSearches.insert(0, query);
       
-      // Keep only the most recent searches
-      if (recentSearches.length > AppConstants.maxRecentSearches) {
-        recentSearches.removeRange(AppConstants.maxRecentSearches, recentSearches.length);
+      // Keep only last 10 searches
+      if (recentSearches.length > 10) {
+        recentSearches.removeRange(10, recentSearches.length);
       }
       
       await _storage.setStringList(_recentSearchesKey, recentSearches);
     } catch (e) {
-      // Fail silently for recent searches
+      debugPrint('Error adding to recent searches: $e');
     }
   }
 
-  /// Get recent search queries
+  /// Get recent searches
   Future<List<String>> getRecentSearches() async {
     try {
       return await _storage.getStringList(_recentSearchesKey) ?? [];
     } catch (e) {
+      debugPrint('Error getting recent searches: $e');
       return [];
     }
   }
@@ -321,82 +308,240 @@ class FoodRepository {
     try {
       await _storage.remove(_recentSearchesKey);
     } catch (e) {
-      // Fail silently
+      debugPrint('Error clearing recent searches: $e');
     }
   }
 
-  /// Add a food item to favorites
-  Future<bool> addToFavorites(FoodItem item) async {
+  /// Add food to favorites
+  Future<void> addToFavorites(FoodItem food) async {
     try {
-      final favorites = await getFavorites();
+      final favorites = await getFavoriteFoods();
       
-      // Check if already in favorites (by name)
-      final exists = favorites.any((fav) => fav.name.toLowerCase() == item.name.toLowerCase());
-      if (exists) return true; // Already in favorites
+      // Check if already in favorites
+      final exists = favorites.any((item) => item.name.toLowerCase() == food.name.toLowerCase());
+      if (exists) return;
       
-      favorites.add(item);
+      favorites.add(food);
       
-      // Convert to maps for storage
-      final favoritesData = favorites.map((item) => item.toMap()).toList();
-      
-      return await _storage.setObjectList(_favoriteFoodsKey, favoritesData);
+      // Convert to Map and save
+      final mapList = favorites.map((item) => item.toMap()).toList();
+      await _storage.setObjectList(_favoriteFoodsKey, mapList);
     } catch (e) {
-      return false;
+      debugPrint('Error adding to favorites: $e');
     }
   }
 
-  /// Remove a food item from favorites
-  Future<bool> removeFromFavorites(String foodName) async {
+  /// Remove food from favorites
+  Future<void> removeFromFavorites(String foodName) async {
     try {
-      final favorites = await getFavorites();
-      
-      // Remove items with matching name (case-insensitive)
-      final originalLength = favorites.length;
+      final favorites = await getFavoriteFoods();
       favorites.removeWhere((item) => item.name.toLowerCase() == foodName.toLowerCase());
       
-      if (favorites.length < originalLength) {
-        // Convert to maps for storage
-        final favoritesData = favorites.map((item) => item.toMap()).toList();
-        return await _storage.setObjectList(_favoriteFoodsKey, favoritesData);
-      }
-      
-      return false; // Nothing was removed
+      // Convert to Map and save
+      final mapList = favorites.map((item) => item.toMap()).toList();
+      await _storage.setObjectList(_favoriteFoodsKey, mapList);
     } catch (e) {
-      return false;
+      debugPrint('Error removing from favorites: $e');
     }
   }
 
-  /// Get favorite food items
-  Future<List<FoodItem>> getFavorites() async {
+  /// Get favorite foods
+  Future<List<FoodItem>> getFavoriteFoods() async {
     try {
-      final favoritesData = await _storage.getObjectList(_favoriteFoodsKey);
+      final mapList = await _storage.getObjectList(_favoriteFoodsKey);
+      if (mapList == null) return [];
       
-      if (favoritesData == null) return [];
-      
-      return favoritesData.map((data) => FoodItem.fromMap(data)).toList();
+      return mapList.map((map) => FoodItem.fromMap(map)).toList();
     } catch (e) {
+      debugPrint('Error getting favorite foods: $e');
       return [];
     }
   }
 
-  /// Check if a food item is in favorites
+  /// Check if food is in favorites
   Future<bool> isFavorite(String foodName) async {
     try {
-      final favorites = await getFavorites();
+      final favorites = await getFavoriteFoods();
       return favorites.any((item) => item.name.toLowerCase() == foodName.toLowerCase());
     } catch (e) {
+      debugPrint('Error checking if favorite: $e');
       return false;
     }
   }
 
-  /// Clear all favorites
-  Future<bool> clearFavorites() async {
+  // === DEBUG METHODS FOR TROUBLESHOOTING ===
+
+  /// DEBUG: Check food item images and their paths
+  Future<void> debugFoodItemImages() async {
     try {
-      await _storage.remove(_favoriteFoodsKey);
-      return true;
+      final allEntries = await getAllFoodEntries();
+      debugPrint('=== FOOD ITEM IMAGE DEBUG ===');
+      debugPrint('Total food entries: ${allEntries.length}');
+      
+      int entriesWithImages = 0;
+      int existingImages = 0;
+      int migratedPaths = 0;
+      
+      for (final entry in allEntries) {
+        if (entry.imagePath != null && entry.imagePath!.isNotEmpty) {
+          entriesWithImages++;
+          
+          // Use ImageStorageService to properly check relative paths
+          final imageFile = await _imageService.getImageFile(entry.imagePath!);
+          final exists = imageFile != null;
+          
+          debugPrint('Food: ${entry.name}');
+          debugPrint('  Image path: ${entry.imagePath}');
+          debugPrint('  Image exists: $exists');
+          debugPrint('  Timestamp: ${entry.timestamp}');
+          
+          if (exists) {
+            existingImages++;
+            final size = await imageFile.length();
+            debugPrint('  Image size: $size bytes');
+          } else {
+            // Try to migrate absolute path to relative
+            final relativePath = await _imageService.migrateAbsoluteToRelativePath(entry.imagePath!);
+            if (relativePath != null) {
+              debugPrint('  MIGRATION: Can migrate to relative path: $relativePath');
+              migratedPaths++;
+            } else {
+              debugPrint('  ERROR: Image file not found and cannot migrate');
+            }
+          }
+          debugPrint('---');
+        } else {
+          debugPrint('Food: ${entry.name} (NO IMAGE PATH)');
+        }
+      }
+      
+      debugPrint('Summary:');
+      debugPrint('  Total entries: ${allEntries.length}');
+      debugPrint('  Entries with image paths: $entriesWithImages');
+      debugPrint('  Images that actually exist: $existingImages');
+      debugPrint('  Paths that can be migrated: $migratedPaths');
+      debugPrint('=== END FOOD ITEM DEBUG ===');
+      
     } catch (e) {
-      return false;
+      debugPrint('Error debugging food items: $e');
     }
   }
-  
+
+  /// MIGRATION: Fix all food entries with absolute paths
+  Future<void> migrateImagePaths() async {
+    try {
+      debugPrint('=== STARTING IMAGE PATH MIGRATION ===');
+      
+      final allEntries = await getAllFoodEntries();
+      int migratedCount = 0;
+      int failedCount = 0;
+      
+      for (final entry in allEntries) {
+        if (entry.imagePath != null && 
+            entry.imagePath!.isNotEmpty && 
+            (entry.imagePath!.startsWith('/') || entry.imagePath!.contains('Application'))) {
+          
+          // Try to migrate this absolute path
+          final relativePath = await _imageService.migrateAbsoluteToRelativePath(entry.imagePath!);
+          
+          if (relativePath != null) {
+            // Update the food entry with the relative path
+            final updatedEntry = entry.copyWith(imagePath: relativePath);
+            final success = await updateFoodEntry(updatedEntry);
+            
+            if (success) {
+              migratedCount++;
+              debugPrint('✅ Migrated: ${entry.name} -> $relativePath');
+            } else {
+              failedCount++;
+              debugPrint('❌ Failed to update: ${entry.name}');
+            }
+          } else {
+            failedCount++;
+            debugPrint('❌ Cannot migrate: ${entry.name} - image not found');
+          }
+        }
+      }
+      
+      debugPrint('=== MIGRATION COMPLETE ===');
+      debugPrint('Successfully migrated: $migratedCount');
+      debugPrint('Failed migrations: $failedCount');
+      
+    } catch (e) {
+      debugPrint('Error during migration: $e');
+    }
+  }
+
+  /// DEBUG: Test the complete image workflow
+  Future<void> debugCompleteImageWorkflow() async {
+    try {
+      debugPrint('=== COMPLETE IMAGE WORKFLOW DEBUG ===');
+      
+      // 1. Check image storage - Note: method may not exist yet
+      // final imageDebug = await _imageService.debugImageStorage();
+      debugPrint('Checking image storage...');
+      
+      // 2. Check food items
+      await debugFoodItemImages();
+      
+      // 3. Test image service methods
+      final allImages = await _imageService.getAllFoodImages();
+      debugPrint('Images found by getAllFoodImages(): ${allImages.length}');
+      for (final img in allImages) {
+        debugPrint('  Image: ${img.path}');
+      }
+      
+      debugPrint('=== END COMPLETE WORKFLOW DEBUG ===');
+    } catch (e) {
+      debugPrint('Error in complete workflow debug: $e');
+    }
+  }
+
+  /// DEBUG: Clear all data for testing
+  Future<void> debugClearAllData() async {
+    try {
+      debugPrint('=== CLEARING ALL DEBUG DATA ===');
+      
+      // Clear food entries
+      await _storage.clear();
+      
+      // Clear images
+      final deletedCount = await _imageService.clearAllImages();
+      
+      debugPrint('Cleared all food entries from storage');
+      debugPrint('Deleted $deletedCount image files');
+      debugPrint('=== DEBUG CLEAR COMPLETE ===');
+    } catch (e) {
+      debugPrint('Error clearing debug data: $e');
+    }
+  }
+
+  /// DEBUG: Create test food entry with image
+  Future<void> debugCreateTestFoodWithImage() async {
+    try {
+      debugPrint('=== CREATING TEST FOOD WITH IMAGE ===');
+      
+      // Create a test food item (without actual image file)
+      final testFood = FoodItem(
+        id: 'debug_test_${DateTime.now().millisecondsSinceEpoch}',
+        name: 'Debug Test Food',
+        calories: 100.0,
+        proteins: 5.0,
+        carbs: 15.0,
+        fats: 2.0,
+        mealType: 'snack',
+        timestamp: DateTime.now(),
+        servingSize: 1.0,
+        servingUnit: 'serving',
+        imagePath: '/fake/path/to/test/image.jpg', // Fake path for testing
+      );
+      
+      final saved = await saveFoodEntry(testFood);
+      debugPrint('Test food saved: $saved');
+      debugPrint('Test food image path: ${testFood.imagePath}');
+      debugPrint('=== TEST FOOD CREATION COMPLETE ===');
+    } catch (e) {
+      debugPrint('Error creating test food: $e');
+    }
+  }
 }

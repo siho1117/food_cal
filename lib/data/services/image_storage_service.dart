@@ -5,7 +5,7 @@ import '../storage/local_storage.dart';
 import '../../config/constants/app_constants.dart';
 
 /// Service responsible for image file storage and management
-/// Handles saving, retrieving, and deleting image files
+/// FIXED: Now stores relative paths to avoid container UUID issues
 class ImageStorageService {
   final LocalStorage _storage = LocalStorage();
 
@@ -14,38 +14,65 @@ class ImageStorageService {
   static final ImageStorageService _instance = ImageStorageService._internal();
   factory ImageStorageService() => _instance;
 
+  /// Get the food images directory path
+  Future<Directory> _getFoodImagesDirectory() async {
+    final documentsDir = await _storage.getTemporaryDirectory();
+    final foodImagesDir = Directory('${documentsDir.path}/${AppConstants.tempImageFolderKey}');
+    
+    if (!await foodImagesDir.exists()) {
+      await foodImagesDir.create(recursive: true);
+    }
+    
+    return foodImagesDir;
+  }
+
   /// Save an image file to local storage
-  /// Returns the path to the saved image, or null if failed
+  /// Returns the RELATIVE path (just filename), or null if failed
   Future<String?> saveImageFile(File imageFile) async {
     try {
-      // Get the app's documents directory (via LocalStorage method)
-      final documentsDir = await _storage.getTemporaryDirectory();
-
-      // Create a folder for food images if it doesn't exist
-      final foodImagesDir = Directory('${documentsDir.path}/${AppConstants.tempImageFolderKey}');
-      if (!await foodImagesDir.exists()) {
-        await foodImagesDir.create(recursive: true);
-      }
+      final foodImagesDir = await _getFoodImagesDirectory();
 
       // Generate a unique filename based on timestamp
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final newPath = '${foodImagesDir.path}/food_$timestamp.jpg';
+      final filename = 'food_$timestamp.jpg';
+      final newPath = '${foodImagesDir.path}/$filename';
 
       // Copy the file to our app's storage
-      final savedImage = await imageFile.copy(newPath);
+      await imageFile.copy(newPath);
 
-      return savedImage.path;
+      // IMPORTANT: Return only the filename, not the full path
+      return filename;
     } catch (e) {
       debugPrint('Error saving image file: $e');
       return null;
     }
   }
 
-  /// Get an image file from storage
+  /// Get an image file from storage using relative path (filename)
   /// Returns the File object if it exists, null otherwise
   Future<File?> getImageFile(String imagePath) async {
     try {
-      final file = File(imagePath);
+      String fullPath;
+      
+      // Handle both relative and absolute paths for backward compatibility
+      if (imagePath.startsWith('/') || imagePath.contains('Application')) {
+        // It's an absolute path - try to use it directly first
+        final file = File(imagePath);
+        if (await file.exists()) {
+          return file;
+        }
+        
+        // If absolute path doesn't work, extract filename and try relative
+        final filename = imagePath.split('/').last;
+        final foodImagesDir = await _getFoodImagesDirectory();
+        fullPath = '${foodImagesDir.path}/$filename';
+      } else {
+        // It's a relative path (filename) - build full path
+        final foodImagesDir = await _getFoodImagesDirectory();
+        fullPath = '${foodImagesDir.path}/$imagePath';
+      }
+      
+      final file = File(fullPath);
       if (await file.exists()) {
         return file;
       }
@@ -56,29 +83,26 @@ class ImageStorageService {
     }
   }
 
-  /// Check if an image file exists
+  /// Check if an image file exists using relative path (filename)
   Future<bool> imageExists(String imagePath) async {
     try {
-      if (imagePath.isEmpty) return false;
-      final file = File(imagePath);
-      return await file.exists();
+      final file = await getImageFile(imagePath);
+      return file != null;
     } catch (e) {
       return false;
     }
   }
 
-  /// Delete an image file from storage
+  /// Delete an image file from storage using relative path (filename)
   /// Returns true if successfully deleted, false otherwise
   Future<bool> deleteImageFile(String imagePath) async {
     try {
-      if (imagePath.isEmpty) return false;
-      
-      final file = File(imagePath);
-      if (await file.exists()) {
+      final file = await getImageFile(imagePath);
+      if (file != null) {
         await file.delete();
         return true;
       }
-      return false; // File didn't exist
+      return false;
     } catch (e) {
       debugPrint('Error deleting image file: $e');
       return false;
@@ -99,14 +123,12 @@ class ImageStorageService {
     return deletedCount;
   }
 
-  /// Get the size of an image file in bytes
+  /// Get the size of an image file in bytes using relative path (filename)
   /// Returns the file size, or 0 if file doesn't exist or error
   Future<int> getImageFileSize(String imagePath) async {
     try {
-      if (imagePath.isEmpty) return 0;
-      
-      final file = File(imagePath);
-      if (await file.exists()) {
+      final file = await getImageFile(imagePath);
+      if (file != null) {
         return await file.length();
       }
       return 0;
@@ -120,13 +142,8 @@ class ImageStorageService {
   /// Returns a list of File objects
   Future<List<File>> getAllFoodImages() async {
     try {
-      final documentsDir = await _storage.getTemporaryDirectory();
-      final foodImagesDir = Directory('${documentsDir.path}/${AppConstants.tempImageFolderKey}');
+      final foodImagesDir = await _getFoodImagesDirectory();
       
-      if (!await foodImagesDir.exists()) {
-        return [];
-      }
-
       final entities = await foodImagesDir.list().toList();
       final imageFiles = <File>[];
       
@@ -208,13 +225,8 @@ class ImageStorageService {
   /// Returns the number of files deleted
   Future<int> clearAllImages() async {
     try {
-      final documentsDir = await _storage.getTemporaryDirectory();
-      final foodImagesDir = Directory('${documentsDir.path}/${AppConstants.tempImageFolderKey}');
+      final foodImagesDir = await _getFoodImagesDirectory();
       
-      if (!await foodImagesDir.exists()) {
-        return 0;
-      }
-
       final entities = await foodImagesDir.list().toList();
       int deletedCount = 0;
       
@@ -237,24 +249,26 @@ class ImageStorageService {
     }
   }
 
-  /// Create backup of image file
-  /// Returns the path to backup file, or null if failed
+  /// Create backup of image file using relative path (filename)
+  /// Returns the filename of backup file, or null if failed
   Future<String?> createImageBackup(String imagePath, String backupSuffix) async {
     try {
-      if (imagePath.isEmpty) return null;
+      final file = await getImageFile(imagePath);
+      if (file == null) return null;
       
-      final originalFile = File(imagePath);
-      if (!await originalFile.exists()) return null;
-      
-      // Create backup path
-      final pathParts = imagePath.split('.');
+      // Extract filename without extension
+      final filename = imagePath.contains('/') ? imagePath.split('/').last : imagePath;
+      final pathParts = filename.split('.');
       final extension = pathParts.isNotEmpty ? pathParts.last : 'jpg';
-      final basePathWithoutExtension = imagePath.substring(0, imagePath.length - extension.length - 1);
-      final backupPath = '${basePathWithoutExtension}_$backupSuffix.$extension';
+      final baseNameWithoutExtension = filename.substring(0, filename.length - extension.length - 1);
+      final backupFilename = '${baseNameWithoutExtension}_$backupSuffix.$extension';
       
-      // Copy file to backup location
-      final backupFile = await originalFile.copy(backupPath);
-      return backupFile.path;
+      // Create backup in same directory
+      final foodImagesDir = await _getFoodImagesDirectory();
+      final backupPath = '${foodImagesDir.path}/$backupFilename';
+      
+      await file.copy(backupPath);
+      return backupFilename; // Return relative path (filename)
     } catch (e) {
       debugPrint('Error creating image backup: $e');
       return null;
@@ -265,5 +279,74 @@ class ImageStorageService {
   bool _isImageFile(String path) {
     final extension = path.toLowerCase().split('.').last;
     return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension);
+  }
+
+  /// DEBUG: Enhanced image storage debugging
+  Future<Map<String, dynamic>> debugImageStorage() async {
+    try {
+      debugPrint('=== IMAGE STORAGE DEBUG ===');
+      
+      final foodImagesDir = await _getFoodImagesDirectory();
+      debugPrint('Food images directory: ${foodImagesDir.path}');
+      debugPrint('Directory exists: ${await foodImagesDir.exists()}');
+      
+      if (await foodImagesDir.exists()) {
+        final entities = await foodImagesDir.list().toList();
+        final imageFiles = entities.where((e) => e is File && _isImageFile(e.path)).toList();
+        
+        debugPrint('Files in directory: ${entities.length}');
+        debugPrint('Image files: ${imageFiles.length}');
+        
+        // Show first few image files
+        for (int i = 0; i < imageFiles.length && i < 5; i++) {
+          final file = imageFiles[i] as File;
+          final filename = file.path.split('/').last;
+          final size = await file.length();
+          final modified = await file.lastModified();
+          debugPrint('  $filename - ${size} bytes - $modified');
+        }
+        
+        if (imageFiles.length > 5) {
+          debugPrint('  ... and ${imageFiles.length - 5} more files');
+        }
+      }
+      
+      debugPrint('=== END IMAGE STORAGE DEBUG ===');
+      
+      return {
+        'directory': foodImagesDir.path,
+        'exists': await foodImagesDir.exists(),
+        'fileCount': await foodImagesDir.exists() 
+            ? (await foodImagesDir.list().toList()).length 
+            : 0,
+      };
+    } catch (e) {
+      debugPrint('Error in image storage debug: $e');
+      return {'error': e.toString()};
+    }
+  }
+
+  /// MIGRATION: Convert absolute paths to relative paths
+  Future<String?> migrateAbsoluteToRelativePath(String absolutePath) async {
+    try {
+      if (!absolutePath.startsWith('/') && !absolutePath.contains('Application')) {
+        // Already a relative path
+        return absolutePath;
+      }
+      
+      // Extract filename from absolute path
+      final filename = absolutePath.split('/').last;
+      
+      // Check if file exists with this filename
+      final file = await getImageFile(filename);
+      if (file != null) {
+        return filename;
+      }
+      
+      return null; // File doesn't exist
+    } catch (e) {
+      debugPrint('Error migrating path: $e');
+      return null;
+    }
   }
 }

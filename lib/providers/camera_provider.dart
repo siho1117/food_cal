@@ -3,9 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'dart:typed_data';
 import '../data/repositories/food_repository.dart';
 
 class CameraProvider extends ChangeNotifier {
@@ -68,7 +66,9 @@ class CameraProvider extends ChangeNotifier {
       );
 
       if (recognizedItems.isEmpty) {
-        _showErrorAndReturn(context, 'No food items were detected in the image. Please try again.');
+        if (context.mounted) {
+          _showErrorAndReturn(context, 'No food items were detected in the image. Please try again.');
+        }
         return;
       }
 
@@ -76,9 +76,16 @@ class CameraProvider extends ChangeNotifier {
       final saveSuccess = await _foodRepository.saveFoodEntries(recognizedItems);
       
       if (!saveSuccess) {
-        _showErrorAndReturn(context, 'Failed to save food items. Please try again.');
+        if (context.mounted) {
+          _showErrorAndReturn(context, 'Failed to save food items. Please try again.');
+        }
         return;
       }
+
+      // DEBUG: Check image storage after saving food
+      debugPrint('🐛 RUNNING IMAGE DEBUG AFTER SAVING FOOD...');
+      await _foodRepository.debugCompleteImageWorkflow();
+      debugPrint('🐛 IMAGE DEBUG COMPLETE');
 
       // Step 5: Navigate to home page and show success
       if (context.mounted) {
@@ -86,8 +93,10 @@ class CameraProvider extends ChangeNotifier {
       }
 
     } catch (e) {
-      print('Error in camera flow: $e');
-      _showErrorAndReturn(context, 'Error processing image: $e');
+      debugPrint('Error in camera flow: $e');
+      if (context.mounted) {
+        _showErrorAndReturn(context, 'Error processing image: $e');
+      }
     } finally {
       _setLoading(false);
     }
@@ -151,6 +160,7 @@ class CameraProvider extends ChangeNotifier {
   }
 
   /// Resize and optimize image for better API performance
+  /// Optimizes in memory without creating temporary files
   Future<File> _resizeAndOptimizeImage(
     File originalFile, 
     int targetWidth, 
@@ -158,11 +168,6 @@ class CameraProvider extends ChangeNotifier {
     int quality
   ) async {
     try {
-      final Uint8List originalBytes = await originalFile.readAsBytes();
-      
-      final Directory tempDir = await getTemporaryDirectory();
-      final String targetPath = '${tempDir.path}/optimized_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      
       final Uint8List? compressedBytes = await FlutterImageCompress.compressWithFile(
         originalFile.absolute.path,
         minWidth: targetWidth,
@@ -172,15 +177,15 @@ class CameraProvider extends ChangeNotifier {
       );
 
       if (compressedBytes != null) {
-        final File compressedFile = File(targetPath);
-        await compressedFile.writeAsBytes(compressedBytes);
-        return compressedFile;
+        // Write compressed bytes back to the original file
+        await originalFile.writeAsBytes(compressedBytes);
+        return originalFile;
       } else {
         // Fallback to original file if compression fails
         return originalFile;
       }
     } catch (e) {
-      print('Error compressing image: $e');
+      debugPrint('Error compressing image: $e');
       // Fallback to original file if compression fails
       return originalFile;
     }
