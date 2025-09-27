@@ -26,38 +26,43 @@ class AppTheme {
   static Color accentLighter = _lighten(accentColor, 0.15);
   static Color accentDarker = _darken(accentColor, 0.15);
   
-  // Background opacity presets
-  static Color primaryBlueBackground = primaryBlue.withOpacity(0.1);
-  static Color accentBackground = accentColor.withOpacity(0.1);
-  static Color goldAccentBackground = goldAccent.withOpacity(0.1);
-  static Color coralAccentBackground = coralAccent.withOpacity(0.1);
+  // Background opacity presets - FIXED: Updated to use withValues()
+  static Color primaryBlueBackground = primaryBlue.withValues(alpha: 0.1);
+  static Color accentBackground = accentColor.withValues(alpha: 0.1);
+  static Color goldAccentBackground = goldAccent.withValues(alpha: 0.1);
+  static Color coralAccentBackground = coralAccent.withValues(alpha: 0.1);
 
-  // Semantic background helpers
-  static Color getBackgroundFor(Color color, [double opacity = 0.1]) => color.withOpacity(opacity);
-  static Color getBorderFor(Color color, [double opacity = 0.3]) => color.withOpacity(opacity);
+  // Semantic background helpers - FIXED: Updated to use withValues()
+  static Color getBackgroundFor(Color color, [double opacity = 0.1]) => color.withValues(alpha: opacity);
+  static Color getBorderFor(Color color, [double opacity = 0.3]) => color.withValues(alpha: opacity);
   
   // Get appropriate text color based on background color
   static Color getTextColorFor(Color backgroundColor) {
     return backgroundColor.computeLuminance() > 0.5 ? textDark : textLight;
   }
   
-  // Create a Material Color swatch from a single color
+  // Create a Material Color swatch from a single color - FIXED: Proper type handling
   static MaterialColor createMaterialColor(Color color) {
     final strengths = <double>[.05, .1, .2, .3, .4, .5, .6, .7, .8, .9];
     final swatch = <int, Color>{};
-    final r = color.red, g = color.green, b = color.blue;
+    
+    // Extract RGB values properly - these return int values
+    final r = (color.r * 255).round();
+    final g = (color.g * 255).round();
+    final b = (color.b * 255).round();
 
     for (final strength in strengths) {
       final ds = 0.5 - strength;
       swatch[(strength * 1000).round()] = Color.fromRGBO(
-        r + ((ds < 0 ? r : (255 - r)) * ds).round(),
-        g + ((ds < 0 ? g : (255 - g)) * ds).round(),
-        b + ((ds < 0 ? b : (255 - b)) * ds).round(),
+        (r + ((ds < 0 ? r : (255 - r)) * ds)).round().clamp(0, 255),
+        (g + ((ds < 0 ? g : (255 - g)) * ds)).round().clamp(0, 255),
+        (b + ((ds < 0 ? b : (255 - b)) * ds)).round().clamp(0, 255),
         1,
       );
     }
     
-    return MaterialColor(color.value, swatch);
+    // Use toARGB32() instead of deprecated .value property
+    return MaterialColor(color.toARGB32(), swatch);
   }
   
   // Helper method to lighten colors
@@ -105,13 +110,12 @@ class AppTheme {
     letterSpacing: 1.2,
   );
 
-  // The main theme
+  // The main theme - FIXED: Updated deprecated background to surface
   static final ThemeData lightTheme = ThemeData(
     colorScheme: const ColorScheme.light(
       primary: primaryBlue,
       secondary: secondaryBeige,
-      background: secondaryBeige,
-      surface: Colors.white,
+      surface: secondaryBeige,  // FIXED: Changed from background to surface
       tertiary: accentColor,
     ),
     scaffoldBackgroundColor: secondaryBeige,

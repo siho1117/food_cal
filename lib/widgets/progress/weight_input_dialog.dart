@@ -10,11 +10,11 @@ class WeightInputDialog extends StatefulWidget {
   final Function(double, bool) onWeightEntered;
 
   const WeightInputDialog({
-    Key? key,
+    super.key,
     required this.currentWeight,
     required this.isMetric,
     required this.onWeightEntered,
-  }) : super(key: key);
+  });
 
   @override
   State<WeightInputDialog> createState() => _WeightInputDialogState();
@@ -60,7 +60,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppTheme.primaryBlue.withOpacity(0.1),
+              color: AppTheme.primaryBlue.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -107,7 +107,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: !_localIsMetric ? [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           )
@@ -140,7 +140,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: _localIsMetric ? [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           )
@@ -269,23 +269,6 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  static void show(
-    BuildContext context, {
-    required double? currentWeight,
-    required bool isMetric,
-    required Function(double, bool) onWeightEntered,
-  }) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => WeightInputDialog(
-        currentWeight: currentWeight,
-        isMetric: isMetric,
-        onWeightEntered: onWeightEntered,
       ),
     );
   }
