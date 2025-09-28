@@ -12,14 +12,14 @@ class WeekNavigationWidget extends StatelessWidget {
   final double? dayItemHeight;
 
   const WeekNavigationWidget({
-    Key? key,
+    super.key,  // ✅ FIXED: Using super parameter instead of Key? key
     required this.selectedDate,
     required this.onDateChanged,
     this.daysToShow = 8, // Default: 7 days back + today
     this.padding,
     this.dayItemWidth = 42,
     this.dayItemHeight = 65,
-  }) : super(key: key);
+  });  // ✅ FIXED: Removed ': super(key: key)' as it's no longer needed
 
   @override
   Widget build(BuildContext context) {

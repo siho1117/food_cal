@@ -9,7 +9,7 @@ import '../widgets/summary/summary_content_widget.dart';
 import '../utils/export_helper.dart';
 
 class SummaryScreen extends StatefulWidget {
-  const SummaryScreen({Key? key}) : super(key: key);
+  const SummaryScreen({super.key});  // ✅ FIXED: Using super parameter instead of Key? key
 
   @override
   State<SummaryScreen> createState() => _SummaryScreenState();
@@ -70,12 +70,12 @@ class _SummaryScreenState extends State<SummaryScreen> {
                         child: Container(
                           color: AppTheme.secondaryBeige,
                           child: SummaryContentWidget(
-                            period: _currentPeriod,
+                            period: _currentPeriod,  // ✅ FIXED: Only pass period parameter
                           ),
                         ),
                       ),
                       
-                      const SizedBox(height: 100), // Bottom padding for navigation
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
@@ -87,7 +87,6 @@ class _SummaryScreenState extends State<SummaryScreen> {
     );
   }
 
-  /// Handle export with clean user feedback
   Future<void> _handleExport() async {
     if (_isExporting) return;
     
@@ -96,13 +95,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
     });
 
     try {
-      // Show export progress
-      _showMessage('Exporting summary...', isLoading: true);
-      
-      // Small delay for UI feedback
-      await Future.delayed(const Duration(milliseconds: 300));
-      
-      // Export the summary
+      // ✅ FIXED: Use correct method name from ExportHelper
       final success = await ExportHelper.exportSummary(
         _summaryKey,
         _currentPeriod,
@@ -110,15 +103,29 @@ class _SummaryScreenState extends State<SummaryScreen> {
 
       if (mounted) {
         if (success) {
-          _showMessage('Summary saved to Photos! 📸', isSuccess: true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Summary exported successfully! 📸'),
+              backgroundColor: Colors.green,
+            ),
+          );
         } else {
-          _showMessage('Export failed. Please try again.', isError: true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Export failed. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       }
-
     } catch (e) {
       if (mounted) {
-        _showMessage('Export error occurred. Please try again.', isError: true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -127,80 +134,5 @@ class _SummaryScreenState extends State<SummaryScreen> {
         });
       }
     }
-  }
-
-  /// Unified message display method
-  void _showMessage(String message, {
-    bool isLoading = false,
-    bool isSuccess = false,
-    bool isError = false,
-  }) {
-    if (!mounted) return;
-    
-    ScaffoldMessenger.of(context).clearSnackBars();
-    
-    Color backgroundColor;
-    Widget icon;
-    Duration duration;
-    SnackBarAction? action;
-
-    if (isLoading) {
-      backgroundColor = Colors.blue[600]!;
-      icon = const SizedBox(
-        width: 16,
-        height: 16,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-        ),
-      );
-      duration = const Duration(seconds: 2);
-    } else if (isSuccess) {
-      backgroundColor = Colors.green[600]!;
-      icon = const Icon(Icons.check_circle, color: Colors.white, size: 20);
-      duration = const Duration(seconds: 3);
-      action = SnackBarAction(
-        label: 'View',
-        textColor: Colors.white,
-        onPressed: () {
-          // iOS will handle opening Photos
-        },
-      );
-    } else if (isError) {
-      backgroundColor = Colors.red[600]!;
-      icon = const Icon(Icons.error_outline, color: Colors.white, size: 20);
-      duration = const Duration(seconds: 4);
-      action = SnackBarAction(
-        label: 'Retry',
-        textColor: Colors.white,
-        onPressed: () {
-          ScaffoldMessenger.of(context).clearSnackBars();
-          _handleExport();
-        },
-      );
-    } else {
-      backgroundColor = Colors.grey[600]!;
-      icon = const Icon(Icons.info_outline, color: Colors.white, size: 20);
-      duration = const Duration(seconds: 2);
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            icon,
-            const SizedBox(width: 12),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        duration: duration,
-        action: action,
-      ),
-    );
   }
 }

@@ -66,7 +66,7 @@ class CameraActionsWidget extends StatelessWidget {
                 ),
                 
                 // Camera button
-                Container(
+                SizedBox(  // ✅ FIXED: Changed from Container to SizedBox (line 69)
                   width: double.infinity,
                   height: 120,
                   child: ElevatedButton.icon(
