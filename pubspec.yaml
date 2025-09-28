@@ -13,7 +13,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  
+  # ✅ INTERNATIONALIZATION SUPPORT
+  flutter_localizations:
+    sdk: flutter
+  
   # ✅ CORE FLUTTER DEPENDENCIES
   cupertino_icons: ^1.0.8
   
@@ -29,26 +33,26 @@ dependencies:
   flutter_dotenv: ^5.1.0
 
   # ⚠️ CAMERA & IMAGE HANDLING - CONSERVATIVE VERSIONS
-  camera: ^0.10.5+9              # ✅ FIXED: Reverted to stable version
-  image_picker: ^1.0.4           # ✅ FIXED: Reverted to stable version  
-  flutter_image_compress: ^1.1.3 # ✅ FIXED: Reverted to stable version (iOS compatible)
+  camera: ^0.10.5+9
+  image_picker: ^1.0.4
+  flutter_image_compress: ^1.1.3
   image_gallery_saver: ^2.0.3
 
   # ⚠️ PERMISSIONS - STABLE VERSION
-  permission_handler: ^11.2.0    # ✅ FIXED: Reverted to stable version
+  permission_handler: ^11.2.0
 
   # ✅ UI & NAVIGATION
   curved_navigation_bar: ^1.0.6
   
   # ⚠️ SHARING - CONSERVATIVE VERSION
-  share_plus: ^7.2.1             # ✅ FIXED: Reverted to stable version
+  share_plus: ^7.2.1
 
   # ✅ FONTS & UI COMPONENTS
   google_fonts: ^6.2.1
   percent_indicator: ^4.2.3
 
   # ✅ DEPENDENCY INJECTION
-  get_it: ^7.6.4                 # ✅ FIXED: Reverted to stable version
+  get_it: ^7.6.4
 
   # ✅ INTERNATIONALIZATION
   intl: ^0.19.0
@@ -56,13 +60,13 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0          # ✅ FIXED: Stable linting version
-
-# ❌ REMOVED: Dependency overrides that force untested versions
-# The aggressive overrides were causing iOS compatibility issues
+  flutter_lints: ^4.0.0
 
 flutter:
   uses-material-design: true
+  
+  # ✅ ENABLE CODE GENERATION FOR i18n
+  generate: true
   
   # ✅ ASSETS
   assets:
