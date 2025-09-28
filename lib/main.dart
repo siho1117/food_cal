@@ -24,9 +24,9 @@ import 'screens/exercise_screen.dart' as exercise;
 import 'screens/settings_screen.dart';
 import 'screens/summary_screen.dart';
 
-// Widgets
-import 'widgets/custom_bottom_nav.dart';
-import 'widgets/custom_app_bar.dart';
+// Widgets - FIXED: Both widgets are now in widgets/common/
+import 'widgets/common/custom_bottom_nav.dart';
+import 'widgets/common/custom_app_bar.dart';     // FIXED: Moved to widgets/common/
 
 Future<void> main() async {
   // Ensure Flutter is initialized
@@ -111,6 +111,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
+// ✅ COMPLETE MainApp class with proper navigation
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
 
@@ -136,11 +137,11 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
 
     // Initialize screens list
     _screens = [
-      const HomeScreen(),
-      const progress.ProgressScreen(),
-      Container(), // Camera screen handled separately via navigation
-      const exercise.ExerciseScreen(),
-      const SummaryScreen(),
+      const HomeScreen(),              // Index 0: Home
+      const progress.ProgressScreen(), // Index 1: Progress
+      Container(),                     // Index 2: Camera (handled separately)
+      const exercise.ExerciseScreen(), // Index 3: Exercise
+      const SummaryScreen(),           // Index 4: Summary/Settings
     ];
   }
 
@@ -152,7 +153,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
 
   void _onItemTapped(int index) {
     if (index == 2) {
-      // Camera tap - toggle overlay
+      // Camera tap - toggle overlay and navigate
       setState(() {
         _isCameraOverlayOpen = !_isCameraOverlayOpen;
       });
@@ -179,6 +180,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
         });
       }
     } else {
+      // Regular navigation
       setState(() {
         _currentIndex = index;
         _isCameraOverlayOpen = false;
@@ -189,7 +191,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   void _navigateToSettings() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const SettingsScreen(),
+        builder: (context) => const SettingsScreen(showBackButton: true),
       ),
     );
   }

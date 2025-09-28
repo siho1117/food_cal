@@ -1,8 +1,7 @@
-// lib/widgets/custom_bottom_nav.dart
+// lib/widgets/common/custom_bottom_nav.dart
+// ✅ SIMPLIFIED: Using hard-coded values to eliminate import issues
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
-import '../config/design_system/theme.dart';
-import '../config/constants/app_constants.dart';  // ADDED: Import for constants
 
 class CustomBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -20,9 +19,9 @@ class CustomBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use colors from the theme instead of hardcoded values
-    const navBarColor = AppTheme.primaryBlue; // Primary color from theme
-    const selectedButtonColor = AppTheme.accentColor; // Accent color from theme
+    // ✅ SIMPLIFIED: Hard-coded theme colors to avoid import issues
+    const navBarColor = Color(0xFF0D4033);      // AppTheme.primaryBlue
+    const selectedButtonColor = Color(0xFF8B3A3A); // AppTheme.accentColor
 
     // Determine the visual index for the curved navigation bar
     // If camera overlay is open, show camera as selected (index 2)
@@ -31,12 +30,12 @@ class CustomBottomNav extends StatelessWidget {
 
     return CurvedNavigationBar(
       index: visualIndex, // Use visualIndex instead of currentIndex
-      height: AppConstants.bottomNavHeight, // FIXED: Use constant instead of hardcoded 75
+      height: 75.0, // Hard-coded instead of AppConstants.bottomNavHeight
       backgroundColor: Colors.transparent,
       color: navBarColor, // Use theme color for nav bar 
       buttonBackgroundColor: selectedButtonColor, // Use accent color for selected button
-      animationCurve: AppConstants.animationCurve, // FIXED: Use constant instead of hardcoded curve
-      animationDuration: AppConstants.bottomNavAnimationDuration, // FIXED: Use constant instead of hardcoded 400ms
+      animationCurve: Curves.easeInOut, // Hard-coded instead of AppConstants.animationCurve
+      animationDuration: const Duration(milliseconds: 400), // Hard-coded duration
       items: [
         _buildNavItem(Icons.home_rounded, 'Home', 0, visualIndex),
         _buildNavItem(Icons.bar_chart_rounded, 'Progress', 1, visualIndex),
@@ -53,18 +52,14 @@ class CustomBottomNav extends StatelessWidget {
 
     return Padding(
       padding: isSelected
-          ? const EdgeInsets.all(AppConstants.paddingSmall + 2) // FIXED: Use constant-based padding
-          : const EdgeInsets.fromLTRB(
-              AppConstants.paddingSmall + 2, // FIXED: Use constant instead of hardcoded 10
-              AppConstants.paddingMedium,     // FIXED: Use constant instead of hardcoded 16
-              AppConstants.paddingSmall + 2,  // FIXED: Use constant instead of hardcoded 10
-              5), // Keep small bottom padding for visual balance
+          ? const EdgeInsets.all(10.0) // Hard-coded padding
+          : const EdgeInsets.fromLTRB(10.0, 16.0, 10.0, 5.0), // Hard-coded padding
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             icon,
-            size: isSelected ? AppConstants.iconSizeLarge : AppConstants.iconSizeMedium, // FIXED: Use constants
+            size: isSelected ? 24.0 : 20.0, // Hard-coded icon sizes
             color: isSelected ? Colors.white : Colors.white70,
           ),
           if (!isSelected) ...[
@@ -73,7 +68,7 @@ class CustomBottomNav extends StatelessWidget {
               label,
               style: const TextStyle(
                 color: Colors.white70,
-                fontSize: AppConstants.fontSizeSmall, // FIXED: Use constant instead of hardcoded size
+                fontSize: 11.0, // Hard-coded font size
                 fontWeight: FontWeight.w500,
               ),
               maxLines: 1,
@@ -87,11 +82,11 @@ class CustomBottomNav extends StatelessWidget {
 
   Widget _buildCameraNavItem(bool isCameraOpen) {
     return Container(
-      padding: const EdgeInsets.all(AppConstants.paddingSmall), // FIXED: Use constant
+      padding: const EdgeInsets.all(8.0), // Hard-coded padding
       child: Icon(
         Icons.camera_alt_rounded,
-        size: AppConstants.iconSizeXLarge, // FIXED: Use constant instead of hardcoded size
-        color: isCameraOpen ? AppTheme.primaryBlue : Colors.white,
+        size: 28.0, // Hard-coded icon size
+        color: isCameraOpen ? const Color(0xFF0D4033) : Colors.white, // Hard-coded colors
       ),
     );
   }

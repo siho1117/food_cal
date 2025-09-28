@@ -1,6 +1,8 @@
+// lib/widgets/common/custom_app_bar.dart
+// ✅ FIXED: Correct import paths for widgets/common/ location
 import 'package:flutter/material.dart';
-import '../config/design_system/theme.dart';
-import '../config/design_system/text_styles.dart';
+import '../../config/design_system/theme.dart';      // Two levels up to reach config
+import '../../config/design_system/text_styles.dart'; // Two levels up to reach config
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Function onSettingsTap;
