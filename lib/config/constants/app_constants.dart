@@ -39,6 +39,13 @@ class AppConstants {
   static const double fontSizeTitle = 26.0;
   static const double fontSizeAppTitle = 38.0;
 
+  // === ANIMATION CONSTANTS ===
+  static const Curve animationCurve = Curves.easeInOut;
+  static const Duration bottomNavAnimationDuration = Duration(milliseconds: 400);
+  static const Duration defaultAnimationDuration = Duration(milliseconds: 300);
+  static const Duration fastAnimationDuration = Duration(milliseconds: 150);
+  static const Duration slowAnimationDuration = Duration(milliseconds: 600);
+
   // === FOOD RELATED CONSTANTS ===
   static const List<String> mealTypes = [
     'breakfast',
@@ -58,70 +65,71 @@ class AppConstants {
     'slice',
     'tbsp',
     'tsp',
-    'kg',          // ADDED: Missing from your current file
-    'lb',          // ADDED: Missing from your current file
+    'kg',
+    'lb',
+    'liter',
+    'fl oz',
+    'pint',
+    'quart',
   ];
 
-  static const int maxFoodNameLength = 100;
-  static const double maxBudgetAmount = 1000.0;
-  static const double defaultServingSize = 1.0;
+  // === MEAL TYPE EMOJIS ===
+  static const Map<String, String> mealTypeEmojis = {
+    'breakfast': '🌅',
+    'lunch': '☀️',
+    'dinner': '🌙',
+    'snack': '🍎',
+  };
 
-  // === BUDGET PRESETS ===
-  static const List<Map<String, dynamic>> budgetPresets = [
-    {'label': 'Frugal', 'amount': 15.0},
-    {'label': 'Moderate', 'amount': 25.0}, 
-    {'label': 'Generous', 'amount': 40.0},
-  ];
+  // === NUTRITION GOALS (default values) ===
+  static const Map<String, dynamic> defaultNutritionGoals = {
+    'calories': 2000,
+    'protein': 150.0,      // grams
+    'carbs': 250.0,        // grams
+    'fat': 65.0,           // grams
+    'fiber': 25.0,         // grams
+    'sugar': 50.0,         // grams
+    'sodium': 2300.0,      // milligrams
+  };
 
-  // === WEIGHT RELATED ===
-  static const double weightLimitPercentage = 0.20; // 20% max change
-  static const double defaultWeightKg = 70.0;
-  static const double defaultWeightLbs = 154.0;
-  static const double lbsToKgRatio = 2.20462;
+  // === API CONSTANTS ===
+  static const int defaultApiTimeout = 30; // seconds
+  static const int imageApiTimeout = 45; // seconds
+  static const int maxRetries = 3;
+  static const int dailyApiQuota = 50;
 
-  // === TIME CONSTANTS ===
-  static const int mealTimeBoundaries = 11; // breakfast < 11am
-  static const int lunchBoundary = 15;      // lunch < 3pm  
-  static const int snackBoundary = 18;      // snack < 6pm
-  // dinner >= 6pm
+  // === IMAGE PROCESSING CONSTANTS ===
+  static const int maxImageSizeMB = 10;
+  static const int targetImageWidth = 1024;
+  static const int targetImageHeight = 1024;
+  static const int imageCompressionQuality = 85;
 
-  // === API & TIMEOUTS ===
-  static const Duration apiTimeout = Duration(seconds: 60);
-  static const Duration shortTimeout = Duration(seconds: 15);
-  static const Duration animationDuration = Duration(milliseconds: 300);
-  static const Duration loadingDelay = Duration(milliseconds: 200);
+  // === VALIDATION CONSTANTS ===
+  static const double minCalories = 0.0;
+  static const double maxCalories = 5000.0;
+  static const double minMacros = 0.0;
+  static const double maxProtein = 300.0;
+  static const double maxCarbs = 500.0;
+  static const double maxFat = 200.0;
 
-  static const int imageQuality = 90;
-  static const int compressionQuality = 45;
-  static const int targetImageWidth = 256;
-  static const int targetImageHeight = 256;
-
-  // === VALIDATION LIMITS ===
-  static const int maxRecentSearches = 10;
-  static const int maxDurationHours = 1440; // 24 hours in minutes
-  static const int maxTextFieldLength = 8;
-  static const int maxDecimalPlaces = 2;
-
-  // === PROGRESS THRESHOLDS ===
-  static const double budgetWarningThreshold = 0.9;   // 90%
-  static const double budgetCautionThreshold = 0.7;   // 70%
-  static const double budgetGoodThreshold = 0.4;      // 40%
-
-  // === ANIMATION VALUES ===
-  static const Curve animationCurve = Curves.easeOutCubic;
-  static const Duration bottomNavAnimationDuration = Duration(milliseconds: 400);
-  static const double shadowOpacity = 0.05;
-  static const double blurRadius = 10.0;
-  static const Offset shadowOffset = Offset(0, 2);
+  // === USER PROFILE CONSTANTS ===
+  static const double minWeight = 30.0;  // kg
+  static const double maxWeight = 300.0; // kg
+  static const double minHeight = 100.0; // cm
+  static const double maxHeight = 250.0; // cm
+  static const int minAge = 13;
+  static const int maxAge = 120;
 
   // === STORAGE KEYS ===
+  static const String userProfileKey = 'user_profile';
   static const String foodEntriesKey = 'food_entries';
-  static const String tempImageFolderKey = 'food_images';
+  static const String settingsKey = 'app_settings';
+  static const String onboardingKey = 'onboarding_completed';
+  static const String apiQuotaKey = 'api_quota_usage';
+  static const String apiQuotaDateKey = 'api_quota_date';
   static const String recentSearchesKey = 'recent_food_searches';
   static const String favoriteFoodsKey = 'favorite_foods';
   static const String errorLogKey = 'error_log';
-
-  // ADDED: Missing storage keys your code is using
   static const String userWeightKey = 'user_weight';
   static const String userHeightKey = 'user_height';
   static const String userAgeKey = 'user_age';
@@ -130,33 +138,27 @@ class AppConstants {
   static const String dailyBudgetKey = 'daily_budget';
   static const String targetWeightKey = 'target_weight';
   static const String activityLevelKey = 'activity_level';
+  static const String tempImageFolderKey = 'food_images';
 
-  // === UI TEXT ===
-  static const String appName = 'FOOD LLM';
-  
-  // Screen titles
-  static const String homeTitle = 'Daily Dashboard';
-  static const String progressTitle = 'Fitness Tracker';
-  static const String exerciseTitle = 'Workout Log';
-  static const String cameraTitle = 'Food Scanner';
-  static const String analyticsTitle = 'Analytics Dashboard';
-
-  // Common button labels
+  // === COMMON BUTTON LABELS ===
   static const String saveLabel = 'Save';
   static const String cancelLabel = 'Cancel';
   static const String retryLabel = 'Retry';
   static const String analyzeLabel = 'Analyze Food';
   static const String retakeLabel = 'Retake';
 
-  // Common messages
+  // === COMMON MESSAGES ===
   static const String loadingMessage = 'Loading...';
   static const String savingMessage = 'Saving...';
   static const String errorLoadingData = 'Error Loading Data';
   static const String noFoodDetected = 'No food items were detected in the image. Please try again.';
-  static const String saveSuccess = 'Saved successfully!';
-  static const String updateSuccess = 'Updated successfully!';
 
-  // Form validation messages
+  // === ERROR MESSAGES ===
+  static const String networkErrorMessage = 'No internet connection. Please check your network and try again.';
+  static const String genericErrorMessage = 'Something went wrong. Please try again.';
+  static const String quotaExceededMessage = 'Daily analysis limit reached. Please try again tomorrow.';
+  static const String cameraErrorMessage = 'Unable to access camera. Please check permissions.';
+  static const String storageErrorMessage = 'Unable to save data. Please check available storage.';
   static const String fieldRequired = 'This field is required';
   static const String invalidNumber = 'Please enter a valid number';
   static const String nameRequired = 'Food name cannot be empty';
@@ -168,111 +170,229 @@ class AppConstants {
   static const String invalidFat = 'Please enter valid fat amount';
   static const String invalidCost = 'Please enter a valid cost (0 or greater)';
 
-  // Budget messages
+  // === BUDGET MESSAGES ===
   static const String budgetQuestion = 'How much do you want to spend on food per day?';
   static const String budgetAdvice = 'Consider your food goals and spending habits';
   static const String budgetTooHigh = 'Budget seems high. Please check the amount.';
   static const String invalidBudget = 'Please enter a valid budget amount';
   static const String budgetUpdateSuccess = 'Budget updated successfully!';
-  
-  // Budget status messages
-  static const String overBudget = '🚨 Over budget!';
-  static const String approachingBudget = '⚠️ Approaching your budget limit!';
-  static const String onTrackBudget = '📊 On track with your budget!';
-  static const String goodBudget = '💡 Great spending discipline!';
-  static const String excellentBudget = '🎯 Excellent budget management!';
 
-  // === REGEX PATTERNS ===
-  static const String decimalNumberPattern = r'[0-9.,]';  // FIXED: Your code expects this pattern
-  static const String numberOnlyPattern = r'[0-9.]';
-  static const String integerOnlyPattern = r'[0-9]';
+  // === BUDGET PRESETS ===
+  static const List<Map<String, dynamic>> budgetPresets = [
+    {'label': 'Frugal', 'amount': 15.0},
+    {'label': 'Moderate', 'amount': 25.0}, 
+    {'label': 'Generous', 'amount': 40.0},
+  ];
 
-  // === NUTRITIONAL VALIDATION RANGES ===
-  // ADDED: Missing validation constants your forms are using
+  // === SUCCESS MESSAGES ===
+  static const String foodAddedSuccessMessage = 'Food item added to your log!';
+  static const String profileUpdatedMessage = 'Profile updated successfully!';
+  static const String settingsSavedMessage = 'Settings saved successfully!';
+  static const String saveSuccess = 'Saved successfully!';
+  static const String updateSuccess = 'Updated successfully!';
+
+  // === ACTIVITY LEVELS (for calorie calculations) ===
+  static const Map<String, double> activityMultipliers = {
+    'sedentary': 1.2,        // Little or no exercise
+    'light': 1.375,          // Light exercise 1-3 days/week
+    'moderate': 1.55,        // Moderate exercise 3-5 days/week
+    'active': 1.725,         // Hard exercise 6-7 days/week
+    'very_active': 1.9,      // Very hard exercise, physical job
+  };
+
+  // === GENDER OPTIONS ===
+  static const List<String> genderOptions = [
+    'male',
+    'female',
+    'other',
+  ];
+
+  // === GOAL TYPES ===
+  static const List<String> goalTypes = [
+    'lose_weight',
+    'maintain_weight',
+    'gain_weight',
+    'build_muscle',
+    'improve_health',
+  ];
+
+  // === COMMON ALLERGENS ===
+  static const List<String> commonAllergens = [
+    'dairy',
+    'eggs',
+    'fish',
+    'shellfish',
+    'tree_nuts',
+    'peanuts',
+    'wheat',
+    'soy',
+    'sesame',
+  ];
+
+  // === DIETARY PREFERENCES ===
+  static const List<String> dietaryPreferences = [
+    'none',
+    'vegetarian',
+    'vegan',
+    'pescatarian',
+    'keto',
+    'paleo',
+    'mediterranean',
+    'low_carb',
+    'low_fat',
+    'gluten_free',
+  ];
+
+  // === TIME CONSTANTS ===
+  static const Duration splashScreenDuration = Duration(seconds: 3);
+  static const Duration snackBarDuration = Duration(seconds: 4);
+  static const Duration loadingTimeout = Duration(seconds: 10);
+  static const Duration apiTimeout = Duration(seconds: 60);
+  static const Duration shortTimeout = Duration(seconds: 15);
+  static const Duration animationDuration = Duration(milliseconds: 300);
+  static const Duration loadingDelay = Duration(milliseconds: 200);
+
+  // === UI BREAKPOINTS ===
+  static const double mobileBreakpoint = 600.0;
+  static const double tabletBreakpoint = 900.0;
+  static const double desktopBreakpoint = 1200.0;
+
+  // === CHARTS & GRAPHS ===
+  static const double chartHeight = 200.0;
+  static const double progressBarHeight = 8.0;
+  static const int chartAnimationDuration = 1000; // milliseconds
+
+  // === CAMERA CONSTANTS ===
+  static const double cameraOverlayOpacity = 0.7;
+  static const double focusCircleSize = 80.0;
+  static const Duration cameraFocusDuration = Duration(milliseconds: 500);
+
+  // === FORM VALIDATION ===
   static const double minCaloriesValue = 0.0;
   static const double maxCaloriesValue = 9999.0;
   static const double minNutrientValue = 0.0;
   static const double maxNutrientValue = 999.0;
+  static const int maxFoodNameLength = 100;
+  static const double maxBudgetAmount = 1000.0;
+  static const double defaultServingSize = 1.0;
+  static const int maxDecimalPlaces = 2;
+  static const int maxRecentSearches = 10;
 
-  // === API CONSTANTS ===
-  // ADDED: Missing API constants 
-  static const String apiBaseUrl = 'https://api.edamam.com/api/food-database/v2';
-  static const int apiTimeoutSeconds = 30;
-  static const int maxRetryAttempts = 3;
-  static const int dailyQuotaLimit = 100;
+  // === REGEX PATTERNS ===
+  static const String decimalNumberPattern = r'[0-9.,]';
+  static const String numberOnlyPattern = r'[0-9.]';
+  static const String integerOnlyPattern = r'[0-9]';
 
   // === BMI CATEGORIES ===
-  // ADDED: Missing BMI constants
   static const double bmiUnderweight = 18.5;
   static const double bmiNormal = 24.9;
   static const double bmiOverweight = 29.9;
-  // Above 30 is obese
 
-  // === ACTIVITY LEVELS ===
-  // ADDED: Missing activity multipliers
-  static const Map<String, double> activityMultipliers = {
-    'Sedentary': 1.2,
-    'Lightly Active': 1.375,
-    'Moderately Active': 1.55,
-    'Very Active': 1.725,
-    'Extremely Active': 1.9,
-  };
+  // === BUDGET CONSTANTS ===
+  static const double budgetWarningThreshold = 0.9;   // 90%
+  static const double budgetCautionThreshold = 0.7;   // 70%
+  static const double budgetGoodThreshold = 0.4;      // 40%
+  static const double defaultWeightKg = 70.0;
+  static const double defaultWeightLbs = 154.0;
+  static const double lbsToKgRatio = 2.20462;
 
-  // === DEBOUNCE DURATIONS ===
-  // ADDED: Missing debounce constants
-  static const Duration searchDebounce = Duration(milliseconds: 500);
-  static const Duration apiDebounce = Duration(milliseconds: 1000);
+  // === MEAL TIME BOUNDARIES ===
+  static const int mealTimeBoundaries = 11; // breakfast < 11am
+  static const int lunchBoundary = 15;      // lunch < 3pm  
+  static const int snackBoundary = 18;      // snack < 6pm
 
   // === NUTRITIONAL DEFAULTS ===
-  // ADDED: Missing nutritional constants
   static const double defaultCaloriesPerGram = 4.0; // For carbs/protein
   static const double fatCaloriesPerGram = 9.0;
   static const double alcoholCaloriesPerGram = 7.0;
 
-  // === IMAGE CONSTANTS ===
-  // ADDED: Missing image constants
-  static const int maxImageSizeBytes = 5 * 1024 * 1024; // 5MB
-  static const double imageCompressionQuality = 0.8;
+  /// Helper method to get meal type display name
+  static String getMealTypeDisplayName(String mealType) {
+    switch (mealType.toLowerCase()) {
+      case 'breakfast':
+        return 'Breakfast';
+      case 'lunch':
+        return 'Lunch';
+      case 'dinner':
+        return 'Dinner';
+      case 'snack':
+        return 'Snack';
+      default:
+        return mealType.capitalize();
+    }
+  }
 
-  // === ASSET PATHS ===
-  // Add any asset paths here when you have them
-  // static const String logoPath = 'assets/images/logo.png';
-  // static const String placeholderImagePath = 'assets/images/placeholder.png';
+  /// Helper method to get meal type emoji
+  static String getMealTypeEmoji(String mealType) {
+    return mealTypeEmojis[mealType.toLowerCase()] ?? '🍽️';
+  }
+
+  /// Helper method to validate calorie value
+  static bool isValidCalorieValue(double calories) {
+    return calories >= minCalories && calories <= maxCalories;
+  }
+
+  /// Helper method to validate macro value
+  static bool isValidMacroValue(double value, String macroType) {
+    if (value < minMacros) return false;
+    
+    switch (macroType.toLowerCase()) {
+      case 'protein':
+        return value <= maxProtein;
+      case 'carbs':
+      case 'carbohydrates':
+        return value <= maxCarbs;
+      case 'fat':
+      case 'fats':
+        return value <= maxFat;
+      default:
+        return true;
+    }
+  }
+
+  /// Helper method to get activity level multiplier
+  static double getActivityMultiplier(String activityLevel) {
+    return activityMultipliers[activityLevel.toLowerCase()] ?? activityMultipliers['sedentary']!;
+  }
+
+  /// Helper method to format serving unit display
+  static String formatServingUnit(String unit, double amount) {
+    if (amount == 1.0) {
+      return unit;
+    } else {
+      // Add 's' for plural if needed (basic pluralization)
+      if (unit.endsWith('s') || unit.endsWith('x')) {
+        return unit;
+      } else {
+        return '${unit}s';
+      }
+    }
+  }
+
+  /// Helper method to get readable file size
+  static String getReadableFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  /// Helper method to check if device is tablet
+  static bool isTablet(BuildContext context) {
+    return MediaQuery.of(context).size.width >= tabletBreakpoint;
+  }
+
+  /// Helper method to check if device is mobile
+  static bool isMobile(BuildContext context) {
+    return MediaQuery.of(context).size.width < mobileBreakpoint;
+  }
 }
 
-// Extension to make meal type formatting easier
-extension MealTypeExtension on String {
-  String get capitalized {
-    if (isEmpty) return 'Snack';
-    return substring(0, 1).toUpperCase() + substring(1).toLowerCase();
-  }
-}
-
-// Utility class for common calculations
-class AppCalculations {
-  AppCalculations._();
-
-  static double lbsToKg(double lbs) => lbs / AppConstants.lbsToKgRatio;
-  static double kgToLbs(double kg) => kg * AppConstants.lbsToKgRatio;
-  
-  static String getSuggestedMealType() {
-    final hour = DateTime.now().hour;
-    if (hour < AppConstants.mealTimeBoundaries) return AppConstants.mealTypes[0]; // breakfast
-    if (hour < AppConstants.lunchBoundary) return AppConstants.mealTypes[1];      // lunch
-    if (hour < AppConstants.snackBoundary) return AppConstants.mealTypes[3];     // snack
-    return AppConstants.mealTypes[2]; // dinner
+/// Extension for string capitalization
+extension StringExtension on String {
+  String capitalize() {
+    if (isEmpty) return this;
+    return '${this[0].toUpperCase()}${substring(1).toLowerCase()}';
   }
   
-  static double calculateBudgetProgress(double spent, double budget) {
-    if (budget <= 0) return 0.0;
-    return (spent / budget).clamp(0.0, double.infinity);
-  }
-  
-  static bool isBudgetOverLimit(double progress) {
-    return progress > 1.0;
-  }
-  
-  static bool isBudgetWarning(double progress) {
-    return progress >= AppConstants.budgetWarningThreshold;
-  }
+  String get capitalized => capitalize();
 }

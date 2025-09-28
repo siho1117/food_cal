@@ -12,7 +12,6 @@ class SettingsScreen extends StatefulWidget {
   // Parameter to check if we should show back button
   final bool showBackButton;
 
-  // ✅ FIXED: Use super parameter instead of explicit key parameter
   const SettingsScreen({
     super.key,
     this.showBackButton = false,
@@ -25,165 +24,163 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
-    // Provide the SettingsProvider to the widget tree
-    return ChangeNotifierProvider(
-      create: (_) => SettingsProvider()..loadUserData(),
-      child: Scaffold(
-        backgroundColor: AppTheme.secondaryBeige,
-        // Add an app bar with back button when needed
-        appBar: widget.showBackButton
-            ? AppBar(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
+    // ✅ FIXED: Use existing provider from app level instead of creating new one
+    return Scaffold(
+      backgroundColor: AppTheme.secondaryBeige,
+      // Add an app bar with back button when needed
+      appBar: widget.showBackButton
+          ? AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                color: AppTheme.primaryBlue,
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              title: const Text(
+                'Settings',
+                style: TextStyle(
                   color: AppTheme.primaryBlue,
-                  onPressed: () => Navigator.of(context).pop(),
+                  fontWeight: FontWeight.bold,
                 ),
-                title: const Text(
-                  'Settings',
-                  style: TextStyle(
-                    color: AppTheme.primaryBlue,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              )
-            : null,
-        body: SafeArea(
-          child: Consumer<SettingsProvider>(
-            builder: (context, settingsProvider, child) {
-              // Show loading state
-              if (settingsProvider.isLoading) {
-                return const Center(
-                  child: CircularProgressIndicator(),
-                );
-              }
-
-              // Show error state if needed
-              if (settingsProvider.errorMessage != null) {
-                return _buildErrorState(context, settingsProvider);
-              }
-
-              // Show main content with RefreshIndicator for pull-to-refresh
-              return RefreshIndicator(
-                onRefresh: () => settingsProvider.refreshData(),
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header - only show this if not showing the appbar
-                      if (!widget.showBackButton) ...[
-                        Row(
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'FOOD CAL',
-                                  style: TextStyle(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.primaryBlue,
-                                    letterSpacing: 2,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'SETTINGS',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-
-                      // Profile Section
-                      const ProfileSectionWidget(),
-
-                      const SizedBox(height: 30),
-
-                      // Personal Details Section
-                      Text(
-                        'PERSONAL DETAILS',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryBlue,
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      const PersonalDetailsWidget(),
-
-                      const SizedBox(height: 30),
-
-                      // Preferences Section
-                      Text(
-                        'PREFERENCES',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryBlue,
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      const PreferencesWidget(),
-
-                      const SizedBox(height: 30),
-
-                      // Feedback Section
-                      Text(
-                        'FEEDBACK',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryBlue,
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Feedback Widget
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              // ✅ FIXED: Use withValues instead of deprecated withOpacity
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              spreadRadius: 0,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: FeedbackWidget(
-                          onSendFeedback: () async {
-                            // Handle feedback sending through provider
-                            // The FeedbackWidget will handle the UI interaction
-                          },
-                        ),
-                      ),
-
-                      const SizedBox(height: 80), // Extra space for bottom nav
-                    ],
-                  ),
-                ),
+              ),
+            )
+          : null,
+      body: SafeArea(
+        child: Consumer<SettingsProvider>(
+          builder: (context, settingsProvider, child) {
+            // Show loading state
+            if (settingsProvider.isLoading) {
+              return const Center(
+                child: CircularProgressIndicator(),
               );
-            },
-          ),
+            }
+
+            // Show error state if needed
+            if (settingsProvider.errorMessage != null) {
+              return _buildErrorState(context, settingsProvider);
+            }
+
+            // Show main content with RefreshIndicator for pull-to-refresh
+            return RefreshIndicator(
+              onRefresh: () => settingsProvider.refreshData(),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header - only show this if not showing the appbar
+                    if (!widget.showBackButton) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'SETTINGS',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryBlue,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.refresh,
+                              color: AppTheme.primaryBlue,
+                            ),
+                            onPressed: () => settingsProvider.refreshData(),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 30),
+                    ],
+
+                    // Profile Section
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const ProfileSectionWidget(),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Personal Details
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const PersonalDetailsWidget(),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Preferences
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const PreferencesWidget(),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Feedback
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: FeedbackWidget(
+                        onSendFeedback: () async {
+                          // Handle feedback sending through provider
+                          // The FeedbackWidget will handle the UI interaction
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 80), // Extra space for bottom nav
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

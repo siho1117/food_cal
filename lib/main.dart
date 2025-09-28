@@ -3,10 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 
 // App configuration
 import 'config/design_system/theme.dart';
 import 'config/dependency_injection.dart';
+
+// Providers
+import 'providers/home_provider.dart';
+import 'providers/exercise_provider.dart';
+import 'providers/progress_data.dart';
+import 'providers/settings_provider.dart';
 
 // Screens
 import 'screens/splash_screen.dart';
@@ -67,17 +74,39 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'FOOD LLM',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: const SplashScreen(),
-      routes: {
-        '/home': (context) => const MainApp(),
-        '/settings': (context) => const SettingsScreen(),
-        '/progress': (context) => const progress.ProgressScreen(),
-        '/exercise': (context) => const exercise.ExerciseScreen(),
-      },
+    // ✅ FIXED: Wrap MaterialApp with MultiProvider to provide app-level providers
+    return MultiProvider(
+      providers: [
+        // Create providers once at app level
+        ChangeNotifierProvider(
+          create: (_) => HomeProvider()..loadData(),
+          lazy: false, // Load immediately
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ExerciseProvider()..loadData(),
+          lazy: false, // Load immediately
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ProgressData()..loadUserData(),
+          lazy: false, // Load immediately
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SettingsProvider()..loadUserData(),
+          lazy: true, // Load when needed
+        ),
+      ],
+      child: MaterialApp(
+        title: 'FOOD LLM',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        home: const SplashScreen(),
+        routes: {
+          '/home': (context) => const MainApp(),
+          '/settings': (context) => const SettingsScreen(),
+          '/progress': (context) => const progress.ProgressScreen(),
+          '/exercise': (context) => const exercise.ExerciseScreen(),
+        },
+      ),
     );
   }
 }
@@ -102,16 +131,16 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 300),
     );
 
-    // Initialize screens
+    // Initialize screens list
     _screens = [
-      const HomeScreen(),                    // index 0
-      const progress.ProgressScreen(),       // index 1
-      Container(),                           // index 2 - camera placeholder
-      const exercise.ExerciseScreen(),       // index 3
-      const SummaryScreen(),                 // index 4 - Summary instead of Settings
+      const HomeScreen(),
+      const progress.ProgressScreen(),
+      Container(), // Camera screen handled separately via navigation
+      const exercise.ExerciseScreen(),
+      const SummaryScreen(),
     ];
   }
 
@@ -123,44 +152,38 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
 
   void _onItemTapped(int index) {
     if (index == 2) {
-      _navigateToTransparentCamera();
-      return;
-    }
-
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
-  void _navigateToTransparentCamera() {
-    setState(() {
-      _isCameraOverlayOpen = true;
-    });
-    
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => CameraScreen(
-          onDismissed: () {
-            // This callback will be called when the camera screen is dismissed
+      // Camera tap - toggle overlay
+      setState(() {
+        _isCameraOverlayOpen = !_isCameraOverlayOpen;
+      });
+      
+      if (_isCameraOverlayOpen) {
+        // Navigate to camera screen
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => CameraScreen(
+              onDismissed: () {
+                setState(() {
+                  _isCameraOverlayOpen = false;
+                });
+              },
+            ),
+          ),
+        ).then((_) {
+          // Ensure overlay state is reset when returning
+          if (mounted) {
             setState(() {
               _isCameraOverlayOpen = false;
             });
-          },
-        ),
-        opaque: false, // Transparent background
-        transitionDuration: const Duration(milliseconds: 300),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-      ),
-    ).then((_) {
-      // Reset camera overlay state when returning (backup)
-      if (mounted) {
-        setState(() {
-          _isCameraOverlayOpen = false;
+          }
         });
       }
-    });
+    } else {
+      setState(() {
+        _currentIndex = index;
+        _isCameraOverlayOpen = false;
+      });
+    }
   }
 
   void _navigateToSettings() {
