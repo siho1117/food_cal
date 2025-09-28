@@ -4,14 +4,14 @@
 <dict>
 	<!-- Photo Library permissions for export functionality -->
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs access to your photo library to save exported summaries and select photos.</string>
+	<string>FOOD LLM needs access to your photo library to save nutrition summaries and select food photos.</string>
 	
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>This app saves exported summaries to your photo library.</string>
+	<string>FOOD LLM saves nutrition summaries and analysis results to your photo library.</string>
 	
 	<!-- Camera permissions -->
 	<key>NSCameraUsageDescription</key>
-	<string>This app needs camera access to take photos of food for calorie tracking.</string>
+	<string>FOOD LLM needs camera access to take photos of food for AI-powered nutrition analysis.</string>
 	
 	<!-- App configuration -->
 	<key>CADisableMinimumFrameDurationOnPhone</key>
@@ -19,7 +19,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Flutter Application 1</string>
+	<string>FOOD LLM</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -27,7 +27,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>flutter_application_1</string>
+	<string>food_llm</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -48,18 +48,31 @@
 	<array>
 		<string>armv7</string>
 	</array>
+	<!-- ✅ FIXED: Portrait orientation only to match main.dart -->
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
+	<!-- ✅ FIXED: Portrait orientation only for iPad too -->
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	
+	<!-- ✅ ADDED: Additional iOS optimizations -->
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleDefault</string>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+	
+	<!-- ✅ ADDED: Performance optimizations for camera -->
+	<key>UIApplicationExitsOnSuspend</key>
+	<false/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>background-processing</string>
 	</array>
 </dict>
 </plist>
