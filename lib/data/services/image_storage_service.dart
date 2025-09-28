@@ -303,7 +303,7 @@ class ImageStorageService {
           final filename = file.path.split('/').last;
           final size = await file.length();
           final modified = await file.lastModified();
-          debugPrint('  $filename - ${size} bytes - $modified');
+          debugPrint('  $filename - $size bytes - $modified');
         }
         
         if (imageFiles.length > 5) {

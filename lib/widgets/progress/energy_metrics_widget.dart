@@ -184,7 +184,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.flash_on_rounded,
                         size: 14,
                         color: AppTheme.goldAccent,
@@ -240,7 +240,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
                           AnimatedRotation(
                             turns: _showGoals ? 0.5 : 0,
                             duration: const Duration(milliseconds: 300),
-                            child: Icon(
+                            child: const Icon(
                               Icons.keyboard_arrow_down_rounded,
                               size: 14,
                               color: AppTheme.primaryBlue,
@@ -334,7 +334,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
               // Goals header
               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.track_changes_rounded,
                     size: 16,
                     color: AppTheme.primaryBlue,
@@ -485,7 +485,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
         ),
         child: Column(
           children: [
-            Icon(
+            const Icon(
               Icons.warning_amber_rounded,
               size: 36, // Smaller icon
               color: Colors.white,
@@ -601,7 +601,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
         ),
         title: Row(
           children: [
-            Icon(
+            const Icon(
               Icons.info_outline_rounded,
               color: AppTheme.primaryBlue,
               size: 20,

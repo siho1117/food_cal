@@ -132,7 +132,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             ),
             child: Row(
               children: [
-                Icon(Icons.edit, color: AppTheme.primaryBlue, size: AppConstants.iconSizeMedium),
+                const Icon(Icons.edit, color: AppTheme.primaryBlue, size: AppConstants.iconSizeMedium),
                 const SizedBox(width: AppConstants.spacingSmall),
                 Text(
                   'Basic Information',
@@ -189,7 +189,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
-                                borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
+                                borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: AppConstants.paddingMedium,
@@ -244,7 +244,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             ),
             child: Row(
               children: [
-                Icon(Icons.restaurant, color: AppTheme.primaryBlue, size: AppConstants.iconSizeMedium),
+                const Icon(Icons.restaurant, color: AppTheme.primaryBlue, size: AppConstants.iconSizeMedium),
                 const SizedBox(width: AppConstants.spacingSmall),
                 Text(
                   'Nutrition Information',
@@ -357,7 +357,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
-              borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
+              borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppConstants.paddingMedium,
@@ -401,7 +401,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
-              borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
+              borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppConstants.paddingMedium,

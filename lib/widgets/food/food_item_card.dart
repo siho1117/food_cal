@@ -123,7 +123,7 @@ class FoodItemCard extends StatelessWidget {
                           ),
                           child: Text(
                             foodItem.mealType.toUpperCase(),
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                               color: AppTheme.primaryBlue,
@@ -214,7 +214,7 @@ class FoodItemCard extends StatelessWidget {
   }
 
   Widget _buildFallbackIcon() {
-    return Icon(
+    return const Icon(
       Icons.fastfood,
       color: AppTheme.primaryBlue,
       size: 30,

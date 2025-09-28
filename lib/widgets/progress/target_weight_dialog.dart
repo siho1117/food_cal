@@ -1,7 +1,6 @@
 // lib/widgets/progress/target_weight_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../config/design_system/theme.dart';
 import '../../config/design_system/text_styles.dart';
 
 class TargetWeightDialog extends StatefulWidget {
@@ -11,12 +10,12 @@ class TargetWeightDialog extends StatefulWidget {
   final Function(double) onTargetSet;
 
   const TargetWeightDialog({
-    Key? key,
+    super.key,
     required this.currentWeight,
     this.currentTarget,
     required this.isMetric,
     required this.onTargetSet,
-  }) : super(key: key);
+  });
 
   @override
   State<TargetWeightDialog> createState() => _TargetWeightDialogState();
@@ -313,21 +312,21 @@ class _TargetWeightDialogState extends State<TargetWeightDialog> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Target Weight Warning'),
+        title: const Text('Target Weight Warning'),
         content: Text(
           'This target exceeds the recommended ±20% range (${_formatWeight(_minWeightKg)} - ${_formatWeight(_maxWeightKg)}).\n\nFor significant weight changes, please consult with a healthcare professional.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Edit Target'),
+            child: const Text('Edit Target'),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context); // Close warning
               _saveTarget(weightInKg);
             },
-            child: Text('Set Anyway'),
+            child: const Text('Set Anyway'),
           ),
         ],
       ),

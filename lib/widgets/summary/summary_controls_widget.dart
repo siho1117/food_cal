@@ -123,7 +123,7 @@ class SummaryControlsWidget extends StatelessWidget {
           onTap: isExporting ? null : onExport,
           child: Center(
             child: isExporting
-                ? SizedBox(
+                ? const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
@@ -131,7 +131,7 @@ class SummaryControlsWidget extends StatelessWidget {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : Icon(
+                : const Icon(
                     Icons.file_download_outlined,
                     size: 24,
                     color: Colors.white,

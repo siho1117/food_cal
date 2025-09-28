@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'dart:io'; 
-import 'dart:math' as math;
 import '../../config/design_system/theme.dart';
 
 /// UI elements for the camera screen
@@ -105,7 +104,7 @@ class CameraUI {
     required VoidCallback? onPressed,
     required bool isLoading,
   }) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 120,
       child: ElevatedButton.icon(

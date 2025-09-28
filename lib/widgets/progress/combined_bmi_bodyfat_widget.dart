@@ -1,10 +1,8 @@
 // lib/widgets/progress/combined_bmi_bodyfat_widget.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../../config/design_system/theme.dart';
 import '../../config/design_system/text_styles.dart';
-import '../../providers/progress_data.dart';
 
 class CombinedBMIBodyFatWidget extends StatefulWidget {
   final double? bmiValue;
@@ -14,13 +12,13 @@ class CombinedBMIBodyFatWidget extends StatefulWidget {
   final bool isEstimated;
 
   const CombinedBMIBodyFatWidget({
-    Key? key,
+    super.key,
     required this.bmiValue,
     required this.bmiClassification,
     required this.bodyFatPercentage,
     required this.bodyFatClassification,
     this.isEstimated = true,
-  }) : super(key: key);
+  });
 
   @override
   State<CombinedBMIBodyFatWidget> createState() => _CombinedBMIBodyFatWidgetState();
@@ -228,7 +226,7 @@ class _CombinedBMIBodyFatWidgetState extends State<CombinedBMIBodyFatWidget>
                                 color: AppTheme.primaryBlue.withAlpha(26),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Icon(
+                              child: const Icon(
                                 Icons.assessment_rounded,
                                 color: AppTheme.primaryBlue,
                                 size: 20,
@@ -478,8 +476,8 @@ class CircularRingsZoneIndicatorsPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final outerRadius = 75.0; // BMI ring (original size)
-    final innerRadius = 50.0; // Body Fat ring (original size)
+    const outerRadius = 75.0; // BMI ring (original size)
+    const innerRadius = 50.0; // Body Fat ring (original size)
     
     // Calculate progress values for visual representation
     final bmiVisualProgress = bmiValue != null 
@@ -521,8 +519,8 @@ class CircularRingsZoneIndicatorsPainter extends CustomPainter {
     canvas.drawCircle(center, outerRadius, bmiBackgroundPaint);
     
     // Draw BMI healthy zone indicators (Normal BMI: 18.5-24.9, roughly 35%-75% of scale)
-    final bmiHealthyStart = 0.35; // 35%
-    final bmiHealthyEnd = 0.75;   // 75%
+    const bmiHealthyStart = 0.35; // 35%
+    const bmiHealthyEnd = 0.75;   // 75%
     for (int i = 0; i < 8; i++) { // Original number of indicators
       final angle = (bmiHealthyStart + (i / 7) * (bmiHealthyEnd - bmiHealthyStart)) * 2 * math.pi - math.pi / 2;
       final indicatorPosition = Offset(
@@ -546,8 +544,8 @@ class CircularRingsZoneIndicatorsPainter extends CustomPainter {
     canvas.drawCircle(center, innerRadius, bodyFatBackgroundPaint);
     
     // Draw Body Fat healthy zone indicators (Essential+Athletic+Fitness: roughly 25%-70% of scale)
-    final bodyFatHealthyStart = 0.25; // 25%
-    final bodyFatHealthyEnd = 0.70;   // 70%
+    const bodyFatHealthyStart = 0.25; // 25%
+    const bodyFatHealthyEnd = 0.70;   // 70%
     for (int i = 0; i < 6; i++) { // Original number of indicators
       final angle = (bodyFatHealthyStart + (i / 5) * (bodyFatHealthyEnd - bodyFatHealthyStart)) * 2 * math.pi - math.pi / 2;
       final indicatorPosition = Offset(

@@ -469,10 +469,10 @@ class FoodLogWidget extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Failed to delete. Please try again.'),
+          const SnackBar(
+            content: Text('Failed to delete. Please try again.'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
           ),
         );

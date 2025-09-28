@@ -1,7 +1,6 @@
 // lib/widgets/exercise/daily_burn_widget.dart
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import '../../config/design_system/theme.dart';
 import '../../config/design_system/text_styles.dart';
 import '../../data/models/user_profile.dart';
 import '../../utils/formula.dart';

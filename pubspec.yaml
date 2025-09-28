@@ -1,16 +1,14 @@
-name: food_llm  # ✅ CHANGED: Better name than flutter_application_1
+name: food_llm
 description: "AI-powered food tracking and nutrition analysis app"
 
-# The following line prevents the package from being accidentally published to
-# pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+# Prevent accidental publishing
+publish_to: 'none'
 
-# The following defines the version and build number for your application.
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.2.0 <4.0.0'  # ✅ FIXED: Proper version constraint (was ^3.6.2)
-  flutter: ">=3.16.0"    # ✅ ADDED: Minimum Flutter version
+  sdk: '>=3.2.0 <4.0.0'
+  flutter: ">=3.16.0"
 
 dependencies:
   flutter:
@@ -20,77 +18,52 @@ dependencies:
   cupertino_icons: ^1.0.8
   
   # ✅ STATE MANAGEMENT
-  provider: ^6.1.2  # Updated from 6.0.5
+  provider: ^6.1.2
 
   # ✅ LOCAL STORAGE & PREFERENCES  
-  shared_preferences: ^2.2.3  # Updated from 2.2.0
-  path_provider: ^2.1.4       # Updated from 2.1.1
+  shared_preferences: ^2.2.3
+  path_provider: ^2.1.4
 
   # ✅ NETWORKING & HTTP
-  http: ^1.2.2                 # Updated from 1.1.0
-  flutter_dotenv: ^5.1.0      # Keep current
+  http: ^1.2.2
+  flutter_dotenv: ^5.1.0
 
-  # ✅ CAMERA & IMAGE HANDLING
-  camera: ^0.10.6              # Updated from 0.10.5+9
-  image_picker: ^1.1.2         # Updated from 1.0.4
-  flutter_image_compress: ^2.3.0  # ✅ CRITICAL: Updated from 1.1.3 (fixes iOS issues)
-  image_gallery_saver: ^2.0.3 # Keep current
+  # ⚠️ CAMERA & IMAGE HANDLING - CONSERVATIVE VERSIONS
+  camera: ^0.10.5+9              # ✅ FIXED: Reverted to stable version
+  image_picker: ^1.0.4           # ✅ FIXED: Reverted to stable version  
+  flutter_image_compress: ^1.1.3 # ✅ FIXED: Reverted to stable version (iOS compatible)
+  image_gallery_saver: ^2.0.3
 
-  # ✅ PERMISSIONS - CRITICAL FIX
-  permission_handler: ^11.3.1  # Updated from 11.2.0 (better iOS compatibility)
+  # ⚠️ PERMISSIONS - STABLE VERSION
+  permission_handler: ^11.2.0    # ✅ FIXED: Reverted to stable version
 
   # ✅ UI & NAVIGATION
-  curved_navigation_bar: ^1.0.6  # Keep current
+  curved_navigation_bar: ^1.0.6
   
-  # ✅ SHARING
-  share_plus: ^10.0.2          # ✅ CRITICAL: Updated from 7.2.1 (fixes iOS issues)
+  # ⚠️ SHARING - CONSERVATIVE VERSION
+  share_plus: ^7.2.1             # ✅ FIXED: Reverted to stable version
 
   # ✅ FONTS & UI COMPONENTS
-  google_fonts: ^6.2.1         # Updated from 6.1.0
-  percent_indicator: ^4.2.3    # Updated from 4.2.2
+  google_fonts: ^6.2.1
+  percent_indicator: ^4.2.3
 
   # ✅ DEPENDENCY INJECTION
-  get_it: ^8.0.0               # Updated from 7.6.4
+  get_it: ^7.6.4                 # ✅ FIXED: Reverted to stable version
 
   # ✅ INTERNATIONALIZATION
-  intl: ^0.19.0                # Updated from 0.18.0
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_lints: ^4.0.0          # ✅ FIXED: Stable linting version
 
-  # ✅ LINTING - Updated for better code quality
-  flutter_lints: ^5.0.0       # Keep current
+# ❌ REMOVED: Dependency overrides that force untested versions
+# The aggressive overrides were causing iOS compatibility issues
 
-# ✅ DEPENDENCY OVERRIDES - Force newer versions to avoid conflicts
-dependency_overrides:
-  # Force newer image compression to avoid iOS issues
-  flutter_image_compress: ^2.3.0
-  # Ensure latest permission handler for iOS compatibility
-  permission_handler_apple: ^9.4.7
-
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
-
-# The following section is specific to Flutter packages.
 flutter:
-
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
   uses-material-design: true
-
-  # ✅ ASSETS - Organized and documented
+  
+  # ✅ ASSETS
   assets:
-    - .env                     # Environment variables
-    # Add other assets here as needed:
-    # - assets/images/
-    # - assets/icons/
-
-  # ✅ FONTS - Uncomment and customize if you want custom fonts
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
+    - .env

@@ -63,7 +63,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
               color: AppTheme.primaryBlue.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.monitor_weight_rounded,
               color: AppTheme.primaryBlue,
               size: 24,
@@ -195,7 +195,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
+                borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 20,

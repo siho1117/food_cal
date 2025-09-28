@@ -378,7 +378,7 @@ class _FoodEntryFormState extends State<FoodEntryForm> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
-          borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
+          borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppConstants.paddingMedium,
@@ -404,7 +404,7 @@ class _FoodEntryFormState extends State<FoodEntryForm> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
-          borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
+          borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppConstants.paddingMedium,

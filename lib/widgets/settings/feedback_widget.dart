@@ -31,7 +31,7 @@ class FeedbackWidget extends StatelessWidget {
                     color: AppTheme.coralAccent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.feedback,
                     color: AppTheme.coralAccent,
                     size: 24,
@@ -79,15 +79,15 @@ class FeedbackWidget extends StatelessWidget {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: Row(
+          title: const Row(
             children: [
               Icon(
                 Icons.feedback,
                 color: AppTheme.coralAccent,
                 size: 24,
               ),
-              const SizedBox(width: 8),
-              const Text('Send Feedback'),
+              SizedBox(width: 8),
+              Text('Send Feedback'),
             ],
           ),
           content: Column(
@@ -108,7 +108,7 @@ class FeedbackWidget extends StatelessWidget {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppTheme.coralAccent),
+                    borderSide: const BorderSide(color: AppTheme.coralAccent),
                   ),
                 ),
                 maxLines: 5,

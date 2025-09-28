@@ -203,11 +203,11 @@ class ProfileSectionWidget extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(
+        title: const Row(
           children: [
             Icon(Icons.photo_camera, color: AppTheme.primaryBlue),
-            const SizedBox(width: 8),
-            const Text('Profile Picture'),
+            SizedBox(width: 8),
+            Text('Profile Picture'),
           ],
         ),
         content: Column(

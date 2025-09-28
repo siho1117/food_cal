@@ -146,7 +146,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
       builder: (context, progressData, child) {
         final currentWeight = widget.currentWeight;
         // TODO: Add targetWeight property to UserProfile model or use alternative approach
-        final targetWeight = null; // Placeholder until targetWeight is added to UserProfile
+        const targetWeight = null; // Placeholder until targetWeight is added to UserProfile
         final progressPercentage = _calculateProgress(currentWeight, targetWeight);
         final filledSegments = _getFilledSegments(progressPercentage);
         final progressColor = _getProgressColor(progressPercentage);

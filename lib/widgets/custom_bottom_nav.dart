@@ -21,8 +21,8 @@ class CustomBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Use colors from the theme instead of hardcoded values
-    final navBarColor = AppTheme.primaryBlue; // Primary color from theme
-    final selectedButtonColor = AppTheme.accentColor; // Accent color from theme
+    const navBarColor = AppTheme.primaryBlue; // Primary color from theme
+    const selectedButtonColor = AppTheme.accentColor; // Accent color from theme
 
     // Determine the visual index for the curved navigation bar
     // If camera overlay is open, show camera as selected (index 2)
@@ -71,7 +71,7 @@ class CustomBottomNav extends StatelessWidget {
             const SizedBox(height: 2), // Small spacing between icon and text
             Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.white70,
                 fontSize: AppConstants.fontSizeSmall, // FIXED: Use constant instead of hardcoded size
                 fontWeight: FontWeight.w500,

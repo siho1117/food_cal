@@ -66,7 +66,7 @@ class HomeProvider extends ChangeNotifier {
     final now = DateTime.now();
     if (!_isSameDay(now, _selectedDate)) return 1.0; // Past/future dates
     
-    final minutesInDay = 24 * 60;
+    const minutesInDay = 24 * 60;
     final currentMinutes = now.hour * 60 + now.minute;
     return (currentMinutes / minutesInDay).clamp(0.0, 1.0);
   }

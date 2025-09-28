@@ -432,7 +432,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
                 color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.trending_up_rounded,
                 size: 32,
                 color: AppTheme.primaryBlue,
@@ -614,7 +614,7 @@ class CompactWeightChartPainter extends CustomPainter {
 
     // Smoother line paint
     final linePaint = Paint()
-      ..shader = LinearGradient(
+      ..shader = const LinearGradient(
         colors: [
           AppTheme.coralAccent,
           AppTheme.primaryBlue,

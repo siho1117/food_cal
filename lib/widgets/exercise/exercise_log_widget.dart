@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
-import '../../config/design_system/theme.dart';
 import '../../config/design_system/text_styles.dart';
 import '../../providers/exercise_provider.dart';
 import '../../data/models/exercise_entry.dart';
@@ -151,23 +150,23 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
   Widget _buildHeader(ExerciseProvider exerciseProvider) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFFF8FAFC),
-            const Color(0xFFE2E8F0),
+            Color(0xFFF8FAFC),
+            Color(0xFFE2E8F0),
           ],
         ),
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           topLeft: Radius.circular(16),
           topRight: Radius.circular(16),
         ),
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.local_fire_department,
-            color: const Color(0xFF667EEA),
+            color: Color(0xFF667EEA),
             size: 24,
           ),
           const SizedBox(width: 12),
@@ -332,8 +331,8 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
               Container(
                 width: 12,
                 height: 12,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF667EEA),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF667EEA),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -374,9 +373,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
               color: const Color(0xFF667EEA).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.fitness_center,
-              color: const Color(0xFF667EEA),
+              color: Color(0xFF667EEA),
               size: 20,
             ),
           ),
@@ -429,9 +428,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.add,
-                    color: const Color(0xFF667EEA),
+                    color: Color(0xFF667EEA),
                     size: 18,
                   ),
                   const SizedBox(width: 8),
