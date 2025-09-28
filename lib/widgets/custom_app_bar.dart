@@ -6,11 +6,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Function onSettingsTap;
   final String currentPage;
 
+  // ✅ FIXED: Use super parameter instead of explicit key parameter
   const CustomAppBar({
-    Key? key,
+    super.key,
     required this.onSettingsTap,
     this.currentPage = '',
-  }) : super(key: key);
+  });
 
   @override
   // Increase the height to accommodate the sub-heading

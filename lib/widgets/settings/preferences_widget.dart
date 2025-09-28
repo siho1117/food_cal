@@ -5,7 +5,8 @@ import '../../providers/settings_provider.dart';
 import '../../config/design_system/theme.dart';
 
 class PreferencesWidget extends StatelessWidget {
-  const PreferencesWidget({Key? key}) : super(key: key);
+  // ✅ FIXED: Use super parameter instead of explicit key parameter
+  const PreferencesWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +18,8 @@ class PreferencesWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                // ✅ FIXED: Use withValues instead of withOpacity (line 20)
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 spreadRadius: 0,
                 offset: const Offset(0, 2),
@@ -83,7 +85,8 @@ class PreferencesWidget extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppTheme.primaryBlue.withOpacity(0.1),
+                // ✅ FIXED: Use withValues instead of withOpacity (line 86)
+                color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: AppTheme.primaryBlue, size: 24),
@@ -200,7 +203,8 @@ class PreferencesWidget extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: (isGain ? AppTheme.goldAccent : AppTheme.coralAccent).withOpacity(0.1),
+                  // ✅ FIXED: Use withValues instead of withOpacity (line 203)
+                  color: (isGain ? AppTheme.goldAccent : AppTheme.coralAccent).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -279,10 +283,12 @@ class PreferencesWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.2) : Colors.grey.withOpacity(0.1),
+          // ✅ FIXED: Use withValues instead of withOpacity (lines 282 - both instances)
+          color: isSelected ? color.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? color : Colors.grey.withOpacity(0.3),
+            // ✅ FIXED: Use withValues instead of withOpacity (line 285)
+            color: isSelected ? color : Colors.grey.withValues(alpha: 0.3),
             width: 2,
           ),
         ),

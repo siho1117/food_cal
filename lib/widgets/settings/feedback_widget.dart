@@ -7,10 +7,11 @@ import '../../config/design_system/theme.dart';
 class FeedbackWidget extends StatelessWidget {
   final VoidCallback? onSendFeedback; // Optional callback for additional actions
 
+  // ✅ FIXED: Use super parameter instead of explicit key parameter
   const FeedbackWidget({
-    Key? key,
+    super.key,
     this.onSendFeedback,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +27,8 @@ class FeedbackWidget extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppTheme.coralAccent.withOpacity(0.1),
+                    // ✅ FIXED: Use withValues instead of withOpacity
+                    color: AppTheme.coralAccent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -174,7 +176,17 @@ class FeedbackWidget extends StatelessWidget {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Error sending feedback: $e'),
+                                content: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.error_outline,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text('Error: $e'),
+                                  ],
+                                ),
                                 backgroundColor: Colors.red,
                                 behavior: SnackBarBehavior.floating,
                               ),
@@ -182,11 +194,10 @@ class FeedbackWidget extends StatelessWidget {
                           }
                         }
                       } else {
-                        // Show validation message
+                        // Show message for empty feedback
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Please enter your feedback'),
-                            backgroundColor: Colors.orange,
+                            content: Text('Please enter your feedback first'),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
@@ -195,16 +206,7 @@ class FeedbackWidget extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.coralAccent,
               ),
-              child: isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text('Send'),
+              child: const Text('Send'),
             ),
           ],
         ),

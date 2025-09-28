@@ -12,12 +12,13 @@ class FoodEntryForm extends StatefulWidget {
   final FoodItem? initialFoodItem; // For editing existing items
   final Function() onSaved;
 
+  // ✅ FIXED: Use super parameter instead of explicit key parameter
   const FoodEntryForm({
-    Key? key,
+    super.key,
     required this.mealType,
     this.initialFoodItem,
     required this.onSaved,
-  }) : super(key: key);
+  });
 
   @override
   State<FoodEntryForm> createState() => _FoodEntryFormState();
@@ -91,51 +92,44 @@ class _FoodEntryFormState extends State<FoodEntryForm> {
       setState(() => _isLoading = true);
 
       try {
-        // Create food item from form data
         final foodItem = FoodItem(
-          id: widget.initialFoodItem?.id ?? 
-              '${DateTime.now().millisecondsSinceEpoch}_${_nameController.text}',
+          id: widget.initialFoodItem?.id ?? 'food_${DateTime.now().millisecondsSinceEpoch}',
           name: _nameController.text.trim(),
-          calories: double.tryParse(_caloriesController.text) ?? 0.0,
-          proteins: double.tryParse(_proteinsController.text) ?? 0.0,
-          carbs: double.tryParse(_carbsController.text) ?? 0.0,
-          fats: double.tryParse(_fatsController.text) ?? 0.0,
-          servingSize: double.tryParse(_servingSizeController.text) ?? AppConstants.defaultServingSize,
+          calories: double.parse(_caloriesController.text),
+          proteins: double.parse(_proteinsController.text),
+          carbs: double.parse(_carbsController.text),
+          fats: double.parse(_fatsController.text),
+          servingSize: double.parse(_servingSizeController.text),
           servingUnit: _servingUnit,
           mealType: _selectedMealType,
           timestamp: widget.initialFoodItem?.timestamp ?? DateTime.now(),
           imagePath: widget.initialFoodItem?.imagePath,
         );
 
-        // Save or update the food item
-        bool success;
-        if (widget.initialFoodItem != null) {
-          success = await _repository.updateFoodEntry(foodItem);
-        } else {
-          success = await _repository.saveFoodEntries([foodItem]);
-        }
+        final success = await _repository.saveFoodEntry(foodItem);
 
-        if (success) {
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(widget.initialFoodItem != null ? 'Food updated successfully!' : 'Food saved successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
           widget.onSaved();
-          if (mounted) {
-            Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(widget.initialFoodItem != null 
-                    ? AppConstants.updateSuccess 
-                    : AppConstants.saveSuccess),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        } else {
-          throw Exception('Failed to save food item');
+          Navigator.of(context).pop();
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to save food. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error: ${e.toString()}'),
+              content: Text('Error: $e'),
               backgroundColor: Colors.red,
             ),
           );
@@ -386,8 +380,11 @@ class _FoodEntryFormState extends State<FoodEntryForm> {
           borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
           borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
         ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppConstants.paddingMedium,
+          vertical: AppConstants.paddingSmall,
+        ),
       ),
-      style: AppTextStyles.getBodyStyle(),
     );
   }
 
@@ -395,42 +392,34 @@ class _FoodEntryFormState extends State<FoodEntryForm> {
     required String label,
     required String value,
     required List<String> items,
-    required void Function(String?) onChanged,
+    required Function(String?) onChanged,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.getBodyStyle().copyWith(
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[700],
-          ),
+    return DropdownButtonFormField<String>(
+      value: value,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
         ),
-        const SizedBox(height: AppConstants.spacingSmall),
-        DropdownButtonFormField<String>(
-          value: value,
-          onChanged: onChanged,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
-              borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
-            ),
-          ),
-          items: items.map((String item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(
-                item.capitalized, // Uses extension from AppConstants
-                style: AppTextStyles.getBodyStyle(),
-              ),
-            );
-          }).toList(),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+          borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
         ),
-      ],
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppConstants.paddingMedium,
+          vertical: AppConstants.paddingSmall,
+        ),
+      ),
+      items: items.map((String item) {
+        return DropdownMenuItem<String>(
+          value: item,
+          child: Text(
+            item.capitalized,
+            style: AppTextStyles.getBodyStyle(),
+          ),
+        );
+      }).toList(),
     );
   }
 }

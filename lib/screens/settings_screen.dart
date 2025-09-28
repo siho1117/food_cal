@@ -12,10 +12,11 @@ class SettingsScreen extends StatefulWidget {
   // Parameter to check if we should show back button
   final bool showBackButton;
 
+  // ✅ FIXED: Use super parameter instead of explicit key parameter
   const SettingsScreen({
-    Key? key,
+    super.key,
     this.showBackButton = false,
-  }) : super(key: key);
+  });
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -160,7 +161,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              // ✅ FIXED: Use withValues instead of deprecated withOpacity
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               spreadRadius: 0,
                               offset: const Offset(0, 2),

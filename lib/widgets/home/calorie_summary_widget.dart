@@ -1,13 +1,13 @@
 // lib/widgets/home/calorie_summary_widget.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:math' as math;
 import '../../config/design_system/theme.dart';
 import '../../config/design_system/text_styles.dart';
 import '../../providers/home_provider.dart';
 
 class CalorieSummaryWidget extends StatefulWidget {
-  const CalorieSummaryWidget({Key? key}) : super(key: key);
+  // ✅ FIXED: Use super parameter instead of explicit key parameter
+  const CalorieSummaryWidget({super.key});
 
   @override
   State<CalorieSummaryWidget> createState() => _CalorieSummaryWidgetState();
@@ -31,77 +31,74 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
   void initState() {
     super.initState();
     
-    // Initialize animation controllers first
+    // Initialize animation controllers
     _progressController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
     );
     
     _countController = AnimationController(
+      duration: const Duration(milliseconds: 800),
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
     );
     
     _slideController = AnimationController(
+      duration: const Duration(milliseconds: 600),
       vsync: this,
-      duration: const Duration(milliseconds: 800),
     );
     
-    // Then create all animations
-    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _progressController,
-        curve: Curves.easeOutCubic,
-      ),
-    );
+    // Create animations
+    _progressAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _progressController,
+      curve: Curves.easeOutCubic,
+    ));
     
-    _countAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _countController,
-        curve: Curves.easeOutQuart,
-      ),
-    );
+    _countAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _countController,
+      curve: Curves.easeOut,
+    ));
     
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
+      begin: const Offset(0, 0.3),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _slideController,
       curve: Curves.easeOutBack,
     ));
     
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _slideController,
-        curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
-      ),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeOut,
+    ));
     
-    // Start animations after everything is initialized
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Start animations
+    _startAnimations();
+  }
+
+  void _startAnimations() {
+    _slideController.forward();
+    Future.delayed(const Duration(milliseconds: 200), () {
       if (mounted) {
-        _startAnimations();
+        _progressController.forward();
+        _countController.forward();
       }
     });
   }
 
-  void _startAnimations() async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    if (mounted) _countController.forward();
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (mounted) _progressController.forward();
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (mounted) _slideController.forward();
-  }
-
-  // Restart animations when data refreshes
   void _restartAnimations() {
-    if (mounted) {
-      _progressController.reset();
-      _countController.reset();
-      _slideController.reset();
-      _startAnimations();
-    }
+    _progressController.reset();
+    _countController.reset();
+    _slideController.reset();
+    _startAnimations();
   }
 
   void _checkForRefresh(int totalCalories, int calorieGoal, int caloriesRemaining) {
@@ -133,7 +130,8 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
+                  // ✅ FIXED: Use withValues instead of withOpacity (line 136)
+                  color: Colors.black.withValues(alpha: 0.06),
                   blurRadius: 20,
                   spreadRadius: 0,
                   offset: const Offset(0, 4),
@@ -165,302 +163,208 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
         // Determine status and colors
         final statusData = _getStatusData(calorieProgress, expectedPercentage, isOverBudget);
         
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 20,
-                spreadRadius: 0,
-                offset: const Offset(0, 4),
+        return SlideTransition(
+          position: _slideAnimation,
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    // ✅ FIXED: Use withValues instead of withOpacity (line 175)
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 20,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with fire emoji and refresh button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Header with status
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        '🔥',
-                        style: TextStyle(fontSize: 24),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Daily Calories',
+                            style: AppTextStyles.getSubHeadingStyle().copyWith(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryBlue,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            statusData['status']!,
+                            style: AppTextStyles.getBodyStyle().copyWith(
+                              fontSize: 12,
+                              color: statusData['color'] as Color,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Daily Calories',
-                        style: AppTextStyles.getSubHeadingStyle().copyWith(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryBlue,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: (statusData['color'] as Color).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '$progressPercentage%',
+                          style: AppTextStyles.getNumericStyle().copyWith(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: statusData['color'] as Color,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  SlideTransition(
-                    position: _slideAnimation,
-                    child: FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: _buildStatusBadge(statusData, caloriesRemaining, isOverBudget),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // Main content with circular progress and calorie display
-              Row(
-                children: [
-                  // Left side - Calorie numbers
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Animated calorie display
-                        AnimatedBuilder(
-                          animation: _countAnimation,
-                          builder: (context, child) {
-                            final animatedTotal = (totalCalories * _countAnimation.value).round();
-                            final animatedGoal = (calorieGoal * _countAnimation.value).round();
-                            
-                            return RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: '$animatedTotal',
-                                    style: AppTextStyles.getNumericStyle().copyWith(
-                                      fontSize: 42,
-                                      fontWeight: FontWeight.bold,
-                                      color: statusData['color'],
-                                      height: 0.9,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: ' / $animatedGoal',
-                                    style: AppTextStyles.getNumericStyle().copyWith(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Progress percentage with animation
-                        AnimatedBuilder(
-                          animation: _progressAnimation,
-                          builder: (context, child) {
-                            final animatedPercentage = (progressPercentage * _progressAnimation.value).round();
-                            return Text(
-                              '▶ $animatedPercentage% of daily goal',
-                              style: AppTextStyles.getBodyStyle().copyWith(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[700],
-                              ),
-                            );
-                          },
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        // Encouragement text with fade in
-                        FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: Text(
-                            statusData['message'],
-                            style: AppTextStyles.getBodyStyle().copyWith(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: statusData['color'],
+                  
+                  const SizedBox(height: 20),
+                  
+                  // Main calorie display
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      // Current calories (animated)
+                      AnimatedBuilder(
+                        animation: _countAnimation,
+                        builder: (context, child) {
+                          final animatedValue = (_countAnimation.value * totalCalories).round();
+                          return Text(
+                            animatedValue.toString(),
+                            style: AppTextStyles.getNumericStyle().copyWith(
+                              fontSize: 42,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.primaryBlue,
+                              height: 1,
                             ),
+                          );
+                        },
+                      ),
+                      
+                      const SizedBox(width: 8),
+                      
+                      // Goal indicator
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(
+                          '/ $calorieGoal cal',
+                          style: AppTextStyles.getBodyStyle().copyWith(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-
-                  const SizedBox(width: 20),
-
-                  // Right side - Circular progress
-                  SizedBox(
-                    width: 100,
-                    height: 100,
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Progress bar
+                  Container(
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                     child: AnimatedBuilder(
                       animation: _progressAnimation,
                       builder: (context, child) {
-                        return CustomPaint(
-                          painter: CircularProgressPainter(
-                            progress: calorieProgress * _progressAnimation.value,
-                            color: statusData['color'],
-                            backgroundColor: Colors.grey[300]!,
-                            strokeWidth: 8.0,
-                          ),
-                          child: Center(
-                            child: AnimatedBuilder(
-                              animation: _countAnimation,
-                              builder: (context, child) {
-                                final animatedPercentage = (progressPercentage * _countAnimation.value).round();
-                                return Text(
-                                  '$animatedPercentage%',
-                                  style: AppTextStyles.getNumericStyle().copyWith(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: statusData['color'],
-                                  ),
-                                );
-                              },
+                        return FractionallySizedBox(
+                          widthFactor: calorieProgress * _progressAnimation.value,
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  (statusData['color'] as Color).withValues(alpha: 0.8),
+                                  statusData['color'] as Color,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(4),
                             ),
                           ),
                         );
                       },
                     ),
                   ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Remaining calories info
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        isOverBudget ? 'Over by:' : 'Remaining:',
+                        style: AppTextStyles.getBodyStyle().copyWith(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        '${caloriesRemaining.abs()} cal',
+                        style: AppTextStyles.getNumericStyle().copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: isOverBudget ? Colors.red[600] : Colors.green[600],
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
-            ],
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildStatusBadge(Map<String, dynamic> statusData, int caloriesRemaining, bool isOverBudget) {
-    final badgeText = isOverBudget 
-        ? '${caloriesRemaining.abs()} over'
-        : '$caloriesRemaining left';
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: statusData['color'].withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: statusData['color'].withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isOverBudget ? Icons.trending_up : Icons.trending_down,
-            size: 16,
-            color: statusData['color'],
-          ),
-          const SizedBox(width: 6),
-          Text(
-            badgeText,
-            style: AppTextStyles.getBodyStyle().copyWith(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: statusData['color'],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Map<String, dynamic> _getStatusData(double progress, double expectedPercentage, bool isOverBudget) {
     if (isOverBudget) {
       return {
+        'status': 'Over budget',
         'color': Colors.red[600]!,
-        'message': '🚨 Over your daily limit!',
       };
     }
     
     if (progress >= 0.9) {
       return {
+        'status': 'Almost there!',
         'color': Colors.orange[600]!,
-        'message': '🎯 Almost reached your goal!',
       };
     }
     
     if (progress >= 0.7) {
       return {
-        'color': AppTheme.primaryBlue,
-        'message': '💪 Great progress today!',
+        'status': 'Good progress',
+        'color': Colors.blue[600]!,
       };
     }
     
-    if (progress >= 0.4) {
+    if (progress >= 0.5) {
       return {
+        'status': 'On track',
         'color': Colors.green[600]!,
-        'message': '📈 Keep up the good work!',
       };
     }
     
     return {
+      'status': 'Just getting started',
       'color': Colors.grey[600]!,
-      'message': '🍽️ Time to fuel up!',
     };
-  }
-}
-
-// Custom painter for the circular progress indicator
-class CircularProgressPainter extends CustomPainter {
-  final double progress;
-  final Color color;
-  final Color backgroundColor;
-  final double strokeWidth;
-
-  CircularProgressPainter({
-    required this.progress,
-    required this.color,
-    required this.backgroundColor,
-    required this.strokeWidth,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width - strokeWidth) / 2;
-
-    // Background circle
-    final backgroundPaint = Paint()
-      ..color = backgroundColor
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawCircle(center, radius, backgroundPaint);
-
-    // Progress arc
-    final progressPaint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final sweepAngle = 2 * math.pi * progress;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2, // Start from top
-      sweepAngle,
-      false,
-      progressPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(CircularProgressPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-           oldDelegate.color != color ||
-           oldDelegate.backgroundColor != backgroundColor ||
-           oldDelegate.strokeWidth != strokeWidth;
   }
 }

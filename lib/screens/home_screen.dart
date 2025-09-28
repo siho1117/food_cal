@@ -5,12 +5,13 @@ import '../config/design_system/theme.dart';
 import '../providers/home_provider.dart';
 import '../widgets/home/calorie_summary_widget.dart';
 import '../widgets/home/macronutrient_widget.dart';
-import '../widgets/home/cost_summary_widget.dart';  // ← NEW IMPORT
+import '../widgets/home/cost_summary_widget.dart';
 import '../widgets/home/food_log_widget.dart';
 import '../widgets/common/week_navigation_widget.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  // ✅ FIXED: Use super parameter
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();

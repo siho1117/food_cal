@@ -5,7 +5,8 @@ import '../../providers/settings_provider.dart';
 import '../../config/design_system/theme.dart';
 
 class ProfileSectionWidget extends StatelessWidget {
-  const ProfileSectionWidget({Key? key}) : super(key: key);
+  // ✅ FIXED: Use super parameter instead of explicit key parameter
+  const ProfileSectionWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +41,8 @@ class ProfileSectionWidget extends StatelessWidget {
                 // Avatar circle
                 CircleAvatar(
                   radius: 50,
-                  backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
+                  // ✅ FIXED: Use withValues instead of withOpacity
+                  backgroundColor: AppTheme.primaryBlue.withValues(alpha: 0.1),
                   backgroundImage: settingsProvider.avatarUrl != null 
                       ? NetworkImage(settingsProvider.avatarUrl!) 
                       : null,
@@ -88,7 +90,8 @@ class ProfileSectionWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            // ✅ FIXED: Use withValues instead of withOpacity
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             spreadRadius: 0,
             offset: const Offset(0, 2),
@@ -105,8 +108,10 @@ class ProfileSectionWidget extends StatelessWidget {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: isComplete 
-                      ? Colors.green.withOpacity(0.1)
-                      : AppTheme.primaryBlue.withOpacity(0.1),
+                      // ✅ FIXED: Use withValues instead of withOpacity
+                      ? Colors.green.withValues(alpha: 0.1)
+                      // ✅ FIXED: Use withValues instead of withOpacity
+                      : AppTheme.primaryBlue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -157,7 +162,8 @@ class ProfileSectionWidget extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        AppTheme.primaryBlue.withOpacity(0.7),
+                        // ✅ FIXED: Use withValues instead of withOpacity
+                        AppTheme.primaryBlue.withValues(alpha: 0.7),
                         AppTheme.primaryBlue,
                       ],
                     ),
@@ -272,9 +278,11 @@ class ProfileSectionWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: optionColor.withOpacity(0.1),
+          // ✅ FIXED: Use withValues instead of withOpacity
+          color: optionColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: optionColor.withOpacity(0.3)),
+          // ✅ FIXED: Use withValues instead of withOpacity
+          border: Border.all(color: optionColor.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
