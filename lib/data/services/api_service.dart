@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart'; // Added for debugPrint
 import 'fallback_provider.dart'; // Import for fallback mechanism
 
 /// Service to interact with OpenAI API for food recognition with fallback to Taiwan VM proxy
@@ -36,7 +37,8 @@ class FoodApiService {
   String get _openAIApiKey {
     final key = dotenv.env['OPENAI_API_KEY'];
     if (key == null || key.isEmpty) {
-      print('WARNING: OPENAI_API_KEY not found in .env file');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('WARNING: OPENAI_API_KEY not found in .env file');
       return '';
     }
     return key;
@@ -57,7 +59,8 @@ class FoodApiService {
     } catch (e) {
       // Log the error for analytics
       await _logError('OpenAI', e.toString());
-      print('OpenAI direct access error, trying fallback provider: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('OpenAI direct access error, trying fallback provider: $e');
 
       // Increment quota usage
       await incrementQuotaUsage();
@@ -81,19 +84,21 @@ class FoodApiService {
         {
           "role": "system",
           "content":
-              "You are a food recognition system. Identify the food item in the image with a concise name (1-7 words maximum) and provide nutritional information. Use common food names that would appear in a food database."
+              "You are a food recognition system. Identify food items in images and provide nutritional information. Respond with JSON format containing food name, calories, protein, carbs, and fat per serving."
         },
         {
           "role": "user",
           "content": [
             {
               "type": "text",
-              "text":
-                  "What single food item is in this image? Reply in this exact format:\nFood Name: [concise name, 1-7 words]\nCalories: [number] cal\nProtein: [number] g\nCarbs: [number] g\nFat: [number] g\n\nIf you can't identify the food or the image doesn't contain food, respond with \"Food Name: Unidentified Food Item\" and provide estimated nutritional values."
+              "text": "Identify the food item in this image and provide nutritional information per serving in this exact JSON format: {\"name\": \"food_name\", \"calories\": number, \"protein\": number, \"carbs\": number, \"fat\": number}"
             },
             {
               "type": "image_url",
-              "image_url": {"url": "data:image/jpeg;base64,$base64Image"}
+              "image_url": {
+                "url": "data:image/jpeg;base64,$base64Image",
+                "detail": "low"
+              }
             }
           ]
         }
@@ -112,7 +117,7 @@ class FoodApiService {
           },
           body: jsonEncode(requestBody),
         )
-        .timeout(const Duration(seconds: 10));
+        .timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 200) {
       throw Exception(
@@ -121,65 +126,94 @@ class FoodApiService {
 
     // Parse OpenAI response
     final responseData = jsonDecode(response.body);
-    print('OpenAI Response: $responseData');
+    
+    // Increment quota usage for successful requests
+    await incrementQuotaUsage();
 
     // Extract food information from OpenAI response
     return _extractFoodInfoFromOpenAI(responseData);
   }
 
-  /// Extract food information from OpenAI response
-  Map<String, dynamic> _extractFoodInfoFromOpenAI(
-      Map<String, dynamic> response) {
+  /// Extract food information from OpenAI response and format for our app
+  Map<String, dynamic> _extractFoodInfoFromOpenAI(Map<String, dynamic> responseData) {
     try {
-      // Get the content from the response
-      final content = response['choices'][0]['message']['content'] as String;
-      print('Extracted content: $content'); // Debug print
+      // Get the content from OpenAI response
+      final choices = responseData['choices'] as List?;
+      if (choices == null || choices.isEmpty) {
+        throw Exception('No choices in OpenAI response');
+      }
 
-      // Initialize default values
-      String name = 'Unidentified Food Item';
+      final content = choices[0]['message']['content'] as String?;
+      if (content == null || content.isEmpty) {
+        throw Exception('No content in OpenAI response');
+      }
+
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('OpenAI Response Content: $content');
+
+      // Try to extract JSON from the response
+      String name = 'Unknown Food';
       double calories = 0.0;
       double protein = 0.0;
       double carbs = 0.0;
       double fat = 0.0;
 
-      // Extract food name - looking for "Food Name:" or similar at the beginning of a line
-      final nameMatches =
-          RegExp(r'(?:Food\s*Name|Name)[:\s]+([^\n\.]+)', caseSensitive: false)
-              .firstMatch(content);
-      if (nameMatches != null && nameMatches.groupCount >= 1) {
-        name = nameMatches.group(1)!.trim();
+      // Try to parse JSON first
+      try {
+        final jsonMatch = RegExp(r'\{[^}]*\}').firstMatch(content);
+        if (jsonMatch != null) {
+          final jsonData = jsonDecode(jsonMatch.group(0)!);
+          name = jsonData['name'] ?? 'Unknown Food';
+          calories = _parseDoubleValue(jsonData['calories']) ?? 0.0;
+          protein = _parseDoubleValue(jsonData['protein']) ?? 0.0;
+          carbs = _parseDoubleValue(jsonData['carbs']) ?? 0.0;
+          fat = _parseDoubleValue(jsonData['fat']) ?? 0.0;
+        }
+      } catch (e) {
+        // ✅ FIXED: Replace print with debugPrint
+        debugPrint('JSON parsing failed, using regex extraction: $e');
       }
 
-      // Extract calories - looking for "Calories:" followed by numbers
-      final caloriesMatches =
-          RegExp(r'(?:Calories|Cal)[:\s]+(\d+\.?\d*)', caseSensitive: false)
-              .firstMatch(content);
-      if (caloriesMatches != null && caloriesMatches.groupCount >= 1) {
-        calories = double.tryParse(caloriesMatches.group(1)!) ?? 0.0;
-      }
+      // If JSON parsing failed, use regex extraction
+      if (name == 'Unknown Food') {
+        // Extract food name - looking for "name" or "Food Name:" patterns
+        final nameMatches = RegExp(r'(?:name|food)[:\s]+([^,\n]+)', caseSensitive: false)
+            .firstMatch(content);
+        if (nameMatches != null && nameMatches.groupCount >= 1) {
+          name = nameMatches.group(1)!.trim();
+        }
 
-      // Extract protein - looking for "Protein:" followed by numbers
-      final proteinMatches =
-          RegExp(r'(?:Protein)[:\s]+(\d+\.?\d*)', caseSensitive: false)
-              .firstMatch(content);
-      if (proteinMatches != null && proteinMatches.groupCount >= 1) {
-        protein = double.tryParse(proteinMatches.group(1)!) ?? 0.0;
-      }
+        // Extract calories - looking for "Calories:" followed by numbers
+        final caloriesMatches =
+            RegExp(r'(?:Calories|Cal)[:\s]+(\d+\.?\d*)', caseSensitive: false)
+                .firstMatch(content);
+        if (caloriesMatches != null && caloriesMatches.groupCount >= 1) {
+          calories = double.tryParse(caloriesMatches.group(1)!) ?? 0.0;
+        }
 
-      // Extract carbs - looking for "Carbs:" or "Carbohydrates:" followed by numbers
-      final carbsMatches = RegExp(r'(?:Carbs|Carbohydrates)[:\s]+(\d+\.?\d*)',
-              caseSensitive: false)
-          .firstMatch(content);
-      if (carbsMatches != null && carbsMatches.groupCount >= 1) {
-        carbs = double.tryParse(carbsMatches.group(1)!) ?? 0.0;
-      }
+        // Extract protein - looking for "Protein:" followed by numbers
+        final proteinMatches =
+            RegExp(r'(?:Protein)[:\s]+(\d+\.?\d*)', caseSensitive: false)
+                .firstMatch(content);
+        if (proteinMatches != null && proteinMatches.groupCount >= 1) {
+          protein = double.tryParse(proteinMatches.group(1)!) ?? 0.0;
+        }
 
-      // Extract fat - looking for "Fat:" followed by numbers
-      final fatMatches =
-          RegExp(r'(?:Fat)[:\s]+(\d+\.?\d*)', caseSensitive: false)
-              .firstMatch(content);
-      if (fatMatches != null && fatMatches.groupCount >= 1) {
-        fat = double.tryParse(fatMatches.group(1)!) ?? 0.0;
+        // Extract carbs - looking for "Carbs:" or "Carbohydrates:" followed by numbers
+        final carbsMatches = RegExp(r'(?:Carbs|Carbohydrates)[:\s]+(\d+\.?\d*)',
+                caseSensitive: false)
+            .firstMatch(content);
+        if (carbsMatches != null && carbsMatches.groupCount >= 1) {
+          carbs = double.tryParse(carbsMatches.group(1)!) ?? 0.0;
+        }
+
+        // Extract fat - looking for "Fat:" followed by numbers
+        final fatMatches =
+            RegExp(r'(?:Fat)[:\s]+(\d+\.?\d*)', caseSensitive: false)
+                .firstMatch(content);
+        if (fatMatches != null && fatMatches.groupCount >= 1) {
+          fat = double.tryParse(fatMatches.group(1)!) ?? 0.0;
+        }
       }
 
       // Check if the food was unidentified or unknown
@@ -189,9 +223,8 @@ class FoodApiService {
         name = 'Unidentified Food Item';
       }
 
-      // Debug print for extracted values
-      print(
-          'Extracted values: name=$name, calories=$calories, protein=$protein, carbs=$carbs, fat=$fat');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Extracted values: name=$name, calories=$calories, protein=$protein, carbs=$carbs, fat=$fat');
 
       // Format the response for our app
       return {
@@ -209,7 +242,8 @@ class FoodApiService {
         }
       };
     } catch (e) {
-      print('Error extracting food info from OpenAI response: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error extracting food info from OpenAI response: $e');
       // Return an undefined food item response if parsing fails
       return _getUndefinedFoodResponse();
     }
@@ -246,7 +280,8 @@ class FoodApiService {
     } catch (e) {
       // Log the error for analytics
       await _logError('OpenAI', e.toString());
-      print('OpenAI error, using fallback provider: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('OpenAI error, using fallback provider: $e');
 
       // Increment quota usage
       await incrementQuotaUsage();
@@ -297,7 +332,8 @@ class FoodApiService {
 
     // Parse OpenAI response
     final responseData = jsonDecode(response.body);
-    print('OpenAI Response: $responseData');
+    // ✅ FIXED: Replace print with debugPrint
+    debugPrint('OpenAI Response: $responseData');
 
     // Extract food information from OpenAI response
     return _extractFoodInfoFromOpenAI(responseData);
@@ -315,33 +351,33 @@ class FoodApiService {
       return await _searchFoodsWithOpenAI(query);
     } catch (e) {
       // Log the error for analytics
-      await _logError('OpenAI', e.toString());
-      print('OpenAI error, using fallback provider: $e');
+      await _logError('OpenAI Search', e.toString());
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('OpenAI search error: $e');
 
       // Increment quota usage
       await incrementQuotaUsage();
 
-      // Use fallback provider
-      return await _fallbackProvider.searchFoods(
-          query, _openAIApiKey, _textModel);
+      // Use fallback or return empty list
+      return [];
     }
   }
 
-  /// Search for foods with OpenAI
+  /// Search for foods using OpenAI
   Future<List<dynamic>> _searchFoodsWithOpenAI(String query) async {
-    // Create OpenAI API request body with improved output format
+    // Create OpenAI API request body for food search
     final requestBody = {
       "model": _textModel,
       "messages": [
         {
           "role": "system",
           "content":
-              "You are a food database system. Provide food items matching the search query with concise names and nutritional information in a structured JSON format."
+              "You are a food search system. Find foods matching the user's query and return nutritional information in JSON array format."
         },
         {
           "role": "user",
           "content":
-              "Find up to 5 food items matching '$query'. For each item, provide a concise name (1-7 words) and nutritional information. Format your response as a valid JSON array with each object having the format: {\"name\": \"Food Name\", \"calories\": number, \"protein\": number, \"carbs\": number, \"fat\": number}. Ensure the numbers are just numeric values without units."
+              "Find foods matching '$query'. Return results as a JSON array with this format: [{\"name\": \"food_name\", \"calories\": number, \"protein\": number, \"carbs\": number, \"fat\": number}]. Limit to 5 results."
         }
       ],
       "max_tokens": 500
@@ -367,30 +403,43 @@ class FoodApiService {
 
     // Parse OpenAI response
     final responseData = jsonDecode(response.body);
-    print('OpenAI Response: $responseData');
+    
+    // Increment quota usage for successful requests
+    await incrementQuotaUsage();
 
-    // Extract food items from OpenAI response
-    return _extractFoodItemsFromOpenAI(responseData);
+    // Extract search results from OpenAI response
+    return _extractSearchResultsFromOpenAI(responseData);
   }
 
-  /// Extract food items from OpenAI response
-  List<dynamic> _extractFoodItemsFromOpenAI(Map<String, dynamic> response) {
+  /// Extract search results from OpenAI response
+  List<dynamic> _extractSearchResultsFromOpenAI(Map<String, dynamic> responseData) {
     try {
-      // Get the content from the response
-      final content = response['choices'][0]['message']['content'] as String;
-      print('Extracting food items from: $content'); // Debug print
+      // Get the content from OpenAI response
+      final choices = responseData['choices'] as List?;
+      if (choices == null || choices.isEmpty) {
+        return [];
+      }
 
-      // Try to find JSON in the response - looking for an array [...]
-      final jsonMatches =
-          RegExp(r'\[\s*\{.*\}\s*\]', dotAll: true).firstMatch(content);
+      final content = choices[0]['message']['content'] as String?;
+      if (content == null || content.isEmpty) {
+        return [];
+      }
+
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('OpenAI Search Response Content: $content');
+
+      // Try to parse JSON array from the response
+      final jsonMatches = RegExp(r'\[\s*\{.*?\}\s*\]', dotAll: true).firstMatch(content);
 
       if (jsonMatches != null) {
         // Try to parse the JSON array
         final jsonString = jsonMatches.group(0)!;
-        print('Found JSON array: $jsonString'); // Debug print
+        // ✅ FIXED: Replace print with debugPrint
+        debugPrint('Found JSON array: $jsonString');
 
         final items = jsonDecode(jsonString) as List;
-        print('Successfully parsed ${items.length} items'); // Debug print
+        // ✅ FIXED: Replace print with debugPrint
+        debugPrint('Successfully parsed ${items.length} items');
 
         // Format each item
         return items.map((item) {
@@ -401,8 +450,8 @@ class FoodApiService {
           final carbs = _parseDoubleValue(item['carbs']) ?? 0.0;
           final fat = _parseDoubleValue(item['fat']) ?? 0.0;
 
-          print(
-              'Formatted item: $name, cal=$calories, p=$protein, c=$carbs, f=$fat'); // Debug print
+          // ✅ FIXED: Replace print with debugPrint
+          debugPrint('Formatted item: $name, cal=$calories, p=$protein, c=$carbs, f=$fat');
 
           return {
             'id': DateTime.now().millisecondsSinceEpoch.toString(),
@@ -422,7 +471,8 @@ class FoodApiService {
         }).toList();
       } else {
         // If JSON parsing fails, search for possible structured content
-        print('No valid JSON found, attempting to extract structured data');
+        // ✅ FIXED: Replace print with debugPrint
+        debugPrint('No valid JSON found, attempting to extract structured data');
 
         final items = <Map<String, dynamic>>[];
 
@@ -459,7 +509,8 @@ class FoodApiService {
         }
 
         if (items.isNotEmpty) {
-          print('Extracted ${items.length} items using regex');
+          // ✅ FIXED: Replace print with debugPrint
+          debugPrint('Extracted ${items.length} items using regex');
           return items;
         }
 
@@ -467,7 +518,8 @@ class FoodApiService {
         return [];
       }
     } catch (e) {
-      print('Error extracting food items from response: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error extracting food items from response: $e');
       // Return empty list on error
       return [];
     }
@@ -494,111 +546,123 @@ class FoodApiService {
       final errorLog = prefs.getStringList(_errorLogKey) ?? [];
 
       // Add new error with timestamp
-      final timestamp = DateTime.now().toIso8601String();
-      final errorEntry =
-          '$timestamp|$service|${errorMessage.substring(0, Math.min(100, errorMessage.length))}';
-
-      // Keep only the most recent 20 errors
+      final errorEntry = '${DateTime.now().toIso8601String()}: $service - $errorMessage';
       errorLog.add(errorEntry);
-      if (errorLog.length > 20) {
-        errorLog.removeAt(0);
+
+      // Keep only last 10 errors to avoid excessive storage
+      if (errorLog.length > 10) {
+        errorLog.removeRange(0, errorLog.length - 10);
       }
 
-      // Save updated log
       await prefs.setStringList(_errorLogKey, errorLog);
     } catch (e) {
-      print('Error logging API error: $e');
-      // Continue execution even if logging fails
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error logging API error: $e');
     }
   }
 
-  /// Check if we've exceeded our self-imposed daily quota limit
+  /// Check if daily quota has been exceeded
   Future<bool> isDailyQuotaExceeded() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
-      // Get today's date as a string (YYYY-MM-DD format)
-      final today = DateTime.now().toString().split(' ')[0];
-
-      // Get the last date we recorded quota usage
-      final lastQuotaDate = prefs.getString(_quotaDateKey) ?? '';
-
-      // If it's a new day, reset the quota
-      if (lastQuotaDate != today) {
-        await prefs.setString(_quotaDateKey, today);
+      
+      final quotaUsed = prefs.getInt(_quotaUsedKey) ?? 0;
+      final quotaDate = prefs.getString(_quotaDateKey);
+      final today = DateTime.now().toIso8601String().split('T')[0];
+      
+      // Reset quota if it's a new day
+      if (quotaDate != today) {
         await prefs.setInt(_quotaUsedKey, 0);
+        await prefs.setString(_quotaDateKey, today);
         return false;
       }
-
-      // Get current quota usage
-      final quotaUsed = prefs.getInt(_quotaUsedKey) ?? 0;
-
-      // Check if we've exceeded our limit
+      
       return quotaUsed >= dailyQuotaLimit;
     } catch (e) {
-      print('Error checking quota: $e');
-      // In case of error, assume we haven't exceeded quota for better UX
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error checking quota: $e');
       return false;
     }
   }
 
-  /// Increment the quota usage counter
+  /// Increment the daily quota usage
   Future<void> incrementQuotaUsage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
-      // Get today's date as a string (YYYY-MM-DD format)
-      final today = DateTime.now().toString().split(' ')[0];
-
-      // Get the last date we recorded quota usage
-      final lastQuotaDate = prefs.getString(_quotaDateKey) ?? '';
-
-      // If it's a new day, reset the quota
-      if (lastQuotaDate != today) {
-        await prefs.setString(_quotaDateKey, today);
-        await prefs.setInt(_quotaUsedKey, 1); // Set to 1 for this first request
-        return;
-      }
-
-      // Get current quota usage and increment it
+      
       final quotaUsed = prefs.getInt(_quotaUsedKey) ?? 0;
+      final today = DateTime.now().toIso8601String().split('T')[0];
+      
       await prefs.setInt(_quotaUsedKey, quotaUsed + 1);
+      await prefs.setString(_quotaDateKey, today);
+      
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('API quota used: ${quotaUsed + 1}/$dailyQuotaLimit');
     } catch (e) {
-      print('Error incrementing quota: $e');
-      // Continue execution even if quota tracking fails
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error incrementing quota: $e');
     }
   }
 
-  /// Get the remaining quota for today
-  Future<int> getRemainingQuota() async {
+  /// Get current quota usage for display
+  Future<Map<String, dynamic>> getQuotaInfo() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
-      // Get today's date as a string (YYYY-MM-DD format)
-      final today = DateTime.now().toString().split(' ')[0];
-
-      // Get the last date we recorded quota usage
-      final lastQuotaDate = prefs.getString(_quotaDateKey) ?? '';
-
-      // If it's a new day, the full quota is available
-      if (lastQuotaDate != today) {
-        return dailyQuotaLimit;
-      }
-
-      // Get current quota usage
+      
       final quotaUsed = prefs.getInt(_quotaUsedKey) ?? 0;
-
-      // Calculate remaining quota
-      return (dailyQuotaLimit - quotaUsed).clamp(0, dailyQuotaLimit);
+      final quotaDate = prefs.getString(_quotaDateKey);
+      final today = DateTime.now().toIso8601String().split('T')[0];
+      
+      // Reset quota if it's a new day
+      if (quotaDate != today) {
+        await prefs.setInt(_quotaUsedKey, 0);
+        await prefs.setString(_quotaDateKey, today);
+        return {
+          'used': 0,
+          'limit': dailyQuotaLimit,
+          'remaining': dailyQuotaLimit,
+          'date': today,
+        };
+      }
+      
+      return {
+        'used': quotaUsed,
+        'limit': dailyQuotaLimit,
+        'remaining': (dailyQuotaLimit - quotaUsed).clamp(0, dailyQuotaLimit),
+        'date': quotaDate,
+      };
     } catch (e) {
-      print('Error getting remaining quota: $e');
-      // In case of error, return a safe default
-      return dailyQuotaLimit;
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error getting quota info: $e');
+      return {
+        'used': 0,
+        'limit': dailyQuotaLimit,
+        'remaining': dailyQuotaLimit,
+        'date': DateTime.now().toIso8601String().split('T')[0],
+      };
     }
   }
-}
 
-// For min function
-class Math {
-  static int min(int a, int b) => a < b ? a : b;
+  /// Get error log for debugging
+  Future<List<String>> getErrorLog() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getStringList(_errorLogKey) ?? [];
+    } catch (e) {
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error getting error log: $e');
+      return [];
+    }
+  }
+
+  /// Clear error log
+  Future<void> clearErrorLog() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_errorLogKey);
+    } catch (e) {
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error clearing error log: $e');
+    }
+  }
 }

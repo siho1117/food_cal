@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart'; // Added for debugPrint
 
 /// A class to handle local storage operations using SharedPreferences
 ///
@@ -64,7 +65,8 @@ class LocalStorage {
     try {
       return jsonDecode(jsonString) as Map<String, dynamic>;
     } catch (e) {
-      print('Error decoding object for key $key: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error decoding object for key $key: $e');
       return null;
     }
   }
@@ -75,7 +77,8 @@ class LocalStorage {
       final jsonString = jsonEncode(value);
       return await setString(key, jsonString);
     } catch (e) {
-      print('Error encoding object for key $key: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error encoding object for key $key: $e');
       return false;
     }
   }
@@ -95,7 +98,8 @@ class LocalStorage {
       }
       return result;
     } catch (e) {
-      print('Error decoding object list for key $key: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error decoding object list for key $key: $e');
       return null;
     }
   }
@@ -107,7 +111,8 @@ class LocalStorage {
       final jsonStringList = value.map((obj) => jsonEncode(obj)).toList();
       return await setStringList(key, jsonStringList);
     } catch (e) {
-      print('Error encoding object list for key $key: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error encoding object list for key $key: $e');
       return false;
     }
   }

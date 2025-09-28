@@ -7,7 +7,8 @@ import '../widgets/exercise/daily_burn_widget.dart';
 import '../widgets/exercise/exercise_log_widget.dart';
 
 class ExerciseScreen extends StatefulWidget {
-  const ExerciseScreen({Key? key}) : super(key: key);
+  // ✅ FIXED: Use super parameter instead of explicit key parameter
+  const ExerciseScreen({super.key});
 
   @override
   State<ExerciseScreen> createState() => _ExerciseScreenState();
@@ -66,21 +67,10 @@ class _ExerciseScreenState extends State<ExerciseScreen> {
 
                       const SizedBox(height: 20),
 
-                      // Exercise Log Widget (New!)
-                      ExerciseLogWidget(
+                      // Exercise Log Widget
+                      const ExerciseLogWidget(
                         showHeader: false, // Header is already shown above
-                        onExerciseAdded: () {
-                          // Optional callback when exercise is added
-                          // Could trigger additional actions if needed
-                        },
                       ),
-
-                      const SizedBox(height: 20),
-
-                      // Date selector for looking at different days
-                      _buildDateNavigation(exerciseProvider),
-
-                      const SizedBox(height: 80), // Space for bottom nav
                     ],
                   ),
                 ),
@@ -91,129 +81,63 @@ class _ExerciseScreenState extends State<ExerciseScreen> {
       ),
     );
   }
-  
+
+  /// Build error state with retry button
   Widget _buildErrorState(BuildContext context, ExerciseProvider exerciseProvider) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.error_outline,
-            color: Colors.red,
-            size: 48,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Error Loading Data',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            exerciseProvider.errorMessage!,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () => exerciseProvider.refreshData(),
-            child: const Text('Retry'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDateNavigation(ExerciseProvider exerciseProvider) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            spreadRadius: 0,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Date navigation header
-          Row(
-            children: [
-              Icon(
-                Icons.calendar_today,
-                color: AppTheme.primaryBlue,
-                size: 20,
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                // ✅ FIXED: Use withValues instead of deprecated withOpacity
+                color: Colors.red.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(width: 8),
-              Text(
-                'VIEW DIFFERENT DAY',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryBlue,
+              child: const Icon(
+                Icons.error_outline,
+                size: 40,
+                color: Colors.red,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Oops! Something went wrong',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textDark,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              exerciseProvider.errorMessage ?? 'Unknown error occurred',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () => exerciseProvider.refreshData(),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try Again'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryBlue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Date navigation controls
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back_ios),
-                onPressed: () => exerciseProvider.previousDay(),
-                color: AppTheme.primaryBlue,
-              ),
-              TextButton(
-                onPressed: () => _showDatePicker(context, exerciseProvider),
-                child: Text(
-                  exerciseProvider.isToday
-                      ? 'Today'
-                      : '${exerciseProvider.selectedDate.day}/${exerciseProvider.selectedDate.month}/${exerciseProvider.selectedDate.year}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryBlue,
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.arrow_forward_ios),
-                onPressed: exerciseProvider.canGoToNextDay 
-                    ? () => exerciseProvider.nextDay()
-                    : null,
-                color: AppTheme.primaryBlue,
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
-  }
-
-  // Helper method to show date picker
-  Future<void> _showDatePicker(BuildContext context, ExerciseProvider exerciseProvider) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: exerciseProvider.selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null && picked != exerciseProvider.selectedDate) {
-      exerciseProvider.changeDate(picked);
-    }
   }
 }

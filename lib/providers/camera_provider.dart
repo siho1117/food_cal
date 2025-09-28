@@ -1,7 +1,7 @@
 // lib/providers/camera_provider.dart
 // STEP 4: Updated to use GetIt for dependency injection
 import 'dart:io';
-import 'dart:typed_data';
+// ✅ REMOVED: import 'dart:typed_data'; - unnecessary import
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';

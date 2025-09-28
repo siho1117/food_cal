@@ -166,7 +166,8 @@ class HomeProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
-      print('Error calculating weekly food cost: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error calculating weekly food cost: $e');
     }
     
     return total;
@@ -192,7 +193,8 @@ class HomeProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
-      print('Error calculating monthly food cost: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error calculating monthly food cost: $e');
     }
     
     return total;
@@ -230,7 +232,8 @@ class HomeProvider extends ChangeNotifier {
     } catch (e) {
       _errorMessage = 'Failed to load data: $e';
       _isLoading = false;
-      print('Error in HomeProvider.loadData: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error in HomeProvider.loadData: $e');
     }
 
     notifyListeners();
@@ -258,7 +261,8 @@ class HomeProvider extends ChangeNotifier {
       final latestWeight = await _userRepository.getLatestWeightEntry();
       _currentWeight = latestWeight?.weight;
     } catch (e) {
-      print('Error loading user data: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error loading user data: $e');
       // Don't throw - let the UI handle missing user data gracefully
     }
   }
@@ -284,7 +288,8 @@ class HomeProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
-      print('Error loading food entries: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error loading food entries: $e');
       // Initialize with empty data if loading fails
       _entriesByMeal = {
         'breakfast': [],
@@ -301,7 +306,8 @@ class HomeProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       _dailyFoodBudget = prefs.getDouble('daily_food_budget') ?? 25.0;
     } catch (e) {
-      print('Error loading food budget: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error loading food budget: $e');
       _dailyFoodBudget = 25.0; // Default fallback
     }
   }
@@ -314,7 +320,8 @@ class HomeProvider extends ChangeNotifier {
       _dailyFoodBudget = budget;
       notifyListeners();
     } catch (e) {
-      print('Error updating food budget: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error updating food budget: $e');
       rethrow;
     }
   }
@@ -370,7 +377,8 @@ class HomeProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
-      print('Error adding food entry: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error adding food entry: $e');
       rethrow;
     }
   }
@@ -387,31 +395,29 @@ class HomeProvider extends ChangeNotifier {
         if (_entriesByMeal.containsKey(mealType)) {
           final items = _entriesByMeal[mealType]!;
           final index = items.indexWhere((item) => item.id == updatedItem.id);
-          
           if (index != -1) {
             items[index] = updatedItem;
-            
-            // Recalculate totals
             _calculateTotals();
             notifyListeners();
           }
         }
       }
     } catch (e) {
-      print('Error updating food item: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error updating food entry: $e');
       rethrow;
     }
   }
 
-  /// Delete food item
-  Future<void> deleteFoodItem(String itemId) async {
+  /// Delete a food entry
+  Future<void> deleteFoodEntry(String entryId) async {
     try {
       // Find the item first to get its timestamp
       FoodItem? itemToDelete;
       for (final mealType in _entriesByMeal.keys) {
         final items = _entriesByMeal[mealType]!;
         for (final item in items) {
-          if (item.id == itemId) {
+          if (item.id == entryId) {
             itemToDelete = item;
             break;
           }
@@ -420,12 +426,12 @@ class HomeProvider extends ChangeNotifier {
       }
 
       if (itemToDelete != null) {
-        // Delete from repository with both id and timestamp
-        await _foodRepository.deleteFoodEntry(itemId, itemToDelete.timestamp);
+        // Delete from storage with both id and timestamp
+        await _foodRepository.deleteFoodEntry(entryId, itemToDelete.timestamp);
         
         // Remove from local state
         for (final mealType in _entriesByMeal.keys) {
-          _entriesByMeal[mealType]!.removeWhere((item) => item.id == itemId);
+          _entriesByMeal[mealType]!.removeWhere((item) => item.id == entryId);
         }
         
         // Recalculate totals
@@ -433,19 +439,50 @@ class HomeProvider extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Error deleting food item: $e');
+      // ✅ FIXED: Replace print with debugPrint
+      debugPrint('Error deleting food entry: $e');
       rethrow;
     }
   }
 
-  /// Clear error message
-  void clearError() {
-    _errorMessage = null;
-    notifyListeners();
+  /// Check if two dates are the same day
+  bool _isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+           date1.month == date2.month &&
+           date1.day == date2.day;
   }
 
-  /// Helper method to check if two dates are the same day
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
+  /// Get meal items for a specific meal type
+  List<FoodItem> getMealItems(String mealType) {
+    return _entriesByMeal[mealType.toLowerCase()] ?? [];
+  }
+
+  /// Check if the selected date is today
+  bool get isToday => _isSameDay(_selectedDate, DateTime.now());
+
+  /// Check if the selected date is in the future
+  bool get isFutureDate => _selectedDate.isAfter(DateTime.now()) && !isToday;
+
+  /// Get formatted date string for display
+  String get formattedSelectedDate {
+    if (isToday) return 'Today';
+    
+    final now = DateTime.now();
+    final yesterday = now.subtract(const Duration(days: 1));
+    if (_isSameDay(_selectedDate, yesterday)) return 'Yesterday';
+    
+    final tomorrow = now.add(const Duration(days: 1));
+    if (_isSameDay(_selectedDate, tomorrow)) return 'Tomorrow';
+    
+    // Format as "Mon, Dec 25"
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
+    final weekday = weekdays[_selectedDate.weekday - 1];
+    final month = months[_selectedDate.month - 1];
+    final day = _selectedDate.day;
+    
+    return '$weekday, $month $day';
   }
 }
