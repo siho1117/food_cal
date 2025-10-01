@@ -1,10 +1,9 @@
 // lib/screens/splash_screen.dart
 import 'package:flutter/material.dart';
 import '../config/design_system/theme.dart';
-import '../main.dart'; // Import for MainApp placed at the top
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});  // ✅ FIXED: Using super parameter
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -45,13 +44,11 @@ class _SplashScreenState extends State<SplashScreen>
     _navigateToMainApp();
   }
 
-  // ✅ FIXED: Separate method with proper mounted check for BuildContext usage
   void _navigateToMainApp() {
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {  // ✅ Guard with mounted check
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const MainApp()),
-        );
+      if (mounted) {
+        // Use named route navigation to MainApp
+        Navigator.of(context).pushReplacementNamed('/home');
       }
     });
   }
@@ -86,7 +83,7 @@ class _SplashScreenState extends State<SplashScreen>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryBlue.withValues(alpha: 0.3),  // ✅ FIXED: Using withValues instead of withOpacity
+                            color: AppTheme.primaryBlue.withValues(alpha: 0.3),
                             blurRadius: 20,
                             spreadRadius: 5,
                             offset: const Offset(0, 10),
