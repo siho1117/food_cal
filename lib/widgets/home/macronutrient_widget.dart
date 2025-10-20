@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/design_system/theme.dart';
-import '../../config/design_system/text_styles.dart';
+import '../../config/design_system/typography.dart';
 import '../../providers/home_provider.dart';
 
 class MacronutrientWidget extends StatefulWidget {
@@ -95,7 +95,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                       const SizedBox(width: 10),
                       Text(
                         'Macronutrients',
-                        style: AppTextStyles.getSubHeadingStyle().copyWith(
+                        style: AppTypography.displaySmall.copyWith(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.primaryBlue,
@@ -136,7 +136,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
       final delay = index * 0.15; // Stagger animation
 
       return Padding(
-        padding: EdgeInsets.only(bottom: index < 2 ? 8 : 0), // Reduced spacing
+        padding: EdgeInsets.only(bottom: index < 2 ? 8 : 0),
         child: Opacity(
           opacity: (_animation.value - delay).clamp(0.0, 1.0),
           child: _buildCompactMacroRow(
@@ -173,7 +173,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                 width: 60,
                 child: Text(
                   name,
-                  style: AppTextStyles.getBodyStyle().copyWith(
+                  style: AppTypography.bodyMedium.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                     color: Colors.grey[800],
@@ -183,7 +183,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
               const SizedBox(width: 8),
               Text(
                 '${consumed.round()}g / ${target.round()}g',
-                style: AppTextStyles.getNumericStyle().copyWith(
+                style: AppTypography.dataSmall.copyWith(
                   color: Colors.grey[600],
                   fontSize: 12,
                 ),
@@ -199,7 +199,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
               width: 35,
               child: Text(
                 '${progress.round()}%',
-                style: AppTextStyles.getNumericStyle().copyWith(
+                style: AppTypography.dataSmall.copyWith(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: color,
@@ -217,14 +217,14 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
 
   // Mini dot progress (Option 2 style with 10 dots, 4px size)
   Widget _buildMiniDotProgress(double progress, Color color) {
-    const dots = 10; // More dots for better precision
+    const dots = 10;
     final filled = (progress * dots).round().clamp(0, dots);
     
     return Row(
       children: List.generate(dots, (i) => Padding(
-        padding: const EdgeInsets.only(right: 2), // Reduced spacing
+        padding: const EdgeInsets.only(right: 2),
         child: Container(
-          width: 4, // Smaller dots
+          width: 4,
           height: 4,
           decoration: BoxDecoration(
             color: i < filled ? color : Colors.grey[300],
@@ -249,7 +249,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
     return Opacity(
       opacity: _animation.value,
       child: Container(
-        padding: const EdgeInsets.all(12), // Reduced padding
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.grey[50],
           borderRadius: BorderRadius.circular(12),
@@ -259,7 +259,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
           children: [
             // Balance items on the left
             Expanded(
-              child:               Row(
+              child: Row(
                 children: [
                   _buildBalanceItem('🥩', '${percentages['protein']}%', Colors.red[500]!),
                   const SizedBox(width: 12),
@@ -277,7 +277,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                 const SizedBox(width: 4),
                 Text(
                   'Macro Balance',
-                  style: AppTextStyles.getBodyStyle().copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.primaryBlue,
@@ -299,7 +299,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
         const SizedBox(width: 2),
         Text(
           percentage,
-          style: AppTextStyles.getNumericStyle().copyWith(
+          style: AppTypography.dataSmall.copyWith(
             fontSize: 11,
             fontWeight: FontWeight.w600,
             color: color,
