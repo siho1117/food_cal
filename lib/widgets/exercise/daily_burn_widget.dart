@@ -1,7 +1,7 @@
 // lib/widgets/exercise/daily_burn_widget.dart
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import '../../config/design_system/text_styles.dart';
+import '../../config/design_system/typography.dart'; // UPDATED: Import typography
 import '../../data/models/user_profile.dart';
 import '../../utils/formula.dart';
 
@@ -122,57 +122,75 @@ class _DailyBurnWidgetState extends State<DailyBurnWidget>
             opacity: _fadeAnimation.value,
             child: Container(
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFFFFFFF),
-                    Color(0xFFF8FAFC),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(20),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 32,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 8),
-                  ),
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 8,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 4),
+                    offset: const Offset(0, 2),
                   ),
                 ],
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  width: 1,
-                ),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Top gradient bar
-                    Container(
-                      height: 3,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Color(0xFF3B82F6),
-                            Color(0xFF8B5CF6),
-                            Color(0xFFEC4899),
+                    // Header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.local_fire_department,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Calorie Burn',
+                                  style: AppTypography.displaySmall.copyWith( // UPDATED
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF1E293B),
+                                  ),
+                                ),
+                                Text(
+                                  'Track your exercise',
+                                  style: AppTypography.bodySmall.copyWith( // UPDATED
+                                    fontSize: 11,
+                                    color: const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
-                      ),
+                      ],
                     ),
                     
-                    // Content
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
+                    const SizedBox(height: 16),
+                    
+                    // Progress cards
+                    AnimatedBuilder(
+                      animation: _animationController,
+                      builder: (context, child) {
+                        return Column(
+                          children: [
                           // Daily Progress Card
                           _buildProgressCard(
                             label: "Today's Progress",
@@ -209,7 +227,8 @@ class _DailyBurnWidgetState extends State<DailyBurnWidget>
                             ),
                           ),
                         ],
-                      ),
+                      );
+                      },
                     ),
                   ],
                 ),
@@ -252,7 +271,7 @@ class _DailyBurnWidgetState extends State<DailyBurnWidget>
                   // Label
                   Text(
                     label,
-                    style: AppTextStyles.getBodyStyle().copyWith(
+                    style: AppTypography.bodyMedium.copyWith( // UPDATED
                       fontSize: 12,
                       color: const Color(0xFF64748B),
                       fontWeight: FontWeight.w600,
@@ -268,7 +287,7 @@ class _DailyBurnWidgetState extends State<DailyBurnWidget>
                     children: [
                       Text(
                         _formatNumber(current),
-                        style: AppTextStyles.getNumericStyle().copyWith(
+                        style: AppTypography.dataSmall.copyWith( // UPDATED
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
                           color: accentColor,
@@ -276,14 +295,14 @@ class _DailyBurnWidgetState extends State<DailyBurnWidget>
                       ),
                       Text(
                         ' / ',
-                        style: AppTextStyles.getBodyStyle().copyWith(
+                        style: AppTypography.bodyMedium.copyWith( // UPDATED
                           fontSize: 16,
                           color: const Color(0xFF94A3B8),
                         ),
                       ),
                       Text(
                         _formatNumber(target),
-                        style: AppTextStyles.getBodyStyle().copyWith(
+                        style: AppTypography.bodyMedium.copyWith( // UPDATED
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF64748B),
@@ -291,7 +310,7 @@ class _DailyBurnWidgetState extends State<DailyBurnWidget>
                       ),
                       Text(
                         ' cal',
-                        style: AppTextStyles.getBodyStyle().copyWith(
+                        style: AppTypography.bodySmall.copyWith( // UPDATED
                           fontSize: 11,
                           color: const Color(0xFF94A3B8),
                         ),
@@ -304,7 +323,7 @@ class _DailyBurnWidgetState extends State<DailyBurnWidget>
                   // Percentage
                   Text(
                     '$progressPercentage% complete',
-                    style: AppTextStyles.getBodyStyle().copyWith(
+                    style: AppTypography.bodySmall.copyWith( // UPDATED
                       fontSize: 11,
                       color: accentColor,
                       fontWeight: FontWeight.w600,
@@ -331,7 +350,7 @@ class _DailyBurnWidgetState extends State<DailyBurnWidget>
                     child: Center(
                       child: Text(
                         '${(progressPercentage * animation.value).round()}%',
-                        style: AppTextStyles.getBodyStyle().copyWith(
+                        style: AppTypography.labelMedium.copyWith( // UPDATED
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: accentColor,

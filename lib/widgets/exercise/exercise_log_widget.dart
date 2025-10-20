@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
-import '../../config/design_system/text_styles.dart';
+import '../../config/design_system/typography.dart'; // UPDATED: Changed from text_styles
 import '../../providers/exercise_provider.dart';
 import '../../data/models/exercise_entry.dart';
 import 'exercise_entry_dialog.dart';
@@ -173,7 +173,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
           Expanded(
             child: Text(
               'Progress Timeline',
-              style: AppTextStyles.getSubHeadingStyle().copyWith(
+              style: AppTypography.displaySmall.copyWith( // UPDATED
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF1E293B),
@@ -203,7 +203,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
               '+ Track',
-              style: AppTextStyles.getBodyStyle().copyWith(
+              style: AppTypography.bodyMedium.copyWith( // UPDATED
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
@@ -218,60 +218,80 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
   Widget _buildProgressHeader(ExerciseProvider exerciseProvider) {
     final totalBurned = exerciseProvider.totalCaloriesBurned;
     final burnGoal = exerciseProvider.dailyBurnGoal;
-    final progress = burnGoal > 0 ? (totalBurned / burnGoal).clamp(0.0, 1.0) : 0.0;
+    final progress = burnGoal > 0 
+        ? (totalBurned / burnGoal).clamp(0.0, 1.0)
+        : 0.0;
+    final progressPercent = (progress * 100).round();
 
     return Container(
-      padding: const EdgeInsets.all(20),
-      child: Column(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF667EEA).withValues(alpha: 0.05),
+            const Color(0xFF764BA2).withValues(alpha: 0.05),
+          ],
+        ),
+        border: Border(
+          bottom: BorderSide(
+            color: const Color(0xFFE2E8F0),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Today\'s Burn',
+                  style: AppTypography.bodySmall.copyWith( // UPDATED
+                    fontSize: 11,
+                    color: const Color(0xFF64748B),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
                   children: [
                     Text(
-                      'Calories Burned',
-                      style: AppTextStyles.getBodyStyle().copyWith(
-                        fontSize: 14,
-                        color: const Color(0xFF64748B),
+                      '$totalBurned',
+                      style: AppTypography.dataSmall.copyWith( // UPDATED
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF667EEA),
                       ),
                     ),
-                    const SizedBox(height: 4),
                     Text(
-                      '$totalBurned / $burnGoal',
-                      style: AppTextStyles.getSubHeadingStyle().copyWith(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
+                      ' / $burnGoal cal',
+                      style: AppTypography.bodyMedium.copyWith( // UPDATED
+                        fontSize: 14,
+                        color: const Color(0xFF94A3B8),
                       ),
                     ),
                   ],
                 ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF667EEA).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '$progressPercent%',
+              style: AppTypography.bodyMedium.copyWith( // UPDATED
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF667EEA),
               ),
-              SizedBox(
-                width: 60,
-                height: 60,
-                child: CustomPaint(
-                  painter: CircularProgressPainter(
-                    progress: progress,
-                    backgroundColor: const Color(0xFFE2E8F0),
-                    progressColor: const Color(0xFF667EEA),
-                    strokeWidth: 6,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${(progress * 100).round()}%',
-                      style: AppTextStyles.getBodyStyle().copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF667EEA),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
@@ -286,7 +306,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
     return Column(
       children: [
         _buildTimeline(exerciseProvider),
-        // ADD EXERCISE BUTTON - This is the key addition!
         _buildAddExerciseButtonWhenExercisesExist(exerciseProvider),
       ],
     );
@@ -386,7 +405,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
               children: [
                 Text(
                   exercise.name,
-                  style: AppTextStyles.getSubHeadingStyle().copyWith(
+                  style: AppTypography.displaySmall.copyWith( // UPDATED
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF1E293B),
@@ -395,7 +414,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
                 const SizedBox(height: 4),
                 Text(
                   '${exercise.duration} min • ${exercise.intensity} • ${exercise.caloriesBurned} cal',
-                  style: AppTextStyles.getBodyStyle().copyWith(
+                  style: AppTypography.bodyMedium.copyWith( // UPDATED
                     fontSize: 12,
                     color: const Color(0xFF64748B),
                   ),
@@ -408,7 +427,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
     );
   }
 
-  // NEW METHOD: Add Exercise Button for when exercises exist
   Widget _buildAddExerciseButtonWhenExercisesExist(ExerciseProvider exerciseProvider) {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -436,7 +454,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
                   const SizedBox(width: 8),
                   Text(
                     'Add Another Exercise',
-                    style: AppTextStyles.getBodyStyle().copyWith(
+                    style: AppTypography.bodyMedium.copyWith( // UPDATED
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF667EEA),
@@ -472,7 +490,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
           const SizedBox(height: 16),
           Text(
             'No exercises today',
-            style: AppTextStyles.getSubHeadingStyle().copyWith(
+            style: AppTypography.displaySmall.copyWith( // UPDATED
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF64748B),
@@ -481,7 +499,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
           const SizedBox(height: 8),
           Text(
             'Start logging your workouts to track your progress',
-            style: AppTextStyles.getBodyStyle().copyWith(
+            style: AppTypography.bodyMedium.copyWith( // UPDATED
               fontSize: 14,
               color: const Color(0xFF94A3B8),
             ),
@@ -506,7 +524,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   child: Text(
                     'Log Your First Exercise',
-                    style: AppTextStyles.getBodyStyle().copyWith(
+                    style: AppTypography.bodyMedium.copyWith( // UPDATED
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
@@ -569,7 +587,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
           const SizedBox(height: 16),
           Text(
             'Error Loading Exercises',
-            style: AppTextStyles.getSubHeadingStyle().copyWith(
+            style: AppTypography.displaySmall.copyWith( // UPDATED
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF1E293B),
@@ -578,7 +596,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
           const SizedBox(height: 8),
           Text(
             exerciseProvider.errorMessage ?? 'Something went wrong',
-            style: AppTextStyles.getBodyStyle().copyWith(
+            style: AppTypography.bodyMedium.copyWith( // UPDATED
               fontSize: 14,
               color: const Color(0xFF64748B),
             ),
@@ -600,13 +618,27 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
     );
   }
 
+  void _showExerciseDialog(ExerciseProvider exerciseProvider) {
+    showDialog(
+      context: context,
+      builder: (context) => ExerciseEntryDialog(
+        exerciseProvider: exerciseProvider,
+        onExerciseSaved: () {
+          if (widget.onExerciseAdded != null) {
+            widget.onExerciseAdded!();
+          }
+        },
+      ),
+    );
+  }
+
+  // Note: These methods are unused but kept for future reference
   String _formatTime(DateTime time) {
     final hour = time.hour;
     final minute = time.minute;
     final period = hour >= 12 ? 'PM' : 'AM';
     final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-    
-    return '${displayHour.toString()}:${minute.toString().padLeft(2, '0')} $period';
+    return '${displayHour}:${minute.toString().padLeft(2, '0')} $period';
   }
 
   String _formatNumber(int number) {
@@ -614,67 +646,5 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
       return '${(number / 1000).toStringAsFixed(1)}K';
     }
     return number.toString();
-  }
-
-  void _showExerciseDialog(ExerciseProvider exerciseProvider) {
-    showDialog(
-      context: context,
-      builder: (context) => ExerciseEntryDialog(
-        exerciseProvider: exerciseProvider,
-        onExerciseSaved: widget.onExerciseAdded,
-      ),
-    );
-  }
-}
-
-class CircularProgressPainter extends CustomPainter {
-  final double progress;
-  final Color backgroundColor;
-  final Color progressColor;
-  final double strokeWidth;
-
-  CircularProgressPainter({
-    required this.progress,
-    required this.backgroundColor,
-    required this.progressColor,
-    this.strokeWidth = 4,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) / 2 - strokeWidth / 2;
-
-    // Background circle
-    final backgroundPaint = Paint()
-      ..color = backgroundColor
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawCircle(center, radius, backgroundPaint);
-
-    // Progress arc
-    if (progress > 0) {
-      final progressPaint = Paint()
-        ..color = progressColor
-        ..strokeWidth = strokeWidth
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round;
-
-      final sweepAngle = 2 * math.pi * progress;
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        -math.pi / 2, // Start from top
-        sweepAngle,
-        false,
-        progressPaint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return oldDelegate is! CircularProgressPainter ||
-        oldDelegate.progress != progress;
   }
 }

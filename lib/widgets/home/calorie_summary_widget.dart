@@ -2,11 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/design_system/theme.dart';
-import '../../config/design_system/text_styles.dart';
+import '../../config/design_system/typography.dart';
 import '../../providers/home_provider.dart';
 
 class CalorieSummaryWidget extends StatefulWidget {
-  // ✅ FIXED: Use super parameter instead of explicit key parameter
   const CalorieSummaryWidget({super.key});
 
   @override
@@ -130,7 +129,6 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  // ✅ FIXED: Use withValues instead of withOpacity (line 136)
                   color: Colors.black.withValues(alpha: 0.06),
                   blurRadius: 20,
                   spreadRadius: 0,
@@ -174,7 +172,6 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    // ✅ FIXED: Use withValues instead of withOpacity (line 175)
                     color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 20,
                     spreadRadius: 0,
@@ -185,28 +182,20 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header with status
+                  // Header with status badge
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Row(
                         children: [
+                          const Text('🔥', style: TextStyle(fontSize: 20)),
+                          const SizedBox(width: 8),
                           Text(
-                            'Daily Calories',
-                            style: AppTextStyles.getSubHeadingStyle().copyWith(
+                            'Calories Today',
+                            style: AppTypography.displaySmall.copyWith(
                               fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryBlue,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            statusData['status']!,
-                            style: AppTextStyles.getBodyStyle().copyWith(
-                              fontSize: 12,
-                              color: statusData['color'] as Color,
                               fontWeight: FontWeight.w600,
+                              color: Colors.grey[800],
                             ),
                           ),
                         ],
@@ -219,7 +208,7 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
                         ),
                         child: Text(
                           '$progressPercentage%',
-                          style: AppTextStyles.getNumericStyle().copyWith(
+                          style: AppTypography.dataSmall.copyWith(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: statusData['color'] as Color,
@@ -242,7 +231,7 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
                           final animatedValue = (_countAnimation.value * totalCalories).round();
                           return Text(
                             animatedValue.toString(),
-                            style: AppTextStyles.getNumericStyle().copyWith(
+                            style: AppTypography.dataLarge.copyWith(
                               fontSize: 42,
                               fontWeight: FontWeight.w800,
                               color: AppTheme.primaryBlue,
@@ -259,7 +248,7 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Text(
                           '/ $calorieGoal cal',
-                          style: AppTextStyles.getBodyStyle().copyWith(
+                          style: AppTypography.bodyMedium.copyWith(
                             fontSize: 16,
                             color: Colors.grey[600],
                             fontWeight: FontWeight.w500,
@@ -308,7 +297,7 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
                     children: [
                       Text(
                         isOverBudget ? 'Over by:' : 'Remaining:',
-                        style: AppTextStyles.getBodyStyle().copyWith(
+                        style: AppTypography.bodyMedium.copyWith(
                           fontSize: 14,
                           color: Colors.grey[600],
                           fontWeight: FontWeight.w500,
@@ -316,7 +305,7 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
                       ),
                       Text(
                         '${caloriesRemaining.abs()} cal',
-                        style: AppTextStyles.getNumericStyle().copyWith(
+                        style: AppTypography.dataSmall.copyWith(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: isOverBudget ? Colors.red[600] : Colors.green[600],

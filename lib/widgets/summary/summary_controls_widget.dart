@@ -1,7 +1,7 @@
 // lib/widgets/summary/summary_controls_widget.dart
 import 'package:flutter/material.dart';
 import '../../config/design_system/theme.dart';
-import '../../config/design_system/text_styles.dart';
+import '../../config/design_system/typography.dart';
 
 enum SummaryPeriod { daily, weekly, monthly }
 
@@ -80,7 +80,7 @@ class SummaryControlsWidget extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       _getPeriodLabel(period),
-                      style: AppTextStyles.getSubHeadingStyle().copyWith(
+                      style: AppTypography.displaySmall.copyWith(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: isSelected ? Colors.white : Colors.grey[600],
