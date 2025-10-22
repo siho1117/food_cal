@@ -1,10 +1,8 @@
 // lib/widgets/dialogs/budget_edit_dialog.dart
-// UPDATED VERSION - Now uses AppConstants
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../config/design_system/text_styles.dart';
-import '../../config/constants/app_constants.dart';  // NEW IMPORT
+import '../../config/design_system/typography.dart';
+import '../../config/constants/app_constants.dart';
 import '../../providers/home_provider.dart';
 
 class BudgetEditDialog extends StatefulWidget {
@@ -62,7 +60,7 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
         const SizedBox(width: AppConstants.spacingSmall),
         Text(
           widget.title ?? 'Set Daily Budget',
-          style: AppTextStyles.getSubHeadingStyle().copyWith(
+          style: AppTypography.displaySmall.copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.green[700],
             fontSize: AppConstants.fontSizeXLarge,
@@ -79,7 +77,7 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
       children: [
         Text(
           AppConstants.budgetQuestion,
-          style: AppTextStyles.getBodyStyle().copyWith(
+          style: AppTypography.bodyMedium.copyWith(
             color: Colors.grey[600],
             fontSize: AppConstants.fontSizeMedium,
           ),
@@ -110,44 +108,11 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
               borderSide: const BorderSide(color: Colors.red, width: 2),
             ),
           ),
-          onSubmitted: (_) => _handleSave(),
         ),
         
-        const SizedBox(height: AppConstants.spacingMedium),
-        
-        // Quick preset buttons
-        _buildPresetButtons(),
-        
-        const SizedBox(height: AppConstants.spacingMedium),
-        
-        // Helpful tip
-        Container(
-          padding: const EdgeInsets.all(AppConstants.paddingMedium),
-          decoration: BoxDecoration(
-            color: Colors.green[50],
-            borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
-            border: Border.all(color: Colors.green[200]!, width: 1),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.lightbulb_outline, color: Colors.green[600], size: AppConstants.iconSizeSmall),
-              const SizedBox(width: AppConstants.spacingSmall),
-              Expanded(
-                child: Text(
-                  AppConstants.budgetAdvice,
-                  style: AppTextStyles.getBodyStyle().copyWith(
-                    fontSize: AppConstants.fontSizeSmall,
-                    color: Colors.green[700],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        
-        // Advanced options (for settings page)
         if (widget.showAdvancedOptions) ...[
+          const SizedBox(height: AppConstants.spacingMedium),
+          _buildQuickPresets(),
           const SizedBox(height: AppConstants.spacingMedium),
           _buildAdvancedOptions(),
         ],
@@ -155,14 +120,14 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
     );
   }
 
-  Widget _buildPresetButtons() {
+  Widget _buildQuickPresets() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Quick presets:',
-          style: AppTextStyles.getBodyStyle().copyWith(
-            fontSize: AppConstants.fontSizeMedium,
+          'Quick Presets',
+          style: AppTypography.bodyMedium.copyWith(
+            fontSize: AppConstants.fontSizeSmall,
             color: Colors.grey[600],
             fontWeight: FontWeight.w500,
           ),
@@ -231,7 +196,7 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
         children: [
           Text(
             'Budget Overview',
-            style: AppTextStyles.getBodyStyle().copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               fontSize: AppConstants.fontSizeMedium,
               fontWeight: FontWeight.bold,
               color: Colors.grey[700],
@@ -264,14 +229,14 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
       children: [
         Text(
           period,
-          style: AppTextStyles.getBodyStyle().copyWith(
+          style: AppTypography.bodyMedium.copyWith(
             fontSize: AppConstants.fontSizeSmall,
             color: Colors.grey[600],
           ),
         ),
         Text(
           '\$${amount.toStringAsFixed(0)}',
-          style: AppTextStyles.getNumericStyle().copyWith(
+          style: AppTypography.labelLarge.copyWith(
             fontSize: AppConstants.fontSizeSmall,
             fontWeight: FontWeight.w600,
             color: Colors.grey[700],
@@ -345,39 +310,34 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        _showSuccessSnackBar(AppConstants.budgetUpdateSuccess);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Budget updated to \$${budget.toStringAsFixed(2)}/day'),
+            backgroundColor: Colors.green[600],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } catch (e) {
+      if (mounted) {
+        _showErrorSnackBar('Failed to save budget: ${e.toString()}');
+      }
+    } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        _showErrorSnackBar('Failed to save budget: $e');
       }
     }
   }
 
   void _showErrorSnackBar(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red[600],
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
-
-  void _showSuccessSnackBar(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.green[600],
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red[600],
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 }

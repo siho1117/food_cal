@@ -1,10 +1,9 @@
 // lib/widgets/progress/combined_weight_widget.dart
 import 'package:flutter/material.dart';
-// ✅ FIXED: Removed unnecessary services import since material.dart already provides it
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../../config/design_system/theme.dart';
-import '../../config/design_system/text_styles.dart';
+import '../../config/design_system/typography.dart';
 import '../../providers/progress_data.dart';
 
 class CombinedWeightWidget extends StatefulWidget {
@@ -12,7 +11,6 @@ class CombinedWeightWidget extends StatefulWidget {
   final bool isMetric;
   final Function(double, bool) onWeightEntered;
 
-  // ✅ FIXED: Use super parameter instead of explicit key parameter
   const CombinedWeightWidget({
     super.key,
     required this.currentWeight,
@@ -86,8 +84,6 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
     super.dispose();
   }
 
-  /// Calculate progress using the agreed formula:
-  /// Progress = (1 - |current - target| / max(current, target)) * 100
   double _calculateProgress(double? current, double? target) {
     if (current == null || target == null || target <= 0) return 0.0;
     
@@ -98,19 +94,17 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
     return progress.clamp(0.0, 100.0);
   }
 
-  /// Get number of filled segments based on progress percentage
   int _getFilledSegments(double progressPercentage) {
     return (progressPercentage / 100 * totalSegments).round();
   }
 
-  /// Get progress color based on how close to goal
   Color _getProgressColor(double progressPercentage) {
-    if (progressPercentage >= 95) return const Color(0xFF10B981); // Green - Very close/reached
-    if (progressPercentage >= 85) return const Color(0xFF22C55E); // Light green - Close
-    if (progressPercentage >= 70) return const Color(0xFF84CC16); // Lime - Good progress
-    if (progressPercentage >= 50) return const Color(0xFFF59E0B); // Amber - Making progress
-    if (progressPercentage >= 30) return const Color(0xFF3B82F6); // Blue - Some progress
-    return const Color(0xFF6366F1); // Indigo - Just started
+    if (progressPercentage >= 95) return const Color(0xFF10B981);
+    if (progressPercentage >= 85) return const Color(0xFF22C55E);
+    if (progressPercentage >= 70) return const Color(0xFF84CC16);
+    if (progressPercentage >= 50) return const Color(0xFFF59E0B);
+    if (progressPercentage >= 30) return const Color(0xFF3B82F6);
+    return const Color(0xFF6366F1);
   }
 
   String _formatWeight(double? weight) {
@@ -145,8 +139,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
     return Consumer<ProgressData>(
       builder: (context, progressData, child) {
         final currentWeight = widget.currentWeight;
-        // TODO: Add targetWeight property to UserProfile model or use alternative approach
-        const targetWeight = null; // Placeholder until targetWeight is added to UserProfile
+        const targetWeight = null;
         final progressPercentage = _calculateProgress(currentWeight, targetWeight);
         final filledSegments = _getFilledSegments(progressPercentage);
         final progressColor = _getProgressColor(progressPercentage);
@@ -180,7 +173,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
                       children: [
                         Text(
                           'Weight Progress',
-                          style: AppTextStyles.getSubHeadingStyle().copyWith(
+                          style: AppTypography.displaySmall.copyWith(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.primaryBlue,
@@ -188,29 +181,27 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          targetWeight != null ? 'Track your goal' : 'Set a target weight',
-                          style: AppTextStyles.getBodyStyle().copyWith(
-                            fontSize: 12,
+                          targetWeight != null ? 'Tracking to goal' : 'Set your target',
+                          style: AppTypography.bodySmall.copyWith(
+                            fontSize: 11,
                             color: Colors.grey[600],
                           ),
                         ),
                       ],
                     ),
-                    
-                    // Action buttons
                     Row(
                       children: [
                         _buildMinimalButton(
-                          icon: Icons.add_rounded,
+                          icon: Icons.add,
                           color: AppTheme.primaryBlue,
                           isColored: true,
                           onPressed: _showWeightInputDialog,
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                         _buildMinimalButton(
                           icon: Icons.flag_outlined,
-                          color: Colors.grey[600]!,
-                          isColored: false,
+                          color: AppTheme.accentColor,
+                          isColored: targetWeight != null,
                           onPressed: _showTargetWeightDialog,
                         ),
                       ],
@@ -218,38 +209,27 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
                   ],
                 ),
                 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 
-                // Progress Bar
+                // Progress bar
                 Container(
-                  height: 6,
+                  height: 8,
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(3),
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Row(
-                    children: List.generate(totalSegments, (index) {
-                      return Expanded(
-                        child: AnimatedBuilder(
-                          animation: _segmentAnimations[index],
-                          builder: (context, child) {
-                            final isCompleted = index < filledSegments;
-                            final isCurrent = index == filledSegments - 1 && filledSegments > 0;
-                            
-                            Color segmentColor = Colors.transparent;
-                            if (isCompleted) {
-                              final baseColor = isCurrent ? const Color(0xFFF59E0B) : progressColor;
-                              final opacity = (_segmentAnimations[index].value * 255).round();
-                              // ✅ FIXED: Use modern color component accessors
-                              segmentColor = Color.fromARGB(
-                                opacity, 
-                                (baseColor.r * 255).round(),
-                                (baseColor.g * 255).round(),
-                                (baseColor.b * 255).round(),
-                              );
-                            }
-                            
-                            return Container(
+                  child: AnimatedBuilder(
+                    animation: _segmentController,
+                    builder: (context, child) {
+                      return Row(
+                        children: List.generate(totalSegments, (index) {
+                          final isFilled = index < filledSegments;
+                          final segmentColor = isFilled 
+                              ? progressColor.withValues(alpha: _segmentAnimations[index].value)
+                              : Colors.grey[200];
+                          
+                          return Expanded(
+                            child: Container(
                               margin: EdgeInsets.symmetric(
                                 horizontal: index == 0 || index == totalSegments - 1 ? 0 : 0.5,
                               ),
@@ -257,11 +237,11 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
                                 borderRadius: BorderRadius.circular(2),
                                 color: segmentColor,
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        }),
                       );
-                    }),
+                    },
                   ),
                 ),
                 
@@ -277,7 +257,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
                         children: [
                           TextSpan(
                             text: _formatWeight(currentWeight),
-                            style: AppTextStyles.getNumericStyle().copyWith(
+                            style: AppTypography.labelLarge.copyWith(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Colors.grey[800],
@@ -294,7 +274,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
                             ),
                             TextSpan(
                               text: _formatWeight(targetWeight),
-                              style: AppTextStyles.getNumericStyle().copyWith(
+                              style: AppTypography.labelLarge.copyWith(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.grey[600],
@@ -311,7 +291,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
                         children: [
                           TextSpan(
                             text: '${progressPercentage.toInt()}%',
-                            style: AppTextStyles.getBodyStyle().copyWith(
+                            style: AppTypography.bodyMedium.copyWith(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: progressColor,
@@ -326,7 +306,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
                           ),
                           TextSpan(
                             text: remainingText,
-                            style: AppTextStyles.getBodyStyle().copyWith(
+                            style: AppTypography.bodyMedium.copyWith(
                               fontSize: 12,
                               color: Colors.grey[600],
                               fontWeight: FontWeight.w500,
@@ -455,8 +435,6 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
               if (text.isNotEmpty) {
                 final weight = double.tryParse(text);
                 if (weight != null && weight > 0) {
-                  // TODO: Implement updateTargetWeight method in ProgressData
-                  // For now, just show success message
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

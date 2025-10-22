@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../config/design_system/theme.dart';
 import '../../config/design_system/dimensions.dart';
-import '../../config/design_system/text_styles.dart';
+import '../../config/design_system/typography.dart';
 import '../../data/models/user_profile.dart';
 
 class EnergyMetricsWidget extends StatefulWidget {
@@ -10,7 +10,6 @@ class EnergyMetricsWidget extends StatefulWidget {
   final double? currentWeight;
   final VoidCallback? onSettingsTap;
 
-  // ✅ FIXED: Use super parameter instead of explicit key parameter
   const EnergyMetricsWidget({
     super.key,
     required this.userProfile,
@@ -62,9 +61,49 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
     super.dispose();
   }
 
+  Map<String, dynamic> _calculateEnergy() {
+    final profile = widget.userProfile;
+    final weight = widget.currentWeight;
+
+    if (profile == null || weight == null) {
+      return {'missingData': ['profile', 'weight']};
+    }
+
+    final age = profile.age;
+    final gender = profile.gender;
+    final height = profile.height;
+    final activityLevel = profile.activityLevel ?? 1.2;
+
+    if (age == null || gender == null || height == null) {
+      return {'missingData': ['age', 'gender', 'height']};
+    }
+
+    double bmr;
+    if (gender.toLowerCase() == 'male') {
+      bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+    } else {
+      bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+    }
+
+    final tdee = bmr * activityLevel;
+
+    final calorieGoals = {
+      'maintain': tdee.round(),
+      'mildLoss': (tdee - 250).round(),
+      'weightLoss': (tdee - 500).round(),
+      'gain': (tdee + 500).round(),
+    };
+
+    return {
+      'bmr': bmr,
+      'tdee': tdee,
+      'activityLevel': activityLevel,
+      'calorieGoals': calorieGoals,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Calculate BMR & TDEE
     final calculationResults = _calculateEnergy();
     final missingData = calculationResults['missingData'] as List<String>?;
     final bmr = calculationResults['bmr'] as double?;
@@ -80,17 +119,14 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
           margin: EdgeInsets.symmetric(horizontal: Dimensions.xs),
           child: Column(
             children: [
-              // Main split card
               _buildSplitCard(context, bmr, tdee, activityLevel, missingData),
-              
-              // Expandable goals section
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
                 height: _showGoals ? null : 0,
                 child: _showGoals
                     ? _buildGoalsSection(context, calorieGoals)
-                    : null,
+                    : const SizedBox.shrink(),
               ),
             ],
           ),
@@ -99,162 +135,137 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
     );
   }
 
-  Widget _buildSplitCard(
-    BuildContext context,
-    double? bmr,
-    double? tdee,
-    double? activityLevel,
-    List<String>? missingData,
-  ) {
-    if (missingData != null && missingData.isNotEmpty) {
+  Widget _buildSplitCard(BuildContext context, double? bmr, double? tdee, 
+      double? activityLevel, List<String>? missingData) {
+    if (missingData != null) {
       return _buildMissingDataCard(context, missingData);
     }
 
     final activityDiff = (tdee ?? 0) - (bmr ?? 0);
 
     return Card(
-      elevation: 8,
-      // ✅ FIXED: Use withValues instead of withOpacity (line 117)
-      shadowColor: Colors.black.withValues(alpha: 0.15),
+      elevation: 6,
+      shadowColor: Colors.black.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Column(
-          children: [
-            // Split metrics section - More compact
-            IntrinsicHeight(
-              child: Row(
-                children: [
-                  // BMR Section (Left)
-                  Expanded(
-                    child: _buildMetricSection(
-                      title: 'BMR',
-                      value: bmr?.round() ?? 0,
-                      description: 'Base metabolism\ncalories per day',
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFFE27069), // coralAccent
-                          Color(0xFFD4605A), // darker coral
-                        ],
-                      ),
+      child: Column(
+        children: [
+          IntrinsicHeight(
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildMetricSection(
+                    title: 'BMR',
+                    value: bmr?.round() ?? 0,
+                    description: 'Basal metabolic\nrate',
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF0D4033),
+                        Color(0xFF0A3329),
+                      ],
                     ),
-                  ),
-                  
-                  // TDEE Section (Right)
-                  Expanded(
-                    child: _buildMetricSection(
-                      title: 'TDEE',
-                      value: tdee?.round() ?? 0,
-                      description: 'Total daily energy\nexpenditure',
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFFCF9340), // goldAccent
-                          Color(0xFFB8822E), // darker gold
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Footer section - More compact
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                // ✅ FIXED: Use withValues instead of withOpacity (line 171)
-                color: AppTheme.secondaryBeige.withValues(alpha: 0.3),
-                border: Border(
-                  top: BorderSide(
-                    // ✅ FIXED: Use withValues instead of withOpacity (line 174)
-                    color: Colors.grey.withValues(alpha: 0.1),
-                    width: 1,
                   ),
                 ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.flash_on_rounded,
-                        size: 14,
-                        color: AppTheme.goldAccent,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Activity adds +${activityDiff.round()} calories',
-                        style: AppTextStyles.getBodyStyle().copyWith(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.primaryBlue,
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 8),
-                  
-                  // Tap to expand button
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _showGoals = !_showGoals;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        // ✅ FIXED: Use withValues instead of withOpacity (line 216)
-                        color: AppTheme.primaryBlue.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          // ✅ FIXED: Use withValues instead of withOpacity (line 219)
-                          color: AppTheme.primaryBlue.withValues(alpha: 0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _showGoals ? 'Hide Goals' : 'View Calorie Goals',
-                            style: AppTextStyles.getBodyStyle().copyWith(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.primaryBlue,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          AnimatedRotation(
-                            turns: _showGoals ? 0.5 : 0,
-                            duration: const Duration(milliseconds: 300),
-                            child: const Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              size: 14,
-                              color: AppTheme.primaryBlue,
-                            ),
-                          ),
-                        ],
-                      ),
+                Container(
+                  width: 1,
+                  color: Colors.white.withValues(alpha: 0.2),
+                ),
+                Expanded(
+                  child: _buildMetricSection(
+                    title: 'TDEE',
+                    value: tdee?.round() ?? 0,
+                    description: 'Total daily energy\nexpenditure',
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFCF9340),
+                        Color(0xFFB8822E),
+                      ],
                     ),
                   ),
-                ],
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppTheme.secondaryBeige.withValues(alpha: 0.3),
+              border: Border(
+                top: BorderSide(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  width: 1,
+                ),
               ),
             ),
-          ],
-        ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.flash_on_rounded,
+                      size: 14,
+                      color: AppTheme.goldAccent,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Activity adds +${activityDiff.round()} calories',
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primaryBlue,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _showGoals = !_showGoals;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _showGoals ? 'Hide Goals' : 'View Calorie Goals',
+                          style: AppTypography.bodyMedium.copyWith(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primaryBlue,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        AnimatedRotation(
+                          turns: _showGoals ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 300),
+                          child: const Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 14,
+                            color: AppTheme.primaryBlue,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -266,45 +277,36 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
     required LinearGradient gradient,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16), // Reduced padding
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(gradient: gradient),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Title
           Text(
             title,
-            style: AppTextStyles.getSubHeadingStyle().copyWith(
+            style: AppTypography.displaySmall.copyWith(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              // ✅ FIXED: Use withValues instead of withOpacity (line 275)
               color: Colors.white.withValues(alpha: 0.9),
               letterSpacing: 1,
             ),
           ),
-          
-          const SizedBox(height: 8), // Reduced spacing
-          
-          // Value
+          const SizedBox(height: 8),
           Text(
             value.toString(),
-            style: AppTextStyles.getNumericStyle().copyWith(
-              fontSize: 36, // Slightly smaller
+            style: AppTypography.labelLarge.copyWith(
+              fontSize: 36,
               fontWeight: FontWeight.w800,
               color: Colors.white,
               height: 1,
             ),
           ),
-          
-          const SizedBox(height: 6), // Reduced spacing
-          
-          // Description
+          const SizedBox(height: 6),
           Text(
             description,
             textAlign: TextAlign.center,
-            style: AppTextStyles.getBodyStyle().copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               fontSize: 12,
-              // ✅ FIXED: Use withValues instead of withOpacity (line 301)
               color: Colors.white.withValues(alpha: 0.8),
               height: 1.2,
             ),
@@ -314,147 +316,80 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
     );
   }
 
-  Widget _buildGoalsSection(BuildContext context, Map<String, int>? calorieGoals) {
-    if (calorieGoals == null) return const SizedBox.shrink();
+  Widget _buildGoalsSection(BuildContext context, Map<String, int>? goals) {
+    if (goals == null) return const SizedBox.shrink();
 
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      child: Card(
-        elevation: 4,
-        // ✅ FIXED: Use withValues instead of withOpacity (line 317)
-        shadowColor: Colors.black.withValues(alpha: 0.1),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16), // Reduced padding
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Goals header
-              Row(
-                children: [
-                  const Icon(
-                    Icons.track_changes_rounded,
-                    size: 16,
+    return Card(
+      margin: const EdgeInsets.only(top: 12),
+      elevation: 4,
+      shadowColor: Colors.black.withValues(alpha: 0.06),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.flag_rounded, color: AppTheme.primaryBlue, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Calorie Goals',
+                  style: AppTypography.displaySmall.copyWith(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                     color: AppTheme.primaryBlue,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Calorie Goals',
-                    style: AppTextStyles.getSubHeadingStyle().copyWith(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryBlue,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: Icon(
-                      Icons.info_outline_rounded,
-                      size: 16,
-                      color: Colors.grey[600],
-                    ),
-                    onPressed: () => _showInfoDialog(context),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 12),
-              
-              // Goals grid - Fixed overflow
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final availableWidth = constraints.maxWidth;
-                  final cardWidth = (availableWidth - 8) / 2; // Account for gap
-                  
-                  return Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildGoalCard(
-                        'Weight Loss',
-                        calorieGoals['lose'] ?? 0,
-                        Colors.red[400]!,
-                        Icons.trending_down_rounded,
-                        cardWidth,
-                      ),
-                      _buildGoalCard(
-                        'Maintain',
-                        calorieGoals['maintain'] ?? 0,
-                        AppTheme.primaryBlue,
-                        Icons.trending_flat_rounded,
-                        cardWidth,
-                      ),
-                      _buildGoalCard(
-                        'Mild Loss',
-                        calorieGoals['lose_mild'] ?? 0,
-                        Colors.lightGreen[600]!,
-                        Icons.trending_down_rounded,
-                        cardWidth,
-                      ),
-                      _buildGoalCard(
-                        'Weight Gain',
-                        calorieGoals['gain'] ?? 0,
-                        AppTheme.goldAccent,
-                        Icons.trending_up_rounded,
-                        cardWidth,
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildGoalRow('Maintain Weight', goals['maintain']!, AppTheme.primaryBlue, '✓'),
+            _buildGoalRow('Mild Loss (-0.25kg/week)', goals['mildLoss']!, const Color(0xFF3B82F6), '↘'),
+            _buildGoalRow('Weight Loss (-0.5kg/week)', goals['weightLoss']!, AppTheme.coralAccent, '↓'),
+            _buildGoalRow('Weight Gain (+0.5kg/week)', goals['gain']!, AppTheme.goldAccent, '↑'),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildGoalCard(String title, int calories, Color color, IconData icon, double width) {
-    return Container(
-      width: width,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(
-        // ✅ FIXED: Use withValues instead of withOpacity (line 413)
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          // ✅ FIXED: Use withValues instead of withOpacity (line 416)
-          color: color.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
+  Widget _buildGoalRow(String label, int calories, Color color, String emoji) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 12, color: color),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  title,
-                  style: AppTextStyles.getBodyStyle().copyWith(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                emoji,
+                style: const TextStyle(fontSize: 16),
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTypography.bodyMedium.copyWith(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[800],
+              ),
+            ),
+          ),
           Text(
             '$calories cal',
-            style: AppTextStyles.getNumericStyle().copyWith(
-              fontSize: 13,
+            style: AppTypography.labelLarge.copyWith(
+              fontSize: 15,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -466,65 +401,50 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
 
   Widget _buildMissingDataCard(BuildContext context, List<String> missingData) {
     return Card(
-      elevation: 4,
+      elevation: 6,
+      shadowColor: Colors.black.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Container(
-        padding: const EdgeInsets.all(20), // Reduced padding
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.orange[300]!,
-              Colors.orange[400]!,
-            ],
-          ),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            const Icon(
-              Icons.warning_amber_rounded,
-              size: 36, // Smaller icon
-              color: Colors.white,
-            ),
-            const SizedBox(height: 12),
+            Icon(Icons.info_outline, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 16),
             Text(
-              'Missing Information',
-              style: AppTextStyles.getSubHeadingStyle().copyWith(
+              'Complete Your Profile',
+              style: AppTypography.displaySmall.copyWith(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppTheme.primaryBlue,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
-              'Please update: ${missingData.join(", ")}',
-              style: AppTextStyles.getBodyStyle().copyWith(
-                fontSize: 13,
-                // ✅ FIXED: Use withValues instead of withOpacity (line 497)
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
+              'Add your ${missingData.join(", ")} to calculate BMR & TDEE',
               textAlign: TextAlign.center,
+              style: AppTypography.bodyMedium.copyWith(
+                fontSize: 13,
+                color: Colors.grey[600],
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: widget.onSettingsTap ?? () {},
+              onPressed: widget.onSettingsTap,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.orange[400],
+                backgroundColor: AppTheme.primaryBlue,
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
+                  borderRadius: BorderRadius.circular(20),
                 ),
               ),
               child: Text(
-                'Update Settings',
-                style: AppTextStyles.getBodyStyle().copyWith(
-                  fontSize: 13,
+                'Go to Settings',
+                style: AppTypography.bodyMedium.copyWith(
                   fontWeight: FontWeight.w600,
+                  fontSize: 13,
                 ),
               ),
             ),
@@ -534,108 +454,33 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
     );
   }
 
-  Map<String, dynamic> _calculateEnergy() {
-    final userProfile = widget.userProfile;
-    final currentWeight = widget.currentWeight;
-
-    // Check for missing data
-    final List<String> missingData = [];
-    if (userProfile == null) {
-      missingData.add('profile');
-      return {'missingData': missingData};
-    }
-
-    if (currentWeight == null) missingData.add('current weight');
-    if (userProfile.height == null) missingData.add('height');
-    if (userProfile.age == null) missingData.add('age');
-    if (userProfile.gender == null) missingData.add('gender');
-
-    if (missingData.isNotEmpty) {
-      return {'missingData': missingData};
-    }
-
-    // Calculate BMR using Mifflin-St Jeor equation
-    final age = userProfile.age!;
-    final height = userProfile.height!; // in cm
-    final weight = currentWeight!; // in kg
-    final gender = userProfile.gender!;
-
-    double bmr;
-    if (gender.toLowerCase() == 'male') {
-      bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
-    } else {
-      bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
-    }
-
-    // Calculate activity level
-    final activityLevel = userProfile.activityLevel ?? 1.2;
-    
-    // Calculate TDEE (Total Daily Energy Expenditure)
-    final tdee = bmr * activityLevel;
-    
-    // Calculate calorie targets
-    final maintenance = tdee.round();
-    final lose = (maintenance - 500).round(); // 500 calorie deficit
-    final loseMild = (maintenance - 250).round(); // 250 calorie deficit
-    final gain = (maintenance + 500).round(); // 500 calorie surplus
-    
-    return {
-      'bmr': bmr,
-      'tdee': tdee,
-      'activityLevel': activityLevel,
-      'calorieGoals': {
-        'maintain': maintenance,
-        'lose': lose,
-        'lose_mild': loseMild,
-        'gain': gain,
-      },
-    };
-  }
-
-  void _showInfoDialog(BuildContext context) {
+  void _showInfoDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            const Icon(
-              Icons.info_outline_rounded,
-              color: AppTheme.primaryBlue,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'About Energy Metrics',
-              style: AppTextStyles.getSubHeadingStyle().copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppTheme.primaryBlue,
-                fontSize: 16,
-              ),
-            ),
-          ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Energy Metrics',
+          style: AppTypography.displaySmall.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryBlue,
+          ),
         ),
         content: SingleChildScrollView(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildInfoSection(
                 'BMR (Basal Metabolic Rate)',
-                'The calories your body needs for essential functions like breathing, circulation, and cell repair while at complete rest.',
+                'The number of calories your body burns at rest to maintain vital functions like breathing, circulation, and cell production.',
               ),
-              
               const SizedBox(height: 12),
-              
               _buildInfoSection(
                 'TDEE (Total Daily Energy Expenditure)',
                 'Your complete daily calorie burn including BMR plus calories from physical activity, digestion, and daily movement.',
               ),
-              
               const SizedBox(height: 12),
-              
               _buildInfoSection(
                 'Calorie Goals',
                 'Weight loss: 500 cal deficit daily can lead to ~1 lb/week loss\nMild loss: 250 cal deficit for gradual weight loss\nGain: 500 cal surplus for healthy weight gain',
@@ -651,7 +496,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
             ),
             child: Text(
               'GOT IT',
-              style: AppTextStyles.getBodyStyle().copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -667,7 +512,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
       children: [
         Text(
           title,
-          style: AppTextStyles.getSubHeadingStyle().copyWith(
+          style: AppTypography.displaySmall.copyWith(
             fontWeight: FontWeight.w600,
             fontSize: 13,
             color: AppTheme.primaryBlue,
@@ -676,7 +521,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
         const SizedBox(height: 4),
         Text(
           content,
-          style: AppTextStyles.getBodyStyle().copyWith(
+          style: AppTypography.bodyMedium.copyWith(
             fontSize: 12,
             color: Colors.grey[700],
             height: 1.4,

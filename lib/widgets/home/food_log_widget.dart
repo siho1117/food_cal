@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/design_system/theme.dart';
-import '../../config/design_system/text_styles.dart';
+import '../../config/design_system/typography.dart';
 import '../../providers/home_provider.dart';
 import '../../data/models/food_item.dart';
 import '../../data/services/image_storage_service.dart';
@@ -61,7 +61,7 @@ class FoodLogWidget extends StatelessWidget {
                         children: [
                           Text(
                             'Recent Food Log',
-                            style: AppTextStyles.getSubHeadingStyle().copyWith(
+                            style: AppTypography.displaySmall.copyWith(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: AppTheme.primaryBlue,
@@ -69,7 +69,7 @@ class FoodLogWidget extends StatelessWidget {
                           ),
                           Text(
                             '${allFoodItems.length} ${allFoodItems.length == 1 ? 'item' : 'items'} today',
-                            style: AppTextStyles.getBodyStyle().copyWith(
+                            style: AppTypography.bodyMedium.copyWith(
                               fontSize: 13,
                               color: Colors.grey[600],
                             ),
@@ -111,7 +111,7 @@ class FoodLogWidget extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'No food logged today',
-            style: AppTextStyles.getBodyStyle().copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: Colors.grey[500],
               fontSize: 16,
             ),
@@ -119,7 +119,7 @@ class FoodLogWidget extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Take a photo of your food to get started!',
-            style: AppTextStyles.getBodyStyle().copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: Colors.grey[400],
               fontSize: 14,
             ),
@@ -207,7 +207,7 @@ class FoodLogWidget extends StatelessWidget {
                       Expanded(
                         child: Text(
                           item.name,
-                          style: AppTextStyles.getSubHeadingStyle().copyWith(
+                          style: AppTypography.displaySmall.copyWith(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: AppTheme.textDark,
@@ -216,45 +216,46 @@ class FoodLogWidget extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (itemCost > 0) ...[
-                        const SizedBox(width: 8),
+                      const SizedBox(width: 8),
+                      if (itemCost > 0)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.green[50],
+                            color: AppTheme.goldAccent.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text('\$', style: TextStyle(fontSize: 14)),
-                              const SizedBox(width: 4),
-                              Text(
-                                itemCost.toStringAsFixed(2),
-                                style: AppTextStyles.getNumericStyle().copyWith(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green[700],
-                                ),
-                              ),
-                            ],
+                          child: Text(
+                            '\$${itemCost.toStringAsFixed(2)}',
+                            style: AppTypography.bodySmall.copyWith(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.goldAccent,
+                            ),
                           ),
                         ),
-                      ],
                     ],
                   ),
                   
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   
-                  // ROW 2: Time and serving info
+                  // ROW 2: Serving size + time
                   Row(
                     children: [
                       Text(
-                        '${_formatTime(item.timestamp)} • ${item.servingSize} ${item.servingUnit}',
-                        style: AppTextStyles.getBodyStyle().copyWith(
-                          fontSize: 13,
+                        '${item.servingSize} ${item.servingUnit}',
+                        style: AppTypography.bodySmall.copyWith(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text('•', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatTime(item.timestamp),
+                        style: AppTypography.bodySmall.copyWith(
+                          fontSize: 12,
                           color: Colors.grey[500],
-                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -278,15 +279,15 @@ class FoodLogWidget extends StatelessWidget {
                           children: [
                             const Text('💪', style: TextStyle(fontSize: 11)),
                             const SizedBox(width: 2),
-                            Text('${protein}g', style: AppTextStyles.getNumericStyle().copyWith(fontSize: 11, fontWeight: FontWeight.w600)),
+                            Text('${protein}g', style: AppTypography.bodySmall.copyWith(fontSize: 11, fontWeight: FontWeight.w600)),
                             const SizedBox(width: 8),
                             const Text('🍞', style: TextStyle(fontSize: 11)),
                             const SizedBox(width: 2),
-                            Text('${carbs}g', style: AppTextStyles.getNumericStyle().copyWith(fontSize: 11, fontWeight: FontWeight.w600)),
+                            Text('${carbs}g', style: AppTypography.bodySmall.copyWith(fontSize: 11, fontWeight: FontWeight.w600)),
                             const SizedBox(width: 8),
                             const Text('🥑', style: TextStyle(fontSize: 11)),
                             const SizedBox(width: 2),
-                            Text('${fat}g', style: AppTextStyles.getNumericStyle().copyWith(fontSize: 11, fontWeight: FontWeight.w600)),
+                            Text('${fat}g', style: AppTypography.bodySmall.copyWith(fontSize: 11, fontWeight: FontWeight.w600)),
                           ],
                         ),
                       ),
@@ -310,7 +311,7 @@ class FoodLogWidget extends StatelessWidget {
                             const SizedBox(width: 4),
                             Text(
                               '${itemCalories}cal',
-                              style: AppTextStyles.getNumericStyle().copyWith(
+                              style: AppTypography.bodySmall.copyWith(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: AppTheme.primaryBlue,
@@ -379,14 +380,14 @@ class FoodLogWidget extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Delete Food Item',
-          style: AppTextStyles.getSubHeadingStyle().copyWith(
+          style: AppTypography.displaySmall.copyWith(
             fontWeight: FontWeight.bold,
             color: AppTheme.primaryBlue,
           ),
         ),
         content: Text(
           'Remove "${item.name}" from your food log?',
-          style: AppTextStyles.getBodyStyle().copyWith(
+          style: AppTypography.bodyMedium.copyWith(
             color: AppTheme.textDark,
           ),
         ),
@@ -395,7 +396,7 @@ class FoodLogWidget extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(
               'Cancel',
-              style: AppTextStyles.getBodyStyle().copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 color: Colors.grey[600],
                 fontWeight: FontWeight.w600,
               ),
@@ -423,7 +424,7 @@ class FoodLogWidget extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     'Delete',
-                    style: AppTextStyles.getBodyStyle().copyWith(
+                    style: AppTypography.bodyMedium.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                     ),

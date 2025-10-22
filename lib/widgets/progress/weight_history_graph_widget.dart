@@ -1,9 +1,8 @@
 // lib/widgets/progress/weight_history_graph_widget.dart
-// Cleaner, more compact version
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../config/design_system/theme.dart';
-import '../../config/design_system/text_styles.dart';
+import '../../config/design_system/typography.dart';
 import '../../data/models/weight_data.dart';
 
 enum TimePeriod { sevenDays, thirtyDays, threeMonths, sixMonths, oneYear }
@@ -52,6 +51,105 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
     super.dispose();
   }
 
+  List<WeightData> _getFilteredData() {
+    final now = DateTime.now();
+    DateTime cutoffDate;
+
+    switch (_selectedPeriod) {
+      case TimePeriod.sevenDays:
+        cutoffDate = now.subtract(const Duration(days: 7));
+        break;
+      case TimePeriod.thirtyDays:
+        cutoffDate = now.subtract(const Duration(days: 30));
+        break;
+      case TimePeriod.threeMonths:
+        cutoffDate = now.subtract(const Duration(days: 90));
+        break;
+      case TimePeriod.sixMonths:
+        cutoffDate = now.subtract(const Duration(days: 180));
+        break;
+      case TimePeriod.oneYear:
+        cutoffDate = now.subtract(const Duration(days: 365));
+        break;
+    }
+
+    return widget.weightHistory
+        .where((entry) => entry.timestamp.isAfter(cutoffDate))
+        .toList()
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+  }
+
+  List<WeightData> _simplifyData(List<WeightData> data) {
+    if (data.length <= 30) return data;
+    
+    final step = (data.length / 30).ceil();
+    final simplified = <WeightData>[];
+    
+    for (var i = 0; i < data.length; i += step) {
+      simplified.add(data[i]);
+    }
+    
+    if (simplified.last != data.last) {
+      simplified.add(data.last);
+    }
+    
+    return simplified;
+  }
+
+  Map<String, double> _calculateStats(List<WeightData> data) {
+    if (data.isEmpty) {
+      return {'totalChange': 0.0, 'average': 0.0, 'weeklyRate': 0.0};
+    }
+
+    final weights = data.map((e) => e.weight).toList();
+    final totalChange = (weights.last - weights.first).toDouble();
+    final average = (weights.reduce((a, b) => a + b) / weights.length).toDouble();
+    
+    final days = data.last.timestamp.difference(data.first.timestamp).inDays;
+    final weeklyRate = days > 0 ? ((totalChange / days) * 7).toDouble() : 0.0;
+
+    return {
+      'totalChange': totalChange,
+      'average': average,
+      'weeklyRate': weeklyRate,
+    };
+  }
+
+  Map<String, dynamic> _calculateTrend(List<WeightData> data) {
+    if (data.length < 2) {
+      return {'type': 'stable', 'rate': 0.0};
+    }
+
+    final recentData = data.length > 7 ? data.sublist(data.length - 7) : data;
+    final weights = recentData.map((e) => e.weight).toList();
+    final change = (weights.last - weights.first).toDouble();
+    final days = recentData.last.timestamp.difference(recentData.first.timestamp).inDays;
+    final weeklyRate = days > 0 ? ((change / days) * 7).toDouble() : 0.0;
+
+    if (weeklyRate.abs() < 0.2) {
+      return {'type': 'stable', 'rate': weeklyRate.abs()};
+    } else if (weeklyRate < 0) {
+      return {'type': 'losing', 'rate': weeklyRate};
+    } else {
+      return {'type': 'gaining', 'rate': weeklyRate};
+    }
+  }
+
+  String _getPeriodLabel(TimePeriod period) {
+    switch (period) {
+      case TimePeriod.sevenDays:
+        return '7D';
+      case TimePeriod.thirtyDays:
+        return '30D';
+      case TimePeriod.threeMonths:
+        return '3M';
+      case TimePeriod.sixMonths:
+        return '6M';
+      case TimePeriod.oneYear:
+        return '1Y';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final filteredData = _getFilteredData();
@@ -60,7 +158,6 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
       return _buildEmptyState();
     }
 
-    // Reduce data points for cleaner visualization
     final simplifiedData = _simplifyData(filteredData);
     final stats = _calculateStats(filteredData);
     final trend = _calculateTrend(filteredData);
@@ -81,25 +178,38 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white,
-                      AppTheme.secondaryBeige.withValues(alpha: 0.2),
-                    ],
-                  ),
+                  color: Colors.white,
                 ),
-                padding: const EdgeInsets.all(20), // Reduced padding
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildCompactHeader(),
-                    const SizedBox(height: 12),
-                    _buildTrendIndicator(trend),
-                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Weight History',
+                              style: AppTypography.displaySmall.copyWith(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primaryBlue,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            _buildTrendIndicator(trend),
+                          ],
+                        ),
+                        _buildPeriodSelector(),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
                     _buildCompactChart(simplifiedData),
                     const SizedBox(height: 12),
+                    _buildSimpleXAxisLabels(simplifiedData),
+                    const SizedBox(height: 16),
                     _buildCompactStats(stats),
                   ],
                 ),
@@ -111,68 +221,34 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
     );
   }
 
-  Widget _buildCompactHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppTheme.primaryBlue, AppTheme.primaryBlue.withValues(alpha: 0.8)],
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.trending_up_rounded,
-                color: Colors.white,
-                size: 16,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'Weight Progress',
-              style: AppTextStyles.getSubHeadingStyle().copyWith(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.primaryBlue,
-              ),
-            ),
-          ],
-        ),
-        _buildCompactTimePeriodSelector(),
-      ],
-    );
-  }
-
-  Widget _buildCompactTimePeriodSelector() {
+  Widget _buildPeriodSelector() {
     return Container(
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
-        children: TimePeriod.values.take(4).map((period) {
+        mainAxisSize: MainAxisSize.min,
+        children: TimePeriod.values.map((period) {
           final isSelected = period == _selectedPeriod;
           return GestureDetector(
             onTap: () {
               setState(() {
                 _selectedPeriod = period;
+                _animationController.reset();
+                _animationController.forward();
               });
             },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: isSelected ? AppTheme.primaryBlue : Colors.transparent,
                 borderRadius: BorderRadius.circular(7),
               ),
               child: Text(
                 _getPeriodLabel(period),
-                style: AppTextStyles.getBodyStyle().copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: isSelected ? Colors.white : Colors.grey[600],
@@ -228,7 +304,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
           const SizedBox(width: 6),
           Text(
             description,
-            style: AppTextStyles.getBodyStyle().copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: textColor,
@@ -241,85 +317,42 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
 
   Widget _buildCompactChart(List<WeightData> data) {
     return Container(
-      height: 180, // Reduced height
+      height: 180,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.grey[50]!,
-            Colors.white,
-          ],
+          colors: [Colors.grey[50]!, Colors.white],
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
       ),
-      child: Stack(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Chart area
-          Positioned(
-            left: 35, // Reduced margin
-            right: 15,
-            top: 15,
-            bottom: 30,
+          _buildYAxisLabels(data),
+          Expanded(
             child: CustomPaint(
-              painter: CompactWeightChartPainter(
+              painter: WeightChartPainter(
                 data: data,
-                targetWeight: widget.targetWeight,
-                animation: _animation,
-                touchedIndex: _touchedIndex,
                 isMetric: widget.isMetric,
-              ),
-              child: GestureDetector(
-                onTapDown: (details) {
-                  final RenderBox renderBox = context.findRenderObject() as RenderBox;
-                  final localPosition = renderBox.globalToLocal(details.globalPosition);
-                  final chartWidth = renderBox.size.width - 50;
-                  final xPosition = localPosition.dx - 35;
-                  
-                  if (xPosition >= 0 && xPosition <= chartWidth && data.isNotEmpty) {
-                    final index = ((xPosition / chartWidth) * (data.length - 1)).round();
-                    setState(() {
-                      _touchedIndex = index.clamp(0, data.length - 1);
-                    });
-                    
-                    _showTooltip(data[_touchedIndex!]);
-                  }
-                },
+                targetWeight: widget.targetWeight,
+                animation: _animation.value,
+                touchedIndex: _touchedIndex,
               ),
             ),
-          ),
-          
-          // Simplified Y-axis labels (only 3 labels)
-          Positioned(
-            left: 0,
-            top: 15,
-            bottom: 30,
-            width: 30,
-            child: _buildSimpleYAxisLabels(data),
-          ),
-          
-          // Simplified X-axis labels
-          Positioned(
-            left: 35,
-            right: 15,
-            bottom: 0,
-            height: 25,
-            child: _buildSimpleXAxisLabels(data),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSimpleYAxisLabels(List<WeightData> data) {
+  Widget _buildYAxisLabels(List<WeightData> data) {
     if (data.isEmpty) return const SizedBox.shrink();
     
     final weights = data.map((e) => e.weight).toList();
     final minWeight = weights.reduce((a, b) => a < b ? a : b);
     final maxWeight = weights.reduce((a, b) => a > b ? a : b);
-    
-    // Only show 3 labels: min, middle, max
     final middle = (minWeight + maxWeight) / 2;
     
     return Column(
@@ -338,7 +371,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
       padding: const EdgeInsets.only(right: 6),
       child: Text(
         value.toStringAsFixed(0),
-        style: AppTextStyles.getNumericStyle().copyWith(
+        style: AppTypography.labelLarge.copyWith(
           fontSize: 10,
           color: Colors.grey[600],
         ),
@@ -349,7 +382,6 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
   Widget _buildSimpleXAxisLabels(List<WeightData> data) {
     if (data.isEmpty) return const SizedBox.shrink();
     
-    // Only show first, middle, and last dates
     final indices = data.length > 2 
         ? [0, data.length ~/ 2, data.length - 1]
         : [0, data.length - 1];
@@ -362,7 +394,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
         
         return Text(
           DateFormat(format).format(date),
-          style: AppTextStyles.getBodyStyle().copyWith(
+          style: AppTypography.bodyMedium.copyWith(
             fontSize: 10,
             color: Colors.grey[600],
           ),
@@ -395,22 +427,20 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
     return Column(
       children: [
         Text(
+          label,
+          style: AppTypography.bodySmall.copyWith(
+            fontSize: 10,
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
           value,
-          style: AppTextStyles.getNumericStyle().copyWith(
+          style: AppTypography.labelLarge.copyWith(
             fontSize: 14,
             fontWeight: FontWeight.bold,
             color: AppTheme.primaryBlue,
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: AppTextStyles.getBodyStyle().copyWith(
-            fontSize: 10,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-          textAlign: TextAlign.center,
         ),
       ],
     );
@@ -418,31 +448,25 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
 
   Widget _buildEmptyState() {
     return Card(
-      elevation: 4,
+      elevation: 6,
+      shadowColor: Colors.black.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
       child: Container(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(40),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryBlue.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.trending_up_rounded,
-                size: 32,
-                color: AppTheme.primaryBlue,
-              ),
+            Icon(
+              Icons.show_chart,
+              size: 60,
+              color: Colors.grey[300],
             ),
             const SizedBox(height: 16),
             Text(
-              'Start Tracking Your Progress',
-              style: AppTextStyles.getSubHeadingStyle().copyWith(
-                fontSize: 16,
+              'No Weight History',
+              style: AppTypography.displaySmall.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppTheme.primaryBlue,
               ),
@@ -450,7 +474,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
             const SizedBox(height: 6),
             Text(
               'Add weight entries to see beautiful charts',
-              style: AppTextStyles.getBodyStyle().copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 fontSize: 12,
                 color: Colors.grey[600],
               ),
@@ -458,9 +482,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () {
-                // Navigate to add weight entry
-              },
+              onPressed: () {},
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryBlue,
                 foregroundColor: Colors.white,
@@ -472,7 +494,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
               ),
               child: Text(
                 '+ Add Weight Entry',
-                style: AppTextStyles.getBodyStyle().copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
@@ -483,121 +505,21 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
       ),
     );
   }
-
-  void _showTooltip(WeightData entry) {
-    // Simple debug output - you could implement a proper tooltip overlay
-    // Removed print statement for production
-    // You could add a proper tooltip overlay here if needed
-  }
-
-  // Data simplification to reduce visual noise
-  List<WeightData> _simplifyData(List<WeightData> data) {
-    if (data.length <= 15) return data; // No need to simplify small datasets
-    
-    // Take every nth point to reduce visual clutter
-    final step = (data.length / 15).ceil();
-    final simplified = <WeightData>[];
-    
-    for (int i = 0; i < data.length; i += step) {
-      simplified.add(data[i]);
-    }
-    
-    // Always include the last point
-    if (simplified.last != data.last) {
-      simplified.add(data.last);
-    }
-    
-    return simplified;
-  }
-
-  // Helper methods (same logic but optimized)
-  List<WeightData> _getFilteredData() {
-    final now = DateTime.now();
-    final cutoffDate = switch (_selectedPeriod) {
-      TimePeriod.sevenDays => now.subtract(const Duration(days: 7)),
-      TimePeriod.thirtyDays => now.subtract(const Duration(days: 30)),
-      TimePeriod.threeMonths => now.subtract(const Duration(days: 90)),
-      TimePeriod.sixMonths => now.subtract(const Duration(days: 180)),
-      TimePeriod.oneYear => now.subtract(const Duration(days: 365)),
-    };
-
-    return widget.weightHistory
-        .where((entry) => entry.timestamp.isAfter(cutoffDate))
-        .toList()
-      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
-  }
-
-  Map<String, double> _calculateStats(List<WeightData> data) {
-    if (data.isEmpty) return {};
-
-    final weights = data.map((e) => e.weight).toList();
-    final totalChange = weights.last - weights.first;
-    final average = weights.reduce((a, b) => a + b) / weights.length;
-    
-    final daysDiff = data.last.timestamp.difference(data.first.timestamp).inDays;
-    final weeklyRate = daysDiff > 0 ? (totalChange / daysDiff) * 7 : 0.0;
-
-    return {
-      'totalChange': totalChange,
-      'average': average,
-      'weeklyRate': weeklyRate,
-    };
-  }
-
-  Map<String, dynamic> _calculateTrend(List<WeightData> data) {
-    if (data.length < 2) {
-      return {'type': 'maintaining', 'rate': 0.0};
-    }
-
-    final firstHalf = data.take(data.length ~/ 2).toList();
-    final secondHalf = data.skip(data.length ~/ 2).toList();
-    
-    final firstAvg = firstHalf.map((e) => e.weight).reduce((a, b) => a + b) / firstHalf.length;
-    final secondAvg = secondHalf.map((e) => e.weight).reduce((a, b) => a + b) / secondHalf.length;
-    
-    final change = secondAvg - firstAvg;
-    final daysDiff = data.last.timestamp.difference(data.first.timestamp).inDays;
-    final weeklyRate = daysDiff > 0 ? (change / daysDiff) * 7 : 0.0;
-
-    if (change.abs() < 0.5) {
-      return {'type': 'maintaining', 'rate': change.abs()};
-    } else if (change < 0) {
-      return {'type': 'losing', 'rate': weeklyRate};
-    } else {
-      return {'type': 'gaining', 'rate': weeklyRate};
-    }
-  }
-
-  String _getPeriodLabel(TimePeriod period) {
-    switch (period) {
-      case TimePeriod.sevenDays:
-        return '7D';
-      case TimePeriod.thirtyDays:
-        return '30D';
-      case TimePeriod.threeMonths:
-        return '3M';
-      case TimePeriod.sixMonths:
-        return '6M';
-      case TimePeriod.oneYear:
-        return '1Y';
-    }
-  }
 }
 
-// Simplified CustomPainter with smoother curves and fewer elements
-class CompactWeightChartPainter extends CustomPainter {
+class WeightChartPainter extends CustomPainter {
   final List<WeightData> data;
-  final double? targetWeight;
-  final Animation<double> animation;
-  final int? touchedIndex;
   final bool isMetric;
+  final double? targetWeight;
+  final double animation;
+  final int? touchedIndex;
 
-  CompactWeightChartPainter({
+  WeightChartPainter({
     required this.data,
-    required this.targetWeight,
-    required this.animation,
-    required this.touchedIndex,
     required this.isMetric,
+    this.targetWeight,
+    required this.animation,
+    this.touchedIndex,
   });
 
   @override
@@ -608,142 +530,70 @@ class CompactWeightChartPainter extends CustomPainter {
     final minWeight = weights.reduce((a, b) => a < b ? a : b);
     final maxWeight = weights.reduce((a, b) => a > b ? a : b);
     final range = maxWeight - minWeight;
-    final padding = range > 0 ? range * 0.1 : 1.0;
-    final adjustedMin = minWeight - padding;
-    final adjustedMax = maxWeight + padding;
+    final padding = range * 0.1;
 
-    // Smoother line paint
     final linePaint = Paint()
-      ..shader = const LinearGradient(
-        colors: [
-          AppTheme.coralAccent,
-          AppTheme.primaryBlue,
-          AppTheme.goldAccent,
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..color = AppTheme.primaryBlue
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
-    // Subtle gradient fill
-    final fillPaint = Paint()
+    final gradientPaint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          AppTheme.primaryBlue.withValues(alpha: 0.15 * animation.value),
-          AppTheme.primaryBlue.withValues(alpha: 0.02 * animation.value),
+          AppTheme.primaryBlue.withValues(alpha: 0.2),
+          AppTheme.primaryBlue.withValues(alpha: 0.05),
         ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
-    // Smaller, cleaner dots
-    final dotPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-
-    final dotStrokePaint = Paint()
-      ..color = AppTheme.primaryBlue
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
     final path = Path();
-    final fillPath = Path();
+    final gradientPath = Path();
     final points = <Offset>[];
 
-    // Calculate points with smooth curve
-    for (int i = 0; i < data.length; i++) {
+    for (var i = 0; i < data.length; i++) {
       final x = (i / (data.length - 1)) * size.width;
-      final normalizedY = (data[i].weight - adjustedMin) / (adjustedMax - adjustedMin);
-      final y = size.height - (normalizedY * size.height);
+      final normalizedWeight = (data[i].weight - (minWeight - padding)) / (range + 2 * padding);
+      final y = size.height * (1 - normalizedWeight * animation);
+
       points.add(Offset(x, y));
 
       if (i == 0) {
         path.moveTo(x, y);
-        fillPath.moveTo(x, size.height);
-        fillPath.lineTo(x, y);
+        gradientPath.moveTo(x, size.height);
+        gradientPath.lineTo(x, y);
       } else {
-        // Create smooth curves using quadratic bezier
-        final prevPoint = points[i - 1];
-        final controlPoint = Offset(
-          (prevPoint.dx + x) / 2,
-          (prevPoint.dy + y) / 2,
-        );
-        path.quadraticBezierTo(controlPoint.dx, controlPoint.dy, x, y);
-        fillPath.quadraticBezierTo(controlPoint.dx, controlPoint.dy, x, y);
+        path.lineTo(x, y);
+        gradientPath.lineTo(x, y);
       }
     }
 
-    // Complete fill path
-    if (points.isNotEmpty) {
-      fillPath.lineTo(points.last.dx, size.height);
-      fillPath.close();
-    }
+    gradientPath.lineTo(size.width, size.height);
+    gradientPath.close();
 
-    // Draw gradient fill
-    canvas.drawPath(fillPath, fillPaint);
+    canvas.drawPath(gradientPath, gradientPaint);
+    canvas.drawPath(path, linePaint);
 
-    // Draw smooth line
-    final animatedPath = _createAnimatedPath(path, animation.value);
-    canvas.drawPath(animatedPath, linePaint);
+    for (var i = 0; i < points.length; i++) {
+      final point = points[i];
+      final dotPaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill;
+      final borderPaint = Paint()
+        ..color = AppTheme.primaryBlue
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
 
-    // Draw goal line if available (simplified)
-    if (targetWeight != null) {
-      final goalY = size.height - ((targetWeight! - adjustedMin) / (adjustedMax - adjustedMin) * size.height);
-      final goalPaint = Paint()
-        ..color = AppTheme.goldAccent.withValues(alpha: 0.6)
-        ..strokeWidth = 1.5
-        ..style = PaintingStyle.stroke;
-      
-      _drawSimpleDashedLine(canvas, Offset(0, goalY), Offset(size.width, goalY), goalPaint);
-    }
-
-    // Draw fewer, cleaner dots (every few points to reduce clutter)
-    for (int i = 0; i < points.length; i++) {
-      // Only show dots for every 3rd point or touched point
-      if (i % 3 == 0 || i == touchedIndex || i == 0 || i == points.length - 1) {
-        final point = points[i];
-        final radius = (touchedIndex == i) ? 4.0 : 2.5;
-        
-        if (i / points.length <= animation.value) {
-          canvas.drawCircle(point, radius, dotPaint);
-          canvas.drawCircle(point, radius, dotStrokePaint);
-        }
-      }
-    }
-  }
-
-  Path _createAnimatedPath(Path originalPath, double animationValue) {
-    final metrics = originalPath.computeMetrics();
-    final path = Path();
-    
-    for (final metric in metrics) {
-      final length = metric.length * animationValue;
-      final extractPath = metric.extractPath(0, length);
-      path.addPath(extractPath, Offset.zero);
-    }
-    
-    return path;
-  }
-
-  void _drawSimpleDashedLine(Canvas canvas, Offset start, Offset end, Paint paint) {
-    const dashWidth = 6.0;
-    const dashSpace = 4.0;
-    
-    final distance = (end - start).distance;
-    final dashCount = (distance / (dashWidth + dashSpace)).floor();
-    
-    for (int i = 0; i < dashCount; i++) {
-      final startOffset = start + (end - start) * (i * (dashWidth + dashSpace) / distance);
-      final endOffset = start + (end - start) * ((i * (dashWidth + dashSpace) + dashWidth) / distance);
-      canvas.drawLine(startOffset, endOffset, paint);
+      canvas.drawCircle(point, 4, dotPaint);
+      canvas.drawCircle(point, 4, borderPaint);
     }
   }
 
   @override
-  bool shouldRepaint(CompactWeightChartPainter oldDelegate) {
-    return data != oldDelegate.data ||
-           targetWeight != oldDelegate.targetWeight ||
-           animation.value != oldDelegate.animation.value ||
-           touchedIndex != oldDelegate.touchedIndex;
+  bool shouldRepaint(WeightChartPainter oldDelegate) {
+    return oldDelegate.animation != animation ||
+        oldDelegate.touchedIndex != touchedIndex;
   }
 }

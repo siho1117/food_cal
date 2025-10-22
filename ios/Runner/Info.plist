@@ -13,6 +13,16 @@
 	<key>NSCameraUsageDescription</key>
 	<string>FOOD LLM needs camera access to take photos of food for AI-powered nutrition analysis.</string>
 	
+	<!-- Local Network Usage - Required for iOS 14+ (fixes Xcode warning) -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>FOOD LLM may access local network for development and debugging purposes.</string>
+	
+	<!-- Bonjour Services - Required for iOS 14+ (fixes Xcode warning) -->
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_dartobservatory._tcp</string>
+	</array>
+	
 	<!-- App configuration -->
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>

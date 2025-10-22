@@ -1,7 +1,7 @@
 // lib/widgets/common/week_navigation_widget.dart
 import 'package:flutter/material.dart';
 import '../../config/design_system/theme.dart';
-import '../../config/design_system/text_styles.dart';
+import '../../config/design_system/typography.dart';
 
 class WeekNavigationWidget extends StatelessWidget {
   final DateTime selectedDate;
@@ -12,14 +12,14 @@ class WeekNavigationWidget extends StatelessWidget {
   final double? dayItemHeight;
 
   const WeekNavigationWidget({
-    super.key,  // ✅ FIXED: Using super parameter instead of Key? key
+    super.key,
     required this.selectedDate,
     required this.onDateChanged,
     this.daysToShow = 8, // Default: 7 days back + today
     this.padding,
     this.dayItemWidth = 42,
     this.dayItemHeight = 65,
-  });  // ✅ FIXED: Removed ': super(key: key)' as it's no longer needed
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +108,7 @@ class WeekNavigationWidget extends StatelessWidget {
             // Day letter (M, T, W, T, F, S, S)
             Text(
               _getDayLetter(date),
-              style: AppTextStyles.getBodyStyle().copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: isSelected 
@@ -120,7 +120,7 @@ class WeekNavigationWidget extends StatelessWidget {
             // Day number
             Text(
               date.day.toString(),
-              style: AppTextStyles.getNumericStyle().copyWith(
+              style: AppTypography.labelLarge.copyWith(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: isSelected 
@@ -154,7 +154,7 @@ class WeekNavigationWidget extends StatelessWidget {
         _isSameDay(selectedDate, now) 
             ? 'Today' // Show "Today" when today is selected
             : _formatSelectedDate(selectedDate),
-        style: AppTextStyles.getBodyStyle().copyWith(
+        style: AppTypography.bodyMedium.copyWith(
           fontSize: 14,
           color: _isSameDay(selectedDate, now) 
               ? AppTheme.primaryBlue 
