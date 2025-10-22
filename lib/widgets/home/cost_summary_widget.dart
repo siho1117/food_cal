@@ -1,7 +1,7 @@
 // lib/widgets/home/cost_summary_widget.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../config/design_system/text_styles.dart';
+import '../../config/design_system/typography.dart';
 import '../../providers/home_provider.dart';
 import '../dialogs/budget_edit_dialog.dart';
 
@@ -145,7 +145,7 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
                         const SizedBox(width: 8),
                         Text(
                           'Daily Food Cost',
-                          style: AppTextStyles.getSubHeadingStyle().copyWith(
+                          style: AppTypography.displaySmall.copyWith(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey[700],
@@ -163,7 +163,7 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
                         final animatedCost = totalCost * _countAnimation.value;
                         return Text(
                           '\$${animatedCost.toStringAsFixed(2)}',
-                          style: AppTextStyles.getNumericStyle().copyWith(
+                          style: AppTypography.dataLarge.copyWith(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             color: isOverBudget ? Colors.red[600] : Colors.green[700],
@@ -185,7 +185,7 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
                         ),
                         child: Text(
                           'of \$${dailyBudget.toStringAsFixed(2)} budget',
-                          style: AppTextStyles.getBodyStyle().copyWith(
+                          style: AppTypography.bodyMedium.copyWith(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                             color: Colors.grey[600],
@@ -212,7 +212,7 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
                       // Status badge
                       _buildStatusBadge(statusData, remaining, isOverBudget, budgetProgress),
                       
-                      const SizedBox(height: 6),
+                      const SizedBox(width: 6),
                       
                       // Compact progress bar
                       _buildProgressBar(budgetProgress, isOverBudget),
@@ -238,7 +238,7 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
         isOverBudget 
           ? 'Over \$${(-remaining).toStringAsFixed(2)}'
           : '\$${remaining.toStringAsFixed(2)} left',
-        style: AppTextStyles.getNumericStyle().copyWith(
+        style: AppTypography.dataSmall.copyWith(
           fontSize: 10,
           fontWeight: FontWeight.bold,
           color: Colors.white,
