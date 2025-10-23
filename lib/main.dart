@@ -239,6 +239,8 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
+      backgroundColor: Colors.transparent, // ✅ NEW: Make scaffold background transparent
+      extendBodyBehindAppBar: true,        // ✅ NEW: Extend body behind AppBar for gradient flow
       appBar: CustomAppBar(
         onSettingsTap: _navigateToSettings,
         currentPage: _getCurrentPageSubtitle(),
