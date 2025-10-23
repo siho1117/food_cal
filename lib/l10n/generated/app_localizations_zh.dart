@@ -12,22 +12,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appTitle => 'FOOD LLM';
 
   @override
-  String get homeTitle => '首页';
+  String get homeTitle => '首頁';
 
   @override
-  String get progressTitle => '进度';
+  String get progressTitle => '進度';
 
   @override
-  String get exerciseTitle => '运动';
+  String get exerciseTitle => '運動';
 
   @override
-  String get settingsTitle => '设置';
+  String get settingsTitle => '設置';
 
   @override
-  String get summaryTitle => '总结';
+  String get summaryTitle => '總結';
 
   @override
-  String get cameraTitle => '食物识别';
+  String get cameraTitle => '食物識別';
 
   @override
   String get breakfast => '早餐';
@@ -45,7 +45,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get calories => '卡路里';
 
   @override
-  String get protein => '蛋白质';
+  String get protein => '蛋白質';
 
   @override
   String get carbs => '碳水化合物';
@@ -54,10 +54,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fat => '脂肪';
 
   @override
-  String get cost => '费用';
+  String get cost => '費用';
 
   @override
-  String get weight => '体重';
+  String get weight => '體重';
 
   @override
   String get height => '身高';
@@ -69,19 +69,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cancel => '取消';
 
   @override
-  String get retry => '重试';
+  String get retry => '重試';
 
   @override
-  String get loading => '加载中...';
+  String get loading => '載入中...';
 
   @override
   String get saving => '保存中...';
 
   @override
-  String get delete => '删除';
+  String get delete => '刪除';
 
   @override
-  String get edit => '编辑';
+  String get edit => '編輯';
 
   @override
   String get add => '添加';
@@ -96,13 +96,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get back => '返回';
 
   @override
-  String get close => '关闭';
+  String get close => '關閉';
 
   @override
-  String get camera => '相机';
+  String get camera => '相機';
 
   @override
-  String get gallery => '相册';
+  String get gallery => '相冊';
 
   @override
   String get analyzeFood => '分析食物';
@@ -114,55 +114,55 @@ class AppLocalizationsZh extends AppLocalizations {
   String get foodPhoto => '食物照片';
 
   @override
-  String get language => '语言';
+  String get language => '語言';
 
   @override
-  String get selectLanguage => '选择语言';
+  String get selectLanguage => '選擇語言';
 
   @override
-  String get profile => '个人资料';
+  String get profile => '個人資料';
 
   @override
-  String get preferences => '偏好设置';
+  String get preferences => '偏好設置';
 
   @override
-  String get about => '关于';
+  String get about => '關於';
 
   @override
-  String get help => '帮助';
+  String get help => '幫助';
 
   @override
-  String get feedback => '反馈';
+  String get feedback => '反饋';
 
   @override
-  String get errorLoadingData => '数据加载错误';
+  String get errorLoadingData => '數據載入錯誤';
 
   @override
-  String get tryAgain => '重试';
+  String get tryAgain => '重試';
 
   @override
-  String get unknownError => '发生未知错误';
+  String get unknownError => '發生未知錯誤';
 
   @override
-  String get noInternetConnection => '无网络连接。请检查网络后重试。';
+  String get noInternetConnection => '無網絡連接。請檢查網絡後重試。';
 
   @override
-  String get networkError => '网络错误。请重试。';
+  String get networkError => '網絡錯誤。請重試。';
 
   @override
-  String get serverError => '服务器错误。请稍后重试。';
+  String get serverError => '服務器錯誤。請稍後重試。';
 
   @override
-  String get foodAddedSuccess => '食物已添加到记录中！';
+  String get foodAddedSuccess => '食物已添加到記錄中！';
 
   @override
-  String get exerciseLoggedSuccess => '运动记录成功！';
+  String get exerciseLoggedSuccess => '運動記錄成功！';
 
   @override
-  String get profileUpdatedSuccess => '个人资料更新成功！';
+  String get profileUpdatedSuccess => '個人資料更新成功！';
 
   @override
-  String get settingsSavedSuccess => '设置保存成功！';
+  String get settingsSavedSuccess => '設置保存成功！';
 
   @override
   String get today => '今天';
@@ -171,7 +171,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get yesterday => '昨天';
 
   @override
-  String get thisWeek => '本周';
+  String get thisWeek => '本週';
 
   @override
   String get thisMonth => '本月';
@@ -180,43 +180,43 @@ class AppLocalizationsZh extends AppLocalizations {
   String get daily => '每日';
 
   @override
-  String get weekly => '每周';
+  String get weekly => '每週';
 
   @override
   String get monthly => '每月';
 
   @override
-  String get goal => '目标';
+  String get goal => '目標';
 
   @override
-  String get target => '目标';
+  String get target => '目標';
 
   @override
-  String get remaining => '剩余';
+  String get remaining => '剩餘';
 
   @override
   String get consumed => '已消耗';
 
   @override
-  String get burned => '已燃烧';
+  String get burned => '已燃燒';
 
   @override
-  String get progress => '进度';
+  String get progress => '進度';
 
   @override
   String get name => '姓名';
 
   @override
-  String get age => '年龄';
+  String get age => '年齡';
 
   @override
-  String get gender => '性别';
+  String get gender => '性別';
 
   @override
-  String get activityLevel => '活动水平';
+  String get activityLevel => '活動水平';
 
   @override
-  String get units => '单位';
+  String get units => '單位';
 
   @override
   String get metric => '公制';
@@ -237,16 +237,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sedentary => '久坐';
 
   @override
-  String get lightlyActive => '轻度活跃';
+  String get lightlyActive => '輕度活躍';
 
   @override
-  String get moderatelyActive => '中度活跃';
+  String get moderatelyActive => '中度活躍';
 
   @override
-  String get veryActive => '高度活跃';
+  String get veryActive => '高度活躍';
 
   @override
-  String get extremelyActive => '极度活跃';
+  String get extremelyActive => '極度活躍';
+
+  @override
+  String get caloriesToday => '今日卡路里';
+
+  @override
+  String get cal => '卡';
+
+  @override
+  String get remainingCalories => '剩餘卡路里';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -257,22 +266,22 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get appTitle => 'FOOD LLM';
 
   @override
-  String get homeTitle => '首页';
+  String get homeTitle => '首頁';
 
   @override
-  String get progressTitle => '进度';
+  String get progressTitle => '進度';
 
   @override
-  String get exerciseTitle => '运动';
+  String get exerciseTitle => '運動';
 
   @override
-  String get settingsTitle => '设置';
+  String get settingsTitle => '設置';
 
   @override
-  String get summaryTitle => '总结';
+  String get summaryTitle => '總結';
 
   @override
-  String get cameraTitle => '食物识别';
+  String get cameraTitle => '食物識別';
 
   @override
   String get breakfast => '早餐';
@@ -290,7 +299,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get calories => '卡路里';
 
   @override
-  String get protein => '蛋白质';
+  String get protein => '蛋白質';
 
   @override
   String get carbs => '碳水化合物';
@@ -299,10 +308,10 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get fat => '脂肪';
 
   @override
-  String get cost => '费用';
+  String get cost => '費用';
 
   @override
-  String get weight => '体重';
+  String get weight => '體重';
 
   @override
   String get height => '身高';
@@ -314,19 +323,19 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get cancel => '取消';
 
   @override
-  String get retry => '重试';
+  String get retry => '重試';
 
   @override
-  String get loading => '加载中...';
+  String get loading => '載入中...';
 
   @override
   String get saving => '保存中...';
 
   @override
-  String get delete => '删除';
+  String get delete => '刪除';
 
   @override
-  String get edit => '编辑';
+  String get edit => '編輯';
 
   @override
   String get add => '添加';
@@ -341,13 +350,13 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get back => '返回';
 
   @override
-  String get close => '关闭';
+  String get close => '關閉';
 
   @override
-  String get camera => '相机';
+  String get camera => '相機';
 
   @override
-  String get gallery => '相册';
+  String get gallery => '相冊';
 
   @override
   String get analyzeFood => '分析食物';
@@ -359,55 +368,55 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get foodPhoto => '食物照片';
 
   @override
-  String get language => '语言';
+  String get language => '語言';
 
   @override
-  String get selectLanguage => '选择语言';
+  String get selectLanguage => '選擇語言';
 
   @override
-  String get profile => '个人资料';
+  String get profile => '個人資料';
 
   @override
-  String get preferences => '偏好设置';
+  String get preferences => '偏好設置';
 
   @override
-  String get about => '关于';
+  String get about => '關於';
 
   @override
-  String get help => '帮助';
+  String get help => '幫助';
 
   @override
-  String get feedback => '反馈';
+  String get feedback => '反饋';
 
   @override
-  String get errorLoadingData => '数据加载错误';
+  String get errorLoadingData => '數據載入錯誤';
 
   @override
-  String get tryAgain => '重试';
+  String get tryAgain => '重試';
 
   @override
-  String get unknownError => '发生未知错误';
+  String get unknownError => '發生未知錯誤';
 
   @override
-  String get noInternetConnection => '无网络连接。请检查网络后重试。';
+  String get noInternetConnection => '無網絡連接。請檢查網絡後重試。';
 
   @override
-  String get networkError => '网络错误。请重试。';
+  String get networkError => '網絡錯誤。請重試。';
 
   @override
-  String get serverError => '服务器错误。请稍后重试。';
+  String get serverError => '服務器錯誤。請稍後重試。';
 
   @override
-  String get foodAddedSuccess => '食物已添加到记录中！';
+  String get foodAddedSuccess => '食物已添加到記錄中！';
 
   @override
-  String get exerciseLoggedSuccess => '运动记录成功！';
+  String get exerciseLoggedSuccess => '運動記錄成功！';
 
   @override
-  String get profileUpdatedSuccess => '个人资料更新成功！';
+  String get profileUpdatedSuccess => '個人資料更新成功！';
 
   @override
-  String get settingsSavedSuccess => '设置保存成功！';
+  String get settingsSavedSuccess => '設置保存成功！';
 
   @override
   String get today => '今天';
@@ -416,7 +425,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get yesterday => '昨天';
 
   @override
-  String get thisWeek => '本周';
+  String get thisWeek => '本週';
 
   @override
   String get thisMonth => '本月';
@@ -425,43 +434,43 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get daily => '每日';
 
   @override
-  String get weekly => '每周';
+  String get weekly => '每週';
 
   @override
   String get monthly => '每月';
 
   @override
-  String get goal => '目标';
+  String get goal => '目標';
 
   @override
-  String get target => '目标';
+  String get target => '目標';
 
   @override
-  String get remaining => '剩余';
+  String get remaining => '剩餘';
 
   @override
   String get consumed => '已消耗';
 
   @override
-  String get burned => '已燃烧';
+  String get burned => '已燃燒';
 
   @override
-  String get progress => '进度';
+  String get progress => '進度';
 
   @override
   String get name => '姓名';
 
   @override
-  String get age => '年龄';
+  String get age => '年齡';
 
   @override
-  String get gender => '性别';
+  String get gender => '性別';
 
   @override
-  String get activityLevel => '活动水平';
+  String get activityLevel => '活動水平';
 
   @override
-  String get units => '单位';
+  String get units => '單位';
 
   @override
   String get metric => '公制';
@@ -482,16 +491,25 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get sedentary => '久坐';
 
   @override
-  String get lightlyActive => '轻度活跃';
+  String get lightlyActive => '輕度活躍';
 
   @override
-  String get moderatelyActive => '中度活跃';
+  String get moderatelyActive => '中度活躍';
 
   @override
-  String get veryActive => '高度活跃';
+  String get veryActive => '高度活躍';
 
   @override
-  String get extremelyActive => '极度活跃';
+  String get extremelyActive => '極度活躍';
+
+  @override
+  String get caloriesToday => '今日卡路里';
+
+  @override
+  String get cal => '卡';
+
+  @override
+  String get remainingCalories => '剩餘卡路里';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -737,4 +755,13 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get extremelyActive => '極度活躍';
+
+  @override
+  String get caloriesToday => '今日卡路里';
+
+  @override
+  String get cal => '卡';
+
+  @override
+  String get remainingCalories => '剩餘卡路里';
 }

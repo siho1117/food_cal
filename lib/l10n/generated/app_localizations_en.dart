@@ -247,4 +247,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get extremelyActive => 'Extremely Active';
+
+  @override
+  String get caloriesToday => 'Calories Today';
+
+  @override
+  String get cal => 'cal';
+
+  @override
+  String get remainingCalories => 'Remaining calories';
 }

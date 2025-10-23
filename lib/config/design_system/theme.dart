@@ -268,3 +268,26 @@ class AppTheme {
     // Will be expanded when dark mode is implemented
   );
 }
+
+// ═══════════════════════════════════════════════════════════════
+// SHARED WIDGET DESIGN TOKENS
+// ═══════════════════════════════════════════════════════════════
+
+/// Shared card/widget design system
+/// Used by 10+ widgets for consistent iOS-inspired styling
+class AppWidgetDesign {
+  AppWidgetDesign._(); // Private constructor to prevent instantiation
+  
+  // Border styling (iOS-inspired white borders)
+  static const double cardBorderWidth = 4.0;
+  static const double cardBorderRadius = 28.0;
+  static const double cardBorderOpacity = 0.5;
+  static const Color cardBorderColor = Colors.white;
+  
+  // Text shadow policy (currently disabled, change to enable globally)
+  // To enable shadows: replace null with [Shadow(offset: Offset(0, 1), blurRadius: 2.0, color: Color.fromRGBO(0, 0, 0, 0.3))]
+  static const List<Shadow>? textShadows = null;
+  
+  // Standard card padding
+  static const EdgeInsets cardPadding = EdgeInsets.fromLTRB(24, 28, 24, 28);
+}

@@ -576,6 +576,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Extremely Active'**
   String get extremelyActive;
+
+  /// No description provided for @caloriesToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories Today'**
+  String get caloriesToday;
+
+  /// No description provided for @cal.
+  ///
+  /// In en, this message translates to:
+  /// **'cal'**
+  String get cal;
+
+  /// No description provided for @remainingCalories.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining calories'**
+  String get remainingCalories;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

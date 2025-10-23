@@ -92,5 +92,9 @@
   "lightlyActive": "Lightly Active",
   "moderatelyActive": "Moderately Active",
   "veryActive": "Very Active",
-  "extremelyActive": "Extremely Active"
+  "extremelyActive": "Extremely Active",
+  
+  "caloriesToday": "Calories Today",
+  "cal": "cal",
+  "remainingCalories": "Remaining calories"
 }

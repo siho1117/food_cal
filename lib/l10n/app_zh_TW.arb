@@ -92,5 +92,9 @@
   "lightlyActive": "輕度活躍",
   "moderatelyActive": "中度活躍",
   "veryActive": "高度活躍",
-  "extremelyActive": "極度活躍"
+  "extremelyActive": "極度活躍",
+  
+  "caloriesToday": "今日卡路里",
+  "cal": "卡",
+  "remainingCalories": "剩餘卡路里"
 }

@@ -1,7 +1,7 @@
 // lib/widgets/progress/target_weight_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../config/design_system/text_styles.dart';
+import '../../config/design_system/typography.dart';
 
 class TargetWeightDialog extends StatefulWidget {
   final double? currentWeight;
@@ -70,7 +70,7 @@ class _TargetWeightDialogState extends State<TargetWeightDialog> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: Colors.green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -82,7 +82,7 @@ class _TargetWeightDialogState extends State<TargetWeightDialog> {
           const SizedBox(width: 12),
           Text(
             'Set Target Weight',
-            style: AppTextStyles.getSubHeadingStyle().copyWith(
+            style: AppTypography.displaySmall.copyWith(
               fontWeight: FontWeight.bold,
               fontSize: 20,
             ),
@@ -107,7 +107,7 @@ class _TargetWeightDialogState extends State<TargetWeightDialog> {
                 Expanded(
                   child: Text(
                     'Recommended range: ${_formatWeight(_minWeightKg)} - ${_formatWeight(_maxWeightKg)}\n(±20% of current weight)',
-                    style: AppTextStyles.getBodyStyle().copyWith(
+                    style: AppTypography.bodyMedium.copyWith(
                       fontSize: 11,
                       color: Colors.amber[700],
                     ),
@@ -143,7 +143,7 @@ class _TargetWeightDialogState extends State<TargetWeightDialog> {
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: !_localIsMetric ? [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           )
@@ -176,7 +176,7 @@ class _TargetWeightDialogState extends State<TargetWeightDialog> {
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: _localIsMetric ? [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           )
@@ -208,7 +208,7 @@ class _TargetWeightDialogState extends State<TargetWeightDialog> {
               FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
             ],
             textAlign: TextAlign.center,
-            style: AppTextStyles.getNumericStyle().copyWith(
+            style: AppTypography.dataLarge.copyWith(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.green[600],
@@ -220,7 +220,7 @@ class _TargetWeightDialogState extends State<TargetWeightDialog> {
                 fontSize: 24,
               ),
               suffixText: _localIsMetric ? 'kg' : 'lbs',
-              suffixStyle: AppTextStyles.getBodyStyle().copyWith(
+              suffixStyle: AppTypography.bodyMedium.copyWith(
                 fontSize: 18,
                 color: Colors.grey[600],
                 fontWeight: FontWeight.w600,
@@ -233,78 +233,77 @@ class _TargetWeightDialogState extends State<TargetWeightDialog> {
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide(color: Colors.green[600]!, width: 2),
               ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 16,
-              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             ),
           ),
           
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           
-          // Action Buttons
-          Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'Cancel',
-                    style: AppTextStyles.getBodyStyle().copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () => _handleSave(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'Save',
-                    style: AppTextStyles.getBodyStyle().copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          // Current weight display
+          Text(
+            'Current: ${_formatWeight(widget.currentWeight)}',
+            style: AppTypography.bodyMedium.copyWith(
+              fontSize: 13,
+              color: Colors.grey[600],
+            ),
           ),
         ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            'Cancel',
+            style: AppTypography.bodyMedium.copyWith(
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: _handleSave,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green[600],
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: Text(
+            'Set Target',
+            style: AppTypography.bodyMedium.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   void _handleSave() {
-    final input = _weightController.text.trim();
-    if (input.isNotEmpty) {
-      final inputWeight = double.tryParse(input);
-      if (inputWeight != null && inputWeight > 0) {
-        final weightInKg = _localIsMetric ? inputWeight : inputWeight / 2.20462;
-        
-        // Check if within 20% limits
-        if (weightInKg < _minWeightKg || weightInKg > _maxWeightKg) {
-          _showWarningDialog(weightInKg);
-        } else {
-          _saveTarget(weightInKg);
-        }
-      }
+    final inputText = _weightController.text.trim();
+    if (inputText.isEmpty) return;
+    
+    final inputWeight = double.tryParse(inputText);
+    if (inputWeight == null || inputWeight <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid weight'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
+    // Convert to kg if needed
+    final weightInKg = _localIsMetric ? inputWeight : inputWeight / 2.20462;
+    
+    // Check if within 20% limits
+    if (weightInKg < _minWeightKg || weightInKg > _maxWeightKg) {
+      _showWarningDialog(weightInKg);
+    } else {
+      _saveTarget(weightInKg);
     }
   }
 
@@ -342,35 +341,6 @@ class _TargetWeightDialogState extends State<TargetWeightDialog> {
         content: Text('Target weight set to ${_formatWeight(weightInKg)}'),
         behavior: SnackBarBehavior.floating,
         backgroundColor: Colors.green,
-      ),
-    );
-  }
-
-  static void show(
-    BuildContext context, {
-    required double? currentWeight,
-    double? currentTarget,
-    required bool isMetric,
-    required Function(double) onTargetSet,
-  }) {
-    if (currentWeight == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please set your current weight first'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => TargetWeightDialog(
-        currentWeight: currentWeight,
-        currentTarget: currentTarget,
-        isMetric: isMetric,
-        onTargetSet: onTargetSet,
       ),
     );
   }
