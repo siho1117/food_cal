@@ -25,7 +25,7 @@ import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/progress_screen.dart' as progress;
 import 'screens/camera_screen.dart';
-import 'screens/exercise_screen.dart' as exercise;
+// REMOVED: import 'screens/exercise_screen.dart' as exercise;
 import 'screens/settings_screen.dart';
 import 'screens/summary_screen.dart';
 
@@ -58,19 +58,12 @@ Future<void> main() async {
     debugPrint('✅ SharedPreferences initialized successfully');
   } catch (e) {
     debugPrint('❌ Error initializing SharedPreferences: $e');
-    // This is more critical - you might want to show an error screen
+    // This is more critical - you might want to show an error screen here
   }
 
-  try {
-    // 🚀 SETUP DEPENDENCY INJECTION
-    await setupDependencyInjection();
-    debugPrint('✅ Dependency injection setup complete');
-  } catch (e) {
-    debugPrint('❌ Error setting up dependency injection: $e');
-    // This is critical - the app won't work without DI
-  }
+  // Initialize dependency injection
+  setupDependencyInjection();
 
-  // Run the app
   runApp(const MyApp());
 }
 
@@ -79,36 +72,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ FIXED: Wrap MaterialApp with MultiProvider to provide app-level providers
     return MultiProvider(
       providers: [
-        // Add LanguageProvider for localization
-        ChangeNotifierProvider(
-          create: (_) => LanguageProvider(),
-          lazy: false,
-        ),
-        // Create providers once at app level
-        ChangeNotifierProvider(
-          create: (_) => HomeProvider()..loadData(),
-          lazy: false, // Load immediately
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ExerciseProvider()..loadData(),
-          lazy: false, // Load immediately
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ProgressData()..loadUserData(),
-          lazy: false, // Load immediately
-        ),
-        ChangeNotifierProvider(
-          create: (_) => SettingsProvider()..loadUserData(),
-          lazy: true, // Load when needed
-        ),
+        ChangeNotifierProvider(create: (_) => HomeProvider()..loadData()),
+        ChangeNotifierProvider(create: (_) => ExerciseProvider()..loadData()),
+        ChangeNotifierProvider(create: (_) => ProgressData()..loadUserData()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()..loadLanguage()),
       ],
       child: Consumer<LanguageProvider>(
-        builder: (context, languageProvider, _) {
+        builder: (context, languageProvider, child) {
           return MaterialApp(
-            title: 'FOOD LLM',
+            title: 'Food Cal',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             locale: languageProvider.currentLocale,
@@ -128,7 +103,7 @@ class MyApp extends StatelessWidget {
               '/home': (context) => const MainApp(),
               '/settings': (context) => const SettingsScreen(),
               '/progress': (context) => const progress.ProgressScreen(),
-              '/exercise': (context) => const exercise.ExerciseScreen(),
+              // REMOVED: '/exercise' route - now part of progress screen
             },
           );
         },
@@ -160,13 +135,12 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       duration: const Duration(milliseconds: 300),
     );
 
-    // Initialize screens list
+    // Initialize screens list (4 screens now - exercise removed)
     _screens = [
-      const HomeScreen(),
-      const progress.ProgressScreen(),
-      Container(), // Camera screen handled separately via navigation
-      const exercise.ExerciseScreen(),
-      const SummaryScreen(),
+      const HomeScreen(),                     // Index 0
+      const progress.ProgressScreen(),        // Index 1 (now has both Progress + Exercise)
+      Container(),                            // Index 2 (Camera - handled separately)
+      const SummaryScreen(),                  // Index 3 (was index 4)
     ];
   }
 
@@ -225,10 +199,8 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       case 0:
         return 'Daily Nutrition';
       case 1:
-        return 'Progress Tracker';
+        return 'Activity & Progress'; // UPDATED: now includes exercise
       case 3:
-        return 'Exercise Tracker';
-      case 4:
         return 'Analytics Dashboard';
       default:
         return '';
@@ -239,8 +211,8 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Colors.transparent, // ✅ NEW: Make scaffold background transparent
-      extendBodyBehindAppBar: true,        // ✅ NEW: Extend body behind AppBar for gradient flow
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: CustomAppBar(
         onSettingsTap: _navigateToSettings,
         currentPage: _getCurrentPageSubtitle(),
