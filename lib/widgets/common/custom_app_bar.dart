@@ -4,17 +4,15 @@ import 'package:flutter/services.dart';
 import '../../config/design_system/typography.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final Function onSettingsTap;
   final String currentPage;
 
   const CustomAppBar({
     super.key,
-    required this.onSettingsTap,
     this.currentPage = '',
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(70); // Reduced from 100 to 70
+  Size get preferredSize => const Size.fromHeight(70);
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +32,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       flexibleSpace: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0), // Reduced vertical padding from 15 to 12
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -54,17 +52,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
 
-              // Settings icon button
-              IconButton(
-                icon: const Icon(
-                  Icons.settings,
-                  color: Colors.white,
-                  size: 28,
-                ),
-                onPressed: () => onSettingsTap(),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
+              // Settings button removed - now accessible via bottom navigation
+              // Just an empty SizedBox to maintain the layout structure
+              const SizedBox(width: 28), // Same width as the old icon button
             ],
           ),
         ),

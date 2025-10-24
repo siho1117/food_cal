@@ -1,14 +1,16 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-// App configuration
-import 'config/design_system/theme.dart';
-import 'config/dependency_injection.dart';
+// Screens
+import 'screens/splash_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/progress_screen.dart';
+import 'screens/camera_screen.dart';
+import 'screens/summary_screen.dart';
+import 'screens/settings_screen.dart';
 
 // Providers
 import 'providers/home_provider.dart';
@@ -17,52 +19,30 @@ import 'providers/progress_data.dart';
 import 'providers/settings_provider.dart';
 import 'providers/language_provider.dart';
 
+// Config
+import 'config/design_system/theme.dart';
+import 'config/dependency_injection.dart';
+
 // Localization
 import 'l10n/generated/app_localizations.dart';
-
-// Screens
-import 'screens/splash_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/progress_screen.dart' as progress;
-import 'screens/camera_screen.dart';
-// REMOVED: import 'screens/exercise_screen.dart' as exercise;
-import 'screens/settings_screen.dart';
-import 'screens/summary_screen.dart';
 
 // Widgets
 import 'widgets/common/custom_bottom_nav.dart';
 import 'widgets/common/custom_app_bar.dart';
 
-Future<void> main() async {
-  // Ensure Flutter is initialized
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // CRITICAL: Lock app to portrait mode only - prevents landscape rotation
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
+  // Initialize SharedPreferences
   try {
-    // Load .env file with error handling
-    await dotenv.load(fileName: '.env');
-    debugPrint('✅ Environment file loaded successfully');
-  } catch (e) {
-    debugPrint('⚠️ Warning: Could not load .env file: $e');
-    // Continue execution - app should work without .env in production
-  }
-
-  try {
-    // Initialize SharedPreferences
     await SharedPreferences.getInstance();
     debugPrint('✅ SharedPreferences initialized successfully');
   } catch (e) {
     debugPrint('❌ Error initializing SharedPreferences: $e');
-    // This is more critical - you might want to show an error screen here
   }
 
-  // Initialize dependency injection
-  setupDependencyInjection();
+  // Initialize dependency injection - MUST AWAIT THIS!
+  await setupDependencyInjection();
 
   runApp(const MyApp());
 }
@@ -100,10 +80,8 @@ class MyApp extends StatelessWidget {
             ],
             home: const SplashScreen(),
             routes: {
-              '/home': (context) => const MainApp(),
+              '/home': (context) => const MainScreen(),
               '/settings': (context) => const SettingsScreen(),
-              '/progress': (context) => const progress.ProgressScreen(),
-              // REMOVED: '/exercise' route - now part of progress screen
             },
           );
         },
@@ -112,84 +90,77 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MainApp extends StatefulWidget {
-  const MainApp({super.key});
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
 
   @override
-  State<MainApp> createState() => _MainAppState();
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
+class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   bool _isCameraOverlayOpen = false;
-  late AnimationController _animationController;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  late List<Widget> _screens;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-
-    // Initialize screens list (4 screens now - exercise removed)
-    _screens = [
-      const HomeScreen(),                     // Index 0
-      const progress.ProgressScreen(),        // Index 1 (now has both Progress + Exercise)
-      Container(),                            // Index 2 (Camera - handled separately)
-      const SummaryScreen(),                  // Index 3 (was index 4)
-    ];
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
+  // 4 actual screens (Camera is an overlay, not a screen)
+  final List<Widget> _screens = const [
+    HomeScreen(),      // Index 0
+    ProgressScreen(),  // Index 1
+    SummaryScreen(),   // Index 2
+    SettingsScreen(),  // Index 3
+  ];
 
   void _onItemTapped(int index) {
+    // Handle the 5-tab bottom nav indices
+    // Home: 0, Progress: 1, Camera: 2, Summary: 3, Settings: 4
+    
     if (index == 2) {
-      // Camera tap - toggle overlay
-      setState(() {
-        _isCameraOverlayOpen = !_isCameraOverlayOpen;
-      });
-      
-      if (_isCameraOverlayOpen) {
-        // Navigate to camera screen
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => CameraScreen(
-              onDismissed: () {
-                setState(() {
-                  _isCameraOverlayOpen = false;
-                });
-              },
-            ),
-          ),
-        ).then((_) {
-          // Ensure overlay state is reset when returning
-          if (mounted) {
-            setState(() {
-              _isCameraOverlayOpen = false;
-            });
-          }
-        });
-      }
+      // Camera tap - show overlay
+      _showCameraOverlay();
     } else {
+      // Convert bottom nav index to screen index
+      // Bottom nav: 0, 1, 2(camera), 3, 4
+      // Screens: 0, 1, 2(summary), 3(settings)
+      int screenIndex;
+      if (index < 2) {
+        screenIndex = index; // Home and Progress map directly
+      } else if (index == 3) {
+        screenIndex = 2; // Summary
+      } else {
+        screenIndex = 3; // Settings
+      }
+      
       setState(() {
-        _currentIndex = index;
+        _currentIndex = screenIndex;
         _isCameraOverlayOpen = false;
       });
     }
   }
 
-  void _navigateToSettings() {
+  void _showCameraOverlay() {
+    setState(() {
+      _isCameraOverlayOpen = true;
+    });
+
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const SettingsScreen(),
+      PageRouteBuilder(
+        opaque: false,
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return CameraScreen(
+            onDismissed: () {
+              if (mounted) {
+                setState(() {
+                  _isCameraOverlayOpen = false;
+                });
+              }
+            },
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
       ),
     );
   }
@@ -199,9 +170,11 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       case 0:
         return 'Daily Nutrition';
       case 1:
-        return 'Activity & Progress'; // UPDATED: now includes exercise
-      case 3:
+        return 'Activity & Progress';
+      case 2:
         return 'Analytics Dashboard';
+      case 3:
+        return 'App Settings';
       default:
         return '';
     }
@@ -210,11 +183,9 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
       appBar: CustomAppBar(
-        onSettingsTap: _navigateToSettings,
         currentPage: _getCurrentPageSubtitle(),
       ),
       body: AnimatedSwitcher(
@@ -235,11 +206,28 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       ),
       extendBody: true,
       bottomNavigationBar: CustomBottomNav(
-        currentIndex: _currentIndex,
+        currentIndex: _convertScreenIndexToNavIndex(_currentIndex),
         isCameraOverlayOpen: _isCameraOverlayOpen,
         onTap: _onItemTapped,
-        onCameraCapture: null,
       ),
     );
+  }
+
+  // Convert screen index back to bottom nav index for highlighting
+  int _convertScreenIndexToNavIndex(int screenIndex) {
+    // Screens: 0(Home), 1(Progress), 2(Summary), 3(Settings)
+    // Bottom nav: 0(Home), 1(Progress), 2(Camera), 3(Summary), 4(Settings)
+    switch (screenIndex) {
+      case 0:
+        return 0; // Home
+      case 1:
+        return 1; // Progress
+      case 2:
+        return 3; // Summary
+      case 3:
+        return 4; // Settings
+      default:
+        return 0;
+    }
   }
 }
