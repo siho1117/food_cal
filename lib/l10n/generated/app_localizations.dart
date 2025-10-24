@@ -97,215 +97,29 @@ abstract class AppLocalizations {
     Locale('zh', 'TW')
   ];
 
-  /// No description provided for @appTitle.
+  /// No description provided for @caloriesToday.
   ///
   /// In en, this message translates to:
-  /// **'FOOD LLM'**
-  String get appTitle;
+  /// **'Calories Today'**
+  String get caloriesToday;
 
-  /// No description provided for @homeTitle.
+  /// No description provided for @cal.
   ///
   /// In en, this message translates to:
-  /// **'Home'**
-  String get homeTitle;
+  /// **'cal'**
+  String get cal;
 
-  /// No description provided for @progressTitle.
+  /// No description provided for @remainingCalories.
   ///
   /// In en, this message translates to:
-  /// **'Progress'**
-  String get progressTitle;
-
-  /// No description provided for @exerciseTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Exercise'**
-  String get exerciseTitle;
+  /// **'Remaining calories'**
+  String get remainingCalories;
 
   /// No description provided for @settingsTitle.
   ///
   /// In en, this message translates to:
   /// **'Settings'**
   String get settingsTitle;
-
-  /// No description provided for @summaryTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Summary'**
-  String get summaryTitle;
-
-  /// No description provided for @cameraTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Food Recognition'**
-  String get cameraTitle;
-
-  /// No description provided for @breakfast.
-  ///
-  /// In en, this message translates to:
-  /// **'Breakfast'**
-  String get breakfast;
-
-  /// No description provided for @lunch.
-  ///
-  /// In en, this message translates to:
-  /// **'Lunch'**
-  String get lunch;
-
-  /// No description provided for @dinner.
-  ///
-  /// In en, this message translates to:
-  /// **'Dinner'**
-  String get dinner;
-
-  /// No description provided for @snack.
-  ///
-  /// In en, this message translates to:
-  /// **'Snack'**
-  String get snack;
-
-  /// No description provided for @calories.
-  ///
-  /// In en, this message translates to:
-  /// **'Calories'**
-  String get calories;
-
-  /// No description provided for @protein.
-  ///
-  /// In en, this message translates to:
-  /// **'Protein'**
-  String get protein;
-
-  /// No description provided for @carbs.
-  ///
-  /// In en, this message translates to:
-  /// **'Carbs'**
-  String get carbs;
-
-  /// No description provided for @fat.
-  ///
-  /// In en, this message translates to:
-  /// **'Fat'**
-  String get fat;
-
-  /// No description provided for @cost.
-  ///
-  /// In en, this message translates to:
-  /// **'Cost'**
-  String get cost;
-
-  /// No description provided for @weight.
-  ///
-  /// In en, this message translates to:
-  /// **'Weight'**
-  String get weight;
-
-  /// No description provided for @height.
-  ///
-  /// In en, this message translates to:
-  /// **'Height'**
-  String get height;
-
-  /// No description provided for @save.
-  ///
-  /// In en, this message translates to:
-  /// **'Save'**
-  String get save;
-
-  /// No description provided for @cancel.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get cancel;
-
-  /// No description provided for @retry.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry'**
-  String get retry;
-
-  /// No description provided for @loading.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading...'**
-  String get loading;
-
-  /// No description provided for @saving.
-  ///
-  /// In en, this message translates to:
-  /// **'Saving...'**
-  String get saving;
-
-  /// No description provided for @delete.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete'**
-  String get delete;
-
-  /// No description provided for @edit.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit'**
-  String get edit;
-
-  /// No description provided for @add.
-  ///
-  /// In en, this message translates to:
-  /// **'Add'**
-  String get add;
-
-  /// No description provided for @done.
-  ///
-  /// In en, this message translates to:
-  /// **'Done'**
-  String get done;
-
-  /// No description provided for @next.
-  ///
-  /// In en, this message translates to:
-  /// **'Next'**
-  String get next;
-
-  /// No description provided for @back.
-  ///
-  /// In en, this message translates to:
-  /// **'Back'**
-  String get back;
-
-  /// No description provided for @close.
-  ///
-  /// In en, this message translates to:
-  /// **'Close'**
-  String get close;
-
-  /// No description provided for @camera.
-  ///
-  /// In en, this message translates to:
-  /// **'Camera'**
-  String get camera;
-
-  /// No description provided for @gallery.
-  ///
-  /// In en, this message translates to:
-  /// **'Gallery'**
-  String get gallery;
-
-  /// No description provided for @analyzeFood.
-  ///
-  /// In en, this message translates to:
-  /// **'Analyze Food'**
-  String get analyzeFood;
-
-  /// No description provided for @retake.
-  ///
-  /// In en, this message translates to:
-  /// **'Retake'**
-  String get retake;
-
-  /// No description provided for @foodPhoto.
-  ///
-  /// In en, this message translates to:
-  /// **'Food Photo'**
-  String get foodPhoto;
 
   /// No description provided for @language.
   ///
@@ -319,197 +133,11 @@ abstract class AppLocalizations {
   /// **'Select Language'**
   String get selectLanguage;
 
-  /// No description provided for @profile.
-  ///
-  /// In en, this message translates to:
-  /// **'Profile'**
-  String get profile;
-
   /// No description provided for @preferences.
   ///
   /// In en, this message translates to:
   /// **'Preferences'**
   String get preferences;
-
-  /// No description provided for @about.
-  ///
-  /// In en, this message translates to:
-  /// **'About'**
-  String get about;
-
-  /// No description provided for @help.
-  ///
-  /// In en, this message translates to:
-  /// **'Help'**
-  String get help;
-
-  /// No description provided for @feedback.
-  ///
-  /// In en, this message translates to:
-  /// **'Feedback'**
-  String get feedback;
-
-  /// No description provided for @errorLoadingData.
-  ///
-  /// In en, this message translates to:
-  /// **'Error Loading Data'**
-  String get errorLoadingData;
-
-  /// No description provided for @tryAgain.
-  ///
-  /// In en, this message translates to:
-  /// **'Try Again'**
-  String get tryAgain;
-
-  /// No description provided for @unknownError.
-  ///
-  /// In en, this message translates to:
-  /// **'An unknown error occurred'**
-  String get unknownError;
-
-  /// No description provided for @noInternetConnection.
-  ///
-  /// In en, this message translates to:
-  /// **'No internet connection. Please check your network and try again.'**
-  String get noInternetConnection;
-
-  /// No description provided for @networkError.
-  ///
-  /// In en, this message translates to:
-  /// **'Network error. Please try again.'**
-  String get networkError;
-
-  /// No description provided for @serverError.
-  ///
-  /// In en, this message translates to:
-  /// **'Server error. Please try again later.'**
-  String get serverError;
-
-  /// No description provided for @foodAddedSuccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Food added to log successfully!'**
-  String get foodAddedSuccess;
-
-  /// No description provided for @exerciseLoggedSuccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Exercise logged successfully!'**
-  String get exerciseLoggedSuccess;
-
-  /// No description provided for @profileUpdatedSuccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Profile updated successfully!'**
-  String get profileUpdatedSuccess;
-
-  /// No description provided for @settingsSavedSuccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Settings saved successfully!'**
-  String get settingsSavedSuccess;
-
-  /// No description provided for @today.
-  ///
-  /// In en, this message translates to:
-  /// **'Today'**
-  String get today;
-
-  /// No description provided for @yesterday.
-  ///
-  /// In en, this message translates to:
-  /// **'Yesterday'**
-  String get yesterday;
-
-  /// No description provided for @thisWeek.
-  ///
-  /// In en, this message translates to:
-  /// **'This Week'**
-  String get thisWeek;
-
-  /// No description provided for @thisMonth.
-  ///
-  /// In en, this message translates to:
-  /// **'This Month'**
-  String get thisMonth;
-
-  /// No description provided for @daily.
-  ///
-  /// In en, this message translates to:
-  /// **'Daily'**
-  String get daily;
-
-  /// No description provided for @weekly.
-  ///
-  /// In en, this message translates to:
-  /// **'Weekly'**
-  String get weekly;
-
-  /// No description provided for @monthly.
-  ///
-  /// In en, this message translates to:
-  /// **'Monthly'**
-  String get monthly;
-
-  /// No description provided for @goal.
-  ///
-  /// In en, this message translates to:
-  /// **'Goal'**
-  String get goal;
-
-  /// No description provided for @target.
-  ///
-  /// In en, this message translates to:
-  /// **'Target'**
-  String get target;
-
-  /// No description provided for @remaining.
-  ///
-  /// In en, this message translates to:
-  /// **'Remaining'**
-  String get remaining;
-
-  /// No description provided for @consumed.
-  ///
-  /// In en, this message translates to:
-  /// **'Consumed'**
-  String get consumed;
-
-  /// No description provided for @burned.
-  ///
-  /// In en, this message translates to:
-  /// **'Burned'**
-  String get burned;
-
-  /// No description provided for @progress.
-  ///
-  /// In en, this message translates to:
-  /// **'Progress'**
-  String get progress;
-
-  /// No description provided for @name.
-  ///
-  /// In en, this message translates to:
-  /// **'Name'**
-  String get name;
-
-  /// No description provided for @age.
-  ///
-  /// In en, this message translates to:
-  /// **'Age'**
-  String get age;
-
-  /// No description provided for @gender.
-  ///
-  /// In en, this message translates to:
-  /// **'Gender'**
-  String get gender;
-
-  /// No description provided for @activityLevel.
-  ///
-  /// In en, this message translates to:
-  /// **'Activity Level'**
-  String get activityLevel;
 
   /// No description provided for @units.
   ///
@@ -529,71 +157,47 @@ abstract class AppLocalizations {
   /// **'Imperial'**
   String get imperial;
 
-  /// No description provided for @male.
+  /// No description provided for @save.
   ///
   /// In en, this message translates to:
-  /// **'Male'**
-  String get male;
+  /// **'Save'**
+  String get save;
 
-  /// No description provided for @female.
+  /// No description provided for @cancel.
   ///
   /// In en, this message translates to:
-  /// **'Female'**
-  String get female;
+  /// **'Cancel'**
+  String get cancel;
 
-  /// No description provided for @other.
+  /// No description provided for @retry.
   ///
   /// In en, this message translates to:
-  /// **'Other'**
-  String get other;
+  /// **'Retry'**
+  String get retry;
 
-  /// No description provided for @sedentary.
+  /// No description provided for @close.
   ///
   /// In en, this message translates to:
-  /// **'Sedentary'**
-  String get sedentary;
+  /// **'Close'**
+  String get close;
 
-  /// No description provided for @lightlyActive.
+  /// No description provided for @errorLoadingData.
   ///
   /// In en, this message translates to:
-  /// **'Lightly Active'**
-  String get lightlyActive;
+  /// **'Error Loading Data'**
+  String get errorLoadingData;
 
-  /// No description provided for @moderatelyActive.
+  /// No description provided for @unknownError.
   ///
   /// In en, this message translates to:
-  /// **'Moderately Active'**
-  String get moderatelyActive;
+  /// **'An unknown error occurred'**
+  String get unknownError;
 
-  /// No description provided for @veryActive.
+  /// No description provided for @settingsSavedSuccess.
   ///
   /// In en, this message translates to:
-  /// **'Very Active'**
-  String get veryActive;
-
-  /// No description provided for @extremelyActive.
-  ///
-  /// In en, this message translates to:
-  /// **'Extremely Active'**
-  String get extremelyActive;
-
-  /// No description provided for @caloriesToday.
-  ///
-  /// In en, this message translates to:
-  /// **'Calories Today'**
-  String get caloriesToday;
-
-  /// No description provided for @cal.
-  ///
-  /// In en, this message translates to:
-  /// **'cal'**
-  String get cal;
-
-  /// No description provided for @remainingCalories.
-  ///
-  /// In en, this message translates to:
-  /// **'Remaining calories'**
-  String get remainingCalories;
+  /// **'Settings saved successfully!'**
+  String get settingsSavedSuccess;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
