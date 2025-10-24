@@ -9,13 +9,19 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get caloriesToday => 'Calories Today';
+  String get caloriesToday => 'Calories Intake';
 
   @override
   String get cal => 'cal';
 
   @override
   String get remainingCalories => 'Remaining calories';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get yesterday => 'Yesterday';
 
   @override
   String get settingsTitle => 'Settings';

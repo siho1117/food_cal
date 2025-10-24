@@ -2,14 +2,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/progress_data.dart';
+import '../providers/exercise_provider.dart';
 import '../widgets/progress/combined_weight_widget.dart';
 import '../widgets/progress/combined_bmi_bodyfat_widget.dart';
 import '../widgets/progress/weight_history_graph_widget.dart';
 import '../widgets/progress/energy_metrics_widget.dart';
+// NEW: Import exercise widgets (now in progress folder)
+import '../widgets/progress/daily_burn_widget.dart';
+import '../widgets/progress/exercise_log_widget.dart';
 import '../config/design_system/theme.dart';
 
 class ProgressScreen extends StatefulWidget {
-  const ProgressScreen({super.key});  // ✅ FIXED: Use super parameter
+  const ProgressScreen({super.key});
 
   @override
   State<ProgressScreen> createState() => _ProgressScreenState();
@@ -18,35 +22,44 @@ class ProgressScreen extends StatefulWidget {
 class _ProgressScreenState extends State<ProgressScreen> {
   @override
   Widget build(BuildContext context) {
-    // ✅ FIXED: Use existing provider from app level instead of manual management
+    // Use MultiProvider to consume both ProgressData and ExerciseProvider
     return Scaffold(
       backgroundColor: AppTheme.secondaryBeige,
       body: SafeArea(
-        child: Consumer<ProgressData>(
-          builder: (context, progressData, child) {
-            // Show loading state
-            if (progressData.isLoading) {
+        child: Consumer2<ProgressData, ExerciseProvider>(
+          builder: (context, progressData, exerciseProvider, child) {
+            // Show loading state if either provider is loading
+            if (progressData.isLoading || exerciseProvider.isLoading) {
               return const Center(
                 child: CircularProgressIndicator(),
               );
             }
             
-            // Show error state
+            // Show error state if either has error
             if (progressData.errorMessage != null) {
-              return _buildErrorState(context, progressData);
+              return _buildErrorState(context, progressData.errorMessage!);
+            }
+            if (exerciseProvider.errorMessage != null) {
+              return _buildErrorState(context, exerciseProvider.errorMessage!);
             }
             
             return RefreshIndicator(
-              onRefresh: () => progressData.refreshData(),  // ✅ FIXED: Use correct method name
+              onRefresh: () async {
+                // Refresh both providers
+                await Future.wait([
+                  progressData.refreshData(),
+                  exerciseProvider.refreshData(),
+                ]);
+              },
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header
+                    // Main Header
                     const Text(
-                      'PROGRESS TRACKER',
+                      'ACTIVITY & PROGRESS',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -56,6 +69,13 @@ class _ProgressScreenState extends State<ProgressScreen> {
                     ),
                     
                     const SizedBox(height: 30),
+                    
+                    // ═══════════════════════════════════════
+                    // PROGRESS SECTION
+                    // ═══════════════════════════════════════
+                    _buildSectionHeader('Progress Tracking'),
+                    
+                    const SizedBox(height: 16),
                     
                     // Weight Input Widget
                     CombinedWeightWidget(
@@ -90,7 +110,35 @@ class _ProgressScreenState extends State<ProgressScreen> {
                       currentWeight: progressData.currentWeight,
                     ),
                     
-                    // Add some bottom padding
+                    const SizedBox(height: 40),
+                    
+                    // ═══════════════════════════════════════
+                    // EXERCISE SECTION
+                    // ═══════════════════════════════════════
+                    _buildSectionHeader('Exercise Tracking'),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Daily Burn Widget
+                    DailyBurnWidget(
+                      userProfile: exerciseProvider.userProfile,
+                      currentWeight: progressData.currentWeight,
+                      totalCaloriesBurned: exerciseProvider.totalCaloriesBurned,
+                      weeklyCaloriesBurned: 0, // Provider only tracks daily data
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Exercise Log Widget
+                    ExerciseLogWidget(
+                      showHeader: true,
+                      onExerciseAdded: () {
+                        // Refresh data after adding exercise
+                        exerciseProvider.refreshData();
+                      },
+                    ),
+                    
+                    // Add bottom padding for bottom nav
                     const SizedBox(height: 100),
                   ],
                 ),
@@ -102,8 +150,47 @@ class _ProgressScreenState extends State<ProgressScreen> {
     );
   }
 
+  /// Build section header with icon
+  Widget _buildSectionHeader(String title) {
+    IconData icon;
+    if (title.contains('Progress')) {
+      icon = Icons.trending_up;
+    } else if (title.contains('Exercise')) {
+      icon = Icons.fitness_center_rounded;
+    } else {
+      icon = Icons.analytics_outlined;
+    }
+    
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: AppTheme.primaryBlue,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.primaryBlue,
+            letterSpacing: 0.5,
+          ),
+        ),
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.only(left: 12),
+            height: 1,
+            color: Colors.grey[300],
+          ),
+        ),
+      ],
+    );
+  }
+
   /// Build error state with retry button
-  Widget _buildErrorState(BuildContext context, ProgressData progressData) {
+  Widget _buildErrorState(BuildContext context, String errorMessage) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -134,7 +221,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              progressData.errorMessage ?? 'Unknown error occurred',
+              errorMessage,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Colors.grey[600],
               ),
@@ -142,7 +229,11 @@ class _ProgressScreenState extends State<ProgressScreen> {
             ),
             const SizedBox(height: 32),
             ElevatedButton.icon(
-              onPressed: () => progressData.refreshData(),  // ✅ FIXED: Use correct method name
+              onPressed: () {
+                // Refresh both providers
+                context.read<ProgressData>().refreshData();
+                context.read<ExerciseProvider>().refreshData();
+              },
               icon: const Icon(Icons.refresh),
               label: const Text('Try Again'),
               style: ElevatedButton.styleFrom(

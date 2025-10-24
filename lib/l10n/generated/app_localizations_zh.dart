@@ -9,55 +9,61 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get caloriesToday => '今日卡路里';
+  String get caloriesToday => 'Calories Intake';
 
   @override
-  String get cal => '卡';
+  String get cal => 'cal';
 
   @override
-  String get remainingCalories => '剩餘卡路里';
+  String get remainingCalories => 'Remaining calories';
 
   @override
-  String get settingsTitle => '設置';
+  String get today => 'Today';
 
   @override
-  String get language => '語言';
+  String get yesterday => 'Yesterday';
 
   @override
-  String get selectLanguage => '選擇語言';
+  String get settingsTitle => 'Settings';
 
   @override
-  String get preferences => '偏好設置';
+  String get language => 'Language';
 
   @override
-  String get units => '單位';
+  String get selectLanguage => 'Select Language';
 
   @override
-  String get metric => '公制';
+  String get preferences => 'Preferences';
 
   @override
-  String get imperial => '英制';
+  String get units => 'Units';
 
   @override
-  String get save => '保存';
+  String get metric => 'Metric';
 
   @override
-  String get cancel => '取消';
+  String get imperial => 'Imperial';
 
   @override
-  String get retry => '重試';
+  String get save => 'Save';
 
   @override
-  String get close => '關閉';
+  String get cancel => 'Cancel';
 
   @override
-  String get errorLoadingData => '數據載入錯誤';
+  String get retry => 'Retry';
 
   @override
-  String get unknownError => '發生未知錯誤';
+  String get close => 'Close';
 
   @override
-  String get settingsSavedSuccess => '設置保存成功！';
+  String get errorLoadingData => 'Error Loading Data';
+
+  @override
+  String get unknownError => 'An unknown error occurred';
+
+  @override
+  String get settingsSavedSuccess => 'Settings saved successfully!';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -65,55 +71,61 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   AppLocalizationsZhCn(): super('zh_CN');
 
   @override
-  String get caloriesToday => '今日卡路里';
+  String get caloriesToday => 'Calories Intake';
 
   @override
-  String get cal => '卡';
+  String get cal => 'cal';
 
   @override
-  String get remainingCalories => '剩餘卡路里';
+  String get remainingCalories => 'Remaining calories';
 
   @override
-  String get settingsTitle => '設置';
+  String get today => 'Today';
 
   @override
-  String get language => '語言';
+  String get yesterday => 'Yesterday';
 
   @override
-  String get selectLanguage => '選擇語言';
+  String get settingsTitle => 'Settings';
 
   @override
-  String get preferences => '偏好設置';
+  String get language => 'Language';
 
   @override
-  String get units => '單位';
+  String get selectLanguage => 'Select Language';
 
   @override
-  String get metric => '公制';
+  String get preferences => 'Preferences';
 
   @override
-  String get imperial => '英制';
+  String get units => 'Units';
 
   @override
-  String get save => '保存';
+  String get metric => 'Metric';
 
   @override
-  String get cancel => '取消';
+  String get imperial => 'Imperial';
 
   @override
-  String get retry => '重試';
+  String get save => 'Save';
 
   @override
-  String get close => '關閉';
+  String get cancel => 'Cancel';
 
   @override
-  String get errorLoadingData => '數據載入錯誤';
+  String get retry => 'Retry';
 
   @override
-  String get unknownError => '發生未知錯誤';
+  String get close => 'Close';
 
   @override
-  String get settingsSavedSuccess => '設置保存成功！';
+  String get errorLoadingData => 'Error Loading Data';
+
+  @override
+  String get unknownError => 'An unknown error occurred';
+
+  @override
+  String get settingsSavedSuccess => 'Settings saved successfully!';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -121,53 +133,59 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   AppLocalizationsZhTw(): super('zh_TW');
 
   @override
-  String get caloriesToday => '今日卡路里';
+  String get caloriesToday => 'Calories Intake';
 
   @override
-  String get cal => '卡';
+  String get cal => 'cal';
 
   @override
-  String get remainingCalories => '剩餘卡路里';
+  String get remainingCalories => 'Remaining calories';
 
   @override
-  String get settingsTitle => '設定';
+  String get today => 'Today';
 
   @override
-  String get language => '語言';
+  String get yesterday => 'Yesterday';
 
   @override
-  String get selectLanguage => '選擇語言';
+  String get settingsTitle => 'Settings';
 
   @override
-  String get preferences => '偏好設定';
+  String get language => 'Language';
 
   @override
-  String get units => '單位';
+  String get selectLanguage => 'Select Language';
 
   @override
-  String get metric => '公制';
+  String get preferences => 'Preferences';
 
   @override
-  String get imperial => '英制';
+  String get units => 'Units';
 
   @override
-  String get save => '儲存';
+  String get metric => 'Metric';
 
   @override
-  String get cancel => '取消';
+  String get imperial => 'Imperial';
 
   @override
-  String get retry => '重試';
+  String get save => 'Save';
 
   @override
-  String get close => '關閉';
+  String get cancel => 'Cancel';
 
   @override
-  String get errorLoadingData => '資料載入錯誤';
+  String get retry => 'Retry';
 
   @override
-  String get unknownError => '發生未知錯誤';
+  String get close => 'Close';
 
   @override
-  String get settingsSavedSuccess => '設定儲存成功！';
+  String get errorLoadingData => 'Error Loading Data';
+
+  @override
+  String get unknownError => 'An unknown error occurred';
+
+  @override
+  String get settingsSavedSuccess => 'Settings saved successfully!';
 }

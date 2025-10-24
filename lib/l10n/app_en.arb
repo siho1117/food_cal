@@ -2,9 +2,13 @@
   "@@locale": "en",
   
   "@@ COMMENT": "CalorieSummaryWidget - Currently Active",
-  "caloriesToday": "Calories Today",
+  "caloriesToday": "Calories Intake",
   "cal": "cal",
   "remainingCalories": "Remaining calories",
+  
+  "@@ COMMENT": "WeekNavigationWidget - NEW",
+  "today": "Today",
+  "yesterday": "Yesterday",
   
   "@@ COMMENT": "Settings Screen - Currently Active",
   "settingsTitle": "Settings",

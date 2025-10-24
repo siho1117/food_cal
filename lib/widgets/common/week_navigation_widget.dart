@@ -1,7 +1,17 @@
 // lib/widgets/common/week_navigation_widget.dart
 import 'package:flutter/material.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../config/design_system/theme.dart';
 import '../../config/design_system/typography.dart';
+
+/// Widget-specific design constants
+class _WeekNavigationDesign {
+  static const double dayItemWidth = 42.0;
+  static const double dayItemHeight = 65.0;
+  static const double dayItemGap = 8.0;
+  static const double selectedGlowBlur = 12.0;
+  static const double selectedGlowSpread = 2.0;
+}
 
 class WeekNavigationWidget extends StatelessWidget {
   final DateTime selectedDate;
@@ -17,13 +27,14 @@ class WeekNavigationWidget extends StatelessWidget {
     required this.onDateChanged,
     this.daysToShow = 8, // Default: 7 days back + today
     this.padding,
-    this.dayItemWidth = 42,
-    this.dayItemHeight = 65,
+    this.dayItemWidth,
+    this.dayItemHeight,
   });
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
+    final localizations = AppLocalizations.of(context)!;
     
     // Generate the specified number of days ending with today
     final startDate = now.subtract(Duration(days: daysToShow - 1));
@@ -36,16 +47,20 @@ class WeekNavigationWidget extends StatelessWidget {
       final normalizedDate = DateTime(date.year, date.month, date.day);
       final normalizedNow = DateTime(now.year, now.month, now.day);
       
-      // Include dates that are today or before today (not future dates)
       return normalizedDate.isBefore(normalizedNow) || 
              normalizedDate.isAtSameMomentAs(normalizedNow);
     }).toList();
 
-    return Container(
-      padding: padding ?? const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+    return Padding(
+      padding: padding ?? const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Column(
         children: [
-          // Week days row
+          // Selected date display (bigger text, no shadow) - NOW ON TOP
+          _buildSelectedDateDisplay(context, now, localizations),
+          
+          const SizedBox(height: 16),
+          
+          // Week days row (no container border - Option B)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: validDays.map((date) {
@@ -53,6 +68,7 @@ class WeekNavigationWidget extends StatelessWidget {
               final isToday = _isSameDay(date, now);
               
               return _buildDayItem(
+                context: context,
                 date: date,
                 isSelected: isSelected,
                 isToday: isToday,
@@ -60,44 +76,53 @@ class WeekNavigationWidget extends StatelessWidget {
               );
             }).toList(),
           ),
-          
-          // Selected date display
-          const SizedBox(height: 12),
-          _buildSelectedDateDisplay(now),
         ],
       ),
     );
   }
 
   Widget _buildDayItem({
+    required BuildContext context,
     required DateTime date,
     required bool isSelected,
     required bool isToday,
     required VoidCallback onTap,
   }) {
+    final effectiveWidth = dayItemWidth ?? _WeekNavigationDesign.dayItemWidth;
+    final effectiveHeight = dayItemHeight ?? _WeekNavigationDesign.dayItemHeight;
+    
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: dayItemWidth,
-        height: dayItemHeight,
+        width: effectiveWidth,
+        height: effectiveHeight,
         decoration: BoxDecoration(
-          // Visual hierarchy for today vs selected
+          // Semi-transparent white background when selected
           color: isSelected 
-              ? AppTheme.primaryBlue 
+              ? Colors.white.withValues(alpha: 0.25)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular((dayItemWidth ?? 42) / 2),
-          border: isToday && !isSelected
+          borderRadius: BorderRadius.circular(effectiveWidth / 2),
+          // White border for selected day (iOS-style) - Option B
+          border: isSelected
               ? Border.all(
-                  color: AppTheme.primaryBlue.withValues(alpha: 0.5), 
-                  width: 2
+                  color: AppWidgetDesign.cardBorderColor.withValues(
+                    alpha: AppWidgetDesign.cardBorderOpacity,
+                  ),
+                  width: AppWidgetDesign.cardBorderWidth,
                 )
-              : null,
+              : (isToday && !isSelected
+                  ? Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 1.5,
+                    )
+                  : null),
+          // Soft glow for selected day
           boxShadow: isSelected ? [
             BoxShadow(
-              color: AppTheme.primaryBlue.withValues(alpha: 0.3),
-              blurRadius: 8,
-              spreadRadius: 0,
+              color: Colors.white.withValues(alpha: 0.3),
+              blurRadius: _WeekNavigationDesign.selectedGlowBlur,
+              spreadRadius: _WeekNavigationDesign.selectedGlowSpread,
               offset: const Offset(0, 2),
             ),
           ] : null,
@@ -105,15 +130,16 @@ class WeekNavigationWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Day letter (M, T, W, T, F, S, S)
+            // Day letter (localized: M, T, W... or 一, 二, 三...)
             Text(
-              _getDayLetter(date),
+              _getLocalizedDayLetter(context, date),
               style: AppTypography.bodyMedium.copyWith(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: isSelected 
-                    ? Colors.white 
-                    : (isToday ? AppTheme.primaryBlue : Colors.grey[600]),
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.7),
+                letterSpacing: 0.5,
               ),
             ),
             const SizedBox(height: 4),
@@ -121,21 +147,21 @@ class WeekNavigationWidget extends StatelessWidget {
             Text(
               date.day.toString(),
               style: AppTypography.labelLarge.copyWith(
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: isSelected 
-                    ? Colors.white 
-                    : (isToday ? AppTheme.primaryBlue : Colors.grey[800]),
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.85),
               ),
             ),
-            // Today indicator when it's today and not selected
+            // Small dot indicator for today when not selected
             if (isToday && !isSelected) ...[
               const SizedBox(height: 2),
               Container(
                 width: 4,
                 height: 4,
-                decoration: const BoxDecoration(
-                  color: AppTheme.primaryBlue,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.7),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -146,59 +172,75 @@ class WeekNavigationWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildSelectedDateDisplay(DateTime now) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
-      child: Text(
-        key: ValueKey(selectedDate), // Key for proper animation
-        _isSameDay(selectedDate, now) 
-            ? 'Today' // Show "Today" when today is selected
-            : _formatSelectedDate(selectedDate),
-        style: AppTypography.bodyMedium.copyWith(
-          fontSize: 14,
-          color: _isSameDay(selectedDate, now) 
-              ? AppTheme.primaryBlue 
-              : Colors.grey[600],
-          fontWeight: _isSameDay(selectedDate, now) 
-              ? FontWeight.w600 
-              : FontWeight.w500,
+  Widget _buildSelectedDateDisplay(
+    BuildContext context,
+    DateTime now,
+    AppLocalizations localizations,
+  ) {
+    return Center(
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: Text(
+          key: ValueKey(selectedDate),
+          _formatSelectedDate(now, localizations),
+          style: const TextStyle(
+            fontSize: 22, // Bigger text (was 18)
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+            letterSpacing: 0.3,
+            // No shadow
+          ),
         ),
       ),
     );
   }
 
-  // Helper method to get day letter
-  String _getDayLetter(DateTime date) {
-    const dayLetters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-    // weekday returns 1-7 where 1 is Monday, so subtract 1 for 0-indexed array
-    return dayLetters[date.weekday - 1];
+  /// Get localized day letter (M/T/W... or 一/二/三... or 月/火/水... depending on locale)
+  String _getLocalizedDayLetter(BuildContext context, DateTime date) {
+    final locale = Localizations.localeOf(context);
+    
+    // For Chinese locales, use Chinese characters
+    if (locale.languageCode == 'zh') {
+      const chineseDays = ['一', '二', '三', '四', '五', '六', '日'];
+      return chineseDays[date.weekday - 1];
+    }
+    
+    // For Japanese locale, use kanji
+    if (locale.languageCode == 'ja') {
+      const japaneseDays = ['月', '火', '水', '木', '金', '土', '日'];
+      return japaneseDays[date.weekday - 1];
+    }
+    
+    // For English and other locales, use single letter
+    const englishDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    return englishDays[date.weekday - 1];
   }
 
-  // Helper method to check if two dates are the same day
+  /// Helper method to check if two dates are the same day
   bool _isSameDay(DateTime date1, DateTime date2) {
     return date1.year == date2.year &&
            date1.month == date2.month &&
            date1.day == date2.day;
   }
 
-  // Helper method to format selected date
-  String _formatSelectedDate(DateTime date) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
+  /// Format selected date - keep today/yesterday translated, show dates as dd/mm/yyyy
+  String _formatSelectedDate(
+    DateTime now,
+    AppLocalizations localizations,
+  ) {
+    final yesterday = now.subtract(const Duration(days: 1));
     
-    final today = DateTime.now();
-    final yesterday = today.subtract(const Duration(days: 1));
-    
-    // Check for relative dates
-    if (_isSameDay(date, today)) {
-      return 'Today';
-    } else if (_isSameDay(date, yesterday)) {
-      return 'Yesterday';
+    // Check for relative dates (using translation keys)
+    if (_isSameDay(selectedDate, now)) {
+      return localizations.today;
+    } else if (_isSameDay(selectedDate, yesterday)) {
+      return localizations.yesterday;
     } else {
-      // Show full date for older dates
-      return '${months[date.month - 1]} ${date.day}, ${date.year}';
+      // For all other dates, use dd/mm/yyyy format (no translation)
+      final day = selectedDate.day.toString().padLeft(2, '0');
+      final month = selectedDate.month.toString().padLeft(2, '0');
+      final year = selectedDate.year.toString();
+      return '$day/$month/$year';
     }
   }
 }

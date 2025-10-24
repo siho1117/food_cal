@@ -2,27 +2,31 @@
   "@@locale": "zh_TW",
   
   "@@ COMMENT": "CalorieSummaryWidget - Currently Active",
-  "caloriesToday": "今日卡路里",
-  "cal": "卡",
-  "remainingCalories": "剩餘卡路里",
+  "caloriesToday": "Calories Intake",
+  "cal": "cal",
+  "remainingCalories": "Remaining calories",
+  
+  "@@ COMMENT": "WeekNavigationWidget - NEW",
+  "today": "Today",
+  "yesterday": "Yesterday",
   
   "@@ COMMENT": "Settings Screen - Currently Active",
-  "settingsTitle": "設定",
-  "language": "語言",
-  "selectLanguage": "選擇語言",
-  "preferences": "偏好設定",
-  "units": "單位",
-  "metric": "公制",
-  "imperial": "英制",
+  "settingsTitle": "Settings",
+  "language": "Language",
+  "selectLanguage": "Select Language",
+  "preferences": "Preferences",
+  "units": "Units",
+  "metric": "Metric",
+  "imperial": "Imperial",
   
   "@@ COMMENT": "Common Actions - Currently Active",
-  "save": "儲存",
-  "cancel": "取消",
-  "retry": "重試",
-  "close": "關閉",
+  "save": "Save",
+  "cancel": "Cancel",
+  "retry": "Retry",
+  "close": "Close",
   
   "@@ COMMENT": "Error Messages - Currently Active",
-  "errorLoadingData": "資料載入錯誤",
-  "unknownError": "發生未知錯誤",
-  "settingsSavedSuccess": "設定儲存成功！"
+  "errorLoadingData": "Error Loading Data",
+  "unknownError": "An unknown error occurred",
+  "settingsSavedSuccess": "Settings saved successfully!"
 }
