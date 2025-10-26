@@ -18,6 +18,7 @@ import 'providers/exercise_provider.dart';
 import 'providers/progress_data.dart';
 import 'providers/settings_provider.dart';
 import 'providers/language_provider.dart';
+import 'providers/theme_provider.dart';
 
 // Config
 import 'config/design_system/theme.dart';
@@ -59,6 +60,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ProgressData()..loadUserData()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()..loadLanguage()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()..loadGradient()),
       ],
       child: Consumer<LanguageProvider>(
         builder: (context, languageProvider, child) {

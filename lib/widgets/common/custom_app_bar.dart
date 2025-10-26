@@ -30,6 +30,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       toolbarHeight: preferredSize.height,
       automaticallyImplyLeading: false,
+      surfaceTintColor: Colors.transparent, // ✅ Remove Material 3 tint
+      scrolledUnderElevation: 0, // ✅ No elevation when scrolled
       flexibleSpace: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),

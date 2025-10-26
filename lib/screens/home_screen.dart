@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../config/design_system/theme.dart';
-import '../config/design_system/typography.dart'; // Add this import for AppTypography
 import '../config/design_system/gradient_background.dart';
 import '../providers/home_provider.dart';
 import '../widgets/home/calorie_summary_widget.dart';
@@ -63,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: CalorieSummaryWidget(),
                         ),
 
-                        // Week Navigation Widget - WITH REQUIRED PARAMETERS
+                        // Week Navigation Widget
                         WeekNavigationWidget(
                           selectedDate: homeProvider.selectedDate,
                           onDateChanged: (date) => homeProvider.changeDate(date),
