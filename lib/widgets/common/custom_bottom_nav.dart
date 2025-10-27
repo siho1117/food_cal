@@ -2,148 +2,16 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 
-/// Design constants for icon-only segmented control navigation
-/// Follows AppWidgetDesign token system from theme.dart
-class _SegmentedNavDesign {
-  // ═══════════════════════════════════════════════════════════════
-  // DIMENSIONS
-  // ═══════════════════════════════════════════════════════════════
-  
-  /// Total navigation bar height
-  static const double navHeight = 66.0;
-  
-  /// Height of the sliding selector
-  static const double selectorHeight = 54.0;
-  
-  /// Border radius for nav container (matches AppWidgetDesign)
-  static const double navBorderRadius = 28.0;
-  
-  /// Border radius for sliding selector
-  static const double selectorBorderRadius = 22.0;
-  
-  /// Border width (matches AppWidgetDesign.cardBorderWidth)
-  static const double borderWidth = 4.0;
-  
-  /// Internal padding of nav container
-  static const double navPadding = 6.0;
-  
-  /// Gap between nav items
-  static const double itemGap = 6.0;
-  
-  /// Icon size for all nav items
-  static const double iconSize = 26.0;
-  
-  /// Bottom margin (distance from screen bottom)
-  static const double bottomMargin = 20.0;
-  
-  /// Horizontal margin (distance from screen edges)
-  static const double horizontalMargin = 12.0;
-  
-  // ═══════════════════════════════════════════════════════════════
-  // COLORS - LIGHT MODE
-  // ═══════════════════════════════════════════════════════════════
-  
-  /// Frosted glass background color (light mode)
-  static const Color lightBgColor = Colors.white;
-  static const double lightBgOpacity = 0.15;
-  
-  /// Border color (light mode, matches AppWidgetDesign)
-  static const Color lightBorderColor = Colors.white;
-  static const double lightBorderOpacity = 0.5;
-  
-  /// Sliding selector background (light mode)
-  static const Color lightSelectorColor = Colors.white;
-  static const double lightSelectorOpacity = 0.95;
-  
-  /// Inactive icon color (light mode)
-  static const Color lightInactiveIconColor = Colors.white;
-  static const double lightInactiveIconOpacity = 0.7;
-  
-  /// Active icon color (light mode) - primaryBlue
-  static const Color lightActiveIconColor = Color(0xFF0D4033);
-  
-  // ═══════════════════════════════════════════════════════════════
-  // COLORS - DARK MODE
-  // ═══════════════════════════════════════════════════════════════
-  
-  /// Frosted glass background color (dark mode)
-  static const Color darkBgColor = Color(0xFF1A2332);
-  static const double darkBgOpacity = 0.85;
-  
-  /// Border color (dark mode)
-  static const Color darkBorderColor = Colors.white;
-  static const double darkBorderOpacity = 0.1;
-  
-  /// Sliding selector background (dark mode)
-  static const Color darkSelectorColor = Color(0xFF2D3748);
-  static const double darkSelectorOpacity = 0.95;
-  
-  /// Inactive icon color (dark mode)
-  static const Color darkInactiveIconColor = Color(0xFF9CA3AF);
-  static const double darkInactiveIconOpacity = 0.5;
-  
-  /// Active icon color (dark mode) - goldAccent
-  static const Color darkActiveIconColor = Color(0xFFCF9340);
-  
-  // ═══════════════════════════════════════════════════════════════
-  // ANIMATION
-  // ═══════════════════════════════════════════════════════════════
-  
-  /// Duration for selector sliding animation
-  static const Duration slideDuration = Duration(milliseconds: 400);
-  
-  /// Curve for selector sliding animation
-  static const Curve slideCurve = Curves.easeInOutCubic;
-  
-  /// Duration for icon color change
-  static const Duration iconDuration = Duration(milliseconds: 300);
-  
-  // ═══════════════════════════════════════════════════════════════
-  // EFFECTS
-  // ═══════════════════════════════════════════════════════════════
-  
-  /// Backdrop blur amount for frosted glass effect
-  static const double backdropBlur = 20.0;
-  
-  /// Shadow blur radius
-  static const double shadowBlur = 30.0;
-  
-  /// Shadow offset
-  static const Offset shadowOffset = Offset(0, 8);
-  
-  /// Shadow opacity (light mode)
-  static const double shadowOpacityLight = 0.1;
-  
-  /// Shadow opacity (dark mode)
-  static const double shadowOpacityDark = 0.3;
-}
-
 /// Icon-only segmented control bottom navigation bar
 /// 
-/// A minimal, iOS-inspired navigation bar with:
-/// - Frosted glass background with backdrop blur
-/// - Sliding white selector for active state
-/// - 5 navigation items (Home, Progress, Camera, Summary, Settings)
-/// - No text labels - icons only for maximum minimalism
-/// - Theme-aware (light/dark mode support)
-/// - Smooth animations using cubic easing
-/// 
-/// Usage:
-/// ```dart
-/// CustomBottomNav(
-///   currentIndex: _currentIndex,
-///   onTap: (index) {
-///     setState(() {
-///       _currentIndex = index;
-///     });
-///   },
-/// )
-/// ```
-class CustomBottomNav extends StatefulWidget {
-  /// Current active navigation index (0-4)
+/// Inspired by iPhone dock with 5 icons
+/// - Frosted glass background
+/// - Sliding white selector pill
+/// - Active icon becomes transparent (cutout effect)
+/// - Inactive icons use theme text color
+/// - All colors adapt to theme changes
+class CustomBottomNav extends StatelessWidget {
   final int currentIndex;
-  
-  /// Callback when a navigation item is tapped
   final Function(int) onTap;
 
   const CustomBottomNav({
@@ -152,140 +20,104 @@ class CustomBottomNav extends StatefulWidget {
     required this.onTap,
   });
 
-  @override
-  State<CustomBottomNav> createState() => _CustomBottomNavState();
-}
+  // Navigation items
+  static const List<IconData> _navIcons = [
+    Icons.home_rounded,
+    Icons.trending_up_rounded,
+    Icons.camera_alt_rounded,
+    Icons.assessment_rounded,
+    Icons.settings_rounded,
+  ];
 
-class _CustomBottomNavState extends State<CustomBottomNav> {
+  static const List<String> _navLabels = [
+    'Home',
+    'Progress',
+    'Scan Food',
+    'Summary',
+    'Settings',
+  ];
+
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
-
-    // Theme-aware colors
-    final bgColor = isDark
-        ? _SegmentedNavDesign.darkBgColor.withValues(
-            alpha: _SegmentedNavDesign.darkBgOpacity,
-          )
-        : _SegmentedNavDesign.lightBgColor.withValues(
-            alpha: _SegmentedNavDesign.lightBgOpacity,
-          );
-
-    final borderColor = isDark
-        ? _SegmentedNavDesign.darkBorderColor.withValues(
-            alpha: _SegmentedNavDesign.darkBorderOpacity,
-          )
-        : _SegmentedNavDesign.lightBorderColor.withValues(
-            alpha: _SegmentedNavDesign.lightBorderOpacity,
-          );
-
-    final selectorColor = isDark
-        ? _SegmentedNavDesign.darkSelectorColor.withValues(
-            alpha: _SegmentedNavDesign.darkSelectorOpacity,
-          )
-        : _SegmentedNavDesign.lightSelectorColor.withValues(
-            alpha: _SegmentedNavDesign.lightSelectorOpacity,
-          );
-
-    final inactiveIconColor = isDark
-        ? _SegmentedNavDesign.darkInactiveIconColor.withValues(
-            alpha: _SegmentedNavDesign.darkInactiveIconOpacity,
-          )
-        : _SegmentedNavDesign.lightInactiveIconColor.withValues(
-            alpha: _SegmentedNavDesign.lightInactiveIconOpacity,
-          );
-
-    final activeIconColor = isDark
-        ? _SegmentedNavDesign.darkActiveIconColor
-        : _SegmentedNavDesign.lightActiveIconColor;
+    
+    // Get theme text color for inactive icons
+    final themeTextColor = Theme.of(context).textTheme.bodyLarge?.color 
+        ?? (isDark ? Colors.white : Colors.black87);
 
     return Container(
       margin: const EdgeInsets.only(
-        left: _SegmentedNavDesign.horizontalMargin,
-        right: _SegmentedNavDesign.horizontalMargin,
-        bottom: _SegmentedNavDesign.bottomMargin,
+        left: 16.0,
+        right: 16.0,
+        bottom: 20.0,
       ),
-      height: _SegmentedNavDesign.navHeight,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(_SegmentedNavDesign.navBorderRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: isDark
-                  ? _SegmentedNavDesign.shadowOpacityDark
-                  : _SegmentedNavDesign.shadowOpacityLight,
-            ),
-            blurRadius: _SegmentedNavDesign.shadowBlur,
-            offset: _SegmentedNavDesign.shadowOffset,
-          ),
-        ],
-      ),
+      height: 86.0, // iPhone dock-inspired, slightly smaller for 5 icons
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(_SegmentedNavDesign.navBorderRadius),
+        borderRadius: BorderRadius.circular(34.0),
         child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: _SegmentedNavDesign.backdropBlur,
-            sigmaY: _SegmentedNavDesign.backdropBlur,
-          ),
+          filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
           child: Container(
             decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(_SegmentedNavDesign.navBorderRadius),
+              color: isDark
+                  ? const Color(0xFF1A2332).withOpacity(0.85)
+                  : Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(34.0),
               border: Border.all(
-                color: borderColor,
-                width: _SegmentedNavDesign.borderWidth,
+                color: isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.white.withOpacity(0.5),
+                width: 4.0,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+                  blurRadius: 30.0,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
-            padding: const EdgeInsets.all(_SegmentedNavDesign.navPadding),
+            padding: const EdgeInsets.all(7.0),
             child: Stack(
               children: [
-                // Sliding selector background
-                _buildSlidingSelector(selectorColor),
-                
+                // Sliding white selector pill
+                AnimatedAlign(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeInOutCubic,
+                  alignment: _getAlignmentForIndex(currentIndex),
+                  child: FractionallySizedBox(
+                    widthFactor: 1 / _navIcons.length,
+                    child: Container(
+                      height: 72.0,
+                      margin: const EdgeInsets.symmetric(horizontal: 3.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.95),
+                        borderRadius: BorderRadius.circular(26.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 12.0,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
                 // Navigation items
                 Row(
-                  children: [
-                    _buildNavItem(
-                      icon: Icons.home_rounded,
-                      index: 0,
-                      isActive: widget.currentIndex == 0,
-                      inactiveColor: inactiveIconColor,
-                      activeColor: activeIconColor,
-                      semanticLabel: 'Home',
+                  children: List.generate(
+                    _navIcons.length,
+                    (index) => Expanded(
+                      child: _buildNavItem(
+                        icon: _navIcons[index],
+                        label: _navLabels[index],
+                        index: index,
+                        isActive: currentIndex == index,
+                        iconColor: themeTextColor,
+                      ),
                     ),
-                    _buildNavItem(
-                      icon: Icons.trending_up_rounded,
-                      index: 1,
-                      isActive: widget.currentIndex == 1,
-                      inactiveColor: inactiveIconColor,
-                      activeColor: activeIconColor,
-                      semanticLabel: 'Progress',
-                    ),
-                    _buildNavItem(
-                      icon: Icons.camera_alt_rounded,
-                      index: 2,
-                      isActive: widget.currentIndex == 2,
-                      inactiveColor: inactiveIconColor,
-                      activeColor: activeIconColor,
-                      semanticLabel: 'Scan Food',
-                    ),
-                    _buildNavItem(
-                      icon: Icons.assessment_rounded,
-                      index: 3,
-                      isActive: widget.currentIndex == 3,
-                      inactiveColor: inactiveIconColor,
-                      activeColor: activeIconColor,
-                      semanticLabel: 'Summary',
-                    ),
-                    _buildNavItem(
-                      icon: Icons.settings_rounded,
-                      index: 4,
-                      isActive: widget.currentIndex == 4,
-                      inactiveColor: inactiveIconColor,
-                      activeColor: activeIconColor,
-                      semanticLabel: 'Settings',
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -295,70 +127,42 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
     );
   }
 
-  /// Build the animated sliding selector that moves behind the active item
-  Widget _buildSlidingSelector(Color selectorColor) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Calculate selector width (total width divided by 5 items minus gaps)
-        final totalGaps = _SegmentedNavDesign.itemGap * 4; // 4 gaps between 5 items
-        final availableWidth = constraints.maxWidth - totalGaps;
-        final itemWidth = availableWidth / 5;
-        
-        // Calculate selector position based on current index
-        final selectorLeft = (itemWidth + _SegmentedNavDesign.itemGap) * widget.currentIndex;
-
-        return AnimatedPositioned(
-          duration: _SegmentedNavDesign.slideDuration,
-          curve: _SegmentedNavDesign.slideCurve,
-          left: selectorLeft,
-          top: 0,
-          child: Container(
-            width: itemWidth,
-            height: _SegmentedNavDesign.selectorHeight,
-            decoration: BoxDecoration(
-              color: selectorColor,
-              borderRadius: BorderRadius.circular(_SegmentedNavDesign.selectorBorderRadius),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 12.0,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  /// Map index to alignment (-1.0 to 1.0)
+  Alignment _getAlignmentForIndex(int index) {
+    // 0→-1.0, 1→-0.5, 2→0.0, 3→0.5, 4→1.0
+    final double alignmentX = -1.0 + (index * 0.5);
+    return Alignment(alignmentX, 0.0);
   }
 
-  /// Build individual navigation item with icon
+  /// Build individual navigation item
   Widget _buildNavItem({
     required IconData icon,
+    required String label,
     required int index,
     required bool isActive,
-    required Color inactiveColor,
-    required Color activeColor,
-    required String semanticLabel,
+    required Color iconColor,
   }) {
-    return Expanded(
-      child: Semantics(
-        label: semanticLabel,
-        button: true,
-        selected: isActive,
-        child: GestureDetector(
-          onTap: () => widget.onTap(index),
-          behavior: HitTestBehavior.opaque,
+    return Semantics(
+      label: label,
+      button: true,
+      selected: isActive,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => onTap(index),
+          borderRadius: BorderRadius.circular(26.0),
           child: Container(
-            height: _SegmentedNavDesign.selectorHeight,
+            height: 72.0,
             alignment: Alignment.center,
-            child: AnimatedContainer(
-              duration: _SegmentedNavDesign.iconDuration,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
+              // Active: transparent (0.3), Inactive: solid (0.85)
+              opacity: isActive ? 0.3 : 0.85,
               child: Icon(
                 icon,
-                size: _SegmentedNavDesign.iconSize,
-                color: isActive ? activeColor : inactiveColor,
+                size: 36.0, // iPhone dock-inspired, balanced for 5 icons
+                color: iconColor, // Uses theme text color
               ),
             ),
           ),
