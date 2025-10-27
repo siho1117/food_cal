@@ -8,7 +8,6 @@ import '../../config/design_system/typography.dart';
 class _WeekNavigationDesign {
   static const double dayItemWidth = 42.0;
   static const double dayItemHeight = 65.0;
-  static const double dayItemGap = 8.0;
   static const double selectedGlowBlur = 12.0;
   static const double selectedGlowSpread = 2.0;
 }

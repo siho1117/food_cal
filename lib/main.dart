@@ -42,30 +42,31 @@ void main() async {
     debugPrint('❌ Error initializing SharedPreferences: $e');
   }
 
-  // Initialize dependency injection - MUST AWAIT THIS!
+  // Initialize dependency injection
   await setupDependencyInjection();
+  debugPrint('✅ Dependency Injection initialized');
 
-  runApp(const MyApp());
+  runApp(const FoodTrackerApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class FoodTrackerApp extends StatelessWidget {
+  const FoodTrackerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()..loadGradient()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()..loadLanguage()),
         ChangeNotifierProvider(create: (_) => HomeProvider()..loadData()),
         ChangeNotifierProvider(create: (_) => ExerciseProvider()..loadData()),
         ChangeNotifierProvider(create: (_) => ProgressData()..loadUserData()),
-        ChangeNotifierProvider(create: (_) => SettingsProvider()),
-        ChangeNotifierProvider(create: (_) => LanguageProvider()..loadLanguage()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()..loadGradient()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()..loadUserData()),
       ],
       child: Consumer<LanguageProvider>(
         builder: (context, languageProvider, child) {
           return MaterialApp(
-            title: 'Food Cal',
+            title: 'Food Tracker',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             locale: languageProvider.currentLocale,
@@ -83,7 +84,7 @@ class MyApp extends StatelessWidget {
             home: const SplashScreen(),
             routes: {
               '/home': (context) => const MainScreen(),
-              '/settings': (context) => const SettingsScreen(),
+              '/settings': (context) => const SettingsScreen(showBackButton: true),
             },
           );
         },
@@ -101,7 +102,6 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
-  bool _isCameraOverlayOpen = false;
 
   // 4 actual screens (Camera is an overlay, not a screen)
   final List<Widget> _screens = const [
@@ -111,49 +111,68 @@ class _MainScreenState extends State<MainScreen> {
     SettingsScreen(),  // Index 3
   ];
 
-  void _onItemTapped(int index) {
-    // Handle the 5-tab bottom nav indices
-    // Home: 0, Progress: 1, Camera: 2, Summary: 3, Settings: 4
+  void _onItemTapped(int navIndex) {
+    debugPrint('🔵 Nav tapped: index $navIndex');
     
-    if (index == 2) {
+    // Bottom nav indices: 0(Home), 1(Progress), 2(Camera), 3(Summary), 4(Settings)
+    // Screen indices:     0(Home), 1(Progress),           2(Summary), 3(Settings)
+    
+    if (navIndex == 2) {
       // Camera tap - show overlay
       _showCameraOverlay();
-    } else {
-      // Convert bottom nav index to screen index
-      // Bottom nav: 0, 1, 2(camera), 3, 4
-      // Screens: 0, 1, 2(summary), 3(settings)
-      int screenIndex;
-      if (index < 2) {
-        screenIndex = index; // Home and Progress map directly
-      } else if (index == 3) {
-        screenIndex = 2; // Summary
-      } else {
-        screenIndex = 3; // Settings
-      }
-      
-      setState(() {
-        _currentIndex = screenIndex;
-        _isCameraOverlayOpen = false;
-      });
+      return;
+    }
+
+    // Map nav index to screen index
+    final screenIndex = _mapNavToScreen(navIndex);
+    debugPrint('🔵 Mapped to screen index: $screenIndex');
+    
+    setState(() {
+      _currentIndex = screenIndex;
+    });
+  }
+
+  /// Map bottom nav index to screen array index
+  int _mapNavToScreen(int navIndex) {
+    switch (navIndex) {
+      case 0:
+        return 0; // Home
+      case 1:
+        return 1; // Progress
+      case 3:
+        return 2; // Summary
+      case 4:
+        return 3; // Settings
+      default:
+        debugPrint('⚠️ Unexpected nav index: $navIndex');
+        return 0;
+    }
+  }
+
+  /// Map screen index to nav index for highlighting
+  int _mapScreenToNav(int screenIndex) {
+    switch (screenIndex) {
+      case 0:
+        return 0; // Home
+      case 1:
+        return 1; // Progress
+      case 2:
+        return 3; // Summary
+      case 3:
+        return 4; // Settings
+      default:
+        return 0;
     }
   }
 
   void _showCameraOverlay() {
-    setState(() {
-      _isCameraOverlayOpen = true;
-    });
-
     Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
         pageBuilder: (context, animation, secondaryAnimation) {
           return CameraScreen(
             onDismissed: () {
-              if (mounted) {
-                setState(() {
-                  _isCameraOverlayOpen = false;
-                });
-              }
+              // Camera dismissed, no state change needed
             },
           );
         },
@@ -184,6 +203,8 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🔵 Building with currentIndex: $_currentIndex');
+    
     return Scaffold(
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
@@ -208,27 +229,9 @@ class _MainScreenState extends State<MainScreen> {
       ),
       extendBody: true,
       bottomNavigationBar: CustomBottomNav(
-        currentIndex: _convertScreenIndexToNavIndex(_currentIndex),
+        currentIndex: _mapScreenToNav(_currentIndex),
         onTap: _onItemTapped,
       ),
     );
-  }
-
-  // Convert screen index back to bottom nav index for highlighting
-  int _convertScreenIndexToNavIndex(int screenIndex) {
-    // Screens: 0(Home), 1(Progress), 2(Summary), 3(Settings)
-    // Bottom nav: 0(Home), 1(Progress), 2(Camera), 3(Summary), 4(Settings)
-    switch (screenIndex) {
-      case 0:
-        return 0; // Home
-      case 1:
-        return 1; // Progress
-      case 2:
-        return 3; // Summary
-      case 3:
-        return 4; // Settings
-      default:
-        return 0;
-    }
   }
 }
