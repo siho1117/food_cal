@@ -209,7 +209,6 @@ class _MainScreenState extends State<MainScreen> {
       extendBody: true,
       bottomNavigationBar: CustomBottomNav(
         currentIndex: _convertScreenIndexToNavIndex(_currentIndex),
-        isCameraOverlayOpen: _isCameraOverlayOpen,
         onTap: _onItemTapped,
       ),
     );

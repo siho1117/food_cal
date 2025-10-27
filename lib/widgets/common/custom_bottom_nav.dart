@@ -2,88 +2,153 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 
-/// Design constants for floating pill navigation bar
-/// All values centralized for consistent styling and easy maintenance
-class _FloatingPillDesign {
-  // Bar dimensions
-  static const double barHeight = 70.0;
-  static const double barRadius = 28.0;
-  static const double barMarginHorizontal = 12.0;
-  static const double barMarginBottom = 20.0;
+/// Design constants for icon-only segmented control navigation
+/// Follows AppWidgetDesign token system from theme.dart
+class _SegmentedNavDesign {
+  // ═══════════════════════════════════════════════════════════════
+  // DIMENSIONS
+  // ═══════════════════════════════════════════════════════════════
   
-  // Icon sizes
-  static const double iconSizeRegular = 28.0;
-  static const double iconSizeCamera = 36.0;
+  /// Total navigation bar height
+  static const double navHeight = 66.0;
   
-  // Active indicator dots
-  static const double dotSize = 4.0;
-  static const double dotSizeCamera = 6.0;
-  static const double dotGap = 3.0;
-  static const double dotSpacing = 6.0;
+  /// Height of the sliding selector
+  static const double selectorHeight = 54.0;
   
-  // Light mode colors
-  static const Color lightBg = Colors.white;
-  static const double lightBgOpacity = 0.85;
-  static const Color lightBorder = Colors.white;
-  static const double lightBorderOpacity = 0.3;
-  static const Color lightIconUnselected = Color(0xFF6B7280);
-  static const double lightIconOpacity = 0.6;
-  static const Color lightIconSelected = Color(0xFFFF6B6B); // Coral
+  /// Border radius for nav container (matches AppWidgetDesign)
+  static const double navBorderRadius = 28.0;
   
-  // Dark mode colors
-  static const Color darkBg = Color(0xFF1A2332);
+  /// Border radius for sliding selector
+  static const double selectorBorderRadius = 22.0;
+  
+  /// Border width (matches AppWidgetDesign.cardBorderWidth)
+  static const double borderWidth = 4.0;
+  
+  /// Internal padding of nav container
+  static const double navPadding = 6.0;
+  
+  /// Gap between nav items
+  static const double itemGap = 6.0;
+  
+  /// Icon size for all nav items
+  static const double iconSize = 26.0;
+  
+  /// Bottom margin (distance from screen bottom)
+  static const double bottomMargin = 20.0;
+  
+  /// Horizontal margin (distance from screen edges)
+  static const double horizontalMargin = 12.0;
+  
+  // ═══════════════════════════════════════════════════════════════
+  // COLORS - LIGHT MODE
+  // ═══════════════════════════════════════════════════════════════
+  
+  /// Frosted glass background color (light mode)
+  static const Color lightBgColor = Colors.white;
+  static const double lightBgOpacity = 0.15;
+  
+  /// Border color (light mode, matches AppWidgetDesign)
+  static const Color lightBorderColor = Colors.white;
+  static const double lightBorderOpacity = 0.5;
+  
+  /// Sliding selector background (light mode)
+  static const Color lightSelectorColor = Colors.white;
+  static const double lightSelectorOpacity = 0.95;
+  
+  /// Inactive icon color (light mode)
+  static const Color lightInactiveIconColor = Colors.white;
+  static const double lightInactiveIconOpacity = 0.7;
+  
+  /// Active icon color (light mode) - primaryBlue
+  static const Color lightActiveIconColor = Color(0xFF0D4033);
+  
+  // ═══════════════════════════════════════════════════════════════
+  // COLORS - DARK MODE
+  // ═══════════════════════════════════════════════════════════════
+  
+  /// Frosted glass background color (dark mode)
+  static const Color darkBgColor = Color(0xFF1A2332);
   static const double darkBgOpacity = 0.85;
-  static const Color darkBorder = Colors.white;
+  
+  /// Border color (dark mode)
+  static const Color darkBorderColor = Colors.white;
   static const double darkBorderOpacity = 0.1;
-  static const Color darkIconUnselected = Color(0xFF9CA3AF);
-  static const double darkIconOpacity = 0.5;
-  static const Color darkIconSelected = Color(0xFFFFD93D); // Gold
   
-  // Camera button gradient colors
-  static const List<Color> cameraGradientLight = [
-    Color(0xFFFF6B6B), // Coral
-    Color(0xFFFFD93D), // Gold
-  ];
-  static const List<Color> cameraGradientDark = [
-    Color(0xFFFFD93D), // Gold
-    Color(0xFFA8E6CF), // Mint
-  ];
+  /// Sliding selector background (dark mode)
+  static const Color darkSelectorColor = Color(0xFF2D3748);
+  static const double darkSelectorOpacity = 0.95;
   
-  // Camera background circle
-  static const double cameraCircleSize = 48.0;
+  /// Inactive icon color (dark mode)
+  static const Color darkInactiveIconColor = Color(0xFF9CA3AF);
+  static const double darkInactiveIconOpacity = 0.5;
   
-  // Shadow and blur
+  /// Active icon color (dark mode) - goldAccent
+  static const Color darkActiveIconColor = Color(0xFFCF9340);
+  
+  // ═══════════════════════════════════════════════════════════════
+  // ANIMATION
+  // ═══════════════════════════════════════════════════════════════
+  
+  /// Duration for selector sliding animation
+  static const Duration slideDuration = Duration(milliseconds: 400);
+  
+  /// Curve for selector sliding animation
+  static const Curve slideCurve = Curves.easeInOutCubic;
+  
+  /// Duration for icon color change
+  static const Duration iconDuration = Duration(milliseconds: 300);
+  
+  // ═══════════════════════════════════════════════════════════════
+  // EFFECTS
+  // ═══════════════════════════════════════════════════════════════
+  
+  /// Backdrop blur amount for frosted glass effect
   static const double backdropBlur = 20.0;
+  
+  /// Shadow blur radius
   static const double shadowBlur = 30.0;
-  static const double shadowOpacity = 0.1;
-  static const double shadowOpacityDark = 0.3;
+  
+  /// Shadow offset
   static const Offset shadowOffset = Offset(0, 8);
   
-  // Animation
-  static const Duration animationDuration = Duration(milliseconds: 300);
-  static const Duration iconBounceDuration = Duration(milliseconds: 200);
-  static const Curve animationCurve = Curves.easeInOutCubic;
+  /// Shadow opacity (light mode)
+  static const double shadowOpacityLight = 0.1;
+  
+  /// Shadow opacity (dark mode)
+  static const double shadowOpacityDark = 0.3;
 }
 
-/// Floating pill navigation bar with frosted glass effect
+/// Icon-only segmented control bottom navigation bar
 /// 
-/// Features:
+/// A minimal, iOS-inspired navigation bar with:
 /// - Frosted glass background with backdrop blur
-/// - Larger icons (28px regular, 36px camera)
-/// - Camera as hero element with gradient background
-/// - Active indicator dots
-/// - Smooth animations (icon bounce, dot slide)
-/// - Theme-aware (light/dark mode)
-/// - Clean, modern iOS 16+ aesthetic
+/// - Sliding white selector for active state
+/// - 5 navigation items (Home, Progress, Camera, Summary, Settings)
+/// - No text labels - icons only for maximum minimalism
+/// - Theme-aware (light/dark mode support)
+/// - Smooth animations using cubic easing
+/// 
+/// Usage:
+/// ```dart
+/// CustomBottomNav(
+///   currentIndex: _currentIndex,
+///   onTap: (index) {
+///     setState(() {
+///       _currentIndex = index;
+///     });
+///   },
+/// )
+/// ```
 class CustomBottomNav extends StatefulWidget {
+  /// Current active navigation index (0-4)
   final int currentIndex;
-  final bool isCameraOverlayOpen;
+  
+  /// Callback when a navigation item is tapped
   final Function(int) onTap;
 
   const CustomBottomNav({
     super.key,
     required this.currentIndex,
-    required this.isCameraOverlayOpen,
     required this.onTap,
   });
 
@@ -91,175 +156,136 @@ class CustomBottomNav extends StatefulWidget {
   State<CustomBottomNav> createState() => _CustomBottomNavState();
 }
 
-class _CustomBottomNavState extends State<CustomBottomNav>
-    with TickerProviderStateMixin {
-  late AnimationController _iconController;
-  late Animation<double> _iconScaleAnimation;
-  
-  int _lastTappedIndex = -1;
-
-  @override
-  void initState() {
-    super.initState();
-    
-    // Icon bounce animation controller
-    _iconController = AnimationController(
-      duration: _FloatingPillDesign.iconBounceDuration,
-      vsync: this,
-    );
-    
-    _iconScaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.2,
-    ).animate(CurvedAnimation(
-      parent: _iconController,
-      curve: Curves.easeOut,
-    ));
-  }
-
-  @override
-  void dispose() {
-    _iconController.dispose();
-    super.dispose();
-  }
-
-  void _handleTap(int index) {
-    setState(() {
-      _lastTappedIndex = index;
-    });
-    
-    // Play bounce animation
-    _iconController.forward().then((_) {
-      _iconController.reverse();
-    });
-    
-    // Call parent callback
-    widget.onTap(index);
-  }
-
+class _CustomBottomNavState extends State<CustomBottomNav> {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
 
-    // Background color
-    final backgroundColor = isDark
-        ? _FloatingPillDesign.darkBg.withValues(
-            alpha: _FloatingPillDesign.darkBgOpacity,
+    // Theme-aware colors
+    final bgColor = isDark
+        ? _SegmentedNavDesign.darkBgColor.withValues(
+            alpha: _SegmentedNavDesign.darkBgOpacity,
           )
-        : _FloatingPillDesign.lightBg.withValues(
-            alpha: _FloatingPillDesign.lightBgOpacity,
+        : _SegmentedNavDesign.lightBgColor.withValues(
+            alpha: _SegmentedNavDesign.lightBgOpacity,
           );
 
-    // Border color
     final borderColor = isDark
-        ? _FloatingPillDesign.darkBorder.withValues(
-            alpha: _FloatingPillDesign.darkBorderOpacity,
+        ? _SegmentedNavDesign.darkBorderColor.withValues(
+            alpha: _SegmentedNavDesign.darkBorderOpacity,
           )
-        : _FloatingPillDesign.lightBorder.withValues(
-            alpha: _FloatingPillDesign.lightBorderOpacity,
+        : _SegmentedNavDesign.lightBorderColor.withValues(
+            alpha: _SegmentedNavDesign.lightBorderOpacity,
           );
 
-    // Icon colors
-    final unselectedColor = isDark
-        ? _FloatingPillDesign.darkIconUnselected.withValues(
-            alpha: _FloatingPillDesign.darkIconOpacity,
+    final selectorColor = isDark
+        ? _SegmentedNavDesign.darkSelectorColor.withValues(
+            alpha: _SegmentedNavDesign.darkSelectorOpacity,
           )
-        : _FloatingPillDesign.lightIconUnselected.withValues(
-            alpha: _FloatingPillDesign.lightIconOpacity,
+        : _SegmentedNavDesign.lightSelectorColor.withValues(
+            alpha: _SegmentedNavDesign.lightSelectorOpacity,
           );
-    
-    final selectedColor = isDark
-        ? _FloatingPillDesign.darkIconSelected
-        : _FloatingPillDesign.lightIconSelected;
 
-    // Visual index for display
-    final visualIndex = widget.isCameraOverlayOpen ? 2 : widget.currentIndex;
+    final inactiveIconColor = isDark
+        ? _SegmentedNavDesign.darkInactiveIconColor.withValues(
+            alpha: _SegmentedNavDesign.darkInactiveIconOpacity,
+          )
+        : _SegmentedNavDesign.lightInactiveIconColor.withValues(
+            alpha: _SegmentedNavDesign.lightInactiveIconOpacity,
+          );
+
+    final activeIconColor = isDark
+        ? _SegmentedNavDesign.darkActiveIconColor
+        : _SegmentedNavDesign.lightActiveIconColor;
 
     return Container(
-      margin: EdgeInsets.only(
-        left: _FloatingPillDesign.barMarginHorizontal,
-        right: _FloatingPillDesign.barMarginHorizontal,
-        bottom: _FloatingPillDesign.barMarginBottom,
+      margin: const EdgeInsets.only(
+        left: _SegmentedNavDesign.horizontalMargin,
+        right: _SegmentedNavDesign.horizontalMargin,
+        bottom: _SegmentedNavDesign.bottomMargin,
       ),
-      height: _FloatingPillDesign.barHeight,
+      height: _SegmentedNavDesign.navHeight,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(_FloatingPillDesign.barRadius),
+        borderRadius: BorderRadius.circular(_SegmentedNavDesign.navBorderRadius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(
               alpha: isDark
-                  ? _FloatingPillDesign.shadowOpacityDark
-                  : _FloatingPillDesign.shadowOpacity,
+                  ? _SegmentedNavDesign.shadowOpacityDark
+                  : _SegmentedNavDesign.shadowOpacityLight,
             ),
-            blurRadius: _FloatingPillDesign.shadowBlur,
-            offset: _FloatingPillDesign.shadowOffset,
+            blurRadius: _SegmentedNavDesign.shadowBlur,
+            offset: _SegmentedNavDesign.shadowOffset,
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(_FloatingPillDesign.barRadius),
+        borderRadius: BorderRadius.circular(_SegmentedNavDesign.navBorderRadius),
         child: BackdropFilter(
           filter: ImageFilter.blur(
-            sigmaX: _FloatingPillDesign.backdropBlur,
-            sigmaY: _FloatingPillDesign.backdropBlur,
+            sigmaX: _SegmentedNavDesign.backdropBlur,
+            sigmaY: _SegmentedNavDesign.backdropBlur,
           ),
           child: Container(
             decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(_FloatingPillDesign.barRadius),
+              color: bgColor,
+              borderRadius: BorderRadius.circular(_SegmentedNavDesign.navBorderRadius),
               border: Border.all(
                 color: borderColor,
-                width: 1.0,
+                width: _SegmentedNavDesign.borderWidth,
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            padding: const EdgeInsets.all(_SegmentedNavDesign.navPadding),
+            child: Stack(
               children: [
-                // Home (Index 0)
-                _buildNavItem(
-                  icon: Icons.home_rounded,
-                  index: 0,
-                  isSelected: visualIndex == 0,
-                  isDark: isDark,
-                  unselectedColor: unselectedColor,
-                  selectedColor: selectedColor,
-                ),
+                // Sliding selector background
+                _buildSlidingSelector(selectorColor),
                 
-                // Progress (Index 1)
-                _buildNavItem(
-                  icon: Icons.trending_up_rounded,
-                  index: 1,
-                  isSelected: visualIndex == 1,
-                  isDark: isDark,
-                  unselectedColor: unselectedColor,
-                  selectedColor: selectedColor,
-                ),
-                
-                // Camera (Index 2 - Hero/Center)
-                _buildCameraItem(
-                  index: 2,
-                  isDark: isDark,
-                ),
-                
-                // Summary (Index 3)
-                _buildNavItem(
-                  icon: Icons.assessment_rounded,
-                  index: 3,
-                  isSelected: visualIndex == 3,
-                  isDark: isDark,
-                  unselectedColor: unselectedColor,
-                  selectedColor: selectedColor,
-                ),
-                
-                // Settings (Index 4)
-                _buildNavItem(
-                  icon: Icons.settings_rounded,
-                  index: 4,
-                  isSelected: visualIndex == 4,
-                  isDark: isDark,
-                  unselectedColor: unselectedColor,
-                  selectedColor: selectedColor,
+                // Navigation items
+                Row(
+                  children: [
+                    _buildNavItem(
+                      icon: Icons.home_rounded,
+                      index: 0,
+                      isActive: widget.currentIndex == 0,
+                      inactiveColor: inactiveIconColor,
+                      activeColor: activeIconColor,
+                      semanticLabel: 'Home',
+                    ),
+                    _buildNavItem(
+                      icon: Icons.trending_up_rounded,
+                      index: 1,
+                      isActive: widget.currentIndex == 1,
+                      inactiveColor: inactiveIconColor,
+                      activeColor: activeIconColor,
+                      semanticLabel: 'Progress',
+                    ),
+                    _buildNavItem(
+                      icon: Icons.camera_alt_rounded,
+                      index: 2,
+                      isActive: widget.currentIndex == 2,
+                      inactiveColor: inactiveIconColor,
+                      activeColor: activeIconColor,
+                      semanticLabel: 'Scan Food',
+                    ),
+                    _buildNavItem(
+                      icon: Icons.assessment_rounded,
+                      index: 3,
+                      isActive: widget.currentIndex == 3,
+                      inactiveColor: inactiveIconColor,
+                      activeColor: activeIconColor,
+                      semanticLabel: 'Summary',
+                    ),
+                    _buildNavItem(
+                      icon: Icons.settings_rounded,
+                      index: 4,
+                      isActive: widget.currentIndex == 4,
+                      inactiveColor: inactiveIconColor,
+                      activeColor: activeIconColor,
+                      semanticLabel: 'Settings',
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -269,172 +295,74 @@ class _CustomBottomNavState extends State<CustomBottomNav>
     );
   }
 
-  /// Build regular navigation item
+  /// Build the animated sliding selector that moves behind the active item
+  Widget _buildSlidingSelector(Color selectorColor) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Calculate selector width (total width divided by 5 items minus gaps)
+        final totalGaps = _SegmentedNavDesign.itemGap * 4; // 4 gaps between 5 items
+        final availableWidth = constraints.maxWidth - totalGaps;
+        final itemWidth = availableWidth / 5;
+        
+        // Calculate selector position based on current index
+        final selectorLeft = (itemWidth + _SegmentedNavDesign.itemGap) * widget.currentIndex;
+
+        return AnimatedPositioned(
+          duration: _SegmentedNavDesign.slideDuration,
+          curve: _SegmentedNavDesign.slideCurve,
+          left: selectorLeft,
+          top: 0,
+          child: Container(
+            width: itemWidth,
+            height: _SegmentedNavDesign.selectorHeight,
+            decoration: BoxDecoration(
+              color: selectorColor,
+              borderRadius: BorderRadius.circular(_SegmentedNavDesign.selectorBorderRadius),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 12.0,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Build individual navigation item with icon
   Widget _buildNavItem({
     required IconData icon,
     required int index,
-    required bool isSelected,
-    required bool isDark,
-    required Color unselectedColor,
-    required Color selectedColor,
+    required bool isActive,
+    required Color inactiveColor,
+    required Color activeColor,
+    required String semanticLabel,
   }) {
-    final iconColor = isSelected ? selectedColor : unselectedColor;
-    final shouldAnimate = _lastTappedIndex == index;
-
-    return GestureDetector(
-      onTap: () => _handleTap(index),
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Icon with optional bounce animation
-            AnimatedBuilder(
-              animation: _iconScaleAnimation,
-              builder: (context, child) {
-                final scale = shouldAnimate ? _iconScaleAnimation.value : 1.0;
-                return Transform.scale(
-                  scale: scale,
-                  child: Icon(
-                    icon,
-                    size: _FloatingPillDesign.iconSizeRegular,
-                    color: iconColor,
-                  ),
-                );
-              },
-            ),
-            
-            SizedBox(height: _FloatingPillDesign.dotSpacing),
-            
-            // Active indicator dots
-            _buildIndicatorDots(
-              isSelected: isSelected,
-              color: selectedColor,
-              isDark: isDark,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Build camera navigation item (special)
-  Widget _buildCameraItem({
-    required int index,
-    required bool isDark,
-  }) {
-    final gradientColors = isDark
-        ? _FloatingPillDesign.cameraGradientDark
-        : _FloatingPillDesign.cameraGradientLight;
-    
-    final shouldAnimate = _lastTappedIndex == index;
-
-    return GestureDetector(
-      onTap: () => _handleTap(index),
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Camera with gradient background and bounce animation
-            AnimatedBuilder(
-              animation: _iconScaleAnimation,
-              builder: (context, child) {
-                final scale = shouldAnimate ? _iconScaleAnimation.value : 1.0;
-                return Transform.scale(
-                  scale: scale,
-                  child: Container(
-                    width: _FloatingPillDesign.cameraCircleSize,
-                    height: _FloatingPillDesign.cameraCircleSize,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: gradientColors,
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: gradientColors[0].withValues(alpha: 0.4),
-                          blurRadius: 12.0,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt_rounded,
-                      size: _FloatingPillDesign.iconSizeCamera,
-                      color: Colors.white,
-                    ),
-                  ),
-                );
-              },
-            ),
-            
-            SizedBox(height: _FloatingPillDesign.dotSpacing),
-            
-            // Camera indicator dot (always visible)
-            Container(
-              width: _FloatingPillDesign.dotSizeCamera,
-              height: _FloatingPillDesign.dotSizeCamera,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
+    return Expanded(
+      child: Semantics(
+        label: semanticLabel,
+        button: true,
+        selected: isActive,
+        child: GestureDetector(
+          onTap: () => widget.onTap(index),
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            height: _SegmentedNavDesign.selectorHeight,
+            alignment: Alignment.center,
+            child: AnimatedContainer(
+              duration: _SegmentedNavDesign.iconDuration,
+              curve: Curves.easeInOut,
+              child: Icon(
+                icon,
+                size: _SegmentedNavDesign.iconSize,
+                color: isActive ? activeColor : inactiveColor,
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Build indicator dots below icons
-  Widget _buildIndicatorDots({
-    required bool isSelected,
-    required Color color,
-    required bool isDark,
-  }) {
-    if (!isSelected) {
-      // Single faded dot for unselected
-      return Container(
-        width: _FloatingPillDesign.dotSize,
-        height: _FloatingPillDesign.dotSize,
-        decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.3)
-              : Colors.grey.withValues(alpha: 0.4),
-          shape: BoxShape.circle,
-        ),
-      );
-    }
-
-    // Two dots for selected with animation
-    return AnimatedContainer(
-      duration: _FloatingPillDesign.animationDuration,
-      curve: _FloatingPillDesign.animationCurve,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: _FloatingPillDesign.dotSize,
-            height: _FloatingPillDesign.dotSize,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
           ),
-          SizedBox(width: _FloatingPillDesign.dotGap),
-          Container(
-            width: _FloatingPillDesign.dotSize,
-            height: _FloatingPillDesign.dotSize,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
