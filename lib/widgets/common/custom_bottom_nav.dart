@@ -52,7 +52,7 @@ class CustomBottomNav extends StatelessWidget {
         right: 16.0,
         bottom: 20.0,
       ),
-      height: 86.0, // iPhone dock-inspired, slightly smaller for 5 icons
+      height: 75.0, // Moderate reduction for better proportions
       child: ClipRRect(
         borderRadius: BorderRadius.circular(34.0),
         child: BackdropFilter(
@@ -88,7 +88,7 @@ class CustomBottomNav extends StatelessWidget {
                   child: FractionallySizedBox(
                     widthFactor: 1 / _navIcons.length,
                     child: Container(
-                      height: 72.0,
+                      height: 62.0,
                       margin: const EdgeInsets.symmetric(horizontal: 3.0),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.95),
@@ -152,7 +152,7 @@ class CustomBottomNav extends StatelessWidget {
           onTap: () => onTap(index),
           borderRadius: BorderRadius.circular(26.0),
           child: Container(
-            height: 72.0,
+            height: 62.0,
             alignment: Alignment.center,
             child: AnimatedOpacity(
               duration: const Duration(milliseconds: 300),
@@ -161,7 +161,7 @@ class CustomBottomNav extends StatelessWidget {
               opacity: isActive ? 0.3 : 0.85,
               child: Icon(
                 icon,
-                size: 36.0, // iPhone dock-inspired, balanced for 5 icons
+                size: 32.0, // Moderate reduction for better balance
                 color: iconColor, // Uses theme text color
               ),
             ),
