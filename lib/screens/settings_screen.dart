@@ -61,22 +61,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Profile Section
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const ProfileSectionWidget(),
-                        ),
+                        // Profile Section - NO WHITE CONTAINER WRAPPER
+                        const ProfileSectionWidget(),
 
                         const SizedBox(height: 20),
 
@@ -132,15 +118,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                             ],
                           ),
-                          child: FeedbackWidget(
-                            onSendFeedback: () async {
-                              // Handle feedback sending through provider
-                              // The FeedbackWidget will handle the UI interaction
-                            },
-                          ),
+                          child: const FeedbackWidget(),
                         ),
 
-                        const SizedBox(height: 80), // Extra space for bottom nav
+                        const SizedBox(height: 20),
                       ],
                     ),
                   );

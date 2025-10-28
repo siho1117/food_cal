@@ -179,6 +179,16 @@ class SettingsProvider extends ChangeNotifier {
     }
   }
 
+  /// Update user name
+  Future<void> updateName(String name) async {
+    await _createUserProfileIfNeeded();
+
+    if (_userProfile != null) {
+      final updatedProfile = _userProfile!.copyWith(name: name);
+      await _updateProfile(updatedProfile);
+    }
+  }
+
   /// Update activity level
   Future<void> updateActivityLevel(double level) async {
     await _createUserProfileIfNeeded();

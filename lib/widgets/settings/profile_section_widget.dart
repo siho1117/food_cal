@@ -1,340 +1,232 @@
 // lib/widgets/settings/profile_section_widget.dart
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
-import '../../config/design_system/theme.dart';
 
 class ProfileSectionWidget extends StatelessWidget {
-  // ✅ FIXED: Use super parameter instead of explicit key parameter
   const ProfileSectionWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, child) {
-        return Column(
-          children: [
-            // Profile Picture with inline edit functionality
-            _buildProfilePicture(context, settingsProvider),
-            
-            const SizedBox(height: 20),
-
-            // Profile Completion Card
-            _buildProfileCompletionCard(settingsProvider),
-          ],
+        // Get user name from profile (or null if not set)
+        final userName = settingsProvider.userProfile?.name;
+        final hasName = userName != null && userName.isNotEmpty;
+        
+        return _buildTransparentCard(
+          userName: userName,
+          hasName: hasName,
+          onTap: () => _handleProfileTap(context, settingsProvider),
         );
       },
     );
   }
 
-  Widget _buildProfilePicture(BuildContext context, SettingsProvider settingsProvider) {
-    return InkWell(
-      onTap: () => _showAvatarOptions(context, settingsProvider),
-      borderRadius: BorderRadius.circular(60),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            // Avatar with edit button
-            Stack(
-              children: [
-                // Avatar circle
-                CircleAvatar(
-                  radius: 50,
-                  // ✅ FIXED: Use withValues instead of withOpacity
-                  backgroundColor: AppTheme.primaryBlue.withValues(alpha: 0.1),
-                  backgroundImage: settingsProvider.avatarUrl != null 
-                      ? NetworkImage(settingsProvider.avatarUrl!) 
-                      : null,
-                  child: settingsProvider.avatarUrl == null
-                      ? const Icon(Icons.person, size: 50, color: Colors.grey)
-                      : null,
-                ),
-                // Edit button overlay
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: const Icon(Icons.edit, color: Colors.white, size: 16),
-                  ),
-                ),
-              ],
+  Widget _buildTransparentCard({
+    required String? userName,
+    required bool hasName,
+    required VoidCallback onTap,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15), // Transparent to show gradient
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.5),
+              width: 4,
             ),
-            const SizedBox(height: 10),
-            // Label
-            const Text(
-              'Edit Profile Picture',
-              style: TextStyle(color: Colors.grey, fontSize: 14),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileCompletionCard(SettingsProvider settingsProvider) {
-    final completionPercentage = settingsProvider.profileCompletionPercentage;
-    final missingData = settingsProvider.getMissingProfileData();
-    final isComplete = settingsProvider.isProfileComplete;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            // ✅ FIXED: Use withValues instead of withOpacity
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            spreadRadius: 0,
-            offset: const Offset(0, 2),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isComplete 
-                      // ✅ FIXED: Use withValues instead of withOpacity
-                      ? Colors.green.withValues(alpha: 0.1)
-                      // ✅ FIXED: Use withValues instead of withOpacity
-                      : AppTheme.primaryBlue.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  isComplete ? Icons.check_circle : Icons.person,
-                  color: isComplete ? Colors.green : AppTheme.primaryBlue,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(28),
+              splashColor: Colors.white.withOpacity(0.1),
+              highlightColor: Colors.white.withOpacity(0.05),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
                   children: [
-                    Text(
-                      isComplete ? 'Profile Complete!' : 'Profile Setup',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: isComplete ? Colors.green : AppTheme.primaryBlue,
+                    // Avatar circle with gradient letter or empty icon
+                    _buildAvatar(userName, hasName),
+                    
+                    const SizedBox(width: 16),
+                    
+                    // Name section
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            hasName ? userName! : 'Name',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              color: hasName 
+                                  ? Colors.white 
+                                  : Colors.white.withOpacity(0.6),
+                              shadows: const [
+                                Shadow(
+                                  color: Colors.black26,
+                                  offset: Offset(0, 2),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Tap to edit',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white.withOpacity(0.8),
+                              shadows: const [
+                                Shadow(
+                                  color: Colors.black26,
+                                  offset: Offset(0, 1),
+                                  blurRadius: 3,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      isComplete 
-                          ? 'All information is complete'
-                          : '${(completionPercentage * 100).round()}% complete',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    
+                    // Edit icon
+                    Icon(
+                      Icons.edit_rounded,
+                      size: 20,
+                      color: Colors.white.withOpacity(0.9),
+                      shadows: const [
+                        Shadow(
+                          color: Colors.black26,
+                          offset: Offset(0, 2),
+                          blurRadius: 4,
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
-
-          if (!isComplete) ...[
-            const SizedBox(height: 16),
-
-            // Progress bar
-            Container(
-              height: 8,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: FractionallySizedBox(
-                widthFactor: completionPercentage,
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        // ✅ FIXED: Use withValues instead of withOpacity
-                        AppTheme.primaryBlue.withValues(alpha: 0.7),
-                        AppTheme.primaryBlue,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Missing data info
-            Text(
-              'Complete these fields:',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[700],
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              missingData.join(', '),
-              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-            ),
-          ]
-        ],
+        ),
       ),
     );
   }
 
-  // =============================================================================
-  // INLINE AVATAR SELECTION
-  // =============================================================================
+  Widget _buildAvatar(String? userName, bool hasName) {
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        color: hasName 
+            ? Colors.white.withOpacity(0.95)  // White circle for letter
+            : Colors.white.withOpacity(0.3),   // Semi-transparent for empty
+        shape: BoxShape.circle,
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Center(
+        child: hasName 
+            ? _buildGradientLetter(userName!)
+            : Icon(
+                Icons.person,
+                size: 28,
+                color: Colors.white,
+              ),
+      ),
+    );
+  }
 
-  void _showAvatarOptions(BuildContext context, SettingsProvider settingsProvider) {
+  Widget _buildGradientLetter(String userName) {
+    // Get first character and uppercase it
+    final letter = userName.isNotEmpty ? userName[0].toUpperCase() : '?';
+    
+    // TODO: Connect to theme provider's gradient when theme system is ready
+    // For now, using hardcoded gradient matching the mockup
+    const gradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        Color(0xFF667EEA), // Purple-blue
+        Color(0xFF764BA2), // Purple
+      ],
+    );
+    
+    return ShaderMask(
+      shaderCallback: (bounds) => gradient.createShader(bounds),
+      blendMode: BlendMode.srcIn,
+      child: Text(
+        letter,
+        style: const TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          color: Colors.white, // This color gets replaced by gradient
+        ),
+      ),
+    );
+  }
+
+  void _handleProfileTap(BuildContext context, SettingsProvider settingsProvider) {
+    // TODO: Show dialog or navigate to profile edit screen
+    // For now, show a simple dialog to edit name
+    _showEditNameDialog(context, settingsProvider);
+  }
+
+  void _showEditNameDialog(BuildContext context, SettingsProvider settingsProvider) {
+    final currentName = settingsProvider.userProfile?.name ?? '';
+    final controller = TextEditingController(text: currentName);
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.photo_camera, color: AppTheme.primaryBlue),
-            SizedBox(width: 8),
-            Text('Profile Picture'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Choose how to update your profile picture:'),
-            const SizedBox(height: 20),
-            
-            // Avatar options
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                // Camera option
-                _buildAvatarOption(
-                  icon: Icons.camera_alt,
-                  label: 'Camera',
-                  onTap: () {
-                    Navigator.pop(context);
-                    _selectFromCamera(context, settingsProvider);
-                  },
-                ),
-                
-                // Gallery option
-                _buildAvatarOption(
-                  icon: Icons.photo_library,
-                  label: 'Gallery',
-                  onTap: () {
-                    Navigator.pop(context);
-                    _selectFromGallery(context, settingsProvider);
-                  },
-                ),
-                
-                // Remove option
-                _buildAvatarOption(
-                  icon: Icons.delete,
-                  label: 'Remove',
-                  color: Colors.red,
-                  onTap: () {
-                    Navigator.pop(context);
-                    _removeAvatar(context, settingsProvider);
-                  },
-                ),
-              ],
-            ),
-          ],
+        title: const Text('Edit Name'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Enter your name',
+            border: OutlineInputBorder(),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
+          FilledButton(
+            onPressed: () async {
+              final newName = controller.text.trim();
+              if (newName.isNotEmpty) {
+                await settingsProvider.updateName(newName);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Name updated successfully'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Save'),
+          ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildAvatarOption({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    Color? color,
-  }) {
-    final optionColor = color ?? AppTheme.primaryBlue;
-    
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          // ✅ FIXED: Use withValues instead of withOpacity
-          color: optionColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          // ✅ FIXED: Use withValues instead of withOpacity
-          border: Border.all(color: optionColor.withValues(alpha: 0.3)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 32, color: optionColor),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: optionColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _selectFromCamera(BuildContext context, SettingsProvider settingsProvider) {
-    // In a real app, you would use image_picker to get image from camera
-    // For demo purposes, we'll set a placeholder
-    settingsProvider.updateAvatarUrl('https://source.unsplash.com/100x100?face&random=1');
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Camera feature coming soon! Used placeholder image.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _selectFromGallery(BuildContext context, SettingsProvider settingsProvider) {
-    // In a real app, you would use image_picker to get image from gallery
-    // For demo purposes, we'll set a placeholder
-    settingsProvider.updateAvatarUrl('https://source.unsplash.com/100x100?portrait&random=2');
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Gallery feature coming soon! Used placeholder image.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _removeAvatar(BuildContext context, SettingsProvider settingsProvider) {
-    settingsProvider.updateAvatarUrl(null);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Profile picture removed'),
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }

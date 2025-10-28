@@ -64,4 +64,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSavedSuccess => 'Settings saved successfully!';
+
+  @override
+  String get name => 'Name';
+
+  @override
+  String get tapToEdit => 'Tap to edit';
 }

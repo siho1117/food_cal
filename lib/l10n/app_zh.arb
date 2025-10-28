@@ -28,5 +28,8 @@
   "@@ COMMENT": "Error Messages - Currently Active",
   "errorLoadingData": "Error Loading Data",
   "unknownError": "An unknown error occurred",
-  "settingsSavedSuccess": "Settings saved successfully!"
+  "settingsSavedSuccess": "Settings saved successfully!",
+
+  "name": "Name",
+  "tapToEdit": "Tap to edit"
 }

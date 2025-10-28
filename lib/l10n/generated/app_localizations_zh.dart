@@ -64,6 +64,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsSavedSuccess => 'Settings saved successfully!';
+
+  @override
+  String get name => 'Name';
+
+  @override
+  String get tapToEdit => 'Tap to edit';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -126,6 +132,12 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get settingsSavedSuccess => 'Settings saved successfully!';
+
+  @override
+  String get name => 'Name';
+
+  @override
+  String get tapToEdit => 'Tap to edit';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -188,4 +200,10 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get settingsSavedSuccess => 'Settings saved successfully!';
+
+  @override
+  String get name => 'Name';
+
+  @override
+  String get tapToEdit => 'Tap to edit';
 }

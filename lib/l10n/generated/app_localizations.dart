@@ -210,6 +210,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings saved successfully!'**
   String get settingsSavedSuccess;
+
+  /// No description provided for @name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get name;
+
+  /// No description provided for @tapToEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to edit'**
+  String get tapToEdit;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
