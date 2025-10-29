@@ -457,7 +457,7 @@ class AppWidgetDesign {
   // Border styling (iOS-inspired borders with 40% opacity)
   static const double cardBorderWidth = 4.0;
   static const double cardBorderRadius = 28.0;
-  static const double cardBorderOpacity = 0.4;  // Updated to 40% per user request
+  static const double cardBorderOpacity = 0.8;  // Updated to 80% per user request
   static const Color cardBorderColor = Colors.white;
   
   // Text shadow policy - NO SHADOWS for clean, modern look

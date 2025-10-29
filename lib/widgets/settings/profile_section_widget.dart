@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../config/design_system/theme.dart';
+import '../../config/design_system/dialog_theme.dart';
 
 class ProfileSectionWidget extends StatelessWidget {
   const ProfileSectionWidget({super.key});
@@ -40,13 +41,13 @@ class ProfileSectionWidget extends StatelessWidget {
     final textColor = themeProvider.getTextColor(brightness);
     
     return ClipRRect(
-      borderRadius: BorderRadius.circular(AppWidgetDesign.cardBorderRadius),
+      borderRadius: BorderRadius.circular(52), // Pill shape
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.transparent, // Fully transparent to show gradient
-            borderRadius: BorderRadius.circular(AppWidgetDesign.cardBorderRadius),
+            borderRadius: BorderRadius.circular(52), // Pill shape
             border: Border.all(
               color: borderColor,
               width: AppWidgetDesign.cardBorderWidth,
@@ -56,7 +57,7 @@ class ProfileSectionWidget extends StatelessWidget {
             color: Colors.transparent,
             child: InkWell(
               onTap: onTap,
-              borderRadius: BorderRadius.circular(AppWidgetDesign.cardBorderRadius),
+              borderRadius: BorderRadius.circular(52), // Pill shape
               splashColor: textColor.withValues(alpha: 0.1),
               highlightColor: textColor.withValues(alpha: 0.05),
               child: Padding(
@@ -75,28 +76,17 @@ class ProfileSectionWidget extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min, // Minimize height
                         children: [
                           Text(
-                            hasName ? userName! : 'Name',
+                            hasName ? userName! : 'Tap to edit',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w600,
                               color: hasName 
                                   ? textColor
                                   : textColor.withValues(alpha: 0.6),
-                              shadows: AppWidgetDesign.textShadows, // NO SHADOWS
+                              shadows: AppWidgetDesign.textShadows,
                             ),
                           ),
-                          const SizedBox(height: 3), // Slightly reduced
-                          Text(
-                            'Tap to edit',
-                            style: TextStyle(
-                              fontSize: 14, // ✅ Bigger - was 12
-                              fontWeight: FontWeight.w400,
-                              color: textColor.withValues(
-                                alpha: AppWidgetDesign.secondaryTextOpacity,
-                              ),
-                              shadows: AppWidgetDesign.textShadows, // NO SHADOWS
-                            ),
-                          ),
+                          // No subtitle - cleaner design
                         ],
                       ),
                     ),
@@ -126,13 +116,20 @@ class ProfileSectionWidget extends StatelessWidget {
     final brightness = Theme.of(context).brightness;
     final textColor = themeProvider.getTextColor(brightness);
     
+    // Determine solid color based on theme (no opacity)
+    // Theme 01 (Light Gray) uses black, others use white
+    final gradientName = themeProvider.selectedGradient;
+    final solidAvatarColor = gradientName == '01' 
+        ? Colors.black      // Solid black for Theme 01
+        : Colors.white;     // Solid white for Theme 02-09
+    
     return Container(
       width: 52,
       height: 52,
       decoration: BoxDecoration(
         color: hasName 
-            ? Colors.white.withValues(alpha: 0.95)  // White circle for letter
-            : textColor.withValues(alpha: 0.25),    // ✅ Adaptive subtle background
+            ? solidAvatarColor                      // Solid black or white (no opacity)
+            : textColor.withValues(alpha: 0.25),    // Subtle adaptive background when no name
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
@@ -192,20 +189,39 @@ class ProfileSectionWidget extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Edit Name'),
+        // Apply dialog styling from AppDialogTheme
+        backgroundColor: AppDialogTheme.backgroundColor,
+        shape: AppDialogTheme.shape,
+        contentPadding: AppDialogTheme.contentPadding,
+        actionsPadding: AppDialogTheme.actionsPadding,
+        
+        // Title with proper styling
+        title: const Text(
+          'Edit Name',
+          style: AppDialogTheme.titleStyle,
+        ),
+        
+        // Content with styled TextField
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Enter your name',
-            border: OutlineInputBorder(),
-          ),
+          style: AppDialogTheme.inputTextStyle,
+          decoration: AppDialogTheme.inputDecoration(),
         ),
+        
+        // Actions with proper button styling and spacing
         actions: [
+          // Cancel button (TextButton)
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: AppDialogTheme.cancelButtonStyle,
             child: const Text('Cancel'),
           ),
+          
+          // Small gap between buttons
+          const SizedBox(width: AppDialogTheme.buttonGap),
+          
+          // Save button (FilledButton)
           FilledButton(
             onPressed: () async {
               final newName = controller.text.trim();
@@ -213,15 +229,10 @@ class ProfileSectionWidget extends StatelessWidget {
                 await settingsProvider.updateName(newName);
                 if (context.mounted) {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Name updated successfully'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
                 }
               }
             },
+            style: AppDialogTheme.primaryButtonStyle,
             child: const Text('Save'),
           ),
         ],
