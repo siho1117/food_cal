@@ -1,7 +1,8 @@
 // lib/widgets/settings/theme_selector_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';  // ✅ NEW: Using theme_design
+import '../../config/design_system/theme_background.dart';  // ✅ NEW: Using theme_background for gradients
 import '../../providers/theme_provider.dart';
 
 class ThemeSelectorDialog extends StatelessWidget {
@@ -10,7 +11,6 @@ class ThemeSelectorDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final brightness = Theme.of(context).brightness;
     
     // Get all available gradients from provider (01-09)
     final availableGradients = themeProvider.availableGradients;
@@ -32,29 +32,29 @@ class ThemeSelectorDialog extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.coralAccent.withOpacity(0.1),
+                    color: const Color(0xFFFF6B6B).withValues(alpha: 0.1),  // ✅ Using coral color inline
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.palette,
-                    color: AppTheme.coralAccent,
+                    color: Color(0xFFFF6B6B),  // ✅ Coral accent
                     size: 24,
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
+                Text(
                   'Select Theme',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryBlue,
+                    color: AppColors.textDark,  // ✅ Using AppColors
                   ),
                 ),
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: () => Navigator.of(context).pop(),
-                  color: Colors.grey,
+                  color: AppColors.textGrey,  // ✅ Using AppColors
                 ),
               ],
             ),
@@ -63,7 +63,7 @@ class ThemeSelectorDialog extends StatelessWidget {
               'Choose your color scheme',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: AppColors.textGrey,  // ✅ Using AppColors
               ),
             ),
             const SizedBox(height: 24),
@@ -77,7 +77,7 @@ class ThemeSelectorDialog extends StatelessWidget {
                     final displayName = themeProvider.getGradientDisplayName(gradientName);
                     final description = themeProvider.getGradientDescription(gradientName);
                     final emoji = themeProvider.getGradientEmoji(gradientName);
-                    final gradientColors = AppTheme.getGradientColors(gradientName, brightness);
+                    final gradientColors = ThemeBackground.gradients[gradientName]!;  // ✅ Using ThemeBackground
                     
                     return _ThemeTile(
                       gradientName: gradientName,
@@ -86,7 +86,6 @@ class ThemeSelectorDialog extends StatelessWidget {
                       emoji: emoji,
                       gradientColors: gradientColors,
                       isSelected: isSelected,
-                      brightness: brightness,
                       onTap: () async {
                         await themeProvider.setGradient(gradientName);
                         if (context.mounted) {
@@ -109,10 +108,10 @@ class ThemeSelectorDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.primaryBlue.withOpacity(0.05),
+                color: AppColors.textDark.withValues(alpha: 0.05),  // ✅ Using AppColors
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: AppTheme.primaryBlue.withOpacity(0.1),
+                  color: AppColors.textDark.withValues(alpha: 0.1),  // ✅ Using AppColors
                 ),
               ),
               child: Row(
@@ -120,7 +119,7 @@ class ThemeSelectorDialog extends StatelessWidget {
                   Icon(
                     Icons.info_outline,
                     size: 16,
-                    color: AppTheme.primaryBlue.withOpacity(0.7),
+                    color: AppColors.textDark.withValues(alpha: 0.7),  // ✅ Using AppColors
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -128,7 +127,7 @@ class ThemeSelectorDialog extends StatelessWidget {
                       'Theme will be applied to all screens',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[700],
+                        color: AppColors.textGrey,  // ✅ Using AppColors
                       ),
                     ),
                   ),
@@ -149,7 +148,6 @@ class _ThemeTile extends StatefulWidget {
   final String emoji;
   final List<Color> gradientColors;
   final bool isSelected;
-  final Brightness brightness;
   final VoidCallback onTap;
 
   const _ThemeTile({
@@ -159,7 +157,6 @@ class _ThemeTile extends StatefulWidget {
     required this.emoji,
     required this.gradientColors,
     required this.isSelected,
-    required this.brightness,
     required this.onTap,
   });
 
@@ -185,15 +182,15 @@ class _ThemeTileState extends State<_ThemeTile> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: widget.isSelected
-                  ? AppTheme.coralAccent.withOpacity(0.1)
+                  ? const Color(0xFFFF6B6B).withValues(alpha: 0.1)  // ✅ Coral accent
                   : _isHovered
-                      ? Colors.grey.withOpacity(0.05)
+                      ? Colors.grey.withValues(alpha: 0.05)
                       : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: widget.isSelected
-                    ? AppTheme.coralAccent
-                    : Colors.grey.withOpacity(0.2),
+                    ? const Color(0xFFFF6B6B)  // ✅ Coral accent
+                    : Colors.grey.withValues(alpha: 0.2),
                 width: widget.isSelected ? 2 : 1,
               ),
             ),
@@ -238,8 +235,8 @@ class _ThemeTileState extends State<_ThemeTile> {
                                   ? FontWeight.bold 
                                   : FontWeight.w600,
                               color: widget.isSelected
-                                  ? AppTheme.primaryBlue
-                                  : Colors.grey[800],
+                                  ? AppColors.textDark  // ✅ Using AppColors
+                                  : AppColors.textGrey.withValues(alpha: 0.9),  // ✅ Using AppColors
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -247,7 +244,7 @@ class _ThemeTileState extends State<_ThemeTile> {
                             widget.description,
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.grey[600],
+                              color: AppColors.textGrey,  // ✅ Using AppColors
                             ),
                           ),
                         ],
@@ -259,7 +256,7 @@ class _ThemeTileState extends State<_ThemeTile> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: const BoxDecoration(
-                          color: AppTheme.coralAccent,
+                          color: Color(0xFFFF6B6B),  // ✅ Coral accent
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
