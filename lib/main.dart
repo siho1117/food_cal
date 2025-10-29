@@ -29,7 +29,6 @@ import 'l10n/generated/app_localizations.dart';
 
 // Widgets
 import 'widgets/common/custom_bottom_nav.dart';
-import 'widgets/common/custom_app_bar.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,6 +68,8 @@ class FoodTrackerApp extends StatelessWidget {
             title: 'Food Tracker',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: ThemeMode.light,
             locale: languageProvider.currentLocale,
             localizationsDelegates: const [
               AppLocalizations.delegate,
@@ -102,135 +103,59 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  bool _showCamera = false;
 
-  // 4 actual screens (Camera is an overlay, not a screen)
   final List<Widget> _screens = const [
-    HomeScreen(),      // Index 0
-    ProgressScreen(),  // Index 1
-    SummaryScreen(),   // Index 2
-    SettingsScreen(),  // Index 3
+    HomeScreen(),
+    ProgressScreen(),
+    SummaryScreen(),
+    SettingsScreen(),
   ];
 
-  void _onItemTapped(int navIndex) {
-    debugPrint('🔵 Nav tapped: index $navIndex');
-    
-    // Bottom nav indices: 0(Home), 1(Progress), 2(Camera), 3(Summary), 4(Settings)
-    // Screen indices:     0(Home), 1(Progress),           2(Summary), 3(Settings)
-    
-    if (navIndex == 2) {
-      // Camera tap - show overlay
-      _showCameraOverlay();
-      return;
-    }
-
-    // Map nav index to screen index
-    final screenIndex = _mapNavToScreen(navIndex);
-    debugPrint('🔵 Mapped to screen index: $screenIndex');
-    
-    setState(() {
-      _currentIndex = screenIndex;
-    });
-  }
-
-  /// Map bottom nav index to screen array index
-  int _mapNavToScreen(int navIndex) {
-    switch (navIndex) {
-      case 0:
-        return 0; // Home
-      case 1:
-        return 1; // Progress
-      case 3:
-        return 2; // Summary
-      case 4:
-        return 3; // Settings
-      default:
-        debugPrint('⚠️ Unexpected nav index: $navIndex');
-        return 0;
-    }
-  }
-
-  /// Map screen index to nav index for highlighting
-  int _mapScreenToNav(int screenIndex) {
-    switch (screenIndex) {
-      case 0:
-        return 0; // Home
-      case 1:
-        return 1; // Progress
-      case 2:
-        return 3; // Summary
-      case 3:
-        return 4; // Settings
-      default:
-        return 0;
-    }
-  }
-
-  void _showCameraOverlay() {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        opaque: false,
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return CameraScreen(
-            onDismissed: () {
-              // Camera dismissed, no state change needed
-            },
-          );
-        },
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
-        },
-      ),
-    );
-  }
-
-  String _getCurrentPageSubtitle() {
-    switch (_currentIndex) {
-      case 0:
-        return 'Daily Nutrition';
-      case 1:
-        return 'Activity & Progress';
-      case 2:
-        return 'Analytics Dashboard';
-      case 3:
-        return 'App Settings';
-      default:
-        return '';
-    }
+  // Map bottom nav index to screen index (handling camera special case)
+  int _getScreenIndex(int navIndex) {
+    // Assuming 5 nav items: Home(0), Progress(1), Camera(2), Summary(3), Settings(4)
+    if (navIndex == 2) return 0; // Camera - show home in background
+    if (navIndex > 2) return navIndex - 1; // Adjust for camera offset
+    return navIndex;
   }
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🔵 Building with currentIndex: $_currentIndex');
-    
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBodyBehindAppBar: true,
-      appBar: CustomAppBar(
-        currentPage: _getCurrentPageSubtitle(),
-      ),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        transitionBuilder: (Widget child, Animation<double> animation) {
-          return FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0.1, 0.0),
-                end: Offset.zero,
-              ).animate(animation),
-              child: child,
+      body: Stack(
+        children: [
+          // Show screen, with bounds checking
+          _screens[_getScreenIndex(_currentIndex).clamp(0, _screens.length - 1)],
+          
+          // Show camera overlay if index 2 selected
+          if (_showCamera) 
+            CameraScreen(
+              onDismissed: () {
+                setState(() {
+                  _showCamera = false;
+                  // Return to home screen
+                  _currentIndex = 0;
+                });
+              },
             ),
-          );
-        },
-        child: _screens[_currentIndex],
-      ),
-      extendBody: true,
-      bottomNavigationBar: CustomBottomNav(
-        currentIndex: _mapScreenToNav(_currentIndex),
-        onTap: _onItemTapped,
+          
+          // Bottom navigation
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: CustomBottomNav(
+              currentIndex: _currentIndex,
+              onTap: (index) {
+                setState(() {
+                  _currentIndex = index;
+                  _showCamera = (index == 2); // Camera is at index 2
+                });
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

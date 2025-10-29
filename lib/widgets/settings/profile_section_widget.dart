@@ -160,8 +160,7 @@ class ProfileSectionWidget extends StatelessWidget {
     final letter = userName.isNotEmpty ? userName[0].toUpperCase() : '?';
     
     // Get gradient from theme provider
-    final brightness = Theme.of(context).brightness;
-    final gradient = themeProvider.getCurrentGradient(brightness);
+    final gradient = themeProvider.getCurrentGradient();
     
     return ShaderMask(
       shaderCallback: (bounds) => gradient.createShader(bounds),

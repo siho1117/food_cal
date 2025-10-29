@@ -116,3 +116,35 @@ class AppLegacyColors {
   /// @deprecated Use semantic colors from AppColors
   static const Color accentColor = Color(0xFF8B3A3A);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// THEME CONFIGURATION (MINIMAL)
+// ═══════════════════════════════════════════════════════════════
+
+/// Minimal theme configuration
+/// Provides neutral foundation - widgets handle their own styling
+class AppTheme {
+  AppTheme._();
+
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: const ColorScheme.light(
+        primary: AppColors.textDark,
+        surface: Colors.white,
+      ),
+      scaffoldBackgroundColor: AppColors.backgroundLight,
+    );
+  }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.dark(
+        primary: AppColors.textLight,
+        surface: AppColors.backgroundDark,
+      ),
+      scaffoldBackgroundColor: AppColors.backgroundDark,
+    );
+  }
+}

@@ -3,14 +3,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../config/design_system/theme_design.dart';
+import '../config/design_system/theme_background.dart';  // ✅ NEW: Using ThemeBackground
 
 class ThemeProvider extends ChangeNotifier {
   // Storage key
   static const String _gradientKey = 'selected_gradient';
   
-  // Current selected gradient (default: '03' - purple)
-  String _selectedGradient = '03';
+  // Current selected gradient (default: '01' - light gray)
+  String _selectedGradient = '01';
   
   // Loading state
   bool _isLoading = true;
@@ -26,12 +26,15 @@ class ThemeProvider extends ChangeNotifier {
       notifyListeners();
 
       final prefs = await SharedPreferences.getInstance();
-      _selectedGradient = prefs.getString(_gradientKey) ?? '03';
+      final savedGradient = prefs.getString(_gradientKey);
+      
+      // ✅ NEW: Validate using ThemeBackground
+      _selectedGradient = ThemeBackground.getValidThemeId(savedGradient);
       
       debugPrint('✅ Loaded gradient preference: $_selectedGradient');
     } catch (e) {
       debugPrint('❌ Error loading gradient preference: $e');
-      _selectedGradient = '03'; // Fallback to default (purple)
+      _selectedGradient = ThemeBackground.defaultThemeId; // Fallback to default
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -40,10 +43,10 @@ class ThemeProvider extends ChangeNotifier {
 
   /// Change the selected gradient and save to storage
   Future<void> setGradient(String gradientName) async {
-    // Validate gradient name exists
-    if (!_isValidGradient(gradientName)) {
+    // ✅ NEW: Validate using ThemeBackground
+    if (!ThemeBackground.isValidTheme(gradientName)) {
       debugPrint('⚠️ Invalid gradient name: $gradientName, using default');
-      gradientName = '03';
+      gradientName = ThemeBackground.defaultThemeId;
     }
 
     _selectedGradient = gradientName;
@@ -59,40 +62,22 @@ class ThemeProvider extends ChangeNotifier {
     }
   }
 
-  /// Get the current gradient for the specified brightness
-  LinearGradient getCurrentGradient(Brightness brightness) {
-    return AppTheme.getGradient(_selectedGradient, brightness);
+  /// Get the current gradient (no brightness parameter needed)
+  /// ✅ NEW: Using ThemeBackground.getGradient()
+  LinearGradient getCurrentGradient() {
+    return ThemeBackground.getGradient(_selectedGradient);
   }
 
-  /// Get the gradient colors for the specified brightness
-  List<Color> getCurrentGradientColors(Brightness brightness) {
-    return AppTheme.getGradientColors(_selectedGradient, brightness);
-  }
-
-  /// Get adaptive border color for current gradient
-  Color getBorderColor(Brightness brightness) {
-    return AppTheme.getBorderColor(_selectedGradient, brightness);
-  }
-
-  /// Get adaptive text color for current gradient
-  Color getTextColor(Brightness brightness) {
-    return AppTheme.getTextColor(_selectedGradient, brightness);
-  }
-
-  /// Get the first color of the current gradient (useful for app bar)
-  Color getTopColor(Brightness brightness, {double opacity = 0.7}) {
-    final colors = getCurrentGradientColors(brightness);
-    return colors.first.withOpacity(opacity);
-  }
-
-  /// Check if gradient name is valid
-  bool _isValidGradient(String name) {
-    return AppTheme.gradientsLight.containsKey(name);
+  /// Get the gradient colors
+  /// ✅ NEW: Using ThemeBackground.gradients
+  List<Color> getCurrentGradientColors() {
+    return ThemeBackground.gradients[_selectedGradient] ?? 
+           ThemeBackground.gradients[ThemeBackground.defaultThemeId]!;
   }
 
   /// Get all available gradient names (01-09)
-  List<String> get availableGradients => 
-      AppTheme.gradientsLight.keys.toList()..sort(); // Sort to ensure 01, 02, 03... order
+  /// ✅ NEW: Using ThemeBackground.availableThemes
+  List<String> get availableGradients => ThemeBackground.availableThemes;
 
   /// Get display name for gradient (just returns the number)
   String getGradientDisplayName(String gradientName) {
@@ -103,23 +88,23 @@ class ThemeProvider extends ChangeNotifier {
   String getGradientDescription(String gradientName) {
     switch (gradientName) {
       case '01':
-        return 'Light minimal gray';
+        return 'Light Gray - Minimal';
       case '02':
-        return 'Dark midnight';
+        return 'Light Blue - Calm';
       case '03':
-        return 'Purple blue';
+        return 'Pink - Soft';
       case '04':
-        return 'Warm sunrise';
+        return 'Yellow - Bright';
       case '05':
-        return 'Soft coral';
+        return 'Green - Fresh';
       case '06':
-        return 'Ocean blue';
+        return 'Orange - Warm';
       case '07':
-        return 'Fresh mint';
+        return 'Cyan - Cool';
       case '08':
-        return 'Warm peach';
+        return 'Purple - Elegant';
       case '09':
-        return 'Cool teal';
+        return 'Brown - Earth';
       default:
         return 'Custom theme';
     }
@@ -131,23 +116,63 @@ class ThemeProvider extends ChangeNotifier {
       case '01':
         return '⚪'; // White circle for minimal
       case '02':
-        return '⬛'; // Black square for midnight
+        return '🔵'; // Blue circle
       case '03':
-        return '🟣'; // Purple circle
+        return '🩷'; // Pink heart
       case '04':
-        return '🟡'; // Yellow circle for sunrise
+        return '🟡'; // Yellow circle
       case '05':
-        return '🌸'; // Flower for coral
+        return '🟢'; // Green circle
       case '06':
-        return '🔵'; // Blue circle for ocean
+        return '🟠'; // Orange circle
       case '07':
-        return '🟢'; // Green circle for mint
+        return '🩵'; // Light blue
       case '08':
-        return '🧡'; // Orange heart for warm
+        return '🟣'; // Purple circle
       case '09':
-        return '💠'; // Diamond for cool teal
+        return '🤎'; // Brown heart
       default:
         return '🎨'; // Palette for unknown
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // DEPRECATED METHODS (kept for backward compatibility)
+  // ═══════════════════════════════════════════════════════════════
+  
+  /// @deprecated No longer supports brightness parameter
+  /// Use getCurrentGradient() instead
+  LinearGradient getGradient(String name, Brightness brightness) {
+    debugPrint('⚠️ WARNING: getGradient(name, brightness) is deprecated. Use getCurrentGradient() instead.');
+    return ThemeBackground.getGradient(name);
+  }
+
+  /// @deprecated No longer supports brightness parameter
+  /// Use getCurrentGradientColors() instead
+  List<Color> getGradientColors(String name, Brightness brightness) {
+    debugPrint('⚠️ WARNING: getGradientColors(name, brightness) is deprecated. Use getCurrentGradientColors() instead.');
+    return ThemeBackground.gradients[name] ?? 
+           ThemeBackground.gradients[ThemeBackground.defaultThemeId]!;
+  }
+
+  /// @deprecated Border colors no longer theme-dependent
+  /// Use AppColors.borderLight or AppColors.borderDark instead
+  Color getBorderColor(String name, Brightness brightness) {
+    debugPrint('⚠️ WARNING: getBorderColor() is deprecated. Use AppColors.borderLight or borderDark instead.');
+    return Colors.white.withOpacity(0.8);
+  }
+
+  /// @deprecated Text colors no longer theme-dependent
+  /// Use AppColors.textDark or AppColors.textLight instead
+  Color getTextColor(String name, Brightness brightness) {
+    debugPrint('⚠️ WARNING: getTextColor() is deprecated. Use AppColors.textDark or textLight instead.');
+    return Colors.white;
+  }
+
+  /// @deprecated Use getCurrentGradientColors() instead
+  Color getTopColor(Brightness brightness, {double opacity = 0.7}) {
+    debugPrint('⚠️ WARNING: getTopColor() is deprecated. Use getCurrentGradientColors().first instead.');
+    final colors = getCurrentGradientColors();
+    return colors.first.withOpacity(opacity);
   }
 }
