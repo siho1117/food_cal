@@ -2,8 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';  // ✅ NEW: Using theme_design instead of theme
 import '../../providers/home_provider.dart';
+import '../../providers/theme_provider.dart';  // ✅ NEW: Need ThemeProvider for theme-adaptive colors
 
 /// Widget-specific design constants (progress bar - unique to this widget)
 class _CalorieSummaryDesign {
@@ -110,16 +111,16 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<HomeProvider>(
-      builder: (context, homeProvider, child) {
+    // ✅ NEW: Now consuming both HomeProvider AND ThemeProvider
+    return Consumer2<HomeProvider, ThemeProvider>(
+      builder: (context, homeProvider, themeProvider, child) {
         if (homeProvider.isLoading) {
-          return _buildLoadingState();
+          return _buildLoadingState(themeProvider);
         }
 
         final totalCalories = homeProvider.totalCalories;
         final calorieGoal = homeProvider.calorieGoal;
         
-        // Calculate remaining calories directly here
         final remaining = calorieGoal - totalCalories;
         final isOverBudget = remaining < 0;
         
@@ -132,6 +133,7 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
           child: FadeTransition(
             opacity: _fadeAnimation,
             child: _buildTransparentCard(
+              themeProvider: themeProvider,
               totalCalories: totalCalories,
               calorieGoal: calorieGoal,
               remaining: remaining,
@@ -144,20 +146,29 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(ThemeProvider themeProvider) {
+    // ✅ NEW: Get theme-adaptive border color
+    final borderColor = AppColors.getBorderColorForTheme(
+      themeProvider.selectedGradient,
+      AppEffects.borderOpacity,
+    );
+    final textColor = AppColors.getTextColorForTheme(
+      themeProvider.selectedGradient,
+    );
+    
     return Container(
       height: 200,
       decoration: BoxDecoration(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(AppWidgetDesign.cardBorderRadius),
+        borderRadius: BorderRadius.circular(AppDimensions.cardBorderRadius),
         border: Border.all(
-          color: AppWidgetDesign.cardBorderColor.withValues(alpha: AppWidgetDesign.cardBorderOpacity),
-          width: AppWidgetDesign.cardBorderWidth,
+          color: borderColor,  // ✅ Theme-adaptive
+          width: AppDimensions.cardBorderWidth,
         ),
       ),
-      child: const Center(
+      child: Center(
         child: CircularProgressIndicator(
-          color: Color.fromRGBO(255, 255, 255, 0.9),
+          color: textColor.withValues(alpha: 0.9),  // ✅ Theme-adaptive
           strokeWidth: 3,
         ),
       ),
@@ -165,58 +176,68 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
   }
 
   Widget _buildTransparentCard({
+    required ThemeProvider themeProvider,
     required int totalCalories,
     required int calorieGoal,
     required int remaining,
     required bool isOverBudget,
     required double calorieProgress,
   }) {
+    // ✅ NEW: Get theme-adaptive colors
+    final borderColor = AppColors.getBorderColorForTheme(
+      themeProvider.selectedGradient,
+      AppEffects.borderOpacity,
+    );
+    final textColor = AppColors.getTextColorForTheme(
+      themeProvider.selectedGradient,
+    );
+    
     return Container(
       decoration: BoxDecoration(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(AppWidgetDesign.cardBorderRadius),
+        borderRadius: BorderRadius.circular(AppDimensions.cardBorderRadius),
         border: Border.all(
-          color: AppWidgetDesign.cardBorderColor.withValues(alpha: AppWidgetDesign.cardBorderOpacity),
-          width: AppWidgetDesign.cardBorderWidth,
+          color: borderColor,  // ✅ Theme-adaptive
+          width: AppDimensions.cardBorderWidth,
         ),
       ),
       child: Padding(
-        padding: AppWidgetDesign.cardPadding,
+        padding: AppDimensions.cardPadding,
         child: Column(
           children: [
             // Title
             Text(
               AppLocalizations.of(context)!.caloriesToday,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
-                color: Colors.white,
+                color: textColor,  // ✅ Theme-adaptive
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.3,
-                shadows: AppWidgetDesign.textShadows,
+                shadows: AppEffects.textShadows,
               ),
             ),
             
             const SizedBox(height: 20),
             
             // Main calorie number
-            _buildMainDisplay(totalCalories, calorieGoal),
+            _buildMainDisplay(totalCalories, calorieGoal, textColor),
             
             const SizedBox(height: 24),
             
             // Progress bar (red when over budget)
-            _buildSegmentedProgress(calorieProgress, isOverBudget),
+            _buildSegmentedProgress(calorieProgress, isOverBudget, textColor),
             
             const SizedBox(height: 14),
             
             // Remaining calories
-            _buildRemainingInfo(remaining),
+            _buildRemainingInfo(remaining, textColor),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMainDisplay(int totalCalories, int calorieGoal) {
+  Widget _buildMainDisplay(int totalCalories, int calorieGoal, Color textColor) {
     return Center(
       child: Column(
         children: [
@@ -228,13 +249,13 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
               
               return Text(
                 _formatNumber(animatedValue),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 84,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: textColor,  // ✅ Theme-adaptive
                   height: 1.0,
                   letterSpacing: -2,
-                  shadows: AppWidgetDesign.textShadows,
+                  shadows: AppEffects.textShadows,
                 ),
               );
             },
@@ -245,12 +266,12 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
           // Goal line
           Text(
             '/ ${_formatNumber(calorieGoal)} ${AppLocalizations.of(context)!.cal}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: Colors.white,
+              color: textColor,  // ✅ Theme-adaptive
               letterSpacing: 0.3,
-              shadows: AppWidgetDesign.textShadows,
+              shadows: AppEffects.textShadows,
             ),
           ),
         ],
@@ -258,14 +279,14 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
     );
   }
 
-  Widget _buildSegmentedProgress(double progress, bool isOverBudget) {
+  Widget _buildSegmentedProgress(double progress, bool isOverBudget, Color textColor) {
     const segmentCount = _CalorieSummaryDesign.progressBarSegments;
     final filledSegments = (progress * segmentCount).round();
     
-    // Soft red when over budget, white when normal
+    // Soft red when over budget, use theme text color when normal
     final progressColor = isOverBudget 
         ? _CalorieSummaryDesign.progressColorOver
-        : Colors.white;
+        : textColor;  // ✅ Theme-adaptive
     
     return AnimatedBuilder(
       animation: _progressAnimation,
@@ -285,7 +306,7 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
                 decoration: BoxDecoration(
                   color: isFilled 
                       ? progressColor.withValues(alpha: 0.9)
-                      : Colors.white.withValues(alpha: 0.25),
+                      : textColor.withValues(alpha: 0.25),  // ✅ Theme-adaptive unfilled color
                   borderRadius: BorderRadius.circular(3),
                   boxShadow: isFilled ? [
                     BoxShadow(
@@ -303,35 +324,26 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
     );
   }
 
-  Widget _buildRemainingInfo(int remaining) {
-    // Simple logic:
-    // remaining = goal - consumed
-    // If remaining > 0: still have calories left (e.g., "Remaining calories 968")
-    // If remaining < 0: over budget (e.g., "Remaining calories +172")
-    // If remaining = 0: exactly at goal (e.g., "Remaining calories 0")
-    
+  Widget _buildRemainingInfo(int remaining, Color textColor) {
     String displayValue;
     
     if (remaining > 0) {
-      // Still have calories remaining
       displayValue = _formatNumber(remaining);
     } else if (remaining < 0) {
-      // Over budget - show positive number with +
       final overAmount = remaining.abs();
       displayValue = '+${_formatNumber(overAmount)}';
     } else {
-      // Exactly at goal
       displayValue = '0';
     }
     
     return Center(
       child: Text(
         '${AppLocalizations.of(context)!.remainingCalories} $displayValue',
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: Colors.white,
-          shadows: AppWidgetDesign.textShadows,
+          color: textColor,  // ✅ Theme-adaptive
+          shadows: AppEffects.textShadows,
         ),
       ),
     );

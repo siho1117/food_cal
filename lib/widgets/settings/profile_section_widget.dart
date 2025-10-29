@@ -4,7 +4,7 @@ import 'dart:ui';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';  // ✅ NEW: Using theme_design instead of theme
 import '../../config/design_system/dialog_theme.dart';
 
 class ProfileSectionWidget extends StatelessWidget {
@@ -36,9 +36,14 @@ class ProfileSectionWidget extends StatelessWidget {
     required ThemeProvider themeProvider,
     required VoidCallback onTap,
   }) {
-    final brightness = Theme.of(context).brightness;
-    final borderColor = themeProvider.getBorderColor(brightness);
-    final textColor = themeProvider.getTextColor(brightness);
+    // ✅ NEW: Get theme-adaptive colors using new helper functions
+    final borderColor = AppColors.getBorderColorForTheme(
+      themeProvider.selectedGradient,
+      AppEffects.borderOpacity,
+    );
+    final textColor = AppColors.getTextColorForTheme(
+      themeProvider.selectedGradient,
+    );
     
     return ClipRRect(
       borderRadius: BorderRadius.circular(52), // Pill shape
@@ -49,8 +54,8 @@ class ProfileSectionWidget extends StatelessWidget {
             color: Colors.transparent, // Fully transparent to show gradient
             borderRadius: BorderRadius.circular(52), // Pill shape
             border: Border.all(
-              color: borderColor,
-              width: AppWidgetDesign.cardBorderWidth,
+              color: borderColor,  // ✅ Using new helper
+              width: AppDimensions.cardBorderWidth,  // ✅ Using AppDimensions
             ),
           ),
           child: Material(
@@ -61,11 +66,11 @@ class ProfileSectionWidget extends StatelessWidget {
               splashColor: textColor.withValues(alpha: 0.1),
               highlightColor: textColor.withValues(alpha: 0.05),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 22, 24, 22), // Reduced from 24,28,24,28 (slightly shorter)
+                padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
                 child: Row(
                   children: [
                     // Avatar circle with gradient letter or empty icon
-                    _buildAvatar(context, userName, hasName, themeProvider),
+                    _buildAvatar(context, userName, hasName, themeProvider, textColor),
                     
                     const SizedBox(width: 16),
                     
@@ -73,7 +78,7 @@ class ProfileSectionWidget extends StatelessWidget {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min, // Minimize height
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             hasName ? userName! : 'Tap to edit',
@@ -83,19 +88,18 @@ class ProfileSectionWidget extends StatelessWidget {
                               color: hasName 
                                   ? textColor
                                   : textColor.withValues(alpha: 0.6),
-                              shadows: AppWidgetDesign.textShadows,
+                              shadows: AppEffects.textShadows,  // ✅ Using AppEffects
                             ),
                           ),
-                          // No subtitle - cleaner design
                         ],
                       ),
                     ),
                     
-                    // ✅ Mono tone arrow icon (matches theme)
+                    // Arrow icon
                     Icon(
                       Icons.arrow_forward_ios_rounded,
                       size: 18,
-                      color: textColor.withValues(alpha: 0.6), // Subtle, matches text
+                      color: textColor.withValues(alpha: 0.6),
                     ),
                   ],
                 ),
@@ -112,14 +116,10 @@ class ProfileSectionWidget extends StatelessWidget {
     String? userName, 
     bool hasName,
     ThemeProvider themeProvider,
+    Color textColor,  // ✅ Pass textColor as parameter
   ) {
-    final brightness = Theme.of(context).brightness;
-    final textColor = themeProvider.getTextColor(brightness);
-    
-    // Determine solid color based on theme (no opacity)
-    // Theme 01 (Light Gray) uses black, others use white
-    final gradientName = themeProvider.selectedGradient;
-    final solidAvatarColor = gradientName == '01' 
+    // ✅ NEW: Get solid avatar color based on theme
+    final solidAvatarColor = themeProvider.selectedGradient == '01' 
         ? Colors.black      // Solid black for Theme 01
         : Colors.white;     // Solid white for Theme 02-09
     
@@ -128,12 +128,12 @@ class ProfileSectionWidget extends StatelessWidget {
       height: 52,
       decoration: BoxDecoration(
         color: hasName 
-            ? solidAvatarColor                      // Solid black or white (no opacity)
-            : textColor.withValues(alpha: 0.25),    // Subtle adaptive background when no name
+            ? solidAvatarColor
+            : textColor.withValues(alpha: 0.25),
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1), // Softer shadow
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -145,7 +145,7 @@ class ProfileSectionWidget extends StatelessWidget {
             : Icon(
                 Icons.person,
                 size: 28,
-                color: textColor, // ✅ Matches text color (adaptive)
+                color: textColor,
               ),
       ),
     );
@@ -178,7 +178,6 @@ class ProfileSectionWidget extends StatelessWidget {
   }
 
   void _handleProfileTap(BuildContext context, SettingsProvider settingsProvider) {
-    // Show dialog to edit name
     _showEditNameDialog(context, settingsProvider);
   }
 
@@ -189,19 +188,16 @@ class ProfileSectionWidget extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        // Apply dialog styling from AppDialogTheme
         backgroundColor: AppDialogTheme.backgroundColor,
         shape: AppDialogTheme.shape,
         contentPadding: AppDialogTheme.contentPadding,
         actionsPadding: AppDialogTheme.actionsPadding,
         
-        // Title with proper styling
         title: const Text(
           'Edit Name',
           style: AppDialogTheme.titleStyle,
         ),
         
-        // Content with styled TextField
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -209,19 +205,15 @@ class ProfileSectionWidget extends StatelessWidget {
           decoration: AppDialogTheme.inputDecoration(),
         ),
         
-        // Actions with proper button styling and spacing
         actions: [
-          // Cancel button (TextButton)
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: AppDialogTheme.cancelButtonStyle,
             child: const Text('Cancel'),
           ),
           
-          // Small gap between buttons
           const SizedBox(width: AppDialogTheme.buttonGap),
           
-          // Save button (FilledButton)
           FilledButton(
             onPressed: () async {
               final newName = controller.text.trim();
