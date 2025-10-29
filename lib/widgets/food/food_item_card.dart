@@ -1,7 +1,7 @@
 // lib/widgets/food/food_item_card.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 import '../../data/models/food_item.dart';
 import '../../data/services/image_storage_service.dart';
 
@@ -51,7 +51,7 @@ class FoodItemCard extends StatelessWidget {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                  color: AppLegacyColors.primaryBlue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: foodItem.imagePath != null
@@ -118,7 +118,7 @@ class FoodItemCard extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                            color: AppLegacyColors.primaryBlue.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -126,7 +126,7 @@ class FoodItemCard extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryBlue,
+                              color: AppLegacyColors.primaryBlue,
                             ),
                           ),
                         ),
@@ -216,7 +216,7 @@ class FoodItemCard extends StatelessWidget {
   Widget _buildFallbackIcon() {
     return const Icon(
       Icons.fastfood,
-      color: AppTheme.primaryBlue,
+      color: AppLegacyColors.primaryBlue,
       size: 30,
     );
   }

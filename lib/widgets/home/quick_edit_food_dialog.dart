@@ -1,7 +1,7 @@
 // lib/widgets/home/quick_edit_food_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
 import '../../config/constants/app_constants.dart';
 import '../../data/models/food_item.dart';
@@ -96,7 +96,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
           'Edit Food Item',
           style: AppTypography.displaySmall.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppTheme.primaryBlue,
+            color: AppLegacyColors.primaryBlue,
             fontSize: AppConstants.fontSizeXLarge,
           ),
         ),
@@ -117,7 +117,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
           Container(
             padding: const EdgeInsets.all(AppConstants.paddingMedium),
             decoration: BoxDecoration(
-              color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+              color: AppLegacyColors.primaryBlue.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(AppConstants.borderRadiusMedium),
                 topRight: Radius.circular(AppConstants.borderRadiusMedium),
@@ -125,13 +125,13 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.edit, color: AppTheme.primaryBlue, size: AppConstants.iconSizeMedium),
+                const Icon(Icons.edit, color: AppLegacyColors.primaryBlue, size: AppConstants.iconSizeMedium),
                 const SizedBox(width: AppConstants.spacingSmall),
                 Text(
                   'Basic Information',
                   style: AppTypography.bodyMedium.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.primaryBlue,
+                    color: AppLegacyColors.primaryBlue,
                     fontSize: AppConstants.fontSizeMedium + 1,
                   ),
                 ),
@@ -316,7 +316,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
-              borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
+              borderSide: const BorderSide(color: AppLegacyColors.primaryBlue, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppConstants.paddingMedium,
@@ -358,7 +358,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
-              borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
+              borderSide: const BorderSide(color: AppLegacyColors.primaryBlue, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppConstants.paddingMedium,
@@ -399,7 +399,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
       ElevatedButton(
         onPressed: _isLoading ? null : _handleSave,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primaryBlue,
+          backgroundColor: AppLegacyColors.primaryBlue,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall)),
         ),
         child: Text(_isLoading ? 'Saving...' : 'Save Changes'),

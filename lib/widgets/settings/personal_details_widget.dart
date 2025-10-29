@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 
 class PersonalDetailsWidget extends StatelessWidget {
   const PersonalDetailsWidget({super.key});
@@ -90,12 +90,12 @@ class PersonalDetailsWidget extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+          color: AppLegacyColors.primaryBlue.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
           icon,
-          color: AppTheme.primaryBlue,
+          color: AppLegacyColors.primaryBlue,
           size: 20,
         ),
       ),
@@ -294,7 +294,7 @@ class PersonalDetailsWidget extends StatelessWidget {
             final isSelected = gender == currentGender;
             return ListTile(
               title: Text(gender, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-              trailing: isSelected ? const Icon(Icons.check, color: AppTheme.primaryBlue) : null,
+              trailing: isSelected ? const Icon(Icons.check, color: AppLegacyColors.primaryBlue) : null,
               onTap: () async {
                 try {
                   await settingsProvider.updateGender(gender);
@@ -353,7 +353,7 @@ class PersonalDetailsWidget extends StatelessWidget {
                     fontSize: 13,
                   ),
                 ),
-                trailing: isSelected ? const Icon(Icons.check, color: AppTheme.primaryBlue) : null,
+                trailing: isSelected ? const Icon(Icons.check, color: AppLegacyColors.primaryBlue) : null,
                 onTap: () async {
                   try {
                     await settingsProvider.updateActivityLevel(entry.key);

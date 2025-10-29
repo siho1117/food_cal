@@ -1,7 +1,7 @@
 // lib/widgets/progress/combined_bmi_bodyfat_widget.dart
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
 
 class CombinedBMIBodyFatWidget extends StatefulWidget {
@@ -126,7 +126,7 @@ class _CombinedBMIBodyFatWidgetState extends State<CombinedBMIBodyFatWidget>
           'Body Composition Info', 
           style: AppTypography.displaySmall.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppTheme.primaryBlue,
+            color: AppLegacyColors.primaryBlue,
           ),
         ),
         content: SingleChildScrollView(
@@ -216,12 +216,12 @@ class _CombinedBMIBodyFatWidgetState extends State<CombinedBMIBodyFatWidget>
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                          color: AppLegacyColors.primaryBlue.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
                           Icons.assessment_rounded,
-                          color: AppTheme.primaryBlue,
+                          color: AppLegacyColors.primaryBlue,
                           size: 20,
                         ),
                       ),

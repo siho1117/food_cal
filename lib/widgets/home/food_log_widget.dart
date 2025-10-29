@@ -2,7 +2,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
 import '../../providers/home_provider.dart';
 import '../../data/models/food_item.dart';
@@ -64,7 +64,7 @@ class FoodLogWidget extends StatelessWidget {
                             style: AppTypography.displaySmall.copyWith(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryBlue,
+                              color: AppLegacyColors.primaryBlue,
                             ),
                           ),
                           Text(
@@ -210,7 +210,7 @@ class FoodLogWidget extends StatelessWidget {
                           style: AppTypography.displaySmall.copyWith(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.textDark,
+                            color: AppLegacyColors.textDark,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -221,7 +221,7 @@ class FoodLogWidget extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppTheme.goldAccent.withValues(alpha: 0.15),
+                            color: AppLegacyColors.goldAccent.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -229,7 +229,7 @@ class FoodLogWidget extends StatelessWidget {
                             style: AppTypography.bodySmall.copyWith(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: AppTheme.goldAccent,
+                              color: AppLegacyColors.goldAccent,
                             ),
                           ),
                         ),
@@ -298,7 +298,7 @@ class FoodLogWidget extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                          color: AppLegacyColors.primaryBlue.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -314,7 +314,7 @@ class FoodLogWidget extends StatelessWidget {
                               style: AppTypography.bodySmall.copyWith(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: AppTheme.primaryBlue,
+                                color: AppLegacyColors.primaryBlue,
                               ),
                             ),
                           ],
@@ -382,13 +382,13 @@ class FoodLogWidget extends StatelessWidget {
           'Delete Food Item',
           style: AppTypography.displaySmall.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppTheme.primaryBlue,
+            color: AppLegacyColors.primaryBlue,
           ),
         ),
         content: Text(
           'Remove "${item.name}" from your food log?',
           style: AppTypography.bodyMedium.copyWith(
-            color: AppTheme.textDark,
+            color: AppLegacyColors.textDark,
           ),
         ),
         actions: [

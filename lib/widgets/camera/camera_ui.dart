@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'dart:io'; 
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 
 /// UI elements for the camera screen
 class CameraUI {
@@ -89,7 +89,7 @@ class CameraUI {
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,
-          foregroundColor: AppTheme.primaryBlue,
+          foregroundColor: AppLegacyColors.primaryBlue,
           elevation: 4,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -127,7 +127,7 @@ class CameraUI {
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primaryBlue,
+          backgroundColor: AppLegacyColors.primaryBlue,
           foregroundColor: Colors.white,
           elevation: 4,
           shape: RoundedRectangleBorder(
@@ -149,7 +149,7 @@ class CameraUI {
   }) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppTheme.secondaryBeige,
+      backgroundColor: AppLegacyColors.secondaryBeige,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
       ),
@@ -165,7 +165,7 @@ class CameraUI {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryBlue,
+                  color: AppLegacyColors.primaryBlue,
                 ),
               ),
               
@@ -197,7 +197,7 @@ class CameraUI {
                     isExpanded: true,
                     icon: const Icon(
                       Icons.arrow_drop_down,
-                      color: AppTheme.primaryBlue,
+                      color: AppLegacyColors.primaryBlue,
                     ),
                     onChanged: (String? newValue) {
                       if (newValue != null) {
@@ -236,7 +236,7 @@ class CameraUI {
                     icon: const Icon(Icons.replay, size: 20),
                     label: const Text('Retake'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.primaryBlue,
+                      foregroundColor: AppLegacyColors.primaryBlue,
                     ),
                   ),
                   
@@ -249,7 +249,7 @@ class CameraUI {
                     icon: const Icon(Icons.check, size: 20),
                     label: const Text('Analyze Food'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryBlue,
+                      backgroundColor: AppLegacyColors.primaryBlue,
                     ),
                   ),
                 ],

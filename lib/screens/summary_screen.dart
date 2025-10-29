@@ -1,7 +1,7 @@
 // lib/screens/summary_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../config/design_system/theme.dart';
+import '../config/design_system/theme_design.dart';
 import '../providers/home_provider.dart';
 import '../providers/exercise_provider.dart';
 import '../widgets/summary/summary_controls_widget.dart';
@@ -23,7 +23,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
   Widget build(BuildContext context) {
     // ✅ FIXED: No MultiProvider here - use existing app-level providers!
     return Scaffold(
-      backgroundColor: AppTheme.secondaryBeige,
+      backgroundColor: AppLegacyColors.secondaryBeige,
       body: SafeArea(
         child: Consumer2<HomeProvider, ExerciseProvider>(
           builder: (context, homeProvider, exerciseProvider, child) {
@@ -31,7 +31,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
             if (homeProvider.isLoading || exerciseProvider.isLoading) {
               return const Center(
                 child: CircularProgressIndicator(
-                  color: AppTheme.primaryBlue,
+                  color: AppLegacyColors.primaryBlue,
                 ),
               );
             }
@@ -69,7 +69,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
                     RepaintBoundary(
                       key: _summaryKey,
                       child: Container(
-                        color: AppTheme.secondaryBeige,
+                        color: AppLegacyColors.secondaryBeige,
                         child: SummaryContentWidget(
                           period: _currentPeriod,  // ✅ FIXED: Only pass period parameter
                         ),
@@ -123,7 +123,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
               exerciseProvider.refreshData();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryBlue,
+              backgroundColor: AppLegacyColors.primaryBlue,
               foregroundColor: Colors.white,
             ),
             child: const Text('Retry'),

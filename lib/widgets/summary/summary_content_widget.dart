@@ -1,7 +1,7 @@
 // lib/widgets/summary/summary_content_widget.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/exercise_provider.dart';
@@ -70,7 +70,7 @@ class SummaryContentWidget extends StatelessWidget {
           style: AppTypography.displayLarge.copyWith(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppTheme.primaryBlue,
+            color: AppLegacyColors.primaryBlue,
             letterSpacing: 1.2,
           ),
         ),
@@ -93,14 +93,14 @@ class SummaryContentWidget extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppTheme.primaryBlue.withValues(alpha: 0.05),
-            AppTheme.primaryBlue.withValues(alpha: 0.02),
+            AppLegacyColors.primaryBlue.withValues(alpha: 0.05),
+            AppLegacyColors.primaryBlue.withValues(alpha: 0.02),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.1)),
+        border: Border.all(color: AppLegacyColors.primaryBlue.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,7 +434,7 @@ class SummaryContentWidget extends StatelessWidget {
                       style: AppTypography.labelLarge.copyWith(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryBlue,
+                        color: AppLegacyColors.primaryBlue,
                       ),
                     ),
                   ],

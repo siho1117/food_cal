@@ -1,7 +1,7 @@
 // lib/widgets/progress/weight_input_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
 
 class WeightInputDialog extends StatefulWidget {
@@ -67,12 +67,12 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                    color: AppLegacyColors.primaryBlue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
                     Icons.monitor_weight_outlined,
-                    color: AppTheme.primaryBlue,
+                    color: AppLegacyColors.primaryBlue,
                     size: 24,
                   ),
                 ),
@@ -82,7 +82,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
                   style: AppTypography.displaySmall.copyWith(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryBlue,
+                    color: AppLegacyColors.primaryBlue,
                   ),
                 ),
               ],
@@ -126,7 +126,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: !_localIsMetric ? AppTheme.primaryBlue : Colors.grey[600],
+                            color: !_localIsMetric ? AppLegacyColors.primaryBlue : Colors.grey[600],
                           ),
                         ),
                       ),
@@ -159,7 +159,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: _localIsMetric ? AppTheme.primaryBlue : Colors.grey[600],
+                            color: _localIsMetric ? AppLegacyColors.primaryBlue : Colors.grey[600],
                           ),
                         ),
                       ),
@@ -183,7 +183,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
               style: AppTypography.dataLarge.copyWith(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: AppTheme.primaryBlue,
+                color: AppLegacyColors.primaryBlue,
               ),
               decoration: InputDecoration(
                 hintText: _localIsMetric ? '70.0' : '154.0',
@@ -203,7 +203,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
+                  borderSide: const BorderSide(color: AppLegacyColors.primaryBlue, width: 2),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 20,
@@ -252,7 +252,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryBlue,
+                      backgroundColor: AppLegacyColors.primaryBlue,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(

@@ -1,7 +1,7 @@
 // lib/widgets/common/week_navigation_widget.dart
 import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
 
 /// Widget-specific design constants

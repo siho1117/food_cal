@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/theme_provider.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 import 'language_selector_dialog.dart';
 import 'theme_selector_dialog.dart';
 
@@ -70,7 +70,7 @@ class PreferencesWidget extends StatelessWidget {
                 trailing: Switch(
                   value: settingsProvider.isMetric,
                   onChanged: (value) => _toggleUnits(context, settingsProvider),
-                  activeColor: AppTheme.primaryBlue,
+                  activeColor: AppLegacyColors.primaryBlue,
                 ),
                 onTap: () => _toggleUnits(context, settingsProvider),
               ),
@@ -128,10 +128,10 @@ class PreferencesWidget extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withOpacity(0.1),
+                  color: AppLegacyColors.primaryBlue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: AppTheme.primaryBlue, size: 20),
+                child: Icon(icon, color: AppLegacyColors.primaryBlue, size: 20),
               ),
             
             const SizedBox(width: 16),
@@ -146,7 +146,7 @@ class PreferencesWidget extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: AppTheme.primaryBlue,
+                      color: AppLegacyColors.primaryBlue,
                     ),
                   ),
                   const SizedBox(height: 4),

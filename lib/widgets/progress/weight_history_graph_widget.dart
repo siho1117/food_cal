@@ -1,7 +1,7 @@
 // lib/widgets/progress/weight_history_graph_widget.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
 import '../../data/models/weight_data.dart';
 
@@ -195,7 +195,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
                               style: AppTypography.displaySmall.copyWith(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: AppTheme.primaryBlue,
+                                color: AppLegacyColors.primaryBlue,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -243,7 +243,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: isSelected ? AppTheme.primaryBlue : Colors.transparent,
+                color: isSelected ? AppLegacyColors.primaryBlue : Colors.transparent,
                 borderRadius: BorderRadius.circular(7),
               ),
               child: Text(
@@ -272,20 +272,20 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
 
     switch (trendType) {
       case 'losing':
-        bgColor = AppTheme.coralAccent.withValues(alpha: 0.1);
-        textColor = AppTheme.coralAccent;
+        bgColor = AppLegacyColors.coralAccent.withValues(alpha: 0.1);
+        textColor = AppLegacyColors.coralAccent;
         emoji = '📉';
         description = 'Losing ${rate.abs().toStringAsFixed(1)} ${widget.isMetric ? 'kg' : 'lbs'}/week';
         break;
       case 'gaining':
-        bgColor = AppTheme.goldAccent.withValues(alpha: 0.1);
-        textColor = AppTheme.goldAccent;
+        bgColor = AppLegacyColors.goldAccent.withValues(alpha: 0.1);
+        textColor = AppLegacyColors.goldAccent;
         emoji = '📈';
         description = 'Gaining ${rate.toStringAsFixed(1)} ${widget.isMetric ? 'kg' : 'lbs'}/week';
         break;
       default:
-        bgColor = AppTheme.primaryBlue.withValues(alpha: 0.1);
-        textColor = AppTheme.primaryBlue;
+        bgColor = AppLegacyColors.primaryBlue.withValues(alpha: 0.1);
+        textColor = AppLegacyColors.primaryBlue;
         emoji = '➡️';
         description = 'Maintaining within ${rate.toStringAsFixed(1)} ${widget.isMetric ? 'kg' : 'lbs'} range';
     }
@@ -413,7 +413,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppTheme.secondaryBeige.withValues(alpha: 0.2),
+        color: AppLegacyColors.secondaryBeige.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -439,7 +439,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
           style: AppTypography.labelLarge.copyWith(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: AppTheme.primaryBlue,
+            color: AppLegacyColors.primaryBlue,
           ),
         ),
       ],
@@ -468,7 +468,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
               'No Weight History',
               style: AppTypography.displaySmall.copyWith(
                 fontWeight: FontWeight.bold,
-                color: AppTheme.primaryBlue,
+                color: AppLegacyColors.primaryBlue,
               ),
             ),
             const SizedBox(height: 6),
@@ -484,7 +484,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
             ElevatedButton(
               onPressed: () {},
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryBlue,
+                backgroundColor: AppLegacyColors.primaryBlue,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -533,7 +533,7 @@ class WeightChartPainter extends CustomPainter {
     final padding = range * 0.1;
 
     final linePaint = Paint()
-      ..color = AppTheme.primaryBlue
+      ..color = AppLegacyColors.primaryBlue
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
@@ -544,8 +544,8 @@ class WeightChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          AppTheme.primaryBlue.withValues(alpha: 0.2),
-          AppTheme.primaryBlue.withValues(alpha: 0.05),
+          AppLegacyColors.primaryBlue.withValues(alpha: 0.2),
+          AppLegacyColors.primaryBlue.withValues(alpha: 0.05),
         ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
@@ -582,7 +582,7 @@ class WeightChartPainter extends CustomPainter {
         ..color = Colors.white
         ..style = PaintingStyle.fill;
       final borderPaint = Paint()
-        ..color = AppTheme.primaryBlue
+        ..color = AppLegacyColors.primaryBlue
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2;
 

@@ -21,7 +21,7 @@ import 'providers/language_provider.dart';
 import 'providers/theme_provider.dart';
 
 // Config
-import 'config/design_system/theme.dart';
+import 'config/design_system/theme_design.dart';
 import 'config/dependency_injection.dart';
 
 // Localization

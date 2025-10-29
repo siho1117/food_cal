@@ -1,6 +1,6 @@
 // lib/widgets/summary/summary_controls_widget.dart
 import 'package:flutter/material.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
 
 enum SummaryPeriod { daily, weekly, monthly }
@@ -66,7 +66,7 @@ class SummaryControlsWidget extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppTheme.primaryBlue : Colors.transparent,
+                  color: isSelected ? AppLegacyColors.primaryBlue : Colors.transparent,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -103,14 +103,14 @@ class SummaryControlsWidget extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppTheme.primaryBlue,
-            AppTheme.primaryBlue.withValues(alpha: 0.8),
+            AppLegacyColors.primaryBlue,
+            AppLegacyColors.primaryBlue.withValues(alpha: 0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+            color: AppLegacyColors.primaryBlue.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

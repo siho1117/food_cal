@@ -1,7 +1,7 @@
 // lib/widgets/exercise/exercise_entry_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 import '../../providers/exercise_provider.dart';
 import '../../data/models/exercise_entry.dart';
 import 'exercise_dialog_controller.dart';
@@ -89,7 +89,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
-        color: AppTheme.primaryBlue,
+        color: AppLegacyColors.primaryBlue,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -173,11 +173,11 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: isSelected ? AppTheme.primaryBlue : Colors.grey.shade300,
+                    color: isSelected ? AppLegacyColors.primaryBlue : Colors.grey.shade300,
                     width: 2,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  color: isSelected ? AppTheme.primaryBlue.withValues(alpha: 0.1) : Colors.white,
+                  color: isSelected ? AppLegacyColors.primaryBlue.withValues(alpha: 0.1) : Colors.white,
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -239,16 +239,16 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: isSelected ? AppTheme.primaryBlue : Colors.grey.shade300,
+                    color: isSelected ? AppLegacyColors.primaryBlue : Colors.grey.shade300,
                   ),
                   borderRadius: BorderRadius.circular(16),
-                  color: isSelected ? AppTheme.primaryBlue.withValues(alpha: 0.1) : Colors.white,
+                  color: isSelected ? AppLegacyColors.primaryBlue.withValues(alpha: 0.1) : Colors.white,
                 ),
                 child: Text(
                   '${preset}m',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isSelected ? AppTheme.primaryBlue : Colors.grey.shade700,
+                    color: isSelected ? AppLegacyColors.primaryBlue : Colors.grey.shade700,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -281,11 +281,11 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: isSelected ? AppTheme.primaryBlue : Colors.grey.shade300,
+                        color: isSelected ? AppLegacyColors.primaryBlue : Colors.grey.shade300,
                         width: 2,
                       ),
                       borderRadius: BorderRadius.circular(8),
-                      color: isSelected ? AppTheme.primaryBlue.withValues(alpha: 0.1) : Colors.white,
+                      color: isSelected ? AppLegacyColors.primaryBlue.withValues(alpha: 0.1) : Colors.white,
                     ),
                     child: Text(
                       intensity,
@@ -358,7 +358,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
           child: ElevatedButton(
             onPressed: _controller.canSave && !_controller.isLoading ? _handleSave : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryBlue,
+              backgroundColor: AppLegacyColors.primaryBlue,
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             child: _controller.isLoading

@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
 import '../../providers/progress_data.dart';
 
@@ -176,7 +176,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
                           style: AppTypography.displaySmall.copyWith(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryBlue,
+                            color: AppLegacyColors.primaryBlue,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -193,14 +193,14 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
                       children: [
                         _buildMinimalButton(
                           icon: Icons.add,
-                          color: AppTheme.primaryBlue,
+                          color: AppLegacyColors.primaryBlue,
                           isColored: true,
                           onPressed: _showWeightInputDialog,
                         ),
                         const SizedBox(width: 8),
                         _buildMinimalButton(
                           icon: Icons.flag_outlined,
-                          color: AppTheme.accentColor,
+                          color: AppLegacyColors.accentColor,
                           isColored: targetWeight != null,
                           onPressed: _showTargetWeightDialog,
                         ),

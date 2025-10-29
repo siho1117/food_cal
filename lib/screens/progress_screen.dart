@@ -10,7 +10,7 @@ import '../widgets/progress/energy_metrics_widget.dart';
 // NEW: Import exercise widgets (now in progress folder)
 import '../widgets/progress/daily_burn_widget.dart';
 import '../widgets/progress/exercise_log_widget.dart';
-import '../config/design_system/theme.dart';
+import '../config/design_system/theme_design.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -24,7 +24,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
   Widget build(BuildContext context) {
     // Use MultiProvider to consume both ProgressData and ExerciseProvider
     return Scaffold(
-      backgroundColor: AppTheme.secondaryBeige,
+      backgroundColor: AppLegacyColors.secondaryBeige,
       body: SafeArea(
         child: Consumer2<ProgressData, ExerciseProvider>(
           builder: (context, progressData, exerciseProvider, child) {
@@ -63,7 +63,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryBlue,
+                        color: AppLegacyColors.primaryBlue,
                         letterSpacing: 1.5,
                       ),
                     ),
@@ -166,7 +166,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
         Icon(
           icon,
           size: 20,
-          color: AppTheme.primaryBlue,
+          color: AppLegacyColors.primaryBlue,
         ),
         const SizedBox(width: 8),
         Text(
@@ -174,7 +174,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppTheme.primaryBlue,
+            color: AppLegacyColors.primaryBlue,
             letterSpacing: 0.5,
           ),
         ),
@@ -215,7 +215,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
               'Oops! Something went wrong',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: AppTheme.textDark,
+                color: AppLegacyColors.textDark,
               ),
               textAlign: TextAlign.center,
             ),
@@ -237,7 +237,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
               icon: const Icon(Icons.refresh),
               label: const Text('Try Again'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryBlue,
+                backgroundColor: AppLegacyColors.primaryBlue,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(

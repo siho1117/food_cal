@@ -1,7 +1,7 @@
 // lib/widgets/settings/language_selector_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 import '../../providers/language_provider.dart';
 
 class LanguageSelectorDialog extends StatelessWidget {
@@ -35,12 +35,12 @@ class LanguageSelectorDialog extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.coralAccent.withOpacity(0.1),
+                    color: AppLegacyColors.coralAccent.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.language,
-                    color: AppTheme.coralAccent,
+                    color: AppLegacyColors.coralAccent,
                     size: 24,
                   ),
                 ),
@@ -50,7 +50,7 @@ class LanguageSelectorDialog extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryBlue,
+                    color: AppLegacyColors.primaryBlue,
                   ),
                 ),
                 const Spacer(),
@@ -97,10 +97,10 @@ class LanguageSelectorDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.primaryBlue.withOpacity(0.05),
+                color: AppLegacyColors.primaryBlue.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: AppTheme.primaryBlue.withOpacity(0.1),
+                  color: AppLegacyColors.primaryBlue.withOpacity(0.1),
                 ),
               ),
               child: Row(
@@ -108,7 +108,7 @@ class LanguageSelectorDialog extends StatelessWidget {
                   Icon(
                     Icons.info_outline,
                     size: 16,
-                    color: AppTheme.primaryBlue.withOpacity(0.7),
+                    color: AppLegacyColors.primaryBlue.withOpacity(0.7),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -167,14 +167,14 @@ class _LanguageTileState extends State<_LanguageTile> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: widget.isSelected
-                  ? AppTheme.coralAccent.withOpacity(0.1)
+                  ? AppLegacyColors.coralAccent.withOpacity(0.1)
                   : _isHovered
                       ? Colors.grey.withOpacity(0.05)
                       : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: widget.isSelected
-                    ? AppTheme.coralAccent
+                    ? AppLegacyColors.coralAccent
                     : Colors.grey.withOpacity(0.2),
                 width: widget.isSelected ? 2 : 1,
               ),
@@ -198,7 +198,7 @@ class _LanguageTileState extends State<_LanguageTile> {
                           ? FontWeight.bold 
                           : FontWeight.normal,
                       color: widget.isSelected
-                          ? AppTheme.primaryBlue
+                          ? AppLegacyColors.primaryBlue
                           : Colors.grey[800],
                     ),
                   ),
@@ -209,7 +209,7 @@ class _LanguageTileState extends State<_LanguageTile> {
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: const BoxDecoration(
-                      color: AppTheme.coralAccent,
+                      color: AppLegacyColors.coralAccent,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(

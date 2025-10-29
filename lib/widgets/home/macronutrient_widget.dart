@@ -1,7 +1,7 @@
 // lib/widgets/home/macronutrient_widget.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
 import '../../providers/home_provider.dart';
 
@@ -98,7 +98,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                         style: AppTypography.displaySmall.copyWith(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryBlue,
+                          color: AppLegacyColors.primaryBlue,
                         ),
                       ),
                     ],
@@ -280,7 +280,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                   style: AppTypography.bodySmall.copyWith(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.primaryBlue,
+                    color: AppLegacyColors.primaryBlue,
                   ),
                 ),
               ],

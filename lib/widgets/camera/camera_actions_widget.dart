@@ -1,7 +1,7 @@
 // lib/widgets/camera/camera_actions_widget.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 import '../../providers/camera_provider.dart';
 
 class CameraActionsWidget extends StatelessWidget {
@@ -56,7 +56,7 @@ class CameraActionsWidget extends StatelessWidget {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
-                      foregroundColor: AppTheme.primaryBlue,
+                      foregroundColor: AppLegacyColors.primaryBlue,
                       elevation: 4,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -97,7 +97,7 @@ class CameraActionsWidget extends StatelessWidget {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryBlue,
+                      backgroundColor: AppLegacyColors.primaryBlue,
                       foregroundColor: Colors.white,
                       elevation: 4,
                       shape: RoundedRectangleBorder(

@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 
 class FeedbackWidget extends StatelessWidget {
   final VoidCallback? onSendFeedback; // Optional callback for additional actions
@@ -28,12 +28,12 @@ class FeedbackWidget extends StatelessWidget {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     // ✅ FIXED: Use withValues instead of withOpacity
-                    color: AppTheme.coralAccent.withValues(alpha: 0.1),
+                    color: AppLegacyColors.coralAccent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
                     Icons.feedback,
-                    color: AppTheme.coralAccent,
+                    color: AppLegacyColors.coralAccent,
                     size: 24,
                   ),
                 ),
@@ -83,7 +83,7 @@ class FeedbackWidget extends StatelessWidget {
             children: [
               Icon(
                 Icons.feedback,
-                color: AppTheme.coralAccent,
+                color: AppLegacyColors.coralAccent,
                 size: 24,
               ),
               SizedBox(width: 8),
@@ -108,7 +108,7 @@ class FeedbackWidget extends StatelessWidget {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppTheme.coralAccent),
+                    borderSide: const BorderSide(color: AppLegacyColors.coralAccent),
                   ),
                 ),
                 maxLines: 5,
@@ -204,7 +204,7 @@ class FeedbackWidget extends StatelessWidget {
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.coralAccent,
+                backgroundColor: AppLegacyColors.coralAccent,
               ),
               child: const Text('Send'),
             ),

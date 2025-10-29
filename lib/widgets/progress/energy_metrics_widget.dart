@@ -1,6 +1,6 @@
 // lib/widgets/progress/energy_metrics_widget.dart
 import 'package:flutter/material.dart';
-import '../../config/design_system/theme.dart';
+import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/dimensions.dart';
 import '../../config/design_system/typography.dart';
 import '../../data/models/user_profile.dart';
@@ -195,7 +195,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
-              color: AppTheme.secondaryBeige.withValues(alpha: 0.3),
+              color: AppLegacyColors.secondaryBeige.withValues(alpha: 0.3),
               border: Border(
                 top: BorderSide(
                   color: Colors.grey.withValues(alpha: 0.1),
@@ -211,7 +211,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
                     const Icon(
                       Icons.flash_on_rounded,
                       size: 14,
-                      color: AppTheme.goldAccent,
+                      color: AppLegacyColors.goldAccent,
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -219,7 +219,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
                       style: AppTypography.bodyMedium.copyWith(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.primaryBlue,
+                        color: AppLegacyColors.primaryBlue,
                       ),
                     ),
                   ],
@@ -234,7 +234,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                      color: AppLegacyColors.primaryBlue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -245,7 +245,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
                           style: AppTypography.bodyMedium.copyWith(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.primaryBlue,
+                            color: AppLegacyColors.primaryBlue,
                           ),
                         ),
                         const SizedBox(width: 4),
@@ -255,7 +255,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
                           child: const Icon(
                             Icons.keyboard_arrow_down_rounded,
                             size: 14,
-                            color: AppTheme.primaryBlue,
+                            color: AppLegacyColors.primaryBlue,
                           ),
                         ),
                       ],
@@ -333,23 +333,23 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
           children: [
             Row(
               children: [
-                const Icon(Icons.flag_rounded, color: AppTheme.primaryBlue, size: 20),
+                const Icon(Icons.flag_rounded, color: AppLegacyColors.primaryBlue, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   'Calorie Goals',
                   style: AppTypography.displaySmall.copyWith(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryBlue,
+                    color: AppLegacyColors.primaryBlue,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            _buildGoalRow('Maintain Weight', goals['maintain']!, AppTheme.primaryBlue, '✓'),
+            _buildGoalRow('Maintain Weight', goals['maintain']!, AppLegacyColors.primaryBlue, '✓'),
             _buildGoalRow('Mild Loss (-0.25kg/week)', goals['mildLoss']!, const Color(0xFF3B82F6), '↘'),
-            _buildGoalRow('Weight Loss (-0.5kg/week)', goals['weightLoss']!, AppTheme.coralAccent, '↓'),
-            _buildGoalRow('Weight Gain (+0.5kg/week)', goals['gain']!, AppTheme.goldAccent, '↑'),
+            _buildGoalRow('Weight Loss (-0.5kg/week)', goals['weightLoss']!, AppLegacyColors.coralAccent, '↓'),
+            _buildGoalRow('Weight Gain (+0.5kg/week)', goals['gain']!, AppLegacyColors.goldAccent, '↑'),
           ],
         ),
       ),
@@ -417,7 +417,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
               style: AppTypography.displaySmall.copyWith(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: AppTheme.primaryBlue,
+                color: AppLegacyColors.primaryBlue,
               ),
             ),
             const SizedBox(height: 8),
@@ -433,7 +433,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
             ElevatedButton(
               onPressed: widget.onSettingsTap,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryBlue,
+                backgroundColor: AppLegacyColors.primaryBlue,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -463,7 +463,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
           'Energy Metrics',
           style: AppTypography.displaySmall.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppTheme.primaryBlue,
+            color: AppLegacyColors.primaryBlue,
           ),
         ),
         content: SingleChildScrollView(
@@ -492,7 +492,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             style: TextButton.styleFrom(
-              foregroundColor: AppTheme.primaryBlue,
+              foregroundColor: AppLegacyColors.primaryBlue,
             ),
             child: Text(
               'GOT IT',
@@ -515,7 +515,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
           style: AppTypography.displaySmall.copyWith(
             fontWeight: FontWeight.w600,
             fontSize: 13,
-            color: AppTheme.primaryBlue,
+            color: AppLegacyColors.primaryBlue,
           ),
         ),
         const SizedBox(height: 4),
