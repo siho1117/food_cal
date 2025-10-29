@@ -1,6 +1,6 @@
 // lib/config/design_system/dialog_theme.dart
 import 'package:flutter/material.dart';
-import 'theme.dart';
+import 'theme_design.dart';  // ✅ NEW: Using theme_design instead of theme
 
 /// Dialog styling constants following the Dialog Style Guide
 /// 
@@ -36,7 +36,7 @@ class AppDialogTheme {
   static const FontWeight titleFontWeight = FontWeight.w600;
   
   /// Text color for dialog title
-  static const Color titleColor = AppTheme.textDark; // Color(0xFF1A1A1A)
+  static const Color titleColor = AppColors.textDark;  // ✅ Using AppColors
   
   /// Complete text style for dialog title
   static const TextStyle titleStyle = TextStyle(
@@ -73,7 +73,7 @@ class AppDialogTheme {
   static const double inputFontSize = 16.0;
   
   /// Text color for input field
-  static const Color inputTextColor = AppTheme.textDark; // Color(0xFF1A1A1A)
+  static const Color inputTextColor = AppColors.textDark;  // ✅ Using AppColors
   
   /// Border radius for input fields
   static const double inputBorderRadius = 12.0;
@@ -82,7 +82,7 @@ class AppDialogTheme {
   static Color get inputBorderColor => Colors.grey.shade300;
   
   /// Focused border color
-  static const Color inputFocusedBorderColor = AppTheme.textDark; // Color(0xFF1A1A1A)
+  static const Color inputFocusedBorderColor = AppColors.textDark;  // ✅ Using AppColors
   
   /// Default border width
   static const double inputBorderWidth = 1.0;
@@ -168,7 +168,7 @@ class AppDialogTheme {
   // ═══════════════════════════════════════════════════════════════
   
   /// Background color for primary button
-  static const Color primaryButtonBackgroundColor = AppTheme.textDark; // Color(0xFF1A1A1A)
+  static const Color primaryButtonBackgroundColor = AppColors.textDark;  // ✅ Using AppColors
   
   /// Text color for primary button
   static const Color primaryButtonTextColor = Colors.white;

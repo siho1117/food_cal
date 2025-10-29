@@ -7,8 +7,8 @@ import '../widgets/settings/profile_section_widget.dart';
 import '../widgets/settings/personal_details_widget.dart';
 import '../widgets/settings/preferences_widget.dart';
 import '../widgets/settings/feedback_widget.dart';
-import '../config/design_system/theme.dart';
-import '../config/design_system/gradient_background.dart';
+import '../config/design_system/theme_design.dart';  // ✅ For AppColors if needed
+import '../config/design_system/theme_background.dart';
 
 class SettingsScreen extends StatefulWidget {
   // Parameter to check if we should show back button
@@ -29,8 +29,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // Wrap with Consumer<ThemeProvider> to get dynamic gradient
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
-        return GradientBackground(
-          gradientName: themeProvider.selectedGradient, // Dynamic gradient
+        return Container(
+          // ✅ NEW: Direct gradient decoration using ThemeBackground
+          decoration: BoxDecoration(
+            gradient: ThemeBackground.getGradient(themeProvider.selectedGradient),
+          ),
           child: Scaffold(
             backgroundColor: Colors.transparent, // Make transparent to show gradient
             // Add an app bar with back button when needed
@@ -40,13 +43,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     elevation: 0,
                     leading: IconButton(
                       icon: const Icon(Icons.arrow_back),
-                      color: AppTheme.primaryBlue,
+                      color: AppColors.textDark,  // ✅ Using AppColors
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                     title: const Text(
                       'Settings',
                       style: TextStyle(
-                        color: AppTheme.primaryBlue,
+                        color: AppColors.textDark,  // ✅ Using AppColors
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -67,61 +70,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 20),
 
                         // Personal Details
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const PersonalDetailsWidget(),
-                        ),
+                        const PersonalDetailsWidget(),
 
                         const SizedBox(height: 20),
 
-                        // Preferences
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const PreferencesWidget(),
-                        ),
+                        // Preferences (language, theme, units)
+                        const PreferencesWidget(),
 
                         const SizedBox(height: 20),
 
-                        // Feedback
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const FeedbackWidget(),
-                        ),
+                        // Feedback Widget
+                        const FeedbackWidget(),
 
-                        const SizedBox(height: 20),
+                        // Bottom padding for navigation bar
+                        const SizedBox(height: 100),
                       ],
                     ),
                   );

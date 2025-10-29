@@ -1,9 +1,10 @@
 // lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../config/design_system/theme.dart';
-import '../config/design_system/gradient_background.dart';
+import '../config/design_system/theme_background.dart';
+import '../config/design_system/theme_design.dart';  // ✅ For AppColors
 import '../providers/home_provider.dart';
+import '../providers/theme_provider.dart';
 import '../widgets/home/calorie_summary_widget.dart';
 import '../widgets/home/macronutrient_widget.dart';
 import '../widgets/home/cost_summary_widget.dart';
@@ -20,93 +21,97 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
-    // Wrap the entire screen with gradient background
-    return GradientBackground(
-      gradientName: 'home', // Uses home gradient from theme.dart
-      child: Scaffold(
-        backgroundColor: Colors.transparent, // Make Scaffold transparent to show gradient
-        body: SafeArea(
-          child: Consumer<HomeProvider>(
-            builder: (context, homeProvider, child) {
-              if (homeProvider.isLoading) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white, // White spinner looks better on gradient
-                  ),
-                );
-              }
-
-              // Handle error state
-              if (homeProvider.errorMessage != null) {
-                return _buildErrorState(context, homeProvider);
-              }
-              
-              return NotificationListener<OverscrollIndicatorNotification>(
-                onNotification: (notification) {
-                  notification.disallowIndicator();
-                  return true;
-                },
-                child: RefreshIndicator(
-                  onRefresh: () => homeProvider.refreshData(),
-                  color: Colors.white, // White refresh indicator on gradient
-                  backgroundColor: Colors.black.withValues(alpha: 0.3),
-                  strokeWidth: 2.5,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Calorie Summary Widget
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                          child: CalorieSummaryWidget(),
-                        ),
-
-                        // Week Navigation Widget
-                        WeekNavigationWidget(
-                          selectedDate: homeProvider.selectedDate,
-                          onDateChanged: (date) => homeProvider.changeDate(date),
-                          daysToShow: 8, // 7 days back + today
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Macronutrient Widget
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: MacronutrientWidget(),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Cost Summary Widget
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: CostSummaryWidget(),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Food Log Widget
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: FoodLogWidget(
-                            onFoodAdded: () => homeProvider.refreshData(),
-                          ),
-                        ),
-
-                        // Bottom padding for navigation bar
-                        const SizedBox(height: 100),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
+    // ✅ NEW: Get theme from ThemeProvider
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return Container(
+          // ✅ NEW: Direct gradient decoration using ThemeBackground
+          decoration: BoxDecoration(
+            gradient: ThemeBackground.getGradient(themeProvider.selectedGradient),
           ),
-        ),
-      ),
+          child: Scaffold(
+            backgroundColor: Colors.transparent, // Make Scaffold transparent to show gradient
+            body: SafeArea(
+              child: Consumer<HomeProvider>(
+                builder: (context, homeProvider, child) {
+                  if (homeProvider.isLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.white, // White spinner looks better on gradient
+                      ),
+                    );
+                  }
+
+                  // Handle error state
+                  if (homeProvider.errorMessage != null) {
+                    return _buildErrorState(context, homeProvider);
+                  }
+                  
+                  return NotificationListener<OverscrollIndicatorNotification>(
+                    onNotification: (notification) {
+                      notification.disallowIndicator();
+                      return true;
+                    },
+                    child: SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 20),
+                          
+                          // Week Navigation
+                          WeekNavigationWidget(
+                            selectedDate: homeProvider.selectedDate,
+                            onDateChanged: (date) => homeProvider.changeDate(date),
+                            daysToShow: 8, // 7 days back + today
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Calorie Summary (large card)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            child: CalorieSummaryWidget(),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Macronutrient Widget
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            child: MacronutrientWidget(),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Cost Summary Widget (no container wrapper)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            child: CostSummaryWidget(),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Food Log Widget
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: FoodLogWidget(
+                              onFoodAdded: () => homeProvider.refreshData(),
+                            ),
+                          ),
+
+                          // Bottom padding for navigation bar
+                          const SizedBox(height: 100),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -154,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
               label: const Text('Try Again'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
-                foregroundColor: AppTheme.primaryBlue,
+                foregroundColor: AppColors.textDark,  // ✅ Using AppColors
                 padding: const EdgeInsets.symmetric(
                   horizontal: 32,
                   vertical: 16,
