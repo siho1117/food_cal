@@ -6,111 +6,242 @@ class AppTheme {
   AppTheme._();
 
   // ═══════════════════════════════════════════════════════════════
-  // COLOR PALETTE
+  // COLOR PALETTE - SIMPLIFIED (White/Black/Grey Tones)
   // ═══════════════════════════════════════════════════════════════
   
-  // Main colors
-  static const Color primaryBlue = Color(0xFF0D4033);
-  static const Color secondaryBeige = Color(0xFFF5EFE0);
-  static const Color textDark = Color(0xFF333333);
-  static const Color textLight = Colors.white;
-  static const Color accentColor = Color(0xFF8B3A3A);
+  // Core colors (neutral tones only)
+  static const Color textDark = Color(0xFF1A1A1A);      // Almost black for light backgrounds
+  static const Color textLight = Colors.white;          // White for dark backgrounds
+  static const Color textGrey = Color(0xFF666666);      // Grey for secondary text
   
-  // Additional accent colors
+  // UI element colors
+  static const Color borderLight = Colors.white;        // White borders for dark backgrounds
+  static const Color borderDark = Color(0xFF2A2A2A);    // Dark borders for light backgrounds
+  
+  // Background colors (for non-gradient elements)
+  static const Color backgroundLight = Color(0xFFF5F5F5);
+  static const Color backgroundDark = Color(0xFF1A1A1A);
+  
+  // Legacy colors (kept for backward compatibility, will be phased out)
+  static const Color primaryBlue = Color(0xFF0D4033);   // Used in some old widgets
+  static const Color secondaryBeige = Color(0xFFF5EFE0); // Used in some old widgets
+  static const Color accentColor = Color(0xFF8B3A3A);   // Used in some old widgets
   static const Color goldAccent = Color(0xFFCF9340);
   static const Color coralAccent = Color(0xFFE27069);
   static const Color mintAccent = Color(0xFFE4F7D7);
   static const Color nudeAccent = Color(0xFFDEBAB0);
 
   // ═══════════════════════════════════════════════════════════════
-  // GRADIENT LIBRARY
+  // GRADIENT LIBRARY - NUMBERED THEMES (01-09)
   // ═══════════════════════════════════════════════════════════════
   
-  /// Gradient presets - Light Mode
+  /// Gradient presets - Light Mode (numbered 01-09)
+  /// UPDATED: More subtle, sophisticated color transitions
+  /// Smaller color variations for smooth, elegant look
   static const Map<String, List<Color>> gradientsLight = {
-    // iOS-inspired (purple/pink → blue) - Home screen
-    'home': [
-      Color(0xFFB8A3D6), // Soft purple
-      Color(0xFFC4B5E3), // Purple-pink
-      Color(0xFFB8D5F0), // Lavender-blue
-      Color(0xFF9DC9F5), // Sky blue
-      Color(0xFF7BB8F0), // Bright blue
+    // 01 - Light Gray/Minimal (very subtle gray shifts)
+    '01': [
+      Color(0xFFE8E8E8), // Very light gray
+      Color(0xFFE3E3E3), // Slightly darker
+      Color(0xFFDEDEDE), // Light gray
+      Color(0xFFD9D9D9), // Medium-light gray
+      Color(0xFFD4D4D4), // Medium gray
     ],
     
-    // Warm gradient (coral/peach → gold) - Could be used for Progress
-    'warm': [
-      Color(0xFFFFB5A7), // Soft coral
-      Color(0xFFFFC9A3), // Peach
-      Color(0xFFFFD6A5), // Light peach
-      Color(0xFFFFE4B5), // Cream
-      Color(0xFFFFF0C7), // Light gold
+    // 02 - Dark/Midnight (from IMG_5961.PNG)
+    '02': [
+      Color(0xFF2C2C2C), // Very dark gray
+      Color(0xFF272727), // Dark gray
+      Color(0xFF222222), // Darker
+      Color(0xFF1D1D1D), // Very dark
+      Color(0xFF181818), // Almost black
     ],
     
-    // Cool gradient (mint → teal) - Could be used for Exercise
-    'cool': [
-      Color(0xFFB8E6E1), // Mint
-      Color(0xFFA8DDD8), // Light teal
-      Color(0xFF98D4CF), // Teal
-      Color(0xFF88CBC6), // Deep teal
-      Color(0xFF78C2BD), // Ocean teal
+    // 03 - Purple Blue (subtle purple-blue wash)
+    '03': [
+      Color(0xFFC5B8DC), // Soft purple
+      Color(0xFFC2B8E0), // Purple-lavender
+      Color(0xFFBFBDE4), // Lavender-blue
+      Color(0xFFBCC2E8), // Blue-lavender
+      Color(0xFFB9C7EC), // Soft blue
     ],
     
-    // Minimal gradient (light beige → white) - Could be used for Settings
-    'minimal': [
-      Color(0xFFFAF6F0), // Very light beige
-      Color(0xFFF9F5EF), // Light beige
-      Color(0xFFF8F4EE), // Beige
-      Color(0xFFF7F3ED), // Slightly darker beige
-      Color(0xFFF5EFE0), // Your secondaryBeige
+    // 04 - Warm Sunrise (subtle warm gradient)
+    '04': [
+      Color(0xFFFFE5C2), // Light peach
+      Color(0xFFFFE0BC), // Peach
+      Color(0xFFFFDBB6), // Warm peach
+      Color(0xFFFFD6B0), // Golden peach
+      Color(0xFFFFD1AA), // Warm gold
+    ],
+    
+    // 05 - Coral/Pink (subtle coral wash)
+    '05': [
+      Color(0xFFFFDDD6), // Very light coral
+      Color(0xFFFFD8D0), // Light coral
+      Color(0xFFFFD3CA), // Soft coral
+      Color(0xFFFFCEC4), // Coral
+      Color(0xFFFFC9BE), // Warm coral
+    ],
+    
+    // 06 - Ocean Blue (SUBTLE like your reference image!)
+    '06': [
+      Color(0xFFD4E8EE), // Very light blue
+      Color(0xFFCDE4EB), // Light blue
+      Color(0xFFC6E0E8), // Soft blue
+      Color(0xFFBFDCE5), // Blue
+      Color(0xFFB8D8E2), // Ocean blue
+    ],
+    
+    // 07 - Mint Green (subtle mint wash)
+    '07': [
+      Color(0xFFE0F0E0), // Very light mint
+      Color(0xFFDBECDB), // Light mint
+      Color(0xFFD6E8D6), // Soft mint
+      Color(0xFFD1E4D1), // Mint
+      Color(0xFFCCE0CC), // Green mint
+    ],
+    
+    // 08 - Warm Peach (subtle warm wash)
+    '08': [
+      Color(0xFFFFE5D9), // Very light peach
+      Color(0xFFFFE0D3), // Light peach
+      Color(0xFFFFDBCD), // Soft peach
+      Color(0xFFFFD6C7), // Peach
+      Color(0xFFFFD1C1), // Warm peach
+    ],
+    
+    // 09 - Cool Teal (subtle teal wash)
+    '09': [
+      Color(0xFFD9F0ED), // Very light teal
+      Color(0xFFD3ECE9), // Light teal
+      Color(0xFFCDE8E5), // Soft teal
+      Color(0xFFC7E4E1), // Teal
+      Color(0xFFC1E0DD), // Cool teal
     ],
   };
   
-  /// Gradient presets - Dark Mode
+  /// Gradient presets - Dark Mode (numbered 01-09)
+  /// Updated to have VISIBLE color tones, not just dark gray
   static const Map<String, List<Color>> gradientsDark = {
-    // Dark purple/blue - Home screen dark mode
-    'home': [
-      Color(0xFF2D1B4E), // Deep purple
-      Color(0xFF2A1F52), // Dark purple-blue
-      Color(0xFF1E2B4F), // Navy purple
-      Color(0xFF1A2E4E), // Dark navy
-      Color(0xFF162F4D), // Deep navy
+    // 01 - Dark Gray (keep as gray for consistency)
+    '01': [
+      Color(0xFF3A3A3A), // Dark gray
+      Color(0xFF333333), // Darker gray
+      Color(0xFF2C2C2C), // Very dark gray
+      Color(0xFF252525), // Almost black
+      Color(0xFF1E1E1E), // Near black
     ],
     
-    // Dark warm - Progress dark mode
-    'warm': [
-      Color(0xFF4A2C2A), // Dark burgundy
-      Color(0xFF3F2B28), // Dark brown
-      Color(0xFF342A26), // Darker brown
-      Color(0xFF2E2925), // Deep brown
-      Color(0xFF252320), // Almost black brown
+    // 02 - Midnight (pure dark - keep as is)
+    '02': [
+      Color(0xFF1C1C1C), // Very dark
+      Color(0xFF151515), // Darker
+      Color(0xFF0E0E0E), // Almost black
+      Color(0xFF080808), // Near black
+      Color(0xFF000000), // Black
     ],
     
-    // Dark cool - Exercise dark mode
-    'cool': [
-      Color(0xFF1A3A37), // Dark teal
-      Color(0xFF173532), // Darker teal
-      Color(0xFF14302D), // Deep teal
-      Color(0xFF112B28), // Very dark teal
-      Color(0xFF0E2623), // Almost black teal
+    // 03 - Dark Purple (COLORFUL dark mode)
+    '03': [
+      Color(0xFF4A3B5C), // Dark purple
+      Color(0xFF3D334F), // Darker purple
+      Color(0xFF2F2A42), // Deep purple
+      Color(0xFF252036), // Very dark purple
+      Color(0xFF1A1729), // Almost black purple
     ],
     
-    // Dark minimal - Settings dark mode
-    'minimal': [
-      Color(0xFF1C1C1E), // iOS dark gray
-      Color(0xFF1B1B1D), // Slightly darker
-      Color(0xFF1A1A1C), // Darker
-      Color(0xFF19191B), // Even darker
-      Color(0xFF18181A), // Deep dark
+    // 04 - Dark Warm (COLORFUL - orange/brown tones)
+    '04': [
+      Color(0xFF5C4A33), // Dark warm brown
+      Color(0xFF4F3D28), // Darker brown
+      Color(0xFF42311E), // Deep brown
+      Color(0xFF362616), // Very dark brown
+      Color(0xFF291B0F), // Almost black brown
+    ],
+    
+    // 05 - Dark Coral (COLORFUL - burgundy/wine tones)
+    '05': [
+      Color(0xFF5C3B3B), // Dark coral/burgundy
+      Color(0xFF4F3030), // Darker burgundy
+      Color(0xFF422626), // Deep burgundy
+      Color(0xFF361E1E), // Very dark burgundy
+      Color(0xFF291616), // Almost black burgundy
+    ],
+    
+    // 06 - Dark Ocean (COLORFUL - teal/navy tones)
+    '06': [
+      Color(0xFF2D4A52), // Dark teal
+      Color(0xFF253D44), // Darker teal
+      Color(0xFF1E3137), // Deep teal
+      Color(0xFF18262B), // Very dark teal
+      Color(0xFF121B1F), // Almost black teal
+    ],
+    
+    // 07 - Dark Mint (COLORFUL - forest green tones)
+    '07': [
+      Color(0xFF2D4A3B), // Dark mint/forest
+      Color(0xFF253D32), // Darker green
+      Color(0xFF1E3129), // Deep green
+      Color(0xFF182621), // Very dark green
+      Color(0xFF121B18), // Almost black green
+    ],
+    
+    // 08 - Dark Warm Coral (COLORFUL - rust tones)
+    '08': [
+      Color(0xFF5C4539), // Dark rust
+      Color(0xFF4F3A2F), // Darker rust
+      Color(0xFF422F26), // Deep rust
+      Color(0xFF36251E), // Very dark rust
+      Color(0xFF291B16), // Almost black rust
+    ],
+    
+    // 09 - Dark Cool Teal (COLORFUL - deep teal)
+    '09': [
+      Color(0xFF2D4A47), // Dark teal
+      Color(0xFF253D3B), // Darker teal
+      Color(0xFF1E312F), // Deep teal
+      Color(0xFF182624), // Very dark teal
+      Color(0xFF121B1A), // Almost black teal
     ],
   };
   
   /// Gradient stops (same for all gradients)
   static const List<double> gradientStops = [0.0, 0.25, 0.5, 0.75, 1.0];
   
+  /// OPTION C: Predefined themed pairs for each gradient
+  /// Each theme has manually defined text and border colors
+  /// 
+  /// User Specification:
+  /// - White text (NO opacity) + White border (40%) for all themes EXCEPT Theme 01
+  /// - Black text (NO opacity) + Black border (40%) ONLY for Theme 01 (Light Gray)
+  
+  /// Get predefined border color for specific theme
+  static Color getBorderColor(String gradientName, Brightness brightness) {
+    // Theme 01 (Light Gray) uses black border
+    if (gradientName == '01') {
+      return Colors.black.withValues(alpha: 0.4);  // 40% black border
+    }
+    
+    // All other themes (02-09) use white border
+    return Colors.white.withValues(alpha: 0.4);  // 40% white border
+  }
+  
+  /// Get predefined text color for specific theme
+  static Color getTextColor(String gradientName, Brightness brightness) {
+    // Theme 01 (Light Gray) uses black text
+    if (gradientName == '01') {
+      return textDark;  // Solid black (NO opacity)
+    }
+    
+    // All other themes (02-09) use white text
+    return Colors.white;  // Solid white (NO opacity)
+  }
+  
   /// Get gradient colors based on name and brightness
   static List<Color> getGradientColors(String name, Brightness brightness) {
     final gradients = brightness == Brightness.light ? gradientsLight : gradientsDark;
-    return gradients[name] ?? gradientsLight['home']!; // Fallback to home if not found
+    return gradients[name] ?? gradientsLight['03']!; // Fallback to 03 (purple) if not found
   }
   
   /// Build LinearGradient from preset name
@@ -120,10 +251,14 @@ class AppTheme {
     Alignment begin = Alignment.topLeft,
     Alignment end = Alignment.bottomRight,
   }) {
+    final colors = getGradientColors(name, brightness);
+    
+    // REVERSED: Darker tones at top, lighter at bottom
+    // User requested to rotate gradient 180 degrees
     return LinearGradient(
       begin: begin,
       end: end,
-      colors: getGradientColors(name, brightness),
+      colors: colors.reversed.toList(), // ← REVERSED order
       stops: gradientStops,
     );
   }
@@ -221,51 +356,92 @@ class AppTheme {
       labelSmall: AppTypography.labelSmall.copyWith(color: textDark),
     ),
     
+    appBarTheme: const AppBarTheme(
+      backgroundColor: secondaryBeige,
+      foregroundColor: primaryBlue,
+      elevation: 0,
+      centerTitle: true,
+    ),
+    
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryBlue,
         foregroundColor: textLight,
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
         ),
-        textStyle: AppTypography.labelLarge,
-      ),
-    ),
-    
-    appBarTheme: AppBarTheme(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      titleTextStyle: AppTypography.displayMedium.copyWith(
-        color: primaryBlue,
-      ),
-      iconTheme: const IconThemeData(
-        color: primaryBlue,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       ),
     ),
     
     inputDecorationTheme: InputDecorationTheme(
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      labelStyle: AppTypography.bodyMedium.copyWith(color: textDark),
-      hintStyle: AppTypography.bodyMedium.copyWith(color: Colors.grey[600]),
-    ),
-    
-    cardTheme: CardTheme(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: primaryBlue),
       ),
-      color: Colors.white,
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: primaryBlue, width: 2),
+      ),
     ),
   );
-  
-  // TODO: Add darkTheme when implementing dark mode
-  static final ThemeData darkTheme = lightTheme.copyWith(
-    brightness: Brightness.dark,
-    // Will be expanded when dark mode is implemented
+
+  static final ThemeData darkTheme = ThemeData(
+    colorScheme: const ColorScheme.dark(
+      primary: primaryBlue,
+      secondary: secondaryBeige,
+      surface: Color(0xFF1E1E1E),
+      tertiary: accentColor,
+    ),
+    
+    scaffoldBackgroundColor: const Color(0xFF121212),
+    
+    textTheme: TextTheme(
+      displayLarge: AppTypography.displayLarge.copyWith(color: textLight),
+      displayMedium: AppTypography.displayMedium.copyWith(color: textLight),
+      displaySmall: AppTypography.displaySmall.copyWith(color: textLight),
+      headlineLarge: AppTypography.displayLarge.copyWith(color: textLight),
+      headlineMedium: AppTypography.displayMedium.copyWith(color: textLight),
+      headlineSmall: AppTypography.displaySmall.copyWith(color: textLight),
+      titleLarge: AppTypography.displayMedium.copyWith(color: textLight),
+      titleMedium: AppTypography.displaySmall.copyWith(color: textLight),
+      titleSmall: AppTypography.labelLarge.copyWith(color: textLight),
+      bodyLarge: AppTypography.bodyLarge.copyWith(color: textLight),
+      bodyMedium: AppTypography.bodyMedium.copyWith(color: textLight),
+      bodySmall: AppTypography.bodySmall.copyWith(color: textLight),
+      labelLarge: AppTypography.labelLarge.copyWith(color: textLight),
+      labelMedium: AppTypography.labelMedium.copyWith(color: textLight),
+      labelSmall: AppTypography.labelSmall.copyWith(color: textLight),
+    ),
+    
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Color(0xFF1E1E1E),
+      foregroundColor: textLight,
+      elevation: 0,
+      centerTitle: true,
+    ),
+    
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: primaryBlue,
+        foregroundColor: textLight,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      ),
+    ),
+    
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: primaryBlue),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: primaryBlue, width: 2),
+      ),
+    ),
   );
 }
 
@@ -278,16 +454,19 @@ class AppTheme {
 class AppWidgetDesign {
   AppWidgetDesign._(); // Private constructor to prevent instantiation
   
-  // Border styling (iOS-inspired white borders)
+  // Border styling (iOS-inspired borders with 40% opacity)
   static const double cardBorderWidth = 4.0;
   static const double cardBorderRadius = 28.0;
-  static const double cardBorderOpacity = 0.5;
+  static const double cardBorderOpacity = 0.4;  // Updated to 40% per user request
   static const Color cardBorderColor = Colors.white;
   
-  // Text shadow policy (currently disabled, change to enable globally)
-  // To enable shadows: replace null with [Shadow(offset: Offset(0, 1), blurRadius: 2.0, color: Color.fromRGBO(0, 0, 0, 0.3))]
+  // Text shadow policy - NO SHADOWS for clean, modern look
   static const List<Shadow>? textShadows = null;
   
   // Standard card padding
   static const EdgeInsets cardPadding = EdgeInsets.fromLTRB(24, 28, 24, 28);
+  
+  // Text opacity - NO OPACITY for solid text (per user request)
+  static const double primaryTextOpacity = 1.0;   // Solid text (was 0.9)
+  static const double secondaryTextOpacity = 0.7; // Secondary text (can keep)
 }

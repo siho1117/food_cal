@@ -9,8 +9,8 @@ class ThemeProvider extends ChangeNotifier {
   // Storage key
   static const String _gradientKey = 'selected_gradient';
   
-  // Current selected gradient (default: 'home')
-  String _selectedGradient = 'home';
+  // Current selected gradient (default: '03' - purple)
+  String _selectedGradient = '03';
   
   // Loading state
   bool _isLoading = true;
@@ -26,12 +26,12 @@ class ThemeProvider extends ChangeNotifier {
       notifyListeners();
 
       final prefs = await SharedPreferences.getInstance();
-      _selectedGradient = prefs.getString(_gradientKey) ?? 'home';
+      _selectedGradient = prefs.getString(_gradientKey) ?? '03';
       
       debugPrint('✅ Loaded gradient preference: $_selectedGradient');
     } catch (e) {
       debugPrint('❌ Error loading gradient preference: $e');
-      _selectedGradient = 'home'; // Fallback to default
+      _selectedGradient = '03'; // Fallback to default (purple)
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -43,7 +43,7 @@ class ThemeProvider extends ChangeNotifier {
     // Validate gradient name exists
     if (!_isValidGradient(gradientName)) {
       debugPrint('⚠️ Invalid gradient name: $gradientName, using default');
-      gradientName = 'home';
+      gradientName = '03';
     }
 
     _selectedGradient = gradientName;
@@ -69,6 +69,16 @@ class ThemeProvider extends ChangeNotifier {
     return AppTheme.getGradientColors(_selectedGradient, brightness);
   }
 
+  /// Get adaptive border color for current gradient
+  Color getBorderColor(Brightness brightness) {
+    return AppTheme.getBorderColor(_selectedGradient, brightness);
+  }
+
+  /// Get adaptive text color for current gradient
+  Color getTextColor(Brightness brightness) {
+    return AppTheme.getTextColor(_selectedGradient, brightness);
+  }
+
   /// Get the first color of the current gradient (useful for app bar)
   Color getTopColor(Brightness brightness, {double opacity = 0.7}) {
     final colors = getCurrentGradientColors(brightness);
@@ -80,39 +90,64 @@ class ThemeProvider extends ChangeNotifier {
     return AppTheme.gradientsLight.containsKey(name);
   }
 
-  /// Get all available gradient names
+  /// Get all available gradient names (01-09)
   List<String> get availableGradients => 
-      AppTheme.gradientsLight.keys.toList();
+      AppTheme.gradientsLight.keys.toList()..sort(); // Sort to ensure 01, 02, 03... order
 
-  /// Get display name for gradient
+  /// Get display name for gradient (just returns the number)
   String getGradientDisplayName(String gradientName) {
+    return 'Theme $gradientName';
+  }
+
+  /// Get gradient description (simple description)
+  String getGradientDescription(String gradientName) {
     switch (gradientName) {
-      case 'home':
-        return 'Home (Purple)';
-      case 'warm':
-        return 'Warm (Coral)';
-      case 'cool':
-        return 'Cool (Teal)';
-      case 'minimal':
-        return 'Minimal (Beige)';
+      case '01':
+        return 'Light minimal gray';
+      case '02':
+        return 'Dark midnight';
+      case '03':
+        return 'Purple blue';
+      case '04':
+        return 'Warm sunrise';
+      case '05':
+        return 'Soft coral';
+      case '06':
+        return 'Ocean blue';
+      case '07':
+        return 'Fresh mint';
+      case '08':
+        return 'Warm peach';
+      case '09':
+        return 'Cool teal';
       default:
-        return 'Unknown';
+        return 'Custom theme';
     }
   }
 
-  /// Get gradient description
-  String getGradientDescription(String gradientName) {
+  /// Get emoji for gradient (for theme selector)
+  String getGradientEmoji(String gradientName) {
     switch (gradientName) {
-      case 'home':
-        return 'Purple and pink tones';
-      case 'warm':
-        return 'Coral and golden hues';
-      case 'cool':
-        return 'Mint and teal shades';
-      case 'minimal':
-        return 'Light and neutral';
+      case '01':
+        return '⚪'; // White circle for minimal
+      case '02':
+        return '⬛'; // Black square for midnight
+      case '03':
+        return '🟣'; // Purple circle
+      case '04':
+        return '🟡'; // Yellow circle for sunrise
+      case '05':
+        return '🌸'; // Flower for coral
+      case '06':
+        return '🔵'; // Blue circle for ocean
+      case '07':
+        return '🟢'; // Green circle for mint
+      case '08':
+        return '🧡'; // Orange heart for warm
+      case '09':
+        return '💠'; // Diamond for cool teal
       default:
-        return '';
+        return '🎨'; // Palette for unknown
     }
   }
 }

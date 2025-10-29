@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/language_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../config/design_system/theme.dart';
 import 'language_selector_dialog.dart';
+import 'theme_selector_dialog.dart';
 
 class PreferencesWidget extends StatelessWidget {
   const PreferencesWidget({super.key});
@@ -13,8 +15,9 @@ class PreferencesWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, child) {
-        // Also watch LanguageProvider for language changes
+        // Also watch LanguageProvider and ThemeProvider for changes
         final languageProvider = Provider.of<LanguageProvider>(context);
+        final themeProvider = Provider.of<ThemeProvider>(context);
         
         return Container(
           decoration: BoxDecoration(
@@ -40,6 +43,19 @@ class PreferencesWidget extends StatelessWidget {
                 value: languageProvider.currentLanguageName,
                 leadingEmoji: languageProvider.currentLanguageFlag,
                 onTap: () => _showLanguageDialog(context),
+              ),
+
+              const Divider(height: 1),
+
+              // Theme preference
+              _buildPreferenceItem(
+                context,
+                settingsProvider,
+                icon: Icons.palette,
+                title: 'Theme',
+                value: themeProvider.getGradientDisplayName(themeProvider.selectedGradient),
+                leadingEmoji: themeProvider.getGradientEmoji(themeProvider.selectedGradient),
+                onTap: () => _showThemeDialog(context),
               ),
 
               const Divider(height: 1),
@@ -91,57 +107,74 @@ class PreferencesWidget extends StatelessWidget {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.vertical(
-        top: title == 'Language' ? const Radius.circular(12) : Radius.zero,
-        bottom: isLast ? const Radius.circular(12) : Radius.zero,
-      ),
+      borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryBlue.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+            // Leading emoji or icon
+            if (leadingEmoji != null)
+              Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                child: Text(
+                  leadingEmoji,
+                  style: const TextStyle(fontSize: 24),
+                ),
+              )
+            else
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: AppTheme.primaryBlue, size: 20),
               ),
-              child: leadingEmoji != null
-                  ? Text(
-                      leadingEmoji,
-                      style: const TextStyle(fontSize: 24),
-                    )
-                  : Icon(icon, color: AppTheme.primaryBlue, size: 24),
-            ),
+            
             const SizedBox(width: 16),
+            
+            // Title and value
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.primaryBlue,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     value,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
                     ),
                   ),
                 ],
               ),
             ),
-            trailing ?? const Icon(Icons.chevron_right, color: Colors.grey),
+            
+            // Trailing widget or chevron
+            if (trailing != null)
+              trailing
+            else
+              Icon(
+                Icons.chevron_right,
+                color: Colors.grey[400],
+                size: 24,
+              ),
           ],
         ),
       ),
     );
   }
-
-  // =============================================================================
-  // DIALOG METHODS
-  // =============================================================================
 
   void _showLanguageDialog(BuildContext context) {
     showDialog(
@@ -150,152 +183,99 @@ class PreferencesWidget extends StatelessWidget {
     );
   }
 
-  void _toggleUnits(BuildContext context, SettingsProvider settingsProvider) async {
-    try {
-      await settingsProvider.updateUnitPreference(!settingsProvider.isMetric);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Units changed to ${settingsProvider.isMetric ? 'Metric' : 'Imperial'}',
-            ),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
+  void _showThemeDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => const ThemeSelectorDialog(),
+    );
+  }
+
+  void _toggleUnits(BuildContext context, SettingsProvider settingsProvider) {
+    final newValue = !settingsProvider.isMetric;
+    settingsProvider.updateUnitPreference(newValue);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Units changed to ${newValue ? 'Metric' : 'Imperial'}'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   void _showWeightGoalDialog(BuildContext context, SettingsProvider settingsProvider) {
-    bool isGain = true;
-    double selectedAmount = 2.0; // Default 2kg/month
-    final isMetric = settingsProvider.isMetric;
+    final TextEditingController controller = TextEditingController();
     
-    // Set initial values if goal exists
+    // Pre-fill with current goal if it exists
     if (settingsProvider.userProfile?.monthlyWeightGoal != null) {
-      final goal = settingsProvider.userProfile!.monthlyWeightGoal!;
-      isGain = goal > 0;
-      selectedAmount = goal.abs();
-      // Convert to imperial if needed
-      if (!isMetric) {
-        selectedAmount = selectedAmount * 2.20462;
-      }
+      final currentGoal = settingsProvider.userProfile!.monthlyWeightGoal!;
+      controller.text = currentGoal.abs().toStringAsFixed(1);
     }
 
     showDialog(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: const Row(
-              children: [
-                Icon(Icons.speed, color: AppTheme.primaryBlue),
-                SizedBox(width: 8),
-                Text('Monthly Weight Goal'),
-              ],
+      builder: (context) => AlertDialog(
+        title: const Text('Monthly Weight Goal'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'How much weight do you want to lose per month?',
+              style: TextStyle(fontSize: 14),
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Set your monthly weight change target:',
-                  style: TextStyle(color: Colors.grey),
-                ),
-                const SizedBox(height: 20),
-                
-                // Gain/Lose toggle
-                Row(
-                  children: [
-                    Expanded(
-                      child: ChoiceChip(
-                        label: const Text('Lose'),
-                        selected: !isGain,
-                        onSelected: (selected) {
-                          setState(() => isGain = !selected);
-                        },
-                        selectedColor: AppTheme.coralAccent,
-                        labelStyle: TextStyle(
-                          color: !isGain ? Colors.white : Colors.grey[700],
-                          fontWeight: !isGain ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ChoiceChip(
-                        label: const Text('Gain'),
-                        selected: isGain,
-                        onSelected: (selected) {
-                          setState(() => isGain = selected);
-                        },
-                        selectedColor: AppTheme.coralAccent,
-                        labelStyle: TextStyle(
-                          color: isGain ? Colors.white : Colors.grey[700],
-                          fontWeight: isGain ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                
-                // Amount slider
-                Text(
-                  '${selectedAmount.toStringAsFixed(1)} ${isMetric ? 'kg' : 'lbs'}/month',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryBlue,
-                  ),
-                ),
-                Slider(
-                  value: selectedAmount,
-                  min: 0.5,
-                  max: isMetric ? 4.0 : 8.8,
-                  divisions: isMetric ? 35 : 83,
-                  activeColor: AppTheme.coralAccent,
-                  onChanged: (value) {
-                    setState(() => selectedAmount = value);
-                  },
-                ),
-              ],
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: settingsProvider.isMetric ? 'Goal (kg)' : 'Goal (lbs)',
+                hintText: '0.5',
+                border: const OutlineInputBorder(),
+                suffixText: settingsProvider.isMetric ? 'kg' : 'lbs',
+              ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancel'),
+            const SizedBox(height: 8),
+            Text(
+              'Recommended: 0.5-1 ${settingsProvider.isMetric ? 'kg' : 'lbs'} per month',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
               ),
-              ElevatedButton(
-                onPressed: () async {
-                  // Convert to kg if imperial
-                  double goalInKg = isMetric ? selectedAmount : selectedAmount / 2.20462;
-                  // Apply sign based on gain/lose
-                  goalInKg = isGain ? goalInKg : -goalInKg;
-                  
-                  await settingsProvider.updateMonthlyWeightGoal(goalInKg);
-                  if (dialogContext.mounted) {
-                    Navigator.of(dialogContext).pop();
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.coralAccent,
-                ),
-                child: const Text('Save', style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          );
-        },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final input = double.tryParse(controller.text);
+              if (input != null && input > 0) {
+                // Store as negative (weight loss)
+                final goalInKg = settingsProvider.isMetric 
+                    ? -input 
+                    : -input * 0.453592; // Convert lbs to kg
+                    
+                await settingsProvider.updateMonthlyWeightGoal(goalInKg);
+                
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Monthly weight goal updated'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }

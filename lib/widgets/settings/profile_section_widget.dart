@@ -3,21 +3,25 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/theme_provider.dart';
+import '../../config/design_system/theme.dart';
 
 class ProfileSectionWidget extends StatelessWidget {
   const ProfileSectionWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
+    return Consumer2<SettingsProvider, ThemeProvider>(
+      builder: (context, settingsProvider, themeProvider, child) {
         // Get user name from profile (or null if not set)
         final userName = settingsProvider.userProfile?.name;
         final hasName = userName != null && userName.isNotEmpty;
         
         return _buildTransparentCard(
+          context: context,
           userName: userName,
           hasName: hasName,
+          themeProvider: themeProvider,
           onTap: () => _handleProfileTap(context, settingsProvider),
         );
       },
@@ -25,36 +29,42 @@ class ProfileSectionWidget extends StatelessWidget {
   }
 
   Widget _buildTransparentCard({
+    required BuildContext context,
     required String? userName,
     required bool hasName,
+    required ThemeProvider themeProvider,
     required VoidCallback onTap,
   }) {
+    final brightness = Theme.of(context).brightness;
+    final borderColor = themeProvider.getBorderColor(brightness);
+    final textColor = themeProvider.getTextColor(brightness);
+    
     return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(AppWidgetDesign.cardBorderRadius),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15), // Transparent to show gradient
-            borderRadius: BorderRadius.circular(28),
+            color: Colors.transparent, // Fully transparent to show gradient
+            borderRadius: BorderRadius.circular(AppWidgetDesign.cardBorderRadius),
             border: Border.all(
-              color: Colors.white.withOpacity(0.5),
-              width: 4,
+              color: borderColor,
+              width: AppWidgetDesign.cardBorderWidth,
             ),
           ),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: onTap,
-              borderRadius: BorderRadius.circular(28),
-              splashColor: Colors.white.withOpacity(0.1),
-              highlightColor: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(AppWidgetDesign.cardBorderRadius),
+              splashColor: textColor.withValues(alpha: 0.1),
+              highlightColor: textColor.withValues(alpha: 0.05),
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.fromLTRB(24, 22, 24, 22), // Reduced from 24,28,24,28 (slightly shorter)
                 child: Row(
                   children: [
                     // Avatar circle with gradient letter or empty icon
-                    _buildAvatar(userName, hasName),
+                    _buildAvatar(context, userName, hasName, themeProvider),
                     
                     const SizedBox(width: 16),
                     
@@ -62,6 +72,7 @@ class ProfileSectionWidget extends StatelessWidget {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min, // Minimize height
                         children: [
                           Text(
                             hasName ? userName! : 'Name',
@@ -69,49 +80,32 @@ class ProfileSectionWidget extends StatelessWidget {
                               fontSize: 24,
                               fontWeight: FontWeight.w600,
                               color: hasName 
-                                  ? Colors.white 
-                                  : Colors.white.withOpacity(0.6),
-                              shadows: const [
-                                Shadow(
-                                  color: Colors.black26,
-                                  offset: Offset(0, 2),
-                                  blurRadius: 8,
-                                ),
-                              ],
+                                  ? textColor
+                                  : textColor.withValues(alpha: 0.6),
+                              shadows: AppWidgetDesign.textShadows, // NO SHADOWS
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 3), // Slightly reduced
                           Text(
                             'Tap to edit',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 14, // ✅ Bigger - was 12
                               fontWeight: FontWeight.w400,
-                              color: Colors.white.withOpacity(0.8),
-                              shadows: const [
-                                Shadow(
-                                  color: Colors.black26,
-                                  offset: Offset(0, 1),
-                                  blurRadius: 3,
-                                ),
-                              ],
+                              color: textColor.withValues(
+                                alpha: AppWidgetDesign.secondaryTextOpacity,
+                              ),
+                              shadows: AppWidgetDesign.textShadows, // NO SHADOWS
                             ),
                           ),
                         ],
                       ),
                     ),
                     
-                    // Edit icon
+                    // ✅ Mono tone arrow icon (matches theme)
                     Icon(
-                      Icons.edit_rounded,
-                      size: 20,
-                      color: Colors.white.withOpacity(0.9),
-                      shadows: const [
-                        Shadow(
-                          color: Colors.black26,
-                          offset: Offset(0, 2),
-                          blurRadius: 4,
-                        ),
-                      ],
+                      Icons.arrow_forward_ios_rounded,
+                      size: 18,
+                      color: textColor.withValues(alpha: 0.6), // Subtle, matches text
                     ),
                   ],
                 ),
@@ -123,49 +117,54 @@ class ProfileSectionWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildAvatar(String? userName, bool hasName) {
+  Widget _buildAvatar(
+    BuildContext context, 
+    String? userName, 
+    bool hasName,
+    ThemeProvider themeProvider,
+  ) {
+    final brightness = Theme.of(context).brightness;
+    final textColor = themeProvider.getTextColor(brightness);
+    
     return Container(
       width: 52,
       height: 52,
       decoration: BoxDecoration(
         color: hasName 
-            ? Colors.white.withOpacity(0.95)  // White circle for letter
-            : Colors.white.withOpacity(0.3),   // Semi-transparent for empty
+            ? Colors.white.withValues(alpha: 0.95)  // White circle for letter
+            : textColor.withValues(alpha: 0.25),    // ✅ Adaptive subtle background
         shape: BoxShape.circle,
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Colors.black26,
-            blurRadius: 12,
-            offset: Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.1), // Softer shadow
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Center(
         child: hasName 
-            ? _buildGradientLetter(userName!)
+            ? _buildGradientLetter(context, userName!, themeProvider)
             : Icon(
                 Icons.person,
                 size: 28,
-                color: Colors.white,
+                color: textColor, // ✅ Matches text color (adaptive)
               ),
       ),
     );
   }
 
-  Widget _buildGradientLetter(String userName) {
+  Widget _buildGradientLetter(
+    BuildContext context, 
+    String userName,
+    ThemeProvider themeProvider,
+  ) {
     // Get first character and uppercase it
     final letter = userName.isNotEmpty ? userName[0].toUpperCase() : '?';
     
-    // TODO: Connect to theme provider's gradient when theme system is ready
-    // For now, using hardcoded gradient matching the mockup
-    const gradient = LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [
-        Color(0xFF667EEA), // Purple-blue
-        Color(0xFF764BA2), // Purple
-      ],
-    );
+    // Get gradient from theme provider
+    final brightness = Theme.of(context).brightness;
+    final gradient = themeProvider.getCurrentGradient(brightness);
     
     return ShaderMask(
       shaderCallback: (bounds) => gradient.createShader(bounds),
@@ -182,8 +181,7 @@ class ProfileSectionWidget extends StatelessWidget {
   }
 
   void _handleProfileTap(BuildContext context, SettingsProvider settingsProvider) {
-    // TODO: Show dialog or navigate to profile edit screen
-    // For now, show a simple dialog to edit name
+    // Show dialog to edit name
     _showEditNameDialog(context, settingsProvider);
   }
 
