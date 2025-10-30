@@ -1,7 +1,6 @@
 // lib/widgets/progress/energy_metrics_widget.dart
 import 'package:flutter/material.dart';
 import '../../config/design_system/theme_design.dart';
-import '../../config/design_system/dimensions.dart';
 import '../../config/design_system/typography.dart';
 import '../../data/models/user_profile.dart';
 
@@ -116,7 +115,7 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
       child: SlideTransition(
         position: _slideAnimation,
         child: Container(
-          margin: EdgeInsets.symmetric(horizontal: Dimensions.xs),
+          margin: const EdgeInsets.symmetric(horizontal: 8.0),
           child: Column(
             children: [
               _buildSplitCard(context, bmr, tdee, activityLevel, missingData),
@@ -451,83 +450,6 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
           ],
         ),
       ),
-    );
-  }
-
-  void _showInfoDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Energy Metrics',
-          style: AppTypography.displaySmall.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppLegacyColors.primaryBlue,
-          ),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildInfoSection(
-                'BMR (Basal Metabolic Rate)',
-                'The number of calories your body burns at rest to maintain vital functions like breathing, circulation, and cell production.',
-              ),
-              const SizedBox(height: 12),
-              _buildInfoSection(
-                'TDEE (Total Daily Energy Expenditure)',
-                'Your complete daily calorie burn including BMR plus calories from physical activity, digestion, and daily movement.',
-              ),
-              const SizedBox(height: 12),
-              _buildInfoSection(
-                'Calorie Goals',
-                'Weight loss: 500 cal deficit daily can lead to ~1 lb/week loss\nMild loss: 250 cal deficit for gradual weight loss\nGain: 500 cal surplus for healthy weight gain',
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              foregroundColor: AppLegacyColors.primaryBlue,
-            ),
-            child: Text(
-              'GOT IT',
-              style: AppTypography.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoSection(String title, String content) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: AppTypography.displaySmall.copyWith(
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
-            color: AppLegacyColors.primaryBlue,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          content,
-          style: AppTypography.bodyMedium.copyWith(
-            fontSize: 12,
-            color: Colors.grey[700],
-            height: 1.4,
-          ),
-        ),
-      ],
     );
   }
 }
