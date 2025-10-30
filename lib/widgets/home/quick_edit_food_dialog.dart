@@ -35,6 +35,20 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
   late String _selectedUnit;
   bool _isLoading = false;
 
+  // Local UI constants (since they were removed from AppConstants)
+  static const double _borderRadiusLarge = 16.0;
+  static const double _borderRadiusMedium = 12.0;
+  static const double _borderRadiusSmall = 8.0;
+  static const double _spacingSmall = 8.0;
+  static const double _spacingMedium = 16.0;
+  static const double _spacingLarge = 20.0;
+  static const double _paddingMedium = 16.0;
+  static const double _paddingSmall = 8.0;
+  static const double _emojiSize = 20.0;
+  static const double _fontSizeXLarge = 18.0;
+  static const double _fontSizeMedium = 14.0;
+  static const double _iconSizeMedium = 20.0;
+
   @override
   void initState() {
     super.initState();
@@ -67,17 +81,17 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_borderRadiusLarge)),
       title: _buildTitle(),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildBasicInfo(),
-            const SizedBox(height: AppConstants.spacingLarge),
+            const SizedBox(height: _spacingLarge),
             _buildNutritionInfo(),
             if (widget.foodItem.cost != null) ...[
-              const SizedBox(height: AppConstants.spacingLarge),
+              const SizedBox(height: _spacingLarge),
               _buildCostInfo(),
             ],
           ],
@@ -90,14 +104,14 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
   Widget _buildTitle() {
     return Row(
       children: [
-        const Text('🍽️', style: TextStyle(fontSize: AppConstants.emojiSize)),
-        const SizedBox(width: AppConstants.spacingSmall),
+        const Text('🍽️', style: TextStyle(fontSize: _emojiSize)),
+        const SizedBox(width: _spacingSmall),
         Text(
           'Edit Food Item',
           style: AppTypography.displaySmall.copyWith(
             fontWeight: FontWeight.bold,
             color: AppLegacyColors.primaryBlue,
-            fontSize: AppConstants.fontSizeXLarge,
+            fontSize: _fontSizeXLarge,
           ),
         ),
       ],
@@ -108,49 +122,49 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+        borderRadius: BorderRadius.circular(_borderRadiusMedium),
         border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(AppConstants.paddingMedium),
+            padding: const EdgeInsets.all(_paddingMedium),
             decoration: BoxDecoration(
               color: AppLegacyColors.primaryBlue.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppConstants.borderRadiusMedium),
-                topRight: Radius.circular(AppConstants.borderRadiusMedium),
+                topLeft: Radius.circular(_borderRadiusMedium),
+                topRight: Radius.circular(_borderRadiusMedium),
               ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.edit, color: AppLegacyColors.primaryBlue, size: AppConstants.iconSizeMedium),
-                const SizedBox(width: AppConstants.spacingSmall),
+                const Icon(Icons.edit, color: AppLegacyColors.primaryBlue, size: _iconSizeMedium),
+                const SizedBox(width: _spacingSmall),
                 Text(
                   'Basic Information',
                   style: AppTypography.bodyMedium.copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppLegacyColors.primaryBlue,
-                    fontSize: AppConstants.fontSizeMedium + 1,
+                    fontSize: _fontSizeMedium + 1,
                   ),
                 ),
               ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(AppConstants.paddingMedium),
+            padding: const EdgeInsets.all(_paddingMedium),
             child: Column(
               children: [
                 _buildTextField(_nameController, 'Food Name', 'e.g., Grilled Chicken'),
-                const SizedBox(height: AppConstants.spacingMedium),
+                const SizedBox(height: _spacingMedium),
                 Row(
                   children: [
                     Expanded(
                       flex: 2,
                       child: _buildTextField(_servingSizeController, 'Serving Size', AppConstants.defaultServingSize.toString()),
                     ),
-                    const SizedBox(width: AppConstants.spacingMedium),
+                    const SizedBox(width: _spacingMedium),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -160,20 +174,20 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
                             style: AppTypography.bodyMedium.copyWith(
                               fontWeight: FontWeight.w600,
                               color: Colors.grey[700],
-                              fontSize: AppConstants.fontSizeMedium,
+                              fontSize: _fontSizeMedium,
                             ),
                           ),
-                          const SizedBox(height: AppConstants.spacingSmall),
+                          const SizedBox(height: _spacingSmall),
                           DropdownButtonFormField<String>(
                             value: _selectedUnit,
                             decoration: InputDecoration(
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+                                borderRadius: BorderRadius.circular(_borderRadiusSmall),
                                 borderSide: BorderSide(color: Colors.grey[300]!),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
-                                horizontal: AppConstants.paddingMedium,
-                                vertical: AppConstants.paddingSmall,
+                                horizontal: _paddingMedium,
+                                vertical: _paddingSmall,
                               ),
                               isDense: true,
                             ),
@@ -203,45 +217,45 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+        borderRadius: BorderRadius.circular(_borderRadiusMedium),
         border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(AppConstants.paddingMedium),
+            padding: const EdgeInsets.all(_paddingMedium),
             decoration: BoxDecoration(
               color: Colors.green[50],
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppConstants.borderRadiusMedium),
-                topRight: Radius.circular(AppConstants.borderRadiusMedium),
+                topLeft: Radius.circular(_borderRadiusMedium),
+                topRight: Radius.circular(_borderRadiusMedium),
               ),
             ),
             child: Row(
               children: [
-                Icon(Icons.restaurant_menu, color: Colors.green[700], size: AppConstants.iconSizeMedium),
-                const SizedBox(width: AppConstants.spacingSmall),
+                Icon(Icons.restaurant_menu, color: Colors.green[700], size: _iconSizeMedium),
+                const SizedBox(width: _spacingSmall),
                 Text(
                   'Nutrition Facts',
                   style: AppTypography.bodyMedium.copyWith(
                     fontWeight: FontWeight.w700,
                     color: Colors.green[700],
-                    fontSize: AppConstants.fontSizeMedium + 1,
+                    fontSize: _fontSizeMedium + 1,
                   ),
                 ),
               ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(AppConstants.paddingMedium),
+            padding: const EdgeInsets.all(_paddingMedium),
             child: Column(
               children: [
                 _buildNutritionField(_caloriesController, 'Calories', 'kcal'),
-                const SizedBox(height: AppConstants.spacingMedium),
+                const SizedBox(height: _spacingMedium),
                 _buildNutritionField(_proteinController, 'Protein', 'g'),
-                const SizedBox(height: AppConstants.spacingMedium),
+                const SizedBox(height: _spacingMedium),
                 _buildNutritionField(_carbsController, 'Carbs', 'g'),
-                const SizedBox(height: AppConstants.spacingMedium),
+                const SizedBox(height: _spacingMedium),
                 _buildNutritionField(_fatController, 'Fat', 'g'),
               ],
             ),
@@ -255,37 +269,37 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+        borderRadius: BorderRadius.circular(_borderRadiusMedium),
         border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(AppConstants.paddingMedium),
+            padding: const EdgeInsets.all(_paddingMedium),
             decoration: BoxDecoration(
               color: Colors.orange[50],
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppConstants.borderRadiusMedium),
-                topRight: Radius.circular(AppConstants.borderRadiusMedium),
+                topLeft: Radius.circular(_borderRadiusMedium),
+                topRight: Radius.circular(_borderRadiusMedium),
               ),
             ),
             child: Row(
               children: [
-                Icon(Icons.attach_money, color: Colors.orange[700], size: AppConstants.iconSizeMedium),
-                const SizedBox(width: AppConstants.spacingSmall),
+                Icon(Icons.attach_money, color: Colors.orange[700], size: _iconSizeMedium),
+                const SizedBox(width: _spacingSmall),
                 Text(
                   'Cost Information',
                   style: AppTypography.bodyMedium.copyWith(
                     fontWeight: FontWeight.w700,
                     color: Colors.orange[700],
-                    fontSize: AppConstants.fontSizeMedium + 1,
+                    fontSize: _fontSizeMedium + 1,
                   ),
                 ),
               ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(AppConstants.paddingMedium),
+            padding: const EdgeInsets.all(_paddingMedium),
             child: _buildNutritionField(_costController, 'Cost', '\$'),
           ),
         ],
@@ -302,30 +316,30 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
           style: AppTypography.bodyMedium.copyWith(
             fontWeight: FontWeight.w600,
             color: Colors.grey[700],
-            fontSize: AppConstants.fontSizeMedium,
+            fontSize: _fontSizeMedium,
           ),
         ),
-        const SizedBox(height: AppConstants.spacingSmall),
+        const SizedBox(height: _spacingSmall),
         TextField(
           controller: controller,
           decoration: InputDecoration(
             hintText: hint,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+              borderRadius: BorderRadius.circular(_borderRadiusSmall),
               borderSide: BorderSide(color: Colors.grey[300]!),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+              borderRadius: BorderRadius.circular(_borderRadiusSmall),
               borderSide: const BorderSide(color: AppLegacyColors.primaryBlue, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppConstants.paddingMedium,
-              vertical: AppConstants.paddingSmall,
+              horizontal: _paddingMedium,
+              vertical: _paddingSmall,
             ),
             isDense: true,
           ),
           style: AppTypography.bodyMedium.copyWith(
-            fontSize: AppConstants.fontSizeMedium,
+            fontSize: _fontSizeMedium,
             fontWeight: FontWeight.w600,
           ),
           inputFormatters: controller == _nameController
@@ -345,35 +359,35 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
           style: AppTypography.bodyMedium.copyWith(
             fontWeight: FontWeight.w600,
             color: Colors.grey[700],
-            fontSize: AppConstants.fontSizeMedium,
+            fontSize: _fontSizeMedium,
           ),
         ),
-        const SizedBox(height: AppConstants.spacingSmall),
+        const SizedBox(height: _spacingSmall),
         TextField(
           controller: controller,
           decoration: InputDecoration(
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+              borderRadius: BorderRadius.circular(_borderRadiusSmall),
               borderSide: BorderSide(color: Colors.grey[300]!),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+              borderRadius: BorderRadius.circular(_borderRadiusSmall),
               borderSide: const BorderSide(color: AppLegacyColors.primaryBlue, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppConstants.paddingMedium,
-              vertical: AppConstants.paddingSmall,
+              horizontal: _paddingMedium,
+              vertical: _paddingSmall,
             ),
             suffixText: unit,
             suffixStyle: AppTypography.bodyMedium.copyWith(
               color: Colors.grey[600],
               fontWeight: FontWeight.w500,
-              fontSize: AppConstants.fontSizeMedium,
+              fontSize: _fontSizeMedium,
             ),
             isDense: true,
           ),
           style: AppTypography.labelLarge.copyWith(
-            fontSize: AppConstants.fontSizeMedium,
+            fontSize: _fontSizeMedium,
             fontWeight: FontWeight.w600,
           ),
           inputFormatters: [
@@ -400,7 +414,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
         onPressed: _isLoading ? null : _handleSave,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppLegacyColors.primaryBlue,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_borderRadiusSmall)),
         ),
         child: Text(_isLoading ? 'Saving...' : 'Save Changes'),
       ),
