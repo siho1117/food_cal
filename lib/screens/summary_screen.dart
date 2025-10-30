@@ -1,11 +1,14 @@
 // lib/screens/summary_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../config/design_system/theme_background.dart';
 import '../config/design_system/theme_design.dart';
 import '../providers/home_provider.dart';
 import '../providers/exercise_provider.dart';
+import '../providers/theme_provider.dart';
 import '../widgets/summary/summary_controls_widget.dart';
 import '../widgets/summary/summary_content_widget.dart';
+import '../widgets/common/custom_app_bar.dart';
 
 class SummaryScreen extends StatefulWidget {
   const SummaryScreen({super.key});
@@ -21,73 +24,77 @@ class _SummaryScreenState extends State<SummaryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ FIXED: No MultiProvider here - use existing app-level providers!
-    return Scaffold(
-      backgroundColor: AppLegacyColors.secondaryBeige,
-      body: SafeArea(
-        child: Consumer2<HomeProvider, ExerciseProvider>(
-          builder: (context, homeProvider, exerciseProvider, child) {
-            // Handle loading states
-            if (homeProvider.isLoading || exerciseProvider.isLoading) {
-              return const Center(
-                child: CircularProgressIndicator(
-                  color: AppLegacyColors.primaryBlue,
-                ),
-              );
-            }
-
-            // Handle error states
-            if (homeProvider.errorMessage != null || exerciseProvider.errorMessage != null) {
-              return _buildErrorState(context, homeProvider, exerciseProvider);
-            }
-
-            return NotificationListener<OverscrollIndicatorNotification>(
-              onNotification: (notification) {
-                notification.disallowIndicator();
-                return true;
-              },
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 10),
-                    
-                    // Period Switcher + Export Controls
-                    SummaryControlsWidget(
-                      currentPeriod: _currentPeriod,
-                      onPeriodChanged: (period) {
-                        setState(() {
-                          _currentPeriod = period;
-                        });
-                      },
-                      onExport: _handleExport,
-                      isExporting: _isExporting,
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return Container(
+          decoration: BoxDecoration(
+            gradient: ThemeBackground.getGradient(themeProvider.selectedGradient),
+          ),
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: const CustomAppBar(currentPage: 'summary'),
+            body: Consumer2<HomeProvider, ExerciseProvider>(
+              builder: (context, homeProvider, exerciseProvider, child) {
+                if (homeProvider.isLoading || exerciseProvider.isLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
                     ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // Main Summary Content (Wrapped for Export)
-                    RepaintBoundary(
-                      key: _summaryKey,
-                      child: Container(
-                        color: AppLegacyColors.secondaryBeige,
-                        child: SummaryContentWidget(
-                          period: _currentPeriod,  // ✅ FIXED: Only pass period parameter
+                  );
+                }
+
+                if (homeProvider.errorMessage != null || exerciseProvider.errorMessage != null) {
+                  return _buildErrorState(context, homeProvider, exerciseProvider);
+                }
+
+                return NotificationListener<OverscrollIndicatorNotification>(
+                  onNotification: (notification) {
+                    notification.disallowIndicator();
+                    return true;
+                  },
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 10),
+                        
+                        // Period Switcher + Export Controls
+                        SummaryControlsWidget(
+                          currentPeriod: _currentPeriod,
+                          onPeriodChanged: (period) {
+                            setState(() {
+                              _currentPeriod = period;
+                            });
+                          },
+                          onExport: _handleExport,
+                          isExporting: _isExporting,
                         ),
-                      ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Main Summary Content (Wrapped for Export)
+                        RepaintBoundary(
+                          key: _summaryKey,
+                          child: Container(
+                            color: Colors.transparent,
+                            child: SummaryContentWidget(
+                              period: _currentPeriod,
+                            ),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 80),
+                      ],
                     ),
-                    
-                    const SizedBox(height: 80), // Extra space for bottom nav
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 
-  /// Build error state with retry functionality
   Widget _buildErrorState(BuildContext context, HomeProvider homeProvider, ExerciseProvider exerciseProvider) {
     return Center(
       child: Column(
@@ -104,7 +111,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Colors.white,
             ),
           ),
           const SizedBox(height: 8),
@@ -112,29 +119,30 @@ class _SummaryScreenState extends State<SummaryScreen> {
             homeProvider.errorMessage ?? exerciseProvider.errorMessage ?? 'Unknown error occurred',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.grey[600],
+              color: Colors.white.withValues(alpha: 0.8),
             ),
           ),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {
-              // ✅ FIXED: Use correct method names that exist on the providers
               homeProvider.refreshData();
               exerciseProvider.refreshData();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppLegacyColors.primaryBlue,
-              foregroundColor: Colors.white,
+              backgroundColor: Colors.white,
+              foregroundColor: AppColors.textDark,
             ),
             child: const Text('Retry'),
           ),
           const SizedBox(height: 8),
           TextButton(
             onPressed: () {
-              // Just refresh data to try to clear the error state
               homeProvider.refreshData();
               exerciseProvider.refreshData();
             },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Dismiss'),
           ),
         ],
@@ -142,7 +150,6 @@ class _SummaryScreenState extends State<SummaryScreen> {
     );
   }
 
-  /// Handle export functionality
   Future<void> _handleExport() async {
     if (_isExporting) return;
     
@@ -151,7 +158,6 @@ class _SummaryScreenState extends State<SummaryScreen> {
     });
 
     try {
-      // Simple export simulation - replace with your actual export logic
       await Future.delayed(const Duration(seconds: 2));
       
       if (mounted) {

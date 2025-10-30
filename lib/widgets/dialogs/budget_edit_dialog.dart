@@ -29,6 +29,19 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
   late TextEditingController _budgetController;
   bool _isLoading = false;
 
+  // Local UI constants (since they were removed from AppConstants)
+  static const double _borderRadiusLarge = 16.0;
+  static const double _borderRadiusSmall = 8.0;
+  static const double _spacingSmall = 8.0;
+  static const double _spacingMedium = 16.0;
+  static const double _paddingMedium = 16.0;
+  static const double _paddingSmall = 8.0;
+  static const double _emojiSize = 20.0;
+  static const double _fontSizeXLarge = 18.0;
+  static const double _fontSizeMedium = 14.0;
+  static const double _fontSizeSmall = 11.0;
+  static const double _iconSizeSmall = 16.0;
+
   @override
   void initState() {
     super.initState();
@@ -46,7 +59,7 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_borderRadiusLarge)),
       title: _buildTitle(),
       content: _buildContent(),
       actions: _buildActions(),
@@ -56,14 +69,14 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
   Widget _buildTitle() {
     return Row(
       children: [
-        const Text('💰', style: TextStyle(fontSize: AppConstants.emojiSize)),
-        const SizedBox(width: AppConstants.spacingSmall),
+        const Text('💰', style: TextStyle(fontSize: _emojiSize)),
+        const SizedBox(width: _spacingSmall),
         Text(
           widget.title ?? 'Set Daily Budget',
           style: AppTypography.displaySmall.copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.green[700],
-            fontSize: AppConstants.fontSizeXLarge,
+            fontSize: _fontSizeXLarge,
           ),
         ),
       ],
@@ -79,10 +92,10 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
           AppConstants.budgetQuestion,
           style: AppTypography.bodyMedium.copyWith(
             color: Colors.grey[600],
-            fontSize: AppConstants.fontSizeMedium,
+            fontSize: _fontSizeMedium,
           ),
         ),
-        const SizedBox(height: AppConstants.spacingMedium),
+        const SizedBox(height: _spacingMedium),
         
         // Budget input field
         TextField(
@@ -97,23 +110,31 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
             prefixText: '\$',
             hintText: '20.00',
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+              borderRadius: BorderRadius.circular(_borderRadiusSmall),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(_borderRadiusSmall),
+              borderSide: BorderSide(color: Colors.grey[300]!),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+              borderRadius: BorderRadius.circular(_borderRadiusSmall),
               borderSide: BorderSide(color: Colors.green[600]!, width: 2),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+              borderRadius: BorderRadius.circular(_borderRadiusSmall),
               borderSide: const BorderSide(color: Colors.red, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: _paddingMedium,
+              vertical: 12.0,
             ),
           ),
         ),
         
         if (widget.showAdvancedOptions) ...[
-          const SizedBox(height: AppConstants.spacingMedium),
+          const SizedBox(height: _spacingMedium),
           _buildQuickPresets(),
-          const SizedBox(height: AppConstants.spacingMedium),
+          const SizedBox(height: _spacingMedium),
           _buildAdvancedOptions(),
         ],
       ],
@@ -127,12 +148,12 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
         Text(
           'Quick Presets',
           style: AppTypography.bodyMedium.copyWith(
-            fontSize: AppConstants.fontSizeSmall,
+            fontSize: _fontSizeSmall,
             color: Colors.grey[600],
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: AppConstants.spacingSmall),
+        const SizedBox(height: _spacingSmall),
         Row(
           children: AppConstants.budgetPresets.map((preset) {
             final color = _getPresetColor(preset['label'] as String);
@@ -146,8 +167,8 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: color,
                     side: BorderSide(color: color),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.spacingSmall)),
-                    padding: const EdgeInsets.symmetric(vertical: AppConstants.spacingSmall),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_spacingSmall)),
+                    padding: const EdgeInsets.symmetric(vertical: _spacingSmall),
                   ),
                   child: Column(
                     children: [
@@ -157,7 +178,7 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
                       ),
                       Text(
                         '\$${(preset['amount'] as double).toStringAsFixed(0)}',
-                        style: const TextStyle(fontSize: AppConstants.fontSizeSmall),
+                        style: const TextStyle(fontSize: _fontSizeSmall),
                       ),
                     ],
                   ),
@@ -185,10 +206,10 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
 
   Widget _buildAdvancedOptions() {
     return Container(
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      padding: const EdgeInsets.all(_paddingMedium),
       decoration: BoxDecoration(
         color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+        borderRadius: BorderRadius.circular(_borderRadiusSmall),
         border: Border.all(color: Colors.grey[200]!, width: 1),
       ),
       child: Column(
@@ -197,12 +218,12 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
           Text(
             'Budget Overview',
             style: AppTypography.bodyMedium.copyWith(
-              fontSize: AppConstants.fontSizeMedium,
+              fontSize: _fontSizeMedium,
               fontWeight: FontWeight.bold,
               color: Colors.grey[700],
             ),
           ),
-          const SizedBox(height: AppConstants.spacingSmall),
+          const SizedBox(height: _spacingSmall),
           _buildBudgetCalculation(),
         ],
       ),
@@ -230,14 +251,14 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
         Text(
           period,
           style: AppTypography.bodyMedium.copyWith(
-            fontSize: AppConstants.fontSizeSmall,
+            fontSize: _fontSizeSmall,
             color: Colors.grey[600],
           ),
         ),
         Text(
           '\$${amount.toStringAsFixed(0)}',
           style: AppTypography.labelLarge.copyWith(
-            fontSize: AppConstants.fontSizeSmall,
+            fontSize: _fontSizeSmall,
             fontWeight: FontWeight.w600,
             color: Colors.grey[700],
           ),
@@ -261,13 +282,13 @@ class _BudgetEditDialogState extends State<BudgetEditDialog> {
           backgroundColor: Colors.green[600],
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+            borderRadius: BorderRadius.circular(_borderRadiusSmall),
           ),
         ),
         child: _isLoading
             ? const SizedBox(
-                width: AppConstants.iconSizeSmall,
-                height: AppConstants.iconSizeSmall,
+                width: _iconSizeSmall,
+                height: _iconSizeSmall,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
