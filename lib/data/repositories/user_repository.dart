@@ -1,9 +1,5 @@
 // lib/data/repositories/user_repository.dart
-// STEP 5: Updated to use GetIt for dependency injection
 import 'package:flutter/foundation.dart';
-
-// ADD THIS IMPORT for GetIt
-import '../../config/dependency_injection.dart';
 
 import '../models/user_profile.dart';
 import '../models/weight_data.dart';
@@ -13,12 +9,8 @@ class UserRepository {
   static const String _userProfileKey = 'user_profile';
   static const String _weightEntriesKey = 'weight_entries';
 
-  // CHANGE THIS LINE: Get storage from dependency injection
-  // OLD: final LocalStorage _storage = LocalStorage();
-  // NEW: Get from GetIt container
-  final LocalStorage _storage = getIt<LocalStorage>();
-
-  // === EVERYTHING ELSE STAYS THE SAME ===
+  // Direct instantiation - LocalStorage is a singleton
+  final LocalStorage _storage = LocalStorage();
 
   // Get the user profile
   Future<UserProfile?> getUserProfile() async {

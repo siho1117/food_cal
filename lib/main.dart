@@ -22,7 +22,6 @@ import 'providers/theme_provider.dart';
 
 // Config
 import 'config/design_system/theme_design.dart';
-import 'config/dependency_injection.dart';
 
 // Localization
 import 'l10n/generated/app_localizations.dart';
@@ -40,10 +39,6 @@ void main() async {
   } catch (e) {
     debugPrint('❌ Error initializing SharedPreferences: $e');
   }
-
-  // Initialize dependency injection
-  await setupDependencyInjection();
-  debugPrint('✅ Dependency Injection initialized');
 
   runApp(const FoodTrackerApp());
 }

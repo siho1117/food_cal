@@ -1,10 +1,6 @@
 // lib/providers/home_provider.dart
-// STEP 3: Simple change - use GetIt instead of direct instantiation
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-// ADD THIS IMPORT for GetIt
-import '../config/dependency_injection.dart';
 
 import '../data/repositories/food_repository.dart';
 import '../data/repositories/user_repository.dart';
@@ -13,15 +9,9 @@ import '../data/models/user_profile.dart';
 import '../utils/home_statistics_calculator.dart';
 
 class HomeProvider extends ChangeNotifier {
-  // CHANGE ONLY THESE TWO LINES:
-  // OLD: final FoodRepository _foodRepository = FoodRepository();
-  // OLD: final UserRepository _userRepository = UserRepository();
-  
-  // NEW: Get from dependency injection container
-  final FoodRepository _foodRepository = getIt<FoodRepository>();
-  final UserRepository _userRepository = getIt<UserRepository>();
-
-  // === EVERYTHING ELSE STAYS EXACTLY THE SAME ===
+  // Direct instantiation - both repositories use singleton services internally
+  final FoodRepository _foodRepository = FoodRepository();
+  final UserRepository _userRepository = UserRepository();
   
   // Loading state
   bool _isLoading = true;
@@ -113,10 +103,8 @@ class HomeProvider extends ChangeNotifier {
     };
   }
 
-  // ADDED: Missing getter for budget status
   bool get isOverFoodBudget => _totalFoodCost > _dailyFoodBudget;
 
-  // ADDED: Missing getter for macro progress percentages
   Map<String, double> get macroProgressPercentages {
     final consumed = consumedMacros;
     final targets = targetMacros;
@@ -128,7 +116,6 @@ class HomeProvider extends ChangeNotifier {
     };
   }
 
-  // ADDED: Missing getter for meals count (total number, not map)
   int get mealsCount {
     return (_entriesByMeal['breakfast']?.length ?? 0) +
            (_entriesByMeal['lunch']?.length ?? 0) +
@@ -136,7 +123,6 @@ class HomeProvider extends ChangeNotifier {
            (_entriesByMeal['snack']?.length ?? 0);
   }
 
-  // ADDED: If you need detailed count by meal type, use this getter
   Map<String, int> get mealCountsByType {
     return {
       'breakfast': _entriesByMeal['breakfast']?.length ?? 0,
@@ -166,7 +152,6 @@ class HomeProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
-      // ✅ FIXED: Replace print with debugPrint
       debugPrint('Error calculating weekly food cost: $e');
     }
     
@@ -193,7 +178,6 @@ class HomeProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
-      // ✅ FIXED: Replace print with debugPrint
       debugPrint('Error calculating monthly food cost: $e');
     }
     
@@ -232,7 +216,6 @@ class HomeProvider extends ChangeNotifier {
     } catch (e) {
       _errorMessage = 'Failed to load data: $e';
       _isLoading = false;
-      // ✅ FIXED: Replace print with debugPrint
       debugPrint('Error in HomeProvider.loadData: $e');
     }
 
@@ -261,7 +244,6 @@ class HomeProvider extends ChangeNotifier {
       final latestWeight = await _userRepository.getLatestWeightEntry();
       _currentWeight = latestWeight?.weight;
     } catch (e) {
-      // ✅ FIXED: Replace print with debugPrint
       debugPrint('Error loading user data: $e');
       // Don't throw - let the UI handle missing user data gracefully
     }
@@ -288,7 +270,6 @@ class HomeProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
-      // ✅ FIXED: Replace print with debugPrint
       debugPrint('Error loading food entries: $e');
       // Initialize with empty data if loading fails
       _entriesByMeal = {
@@ -306,7 +287,6 @@ class HomeProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       _dailyFoodBudget = prefs.getDouble('daily_food_budget') ?? 25.0;
     } catch (e) {
-      // ✅ FIXED: Replace print with debugPrint
       debugPrint('Error loading food budget: $e');
       _dailyFoodBudget = 25.0; // Default fallback
     }
@@ -320,13 +300,11 @@ class HomeProvider extends ChangeNotifier {
       _dailyFoodBudget = budget;
       notifyListeners();
     } catch (e) {
-      // ✅ FIXED: Replace print with debugPrint
       debugPrint('Error updating food budget: $e');
       rethrow;
     }
   }
 
-  // ADDED: Missing method that your widgets expect
   Future<void> setDailyFoodBudget(double budget) async {
     await updateFoodBudget(budget); // Delegate to existing method
   }
@@ -377,7 +355,6 @@ class HomeProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
-      // ✅ FIXED: Replace print with debugPrint
       debugPrint('Error adding food entry: $e');
       rethrow;
     }
@@ -403,7 +380,6 @@ class HomeProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
-      // ✅ FIXED: Replace print with debugPrint
       debugPrint('Error updating food entry: $e');
       rethrow;
     }
@@ -439,7 +415,6 @@ class HomeProvider extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      // ✅ FIXED: Replace print with debugPrint
       debugPrint('Error deleting food entry: $e');
       rethrow;
     }

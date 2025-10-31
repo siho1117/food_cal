@@ -1,52 +1,17 @@
 // lib/config/constants/app_constants.dart
-import 'package:flutter/material.dart';
 
-/// Central location for all app constants to avoid magic numbers and strings
+/// Central location for business logic constants and app configuration
+/// 
+/// UI-related constants (dimensions, spacing, colors) should be in theme_design.dart
+/// This file contains only business rules, validation, storage keys, and app behavior
 class AppConstants {
   // Private constructor to prevent instantiation
   AppConstants._();
 
-  // === UI DIMENSIONS ===
-  static const double borderRadiusSmall = 8.0;
-  static const double borderRadiusMedium = 12.0;
-  static const double borderRadiusLarge = 16.0;
-  static const double borderRadiusXLarge = 20.0;
-
-  static const double paddingSmall = 8.0;
-  static const double paddingMedium = 16.0;
-  static const double paddingLarge = 20.0;
-  static const double paddingXLarge = 24.0;
-
-  static const double spacingSmall = 8.0;
-  static const double spacingMedium = 16.0;
-  static const double spacingLarge = 20.0;
-  static const double spacingXLarge = 30.0;
-
-  static const double iconSizeSmall = 16.0;
-  static const double iconSizeMedium = 20.0;
-  static const double iconSizeLarge = 24.0;
-  static const double iconSizeXLarge = 28.0;
-
-  static const double emojiSize = 20.0;
-  static const double bottomNavHeight = 75.0;
-  static const double appBarHeight = 100.0;
-
-  // === FONT SIZES ===
-  static const double fontSizeSmall = 11.0;
-  static const double fontSizeMedium = 14.0;
-  static const double fontSizeLarge = 16.0;
-  static const double fontSizeXLarge = 18.0;
-  static const double fontSizeTitle = 26.0;
-  static const double fontSizeAppTitle = 38.0;
-
-  // === ANIMATION CONSTANTS ===
-  static const Curve animationCurve = Curves.easeInOut;
-  static const Duration bottomNavAnimationDuration = Duration(milliseconds: 400);
-  static const Duration defaultAnimationDuration = Duration(milliseconds: 300);
-  static const Duration fastAnimationDuration = Duration(milliseconds: 150);
-  static const Duration slowAnimationDuration = Duration(milliseconds: 600);
-
-  // === FOOD RELATED CONSTANTS ===
+  // ═══════════════════════════════════════════════════════════════
+  // FOOD & MEAL CONSTANTS
+  // ═══════════════════════════════════════════════════════════════
+  
   static const List<String> mealTypes = [
     'breakfast',
     'lunch', 
@@ -73,7 +38,6 @@ class AppConstants {
     'quart',
   ];
 
-  // === MEAL TYPE EMOJIS ===
   static const Map<String, String> mealTypeEmojis = {
     'breakfast': '🌅',
     'lunch': '☀️',
@@ -81,7 +45,12 @@ class AppConstants {
     'snack': '🍎',
   };
 
-  // === NUTRITION GOALS (default values) ===
+  static const double defaultServingSize = 1.0;
+
+  // ═══════════════════════════════════════════════════════════════
+  // NUTRITION GOALS (default values)
+  // ═══════════════════════════════════════════════════════════════
+  
   static const Map<String, dynamic> defaultNutritionGoals = {
     'calories': 2000,
     'protein': 150.0,      // grams
@@ -92,19 +61,28 @@ class AppConstants {
     'sodium': 2300.0,      // milligrams
   };
 
-  // === API CONSTANTS ===
+  // ═══════════════════════════════════════════════════════════════
+  // API CONSTANTS
+  // ═══════════════════════════════════════════════════════════════
+  
   static const int defaultApiTimeout = 30; // seconds
   static const int imageApiTimeout = 45; // seconds
   static const int maxRetries = 3;
   static const int dailyApiQuota = 50;
 
-  // === IMAGE PROCESSING CONSTANTS ===
+  // ═══════════════════════════════════════════════════════════════
+  // IMAGE PROCESSING CONSTANTS
+  // ═══════════════════════════════════════════════════════════════
+  
   static const int maxImageSizeMB = 10;
   static const int targetImageWidth = 1024;
   static const int targetImageHeight = 1024;
   static const int imageCompressionQuality = 85;
 
-  // === VALIDATION CONSTANTS ===
+  // ═══════════════════════════════════════════════════════════════
+  // VALIDATION CONSTANTS
+  // ═══════════════════════════════════════════════════════════════
+  
   static const double minCalories = 0.0;
   static const double maxCalories = 5000.0;
   static const double minMacros = 0.0;
@@ -112,7 +90,6 @@ class AppConstants {
   static const double maxCarbs = 500.0;
   static const double maxFat = 200.0;
 
-  // === USER PROFILE CONSTANTS ===
   static const double minWeight = 30.0;  // kg
   static const double maxWeight = 300.0; // kg
   static const double minHeight = 100.0; // cm
@@ -120,7 +97,19 @@ class AppConstants {
   static const int minAge = 13;
   static const int maxAge = 120;
 
-  // === STORAGE KEYS ===
+  static const double minCaloriesValue = 0.0;
+  static const double maxCaloriesValue = 9999.0;
+  static const double minNutrientValue = 0.0;
+  static const double maxNutrientValue = 999.0;
+  static const int maxFoodNameLength = 100;
+  static const double maxBudgetAmount = 1000.0;
+  static const int maxDecimalPlaces = 2;
+  static const int maxRecentSearches = 10;
+
+  // ═══════════════════════════════════════════════════════════════
+  // STORAGE KEYS
+  // ═══════════════════════════════════════════════════════════════
+  
   static const String userProfileKey = 'user_profile';
   static const String foodEntriesKey = 'food_entries';
   static const String settingsKey = 'app_settings';
@@ -140,20 +129,29 @@ class AppConstants {
   static const String activityLevelKey = 'activity_level';
   static const String tempImageFolderKey = 'food_images';
 
-  // === COMMON BUTTON LABELS ===
+  // ═══════════════════════════════════════════════════════════════
+  // COMMON BUTTON LABELS
+  // ═══════════════════════════════════════════════════════════════
+  
   static const String saveLabel = 'Save';
   static const String cancelLabel = 'Cancel';
   static const String retryLabel = 'Retry';
   static const String analyzeLabel = 'Analyze Food';
   static const String retakeLabel = 'Retake';
 
-  // === COMMON MESSAGES ===
+  // ═══════════════════════════════════════════════════════════════
+  // COMMON MESSAGES
+  // ═══════════════════════════════════════════════════════════════
+  
   static const String loadingMessage = 'Loading...';
   static const String savingMessage = 'Saving...';
   static const String errorLoadingData = 'Error Loading Data';
   static const String noFoodDetected = 'No food items were detected in the image. Please try again.';
 
-  // === ERROR MESSAGES ===
+  // ═══════════════════════════════════════════════════════════════
+  // ERROR MESSAGES
+  // ═══════════════════════════════════════════════════════════════
+  
   static const String networkErrorMessage = 'No internet connection. Please check your network and try again.';
   static const String genericErrorMessage = 'Something went wrong. Please try again.';
   static const String quotaExceededMessage = 'Daily analysis limit reached. Please try again tomorrow.';
@@ -170,28 +168,40 @@ class AppConstants {
   static const String invalidFat = 'Please enter valid fat amount';
   static const String invalidCost = 'Please enter a valid cost (0 or greater)';
 
-  // === BUDGET MESSAGES ===
+  // ═══════════════════════════════════════════════════════════════
+  // BUDGET MESSAGES
+  // ═══════════════════════════════════════════════════════════════
+  
   static const String budgetQuestion = 'How much do you want to spend on food per day?';
   static const String budgetAdvice = 'Consider your food goals and spending habits';
   static const String budgetTooHigh = 'Budget seems high. Please check the amount.';
   static const String invalidBudget = 'Please enter a valid budget amount';
   static const String budgetUpdateSuccess = 'Budget updated successfully!';
 
-  // === BUDGET PRESETS ===
   static const List<Map<String, dynamic>> budgetPresets = [
     {'label': 'Frugal', 'amount': 15.0},
     {'label': 'Moderate', 'amount': 25.0}, 
     {'label': 'Generous', 'amount': 40.0},
   ];
 
-  // === SUCCESS MESSAGES ===
+  static const double budgetWarningThreshold = 0.9;   // 90%
+  static const double budgetCautionThreshold = 0.7;   // 70%
+  static const double budgetGoodThreshold = 0.4;      // 40%
+
+  // ═══════════════════════════════════════════════════════════════
+  // SUCCESS MESSAGES
+  // ═══════════════════════════════════════════════════════════════
+  
   static const String foodAddedSuccessMessage = 'Food item added to your log!';
   static const String profileUpdatedMessage = 'Profile updated successfully!';
   static const String settingsSavedMessage = 'Settings saved successfully!';
   static const String saveSuccess = 'Saved successfully!';
   static const String updateSuccess = 'Updated successfully!';
 
-  // === ACTIVITY LEVELS (for calorie calculations) ===
+  // ═══════════════════════════════════════════════════════════════
+  // ACTIVITY LEVELS (for calorie calculations)
+  // ═══════════════════════════════════════════════════════════════
+  
   static const Map<String, double> activityMultipliers = {
     'sedentary': 1.2,        // Little or no exercise
     'light': 1.375,          // Light exercise 1-3 days/week
@@ -200,14 +210,16 @@ class AppConstants {
     'very_active': 1.9,      // Very hard exercise, physical job
   };
 
-  // === GENDER OPTIONS ===
+  // ═══════════════════════════════════════════════════════════════
+  // GENDER & GOAL OPTIONS
+  // ═══════════════════════════════════════════════════════════════
+  
   static const List<String> genderOptions = [
     'male',
     'female',
     'other',
   ];
 
-  // === GOAL TYPES ===
   static const List<String> goalTypes = [
     'lose_weight',
     'maintain_weight',
@@ -216,7 +228,10 @@ class AppConstants {
     'improve_health',
   ];
 
-  // === COMMON ALLERGENS ===
+  // ═══════════════════════════════════════════════════════════════
+  // ALLERGENS & DIETARY PREFERENCES
+  // ═══════════════════════════════════════════════════════════════
+  
   static const List<String> commonAllergens = [
     'dairy',
     'eggs',
@@ -229,7 +244,6 @@ class AppConstants {
     'sesame',
   ];
 
-  // === DIETARY PREFERENCES ===
   static const List<String> dietaryPreferences = [
     'none',
     'vegetarian',
@@ -243,69 +257,56 @@ class AppConstants {
     'gluten_free',
   ];
 
-  // === TIME CONSTANTS ===
+  // ═══════════════════════════════════════════════════════════════
+  // TIME CONSTANTS
+  // ═══════════════════════════════════════════════════════════════
+  
   static const Duration splashScreenDuration = Duration(seconds: 3);
   static const Duration snackBarDuration = Duration(seconds: 4);
   static const Duration loadingTimeout = Duration(seconds: 10);
   static const Duration apiTimeout = Duration(seconds: 60);
   static const Duration shortTimeout = Duration(seconds: 15);
-  static const Duration animationDuration = Duration(milliseconds: 300);
   static const Duration loadingDelay = Duration(milliseconds: 200);
 
-  // === UI BREAKPOINTS ===
-  static const double mobileBreakpoint = 600.0;
-  static const double tabletBreakpoint = 900.0;
-  static const double desktopBreakpoint = 1200.0;
-
-  // === CHARTS & GRAPHS ===
-  static const double chartHeight = 200.0;
-  static const double progressBarHeight = 8.0;
-  static const int chartAnimationDuration = 1000; // milliseconds
-
-  // === CAMERA CONSTANTS ===
-  static const double cameraOverlayOpacity = 0.7;
-  static const double focusCircleSize = 80.0;
-  static const Duration cameraFocusDuration = Duration(milliseconds: 500);
-
-  // === FORM VALIDATION ===
-  static const double minCaloriesValue = 0.0;
-  static const double maxCaloriesValue = 9999.0;
-  static const double minNutrientValue = 0.0;
-  static const double maxNutrientValue = 999.0;
-  static const int maxFoodNameLength = 100;
-  static const double maxBudgetAmount = 1000.0;
-  static const double defaultServingSize = 1.0;
-  static const int maxDecimalPlaces = 2;
-  static const int maxRecentSearches = 10;
-
-  // === REGEX PATTERNS ===
-  static const String decimalNumberPattern = r'[0-9.,]';
-  static const String numberOnlyPattern = r'[0-9.]';
-  static const String integerOnlyPattern = r'[0-9]';
-
-  // === BMI CATEGORIES ===
-  static const double bmiUnderweight = 18.5;
-  static const double bmiNormal = 24.9;
-  static const double bmiOverweight = 29.9;
-
-  // === BUDGET CONSTANTS ===
-  static const double budgetWarningThreshold = 0.9;   // 90%
-  static const double budgetCautionThreshold = 0.7;   // 70%
-  static const double budgetGoodThreshold = 0.4;      // 40%
-  static const double defaultWeightKg = 70.0;
-  static const double defaultWeightLbs = 154.0;
-  static const double lbsToKgRatio = 2.20462;
-
-  // === MEAL TIME BOUNDARIES ===
+  // ═══════════════════════════════════════════════════════════════
+  // MEAL TIME BOUNDARIES
+  // ═══════════════════════════════════════════════════════════════
+  
   static const int mealTimeBoundaries = 11; // breakfast < 11am
   static const int lunchBoundary = 15;      // lunch < 3pm  
   static const int snackBoundary = 18;      // snack < 6pm
 
-  // === NUTRITIONAL DEFAULTS ===
+  // ═══════════════════════════════════════════════════════════════
+  // NUTRITIONAL DEFAULTS
+  // ═══════════════════════════════════════════════════════════════
+  
   static const double defaultCaloriesPerGram = 4.0; // For carbs/protein
   static const double fatCaloriesPerGram = 9.0;
   static const double alcoholCaloriesPerGram = 7.0;
+  static const double defaultWeightKg = 70.0;
+  static const double defaultWeightLbs = 154.0;
+  static const double lbsToKgRatio = 2.20462;
 
+  // ═══════════════════════════════════════════════════════════════
+  // BMI CATEGORIES
+  // ═══════════════════════════════════════════════════════════════
+  
+  static const double bmiUnderweight = 18.5;
+  static const double bmiNormal = 24.9;
+  static const double bmiOverweight = 29.9;
+
+  // ═══════════════════════════════════════════════════════════════
+  // REGEX PATTERNS
+  // ═══════════════════════════════════════════════════════════════
+  
+  static const String decimalNumberPattern = r'[0-9.,]';
+  static const String numberOnlyPattern = r'[0-9.]';
+  static const String integerOnlyPattern = r'[0-9]';
+
+  // ═══════════════════════════════════════════════════════════════
+  // HELPER METHODS
+  // ═══════════════════════════════════════════════════════════════
+  
   /// Helper method to get meal type display name
   static String getMealTypeDisplayName(String mealType) {
     switch (mealType.toLowerCase()) {
@@ -352,7 +353,8 @@ class AppConstants {
 
   /// Helper method to get activity level multiplier
   static double getActivityMultiplier(String activityLevel) {
-    return activityMultipliers[activityLevel.toLowerCase()] ?? activityMultipliers['sedentary']!;
+    return activityMultipliers[activityLevel.toLowerCase()] ?? 
+           activityMultipliers['sedentary']!;
   }
 
   /// Helper method to format serving unit display
@@ -374,16 +376,6 @@ class AppConstants {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
-
-  /// Helper method to check if device is tablet
-  static bool isTablet(BuildContext context) {
-    return MediaQuery.of(context).size.width >= tabletBreakpoint;
-  }
-
-  /// Helper method to check if device is mobile
-  static bool isMobile(BuildContext context) {
-    return MediaQuery.of(context).size.width < mobileBreakpoint;
   }
 }
 

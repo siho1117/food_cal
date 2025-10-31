@@ -1,9 +1,5 @@
 // lib/providers/exercise_provider.dart
-// STEP 5: Updated to use GetIt for dependency injection
 import 'package:flutter/foundation.dart';
-
-// ADD THIS IMPORT for GetIt
-import '../config/dependency_injection.dart';
 
 import '../data/repositories/user_repository.dart';
 import '../data/models/user_profile.dart';
@@ -12,14 +8,9 @@ import '../data/storage/local_storage.dart';
 import '../utils/formula.dart';
 
 class ExerciseProvider extends ChangeNotifier {
-  // CHANGE THESE LINES: Get services from dependency injection
-  // OLD: final UserRepository _userRepository = UserRepository();
-  // OLD: final LocalStorage _storage = LocalStorage();
-  // NEW: Get from GetIt container
-  final UserRepository _userRepository = getIt<UserRepository>();
-  final LocalStorage _storage = getIt<LocalStorage>();
-
-  // === EVERYTHING ELSE STAYS THE SAME ===
+  // Direct instantiation - both are singletons
+  final UserRepository _userRepository = UserRepository();
+  final LocalStorage _storage = LocalStorage();
 
   // Storage key for exercise entries
   static const String _exerciseEntriesKey = 'exercise_entries';
@@ -222,7 +213,6 @@ class ExerciseProvider extends ChangeNotifier {
     }
   }
 
-  // ADDED: Missing navigation methods for exercise screen
   /// Navigate to previous day
   Future<void> previousDay() async {
     final previousDate = _selectedDate.subtract(const Duration(days: 1));

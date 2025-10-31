@@ -1,26 +1,17 @@
 // lib/providers/camera_provider.dart
-// STEP 4: Updated to use GetIt for dependency injection
 import 'dart:io';
-// ✅ REMOVED: import 'dart:typed_data'; - unnecessary import
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-
-// ADD THIS IMPORT for GetIt
-import '../config/dependency_injection.dart';
 
 import '../data/repositories/food_repository.dart';
 
 class CameraProvider extends ChangeNotifier {
   final ImagePicker _picker = ImagePicker();
   
-  // CHANGE THIS LINE: Get repository from dependency injection
-  // OLD: final FoodRepository _foodRepository = FoodRepository();
-  // NEW: Get from GetIt container
-  final FoodRepository _foodRepository = getIt<FoodRepository>();
-
-  // === EVERYTHING ELSE STAYS THE SAME ===
+  // Direct instantiation - FoodRepository uses singleton services internally
+  final FoodRepository _foodRepository = FoodRepository();
 
   // Loading state
   bool _isLoading = false;

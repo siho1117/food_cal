@@ -1,9 +1,5 @@
 // lib/providers/progress_data.dart
-// STEP 5: Updated to use GetIt for dependency injection
 import 'package:flutter/foundation.dart';
-
-// ADD THIS IMPORT for GetIt
-import '../config/dependency_injection.dart';
 
 import '../data/repositories/user_repository.dart';
 import '../data/models/user_profile.dart';
@@ -13,12 +9,8 @@ import '../utils/formula.dart';
 /// A data provider class that manages progress screen data
 /// Uses ChangeNotifier to inform widgets when data changes
 class ProgressData extends ChangeNotifier {
-  // CHANGE THIS LINE: Get repository from dependency injection
-  // OLD: final UserRepository _userRepository = UserRepository();
-  // NEW: Get from GetIt container
-  final UserRepository _userRepository = getIt<UserRepository>();
-
-  // === EVERYTHING ELSE STAYS THE SAME ===
+  // Direct instantiation - UserRepository is effectively a singleton
+  final UserRepository _userRepository = UserRepository();
   
   // User data
   UserProfile? _userProfile;

@@ -1,9 +1,5 @@
 // lib/providers/settings_provider.dart
-// STEP 4: Updated to use GetIt for dependency injection
 import 'package:flutter/foundation.dart';
-
-// ADD THIS IMPORT for GetIt
-import '../config/dependency_injection.dart';
 
 import '../data/repositories/user_repository.dart';
 import '../data/models/user_profile.dart';
@@ -11,12 +7,8 @@ import '../data/models/weight_data.dart';
 import '../utils/formula.dart';
 
 class SettingsProvider extends ChangeNotifier {
-  // CHANGE THIS LINE: Get repository from dependency injection
-  // OLD: final UserRepository _userRepository = UserRepository();
-  // NEW: Get from GetIt container
-  final UserRepository _userRepository = getIt<UserRepository>();
-
-  // === EVERYTHING ELSE STAYS THE SAME ===
+  // Direct instantiation - UserRepository is effectively a singleton
+  final UserRepository _userRepository = UserRepository();
 
   // Loading state
   bool _isLoading = true;
@@ -252,7 +244,6 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ADDED: Missing method for feedback functionality
   Future<void> sendFeedback(String message) async {
     try {
       // TODO: Implement actual feedback sending logic
@@ -267,7 +258,6 @@ class SettingsProvider extends ChangeNotifier {
     }
   }
 
-  // ADDED: Missing getter for profile completion percentage
   double get profileCompletionPercentage {
     if (_userProfile == null) return 0.0;
     
@@ -284,12 +274,10 @@ class SettingsProvider extends ChangeNotifier {
     return completedFields / totalFields;
   }
 
-  // ADDED: Missing getter for profile completion status
   bool get isProfileComplete {
     return profileCompletionPercentage >= 1.0;
   }
 
-  // ADDED: Missing method to get missing profile data
   List<String> getMissingProfileData() {
     if (_userProfile == null) {
       return ['All profile information'];
