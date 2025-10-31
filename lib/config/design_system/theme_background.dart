@@ -8,63 +8,89 @@ import 'package:flutter/material.dart';
 class ThemeBackground {
   /// Map of theme ID to gradient color stops
   /// 
-  /// Supports 2+ color gradients. Theme '01' is the default.
-  /// Each gradient is defined as a list of Color objects.
-  /// - 2 colors: simple gradient from start to end
-  /// - 3+ colors: gradient with intermediate color stops
+  /// All gradients have 5 color tones, from top (darker) to bottom (lighter).
+  /// Direction: topCenter → bottomCenter (vertical gradient).
+  /// Theme '01' is the default.
   static const Map<String, List<Color>> gradients = {
-    // Theme 01: Light Gray (default)
+    // Theme 01: Blue gradient (Image 1)
     '01': [
-      Color(0xFFF5F5F5), // Light gray
-      Color(0xFFE0E0E0), // Medium gray
+      Color(0xFF2280E6), // Tone 1 (top)
+      Color(0xFF609DF1), // Tone 2
+      Color(0xFF6EA1F7), // Tone 3
+      Color(0xFF87A4F2), // Tone 4
+      Color(0xFFBEAFEC), // Tone 5 (bottom)
     ],
 
-    // Theme 02: Light Blue
+    // Theme 02: Orange gradient (Image 2)
     '02': [
-      Color(0xFFE3F2FD), // Very light blue
-      Color(0xFF90CAF9), // Medium blue
+      Color(0xFFE55022), // Tone 1 (top)
+      Color(0xFFF59D59), // Tone 2
+      Color(0xFFFFC675), // Tone 3
+      Color(0xFFFBDD8B), // Tone 4
+      Color(0xFFDEEBA9), // Tone 5 (bottom)
     ],
 
-    // Theme 03: Pink
+    // Theme 03: Red/Coral gradient (Image 3)
     '03': [
-      Color(0xFFFCE4EC), // Very light pink
-      Color(0xFFF48FB1), // Medium pink
+      Color(0xFFE62A26), // Tone 1 (top)
+      Color(0xFFF86E64), // Tone 2
+      Color(0xFFFF9285), // Tone 3
+      Color(0xFFFFB197), // Tone 4
+      Color(0xFFEACC98), // Tone 5 (bottom)
     ],
 
-    // Theme 04: Yellow
+    // Theme 04: Gray gradient (Image 4)
     '04': [
-      Color(0xFFFFF9C4), // Very light yellow
-      Color(0xFFFFF176), // Medium yellow
+      Color(0xFF909090), // Tone 1 (top)
+      Color(0xFFC6C6C6), // Tone 2
+      Color(0xFFE1E1E1), // Tone 3
+      Color(0xFFD5D5D5), // Tone 4
+      Color(0xFFEEEFEF), // Tone 5 (bottom)
     ],
 
-    // Theme 05: Green
+    // Theme 05: Teal/Blue gradient (Image 5)
     '05': [
-      Color(0xFFE8F5E9), // Very light green
-      Color(0xFFA5D6A7), // Medium green
+      Color(0xFF2E8AB2), // Tone 1 (top)
+      Color(0xFF79A8BA), // Tone 2
+      Color(0xFFA1BBC1), // Tone 3
+      Color(0xFFBDD1DA), // Tone 4
+      Color(0xFFD0D6E3), // Tone 5 (bottom)
     ],
 
-    // Theme 06: Orange
+    // Theme 06: Green gradient (Image 6)
     '06': [
-      Color(0xFFFFF3E0), // Very light orange
-      Color(0xFFFFB74D), // Medium orange
+      Color(0xFF339632), // Tone 1 (top)
+      Color(0xFF86B481), // Tone 2
+      Color(0xFFB3C5AC), // Tone 3
+      Color(0xFFC8DBC5), // Tone 4
+      Color(0xFFD0DFD9), // Tone 5 (bottom)
     ],
 
-    // Theme 07: Cyan
+    // Theme 07: Dark/Black gradient (Image 7)
     '07': [
-      Color(0xFFE1F5FE), // Very light cyan
-      Color(0xFF81D4FA), // Medium cyan
+      Color(0xFF070707), // Tone 1 (top)
+      Color(0xFF141413), // Tone 2
+      Color(0xFF1B1B1B), // Tone 3
+      Color(0xFF4D4D4D), // Tone 4
+      Color(0xFF717171), // Tone 5 (bottom)
     ],
 
-    // Theme 08: Purple
+    // Theme 08: Dark Blue gradient (Image 8)
     '08': [
-      Color(0xFFF3E5F5), // Very light purple
-      Color(0xFFCE93D8), // Medium purple
+      Color(0xFF0160B1), // Tone 1 (top)
+      Color(0xFF044870), // Tone 2
+      Color(0xFF073E51), // Tone 3
+      Color(0xFF3F6B83), // Tone 4
+      Color(0xFF7F89A8), // Tone 5 (bottom)
     ],
 
-    // Theme 09: Brown
+    // Theme 09: Yellow/Green gradient (Image 9)
     '09': [
-      Color(0xFFEFEBE9), // Very light brown
-      Color(0xFFBCAAA4), // Medium brown
+      Color(0xFFDBB426), // Tone 1 (top)
+      Color(0xFFE5D462), // Tone 2
+      Color(0xFFEBE57F), // Tone 3
+      Color(0xFFD4DB60), // Tone 4
+      Color(0xFFD3F1BF), // Tone 5 (bottom)
     ],
   };
 
@@ -75,15 +101,14 @@ class ThemeBackground {
 
   /// Gradient direction configuration
   /// 
-  /// TODO: Make this configurable per-theme or user-preference
-  /// Currently hardcoded to topLeft → bottomRight
-  static const Alignment gradientBegin = Alignment.topLeft;
-  static const Alignment gradientEnd = Alignment.bottomRight;
+  /// Vertical gradient: top (darker) → bottom (lighter)
+  static const Alignment gradientBegin = Alignment.topCenter;
+  static const Alignment gradientEnd = Alignment.bottomCenter;
 
   /// Returns LinearGradient for the given theme ID
   /// 
   /// Falls back to default theme if the provided ID is invalid.
-  /// Supports 2+ color gradients automatically.
+  /// All gradients have 5 color stops.
   /// 
   /// Example usage:
   /// ```dart
@@ -150,7 +175,7 @@ class ThemeBackground {
   /// Get a representative single color for theme preview
   /// 
   /// This is an OPTIONAL helper method for compact UI elements.
-  /// Returns a color that blends the gradient's start and end colors.
+  /// Returns the middle color (Tone 3) of the 5-tone gradient.
   /// 
   /// Use cases:
   /// - Small icon previews (< 50px)
@@ -170,9 +195,8 @@ class ThemeBackground {
   static Color getPreviewColor(String themeId) {
     final colors = gradients[themeId] ?? gradients[defaultThemeId]!;
 
-    // For 2-color gradients: blend at 50%
-    // For 3+ color gradients: blend first and last color
-    return Color.lerp(colors.first, colors.last, 0.5)!;
+    // Return the middle color (Tone 3 of 5)
+    return colors[2];
   }
 
   /// Get the raw color list for a theme
@@ -185,8 +209,10 @@ class ThemeBackground {
   /// Example usage:
   /// ```dart
   /// final colors = ThemeBackground.getColors('03');
-  /// if (colors != null && colors.length >= 3) {
-  ///   // Custom handling for 3+ color gradients
+  /// if (colors != null) {
+  ///   // Custom gradient processing
+  ///   final darkestColor = colors.first;
+  ///   final lightestColor = colors.last;
   /// }
   /// ```
   static List<Color>? getColors(String themeId) {
