@@ -12,35 +12,8 @@ class ThemeBackground {
   /// Direction: topCenter → bottomCenter (vertical gradient).
   /// Theme '01' is the default.
   static const Map<String, List<Color>> gradients = {
-    // Theme 01: Blue gradient (Image 1)
+    // Theme 01: Gray gradient (was Image 4)
     '01': [
-      Color(0xFF2280E6), // Tone 1 (top)
-      Color(0xFF609DF1), // Tone 2
-      Color(0xFF6EA1F7), // Tone 3
-      Color(0xFF87A4F2), // Tone 4
-      Color(0xFFBEAFEC), // Tone 5 (bottom)
-    ],
-
-    // Theme 02: Orange gradient (Image 2)
-    '02': [
-      Color(0xFFE55022), // Tone 1 (top)
-      Color(0xFFF59D59), // Tone 2
-      Color(0xFFFFC675), // Tone 3
-      Color(0xFFFBDD8B), // Tone 4
-      Color(0xFFDEEBA9), // Tone 5 (bottom)
-    ],
-
-    // Theme 03: Red/Coral gradient (Image 3)
-    '03': [
-      Color(0xFFE62A26), // Tone 1 (top)
-      Color(0xFFF86E64), // Tone 2
-      Color(0xFFFF9285), // Tone 3
-      Color(0xFFFFB197), // Tone 4
-      Color(0xFFEACC98), // Tone 5 (bottom)
-    ],
-
-    // Theme 04: Gray gradient (Image 4)
-    '04': [
       Color(0xFF909090), // Tone 1 (top)
       Color(0xFFC6C6C6), // Tone 2
       Color(0xFFE1E1E1), // Tone 3
@@ -48,26 +21,8 @@ class ThemeBackground {
       Color(0xFFEEEFEF), // Tone 5 (bottom)
     ],
 
-    // Theme 05: Teal/Blue gradient (Image 5)
-    '05': [
-      Color(0xFF2E8AB2), // Tone 1 (top)
-      Color(0xFF79A8BA), // Tone 2
-      Color(0xFFA1BBC1), // Tone 3
-      Color(0xFFBDD1DA), // Tone 4
-      Color(0xFFD0D6E3), // Tone 5 (bottom)
-    ],
-
-    // Theme 06: Green gradient (Image 6)
-    '06': [
-      Color(0xFF339632), // Tone 1 (top)
-      Color(0xFF86B481), // Tone 2
-      Color(0xFFB3C5AC), // Tone 3
-      Color(0xFFC8DBC5), // Tone 4
-      Color(0xFFD0DFD9), // Tone 5 (bottom)
-    ],
-
-    // Theme 07: Dark/Black gradient (Image 7)
-    '07': [
+    // Theme 02: Dark/Black gradient (was Image 7)
+    '02': [
       Color(0xFF070707), // Tone 1 (top)
       Color(0xFF141413), // Tone 2
       Color(0xFF1B1B1B), // Tone 3
@@ -75,8 +30,17 @@ class ThemeBackground {
       Color(0xFF717171), // Tone 5 (bottom)
     ],
 
-    // Theme 08: Dark Blue gradient (Image 8)
-    '08': [
+    // Theme 03: Blue gradient (was Image 1)
+    '03': [
+      Color(0xFF2280E6), // Tone 1 (top)
+      Color(0xFF609DF1), // Tone 2
+      Color(0xFF6EA1F7), // Tone 3
+      Color(0xFF87A4F2), // Tone 4
+      Color(0xFFBEAFEC), // Tone 5 (bottom)
+    ],
+
+    // Theme 04: Dark Blue gradient (was Image 8)
+    '04': [
       Color(0xFF0160B1), // Tone 1 (top)
       Color(0xFF044870), // Tone 2
       Color(0xFF073E51), // Tone 3
@@ -84,7 +48,43 @@ class ThemeBackground {
       Color(0xFF7F89A8), // Tone 5 (bottom)
     ],
 
-    // Theme 09: Yellow/Green gradient (Image 9)
+    // Theme 05: Orange gradient (was Image 2)
+    '05': [
+      Color(0xFFE55022), // Tone 1 (top)
+      Color(0xFFF59D59), // Tone 2
+      Color(0xFFFFC675), // Tone 3
+      Color(0xFFFBDD8B), // Tone 4
+      Color(0xFFDEEBA9), // Tone 5 (bottom)
+    ],
+
+    // Theme 06: Red/Coral gradient (was Image 3)
+    '06': [
+      Color(0xFFE62A26), // Tone 1 (top)
+      Color(0xFFF86E64), // Tone 2
+      Color(0xFFFF9285), // Tone 3
+      Color(0xFFFFB197), // Tone 4
+      Color(0xFFEACC98), // Tone 5 (bottom)
+    ],
+
+    // Theme 07: Green gradient (was Image 6)
+    '07': [
+      Color(0xFF339632), // Tone 1 (top)
+      Color(0xFF86B481), // Tone 2
+      Color(0xFFB3C5AC), // Tone 3
+      Color(0xFFC8DBC5), // Tone 4
+      Color(0xFFD0DFD9), // Tone 5 (bottom)
+    ],
+
+    // Theme 08: Teal/Blue gradient (was Image 5)
+    '08': [
+      Color(0xFF2E8AB2), // Tone 1 (top)
+      Color(0xFF79A8BA), // Tone 2
+      Color(0xFFA1BBC1), // Tone 3
+      Color(0xFFBDD1DA), // Tone 4
+      Color(0xFFD0D6E3), // Tone 5 (bottom)
+    ],
+
+    // Theme 09: Yellow/Green gradient (was Image 9)
     '09': [
       Color(0xFFDBB426), // Tone 1 (top)
       Color(0xFFE5D462), // Tone 2

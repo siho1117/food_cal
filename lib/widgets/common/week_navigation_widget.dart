@@ -1,8 +1,10 @@
 // lib/widgets/common/week_navigation_widget.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
+import '../../providers/theme_provider.dart';  // ✅ NEW: Import ThemeProvider
 
 /// Widget-specific design constants
 class _WeekNavigationDesign {
@@ -50,33 +52,44 @@ class WeekNavigationWidget extends StatelessWidget {
              normalizedDate.isAtSameMomentAs(normalizedNow);
     }).toList();
 
-    return Padding(
-      padding: padding ?? const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Column(
-        children: [
-          // Selected date display (bigger text, no shadow) - NOW ON TOP
-          _buildSelectedDateDisplay(context, now, localizations),
-          
-          const SizedBox(height: 16),
-          
-          // Week days row (no container border - Option B)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: validDays.map((date) {
-              final isSelected = _isSameDay(date, selectedDate);
-              final isToday = _isSameDay(date, now);
+    // ✅ NEW: Wrap with Consumer to get theme-adaptive colors
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        // ✅ NEW: Get theme-adaptive text color
+        final textColor = AppColors.getTextColorForTheme(
+          themeProvider.selectedGradient,
+        );
+        
+        return Padding(
+          padding: padding ?? const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: Column(
+            children: [
+              // Selected date display (bigger text, no shadow) - NOW ON TOP
+              _buildSelectedDateDisplay(context, now, localizations, textColor),
               
-              return _buildDayItem(
-                context: context,
-                date: date,
-                isSelected: isSelected,
-                isToday: isToday,
-                onTap: () => onDateChanged(date),
-              );
-            }).toList(),
+              const SizedBox(height: 16),
+              
+              // Week days row (no container border - Option B)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: validDays.map((date) {
+                  final isSelected = _isSameDay(date, selectedDate);
+                  final isToday = _isSameDay(date, now);
+                  
+                  return _buildDayItem(
+                    context: context,
+                    date: date,
+                    isSelected: isSelected,
+                    isToday: isToday,
+                    onTap: () => onDateChanged(date),
+                    textColor: textColor,  // ✅ NEW: Pass textColor
+                  );
+                }).toList(),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -86,6 +99,7 @@ class WeekNavigationWidget extends StatelessWidget {
     required bool isSelected,
     required bool isToday,
     required VoidCallback onTap,
+    required Color textColor,  // ✅ NEW: Add textColor parameter
   }) {
     final effectiveWidth = dayItemWidth ?? _WeekNavigationDesign.dayItemWidth;
     final effectiveHeight = dayItemHeight ?? _WeekNavigationDesign.dayItemHeight;
@@ -97,34 +111,24 @@ class WeekNavigationWidget extends StatelessWidget {
         width: effectiveWidth,
         height: effectiveHeight,
         decoration: BoxDecoration(
-          // Semi-transparent white background when selected
-          color: isSelected 
-              ? Colors.white.withValues(alpha: 0.25)
-              : Colors.transparent,
+          // Always transparent, no background fill
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(effectiveWidth / 2),
-          // White border for selected day (iOS-style) - Option B
+          // Border for selected day (iOS-style) - Option B
           border: isSelected
               ? Border.all(
-                  color: AppWidgetDesign.cardBorderColor.withValues(
+                  color: textColor.withValues(  // ✅ CHANGED: Use textColor
                     alpha: AppWidgetDesign.cardBorderOpacity,
                   ),
                   width: AppWidgetDesign.cardBorderWidth,
                 )
               : (isToday && !isSelected
                   ? Border.all(
-                      color: Colors.white.withValues(alpha: 0.3),
+                      color: textColor.withValues(alpha: 0.3),  // ✅ CHANGED: Use textColor
                       width: 1.5,
                     )
                   : null),
-          // Soft glow for selected day
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: Colors.white.withValues(alpha: 0.3),
-              blurRadius: _WeekNavigationDesign.selectedGlowBlur,
-              spreadRadius: _WeekNavigationDesign.selectedGlowSpread,
-              offset: const Offset(0, 2),
-            ),
-          ] : null,
+          // No glow effect - clean border only
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -136,8 +140,8 @@ class WeekNavigationWidget extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: isSelected 
-                    ? Colors.white
-                    : Colors.white.withValues(alpha: 0.7),
+                    ? textColor  // ✅ CHANGED: Use textColor
+                    : textColor.withValues(alpha: 0.7),  // ✅ CHANGED: Use textColor
                 letterSpacing: 0.5,
               ),
             ),
@@ -149,8 +153,8 @@ class WeekNavigationWidget extends StatelessWidget {
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: isSelected 
-                    ? Colors.white
-                    : Colors.white.withValues(alpha: 0.85),
+                    ? textColor  // ✅ CHANGED: Use textColor
+                    : textColor.withValues(alpha: 0.85),  // ✅ CHANGED: Use textColor
               ),
             ),
             // Small dot indicator for today when not selected
@@ -160,7 +164,7 @@ class WeekNavigationWidget extends StatelessWidget {
                 width: 4,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: textColor.withValues(alpha: 0.7),  // ✅ CHANGED: Use textColor
                   shape: BoxShape.circle,
                 ),
               ),
@@ -175,6 +179,7 @@ class WeekNavigationWidget extends StatelessWidget {
     BuildContext context,
     DateTime now,
     AppLocalizations localizations,
+    Color textColor,  // ✅ NEW: Add textColor parameter
   ) {
     return Center(
       child: AnimatedSwitcher(
@@ -182,10 +187,10 @@ class WeekNavigationWidget extends StatelessWidget {
         child: Text(
           key: ValueKey(selectedDate),
           _formatSelectedDate(now, localizations),
-          style: const TextStyle(
+          style: TextStyle(  // ✅ CHANGED: Use TextStyle directly with textColor
             fontSize: 22, // Bigger text (was 18)
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: textColor,  // ✅ CHANGED: Use textColor
             letterSpacing: 0.3,
             // No shadow
           ),

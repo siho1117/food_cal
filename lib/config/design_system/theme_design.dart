@@ -47,7 +47,7 @@ class AppEffects {
   AppEffects._();
 
   // Opacity values
-  static const double borderOpacity = 0.8;
+  static const double borderOpacity = 0.5;
   static const double textOpacityPrimary = 1.0;
   static const double textOpacitySecondary = 0.7;
 
