@@ -56,7 +56,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         const SizedBox(height: 20),
                         
-                        // Week Navigation
+                        // 1. Calorie Summary (MOVED TO TOP - largest card)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 20),
+                          child: CalorieSummaryWidget(),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // 2. Week Navigation
                         WeekNavigationWidget(
                           selectedDate: homeProvider.selectedDate,
                           onDateChanged: (date) => homeProvider.changeDate(date),
@@ -66,15 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         const SizedBox(height: 20),
 
-                        // Calorie Summary (large card)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: CalorieSummaryWidget(),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Macronutrient Widget
+                        // 3. Macronutrient Widget
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 20),
                           child: MacronutrientWidget(),
@@ -82,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         const SizedBox(height: 20),
 
-                        // Cost Summary Widget
+                        // 4. Cost Summary Widget
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 20),
                           child: CostSummaryWidget(),
@@ -90,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         const SizedBox(height: 20),
 
-                        // Food Log Widget
+                        // 5. Food Log Widget
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: FoodLogWidget(

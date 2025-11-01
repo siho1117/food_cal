@@ -5,11 +5,11 @@ import 'dart:ui';
 /// Icon-only segmented control bottom navigation bar
 /// 
 /// Inspired by iPhone dock with 5 icons
+/// - Adapts to light/dark theme
 /// - Frosted glass background
-/// - Sliding white selector pill
-/// - Active icon becomes transparent (cutout effect)
-/// - Inactive icons use theme text color
-/// - All colors adapt to theme changes
+/// - Sliding selector pill
+/// - Selected icon: Solid fill (stands out)
+/// - Unselected icons: Outlined (subtle)
 class CustomBottomNav extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
@@ -41,10 +41,6 @@ class CustomBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
-    
-    // Get theme text color for inactive icons
-    final themeTextColor = Theme.of(context).textTheme.bodyLarge?.color 
-        ?? (isDark ? Colors.white : Colors.black87);
 
     return Container(
       margin: const EdgeInsets.only(
@@ -52,26 +48,28 @@ class CustomBottomNav extends StatelessWidget {
         right: 16.0,
         bottom: 20.0,
       ),
-      height: 75.0, // Moderate reduction for better proportions
+      height: 75.0,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(34.0),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
           child: Container(
             decoration: BoxDecoration(
+              // Theme-adaptive background
               color: isDark
-                  ? const Color(0xFF1A2332).withOpacity(0.85)
-                  : Colors.white.withOpacity(0.15),
+                  ? const Color(0xFF1A2332).withOpacity(0.85) // Dark theme: dark glass
+                  : Colors.white.withOpacity(0.25),             // Light theme: brighter white glass
               borderRadius: BorderRadius.circular(34.0),
               border: Border.all(
+                // Theme-adaptive border
                 color: isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.white.withOpacity(0.5),
+                    ? Colors.white.withOpacity(0.1)   // Dark theme: subtle border
+                    : Colors.white.withOpacity(0.6),  // Light theme: more visible border
                 width: 4.0,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
                   blurRadius: 30.0,
                   offset: const Offset(0, 8),
                 ),
@@ -80,7 +78,7 @@ class CustomBottomNav extends StatelessWidget {
             padding: const EdgeInsets.all(7.0),
             child: Stack(
               children: [
-                // Sliding white selector pill
+                // Sliding selector pill
                 AnimatedAlign(
                   duration: const Duration(milliseconds: 400),
                   curve: Curves.easeInOutCubic,
@@ -91,11 +89,20 @@ class CustomBottomNav extends StatelessWidget {
                       height: 62.0,
                       margin: const EdgeInsets.symmetric(horizontal: 3.0),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.95),
+                        // Theme-adaptive pill
+                        color: isDark
+                            ? const Color(0xFF2A3342) // Dark theme: elevated dark
+                            : Colors.white,            // Light theme: solid white
                         borderRadius: BorderRadius.circular(26.0),
+                        border: Border.all(
+                          color: isDark
+                              ? Colors.white.withOpacity(0.2)  // Dark theme: subtle border
+                              : Colors.black.withOpacity(0.08), // Light theme: very subtle border
+                          width: 1.0,
+                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
+                            color: Colors.black.withOpacity(isDark ? 0.15 : 0.1),
                             blurRadius: 12.0,
                             offset: const Offset(0, 4),
                           ),
@@ -114,7 +121,7 @@ class CustomBottomNav extends StatelessWidget {
                         label: _navLabels[index],
                         index: index,
                         isActive: currentIndex == index,
-                        iconColor: themeTextColor,
+                        isDark: isDark,
                       ),
                     ),
                   ),
@@ -140,8 +147,23 @@ class CustomBottomNav extends StatelessWidget {
     required String label,
     required int index,
     required bool isActive,
-    required Color iconColor,
+    required bool isDark,
   }) {
+    // CRITICAL FIX: Different icon colors for light vs dark theme
+    Color iconColor;
+    
+    if (isActive) {
+      // Selected icon: High contrast solid color
+      iconColor = isDark 
+          ? Colors.white                    // Dark theme: solid white
+          : const Color(0xFF1A2332);        // Light theme: solid dark
+    } else {
+      // Unselected icon: Dimmed based on theme
+      iconColor = isDark
+          ? Colors.white.withOpacity(0.5)   // Dark theme: dimmed white
+          : const Color(0xFF1A2332).withOpacity(0.4); // Light theme: dimmed dark
+    }
+
     return Semantics(
       label: label,
       button: true,
@@ -154,15 +176,20 @@ class CustomBottomNav extends StatelessWidget {
           child: Container(
             height: 62.0,
             alignment: Alignment.center,
-            child: AnimatedOpacity(
+            child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              // Active: transparent (0.3), Inactive: solid (0.85)
-              opacity: isActive ? 0.3 : 0.85,
+              transitionBuilder: (child, animation) {
+                return ScaleTransition(
+                  scale: animation,
+                  child: child,
+                );
+              },
               child: Icon(
                 icon,
-                size: 32.0, // Moderate reduction for better balance
-                color: iconColor, // Uses theme text color
+                key: ValueKey('${icon}_$isActive'),
+                size: isActive ? 28.0 : 26.0, // Selected is slightly bigger
+                color: iconColor,
+                weight: isActive ? 600 : 400, // Selected is bolder
               ),
             ),
           ),
