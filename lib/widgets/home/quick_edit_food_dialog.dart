@@ -94,7 +94,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             
             const SizedBox(height: 24),
             
-            // Basic Information (no unit field)
+            // Basic Information
             _buildSectionLabel('Basic Information'),
             const SizedBox(height: 12),
             _buildInputField(
@@ -180,40 +180,47 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
         ),
       ),
       
+      // ✅ ALL ACTIONS ON ONE LINE
       actions: [
-        // Delete button at far left
-        FilledButton(
-          onPressed: _isLoading ? null : _handleDelete,
-          style: AppDialogTheme.destructiveButtonStyle,
-          child: const Text('Delete'),
-        ),
-        
-        const Spacer(),
-        
-        // Cancel button
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          style: AppDialogTheme.cancelButtonStyle,
-          child: const Text('Cancel'),
-        ),
-        
-        const SizedBox(width: AppDialogTheme.buttonGap),
-        
-        // Save button
-        FilledButton(
-          onPressed: _isLoading ? null : _handleSave,
-          style: AppDialogTheme.primaryButtonStyle,
-          child: Text(_isLoading ? 'Saving...' : 'Save'),
+        Row(
+          children: [
+            // Delete button (left-aligned)
+            FilledButton(
+              onPressed: _isLoading ? null : _handleDelete,
+              style: AppDialogTheme.destructiveButtonStyle,
+              child: const Text('Delete'),
+            ),
+            
+            const Spacer(),
+            
+            // Cancel button
+            TextButton(
+              onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+              style: AppDialogTheme.cancelButtonStyle,
+              child: const Text('Cancel'),
+            ),
+            
+            const SizedBox(width: AppDialogTheme.buttonGap),
+            
+            // Save button
+            FilledButton(
+              onPressed: _isLoading ? null : _handleSave,
+              style: AppDialogTheme.primaryButtonStyle,
+              child: Text(_isLoading ? 'Saving...' : 'Save'),
+            ),
+          ],
         ),
       ],
     );
   }
 
+  // ✅ BOLD SECTION HEADERS
   Widget _buildSectionLabel(String text) {
     return Text(
       text,
       style: AppTypography.labelMedium.copyWith(
         color: const Color(0xFF374151),
+        fontWeight: FontWeight.bold, // ✅ BOLD
       ),
     );
   }
