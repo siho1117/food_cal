@@ -10,7 +10,7 @@ import '../../providers/theme_provider.dart';
 /// Widget-specific design constants
 class _MacronutrientDesign {
   static const double triangleSize = 160.0; // ✅ Size of the triangle area
-  static const double triangleStrokeWidth = 16.0; // ✅ Thickness: 12.0
+  static const double triangleStrokeWidth = 16.0; // ✅ Thickness: 16.0
 }
 
 class MacronutrientWidget extends StatefulWidget {

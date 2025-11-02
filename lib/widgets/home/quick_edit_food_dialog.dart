@@ -1,7 +1,7 @@
 // lib/widgets/home/quick_edit_food_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../config/design_system/theme_design.dart';
+import '../../config/design_system/dialog_theme.dart';
 import '../../config/design_system/typography.dart';
 import '../../config/constants/app_constants.dart';
 import '../../data/models/food_item.dart';
@@ -32,22 +32,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
   late final TextEditingController _fatController;
   late final TextEditingController _costController;
   
-  late String _selectedUnit;
   bool _isLoading = false;
-
-  // Local UI constants (since they were removed from AppConstants)
-  static const double _borderRadiusLarge = 16.0;
-  static const double _borderRadiusMedium = 12.0;
-  static const double _borderRadiusSmall = 8.0;
-  static const double _spacingSmall = 8.0;
-  static const double _spacingMedium = 16.0;
-  static const double _spacingLarge = 20.0;
-  static const double _paddingMedium = 16.0;
-  static const double _paddingSmall = 8.0;
-  static const double _emojiSize = 20.0;
-  static const double _fontSizeXLarge = 18.0;
-  static const double _fontSizeMedium = 14.0;
-  static const double _iconSizeMedium = 20.0;
 
   @override
   void initState() {
@@ -59,8 +44,6 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
     _proteinController = TextEditingController(text: widget.foodItem.proteins.round().toString());
     _carbsController = TextEditingController(text: widget.foodItem.carbs.round().toString());
     _fatController = TextEditingController(text: widget.foodItem.fats.round().toString());
-    _selectedUnit = widget.foodItem.servingUnit;
-    
     _costController = TextEditingController(
       text: widget.foodItem.cost?.toStringAsFixed(AppConstants.maxDecimalPlaces) ?? ''
     );
@@ -81,369 +64,218 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_borderRadiusLarge)),
-      title: _buildTitle(),
+      backgroundColor: AppDialogTheme.backgroundColor,
+      shape: AppDialogTheme.shape,
+      contentPadding: AppDialogTheme.contentPadding,
+      actionsPadding: AppDialogTheme.actionsPadding,
+      
+      title: const Text(
+        'Edit Food Item',
+        style: AppDialogTheme.titleStyle,
+      ),
+      
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildBasicInfo(),
-            const SizedBox(height: _spacingLarge),
-            _buildNutritionInfo(),
-            if (widget.foodItem.cost != null) ...[
-              const SizedBox(height: _spacingLarge),
-              _buildCostInfo(),
-            ],
+            // Cost (Optional) - AT TOP
+            _buildSectionLabel('Cost (Optional)'),
+            const SizedBox(height: 12),
+            _buildInputField(
+              controller: _costController,
+              label: 'Price per serving',
+              placeholder: '0.00',
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
+              ],
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Basic Information (no unit field)
+            _buildSectionLabel('Basic Information'),
+            const SizedBox(height: 12),
+            _buildInputField(
+              controller: _nameController,
+              label: 'Food Name',
+              placeholder: 'e.g., Grilled Chicken',
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(AppConstants.maxFoodNameLength),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildInputField(
+              controller: _servingSizeController,
+              label: 'Serving Size',
+              placeholder: '1.0',
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
+              ],
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Nutrition Information
+            _buildSectionLabel('Nutrition (per serving)'),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildInputField(
+                    controller: _caloriesController,
+                    label: 'Calories',
+                    placeholder: '0',
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildInputField(
+                    controller: _proteinController,
+                    label: 'Protein (g)',
+                    placeholder: '0',
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildInputField(
+                    controller: _carbsController,
+                    label: 'Carbs (g)',
+                    placeholder: '0',
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildInputField(
+                    controller: _fatController,
+                    label: 'Fat (g)',
+                    placeholder: '0',
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
-      actions: _buildActions(),
-    );
-  }
-
-  Widget _buildTitle() {
-    return Row(
-      children: [
-        const Text('🍽️', style: TextStyle(fontSize: _emojiSize)),
-        const SizedBox(width: _spacingSmall),
-        Text(
-          'Edit Food Item',
-          style: AppTypography.displaySmall.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppLegacyColors.primaryBlue,
-            fontSize: _fontSizeXLarge,
-          ),
+      
+      actions: [
+        // Delete button at far left
+        FilledButton(
+          onPressed: _isLoading ? null : _handleDelete,
+          style: AppDialogTheme.destructiveButtonStyle,
+          child: const Text('Delete'),
+        ),
+        
+        const Spacer(),
+        
+        // Cancel button
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+          style: AppDialogTheme.cancelButtonStyle,
+          child: const Text('Cancel'),
+        ),
+        
+        const SizedBox(width: AppDialogTheme.buttonGap),
+        
+        // Save button
+        FilledButton(
+          onPressed: _isLoading ? null : _handleSave,
+          style: AppDialogTheme.primaryButtonStyle,
+          child: Text(_isLoading ? 'Saving...' : 'Save'),
         ),
       ],
     );
   }
 
-  Widget _buildBasicInfo() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(_borderRadiusMedium),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(_paddingMedium),
-            decoration: BoxDecoration(
-              color: AppLegacyColors.primaryBlue.withValues(alpha: 0.1),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(_borderRadiusMedium),
-                topRight: Radius.circular(_borderRadiusMedium),
-              ),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.edit, color: AppLegacyColors.primaryBlue, size: _iconSizeMedium),
-                const SizedBox(width: _spacingSmall),
-                Text(
-                  'Basic Information',
-                  style: AppTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppLegacyColors.primaryBlue,
-                    fontSize: _fontSizeMedium + 1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(_paddingMedium),
-            child: Column(
-              children: [
-                _buildTextField(_nameController, 'Food Name', 'e.g., Grilled Chicken'),
-                const SizedBox(height: _spacingMedium),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: _buildTextField(_servingSizeController, 'Serving Size', AppConstants.defaultServingSize.toString()),
-                    ),
-                    const SizedBox(width: _spacingMedium),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Unit:',
-                            style: AppTypography.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[700],
-                              fontSize: _fontSizeMedium,
-                            ),
-                          ),
-                          const SizedBox(height: _spacingSmall),
-                          DropdownButtonFormField<String>(
-                            value: _selectedUnit,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(_borderRadiusSmall),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: _paddingMedium,
-                                vertical: _paddingSmall,
-                              ),
-                              isDense: true,
-                            ),
-                            items: AppConstants.servingUnits.map((unit) {
-                              return DropdownMenuItem(value: unit, child: Text(unit));
-                            }).toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedUnit = value!;
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+  Widget _buildSectionLabel(String text) {
+    return Text(
+      text,
+      style: AppTypography.labelMedium.copyWith(
+        color: const Color(0xFF374151),
       ),
     );
   }
 
-  Widget _buildNutritionInfo() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(_borderRadiusMedium),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(_paddingMedium),
-            decoration: BoxDecoration(
-              color: Colors.green[50],
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(_borderRadiusMedium),
-                topRight: Radius.circular(_borderRadiusMedium),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.restaurant_menu, color: Colors.green[700], size: _iconSizeMedium),
-                const SizedBox(width: _spacingSmall),
-                Text(
-                  'Nutrition Facts',
-                  style: AppTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: Colors.green[700],
-                    fontSize: _fontSizeMedium + 1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(_paddingMedium),
-            child: Column(
-              children: [
-                _buildNutritionField(_caloriesController, 'Calories', 'kcal'),
-                const SizedBox(height: _spacingMedium),
-                _buildNutritionField(_proteinController, 'Protein', 'g'),
-                const SizedBox(height: _spacingMedium),
-                _buildNutritionField(_carbsController, 'Carbs', 'g'),
-                const SizedBox(height: _spacingMedium),
-                _buildNutritionField(_fatController, 'Fat', 'g'),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCostInfo() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(_borderRadiusMedium),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(_paddingMedium),
-            decoration: BoxDecoration(
-              color: Colors.orange[50],
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(_borderRadiusMedium),
-                topRight: Radius.circular(_borderRadiusMedium),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.attach_money, color: Colors.orange[700], size: _iconSizeMedium),
-                const SizedBox(width: _spacingSmall),
-                Text(
-                  'Cost Information',
-                  style: AppTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: Colors.orange[700],
-                    fontSize: _fontSizeMedium + 1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(_paddingMedium),
-            child: _buildNutritionField(_costController, 'Cost', '\$'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTextField(TextEditingController controller, String label, String hint) {
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required String placeholder,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '$label:',
-          style: AppTypography.bodyMedium.copyWith(
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[700],
-            fontSize: _fontSizeMedium,
+          label,
+          style: AppTypography.bodySmall.copyWith(
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF6b7280),
           ),
         ),
-        const SizedBox(height: _spacingSmall),
+        const SizedBox(height: 6),
         TextField(
           controller: controller,
-          decoration: InputDecoration(
-            hintText: hint,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(_borderRadiusSmall),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(_borderRadiusSmall),
-              borderSide: const BorderSide(color: AppLegacyColors.primaryBlue, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: _paddingMedium,
-              vertical: _paddingSmall,
-            ),
-            isDense: true,
-          ),
-          style: AppTypography.bodyMedium.copyWith(
-            fontSize: _fontSizeMedium,
-            fontWeight: FontWeight.w600,
-          ),
-          inputFormatters: controller == _nameController
-            ? [LengthLimitingTextInputFormatter(AppConstants.maxFoodNameLength)]
-            : [FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern))],
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
+          style: AppDialogTheme.inputTextStyle,
+          decoration: AppDialogTheme.inputDecoration(hintText: placeholder),
         ),
       ],
     );
-  }
-
-  Widget _buildNutritionField(TextEditingController controller, String label, String unit) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$label:',
-          style: AppTypography.bodyMedium.copyWith(
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[700],
-            fontSize: _fontSizeMedium,
-          ),
-        ),
-        const SizedBox(height: _spacingSmall),
-        TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(_borderRadiusSmall),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(_borderRadiusSmall),
-              borderSide: const BorderSide(color: AppLegacyColors.primaryBlue, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: _paddingMedium,
-              vertical: _paddingSmall,
-            ),
-            suffixText: unit,
-            suffixStyle: AppTypography.bodyMedium.copyWith(
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-              fontSize: _fontSizeMedium,
-            ),
-            isDense: true,
-          ),
-          style: AppTypography.labelLarge.copyWith(
-            fontSize: _fontSizeMedium,
-            fontWeight: FontWeight.w600,
-          ),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  List<Widget> _buildActions() {
-    return [
-      TextButton(
-        onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-        child: Text(
-          AppConstants.cancelLabel,
-          style: AppTypography.bodyMedium.copyWith(
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      ElevatedButton(
-        onPressed: _isLoading ? null : _handleSave,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppLegacyColors.primaryBlue,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_borderRadiusSmall)),
-        ),
-        child: Text(_isLoading ? 'Saving...' : 'Save Changes'),
-      ),
-    ];
   }
 
   Future<void> _handleSave() async {
+    // Validate inputs
     final name = _nameController.text.trim();
-    final servingSize = double.tryParse(_servingSizeController.text);
-    final calories = double.tryParse(_caloriesController.text);
-    final protein = double.tryParse(_proteinController.text);
-    final carbs = double.tryParse(_carbsController.text);
-    final fat = double.tryParse(_fatController.text);
-    final cost = _costController.text.isNotEmpty ? double.tryParse(_costController.text) : null;
-
-    if (name.isEmpty || servingSize == null || calories == null || protein == null || carbs == null || fat == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all required fields')),
-      );
+    if (name.isEmpty) {
+      _showErrorSnackBar('Please enter a food name');
       return;
     }
+
+    final servingSize = double.tryParse(_servingSizeController.text);
+    if (servingSize == null || servingSize <= 0) {
+      _showErrorSnackBar('Please enter a valid serving size');
+      return;
+    }
+
+    final calories = double.tryParse(_caloriesController.text) ?? 0;
+    final protein = double.tryParse(_proteinController.text) ?? 0;
+    final carbs = double.tryParse(_carbsController.text) ?? 0;
+    final fat = double.tryParse(_fatController.text) ?? 0;
+    
+    final costText = _costController.text.trim();
+    final cost = costText.isNotEmpty ? double.tryParse(costText) : null;
 
     setState(() => _isLoading = true);
 
     try {
+      // Create updated food item
       final updatedItem = widget.foodItem.copyWith(
         name: name,
         servingSize: servingSize,
-        servingUnit: _selectedUnit,
         calories: calories,
         proteins: protein,
         carbs: carbs,
@@ -451,25 +283,92 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
         cost: cost,
       );
 
-      await _foodRepository.updateFoodEntry(updatedItem);
+      // Save to repository
+      final success = await _foodRepository.updateFoodEntry(updatedItem);
 
-      if (mounted) {
-        Navigator.of(context).pop();
-        widget.onUpdated?.call();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Food item updated successfully')),
-        );
+      if (success) {
+        if (mounted) {
+          widget.onUpdated?.call();
+          Navigator.of(context).pop();
+        }
+      } else {
+        _showErrorSnackBar('Failed to save changes');
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating food item: $e')),
-        );
-      }
+      debugPrint('Error saving food item: $e');
+      _showErrorSnackBar('An error occurred while saving');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _handleDelete() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppDialogTheme.backgroundColor,
+        shape: AppDialogTheme.shape,
+        title: const Text(
+          'Delete Food Item',
+          style: AppDialogTheme.titleStyle,
+        ),
+        content: Text(
+          'Remove "${widget.foodItem.name}" from your food log?',
+          style: AppDialogTheme.bodyStyle,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            style: AppDialogTheme.cancelButtonStyle,
+            child: const Text('Cancel'),
+          ),
+          const SizedBox(width: AppDialogTheme.buttonGap),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: AppDialogTheme.destructiveButtonStyle,
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => _isLoading = true);
+
+      try {
+        final success = await _foodRepository.deleteFoodEntry(
+          widget.foodItem.id,
+          widget.foodItem.timestamp,
+        );
+
+        if (success && mounted) {
+          widget.onUpdated?.call();
+          Navigator.of(context).pop();
+        } else {
+          _showErrorSnackBar('Failed to delete item');
+        }
+      } catch (e) {
+        debugPrint('Error deleting food item: $e');
+        _showErrorSnackBar('An error occurred while deleting');
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 }

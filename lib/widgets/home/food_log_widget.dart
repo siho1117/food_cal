@@ -141,117 +141,137 @@ class FoodLogWidget extends StatelessWidget {
     final itemCalories = (item.calories * item.servingSize).round();
     final itemCost = item.cost != null ? (item.cost! * item.servingSize) : 0.0;
 
-    return GestureDetector(
-      onTap: () => _showQuickEditDialog(context, item, homeProvider),
-      onLongPress: () => _showDeleteConfirmation(context, item, homeProvider),
-      child: Container(
-        padding: const EdgeInsets.all(16),
+    return Dismissible(
+      key: Key(item.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) async {
+        return await _showDeleteConfirmation(context, item, homeProvider);
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 1.0),
+          color: Colors.red[600],
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.transparent,
-            width: 2,
-          ),
         ),
-        child: Column(
-          children: [
-            // Top section: Image + Title
-            Row(
-              children: [
-                // Food image
-                _buildFoodImage(item),
-                
-                const SizedBox(width: 12),
-                
-                // Title section
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.name,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textDark,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${_formatTime(item.timestamp)}${itemCost > 0 ? ' • \$${itemCost.toStringAsFixed(2)}' : ''}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+        child: const Icon(
+          Icons.delete_rounded,
+          color: Colors.white,
+          size: 28,
+        ),
+      ),
+      child: GestureDetector(
+        onTap: () => _showQuickEditDialog(context, item, homeProvider),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.transparent,
+              width: 2,
             ),
-            
-            const SizedBox(height: 12),
-            
-            // Divider
-            Container(
-              height: 1,
-              color: Colors.grey[300],
-            ),
-            
-            const SizedBox(height: 12),
-            
-            // Bottom section: Quantity + Macros | Calories
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Quantity + Macros
-                Expanded(
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: [
-                      Text(
-                        '×${item.servingSize.toStringAsFixed(item.servingSize.truncateToDouble() == item.servingSize ? 0 : 1)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[800],
-                          fontWeight: FontWeight.w600,
+          ),
+          child: Column(
+            children: [
+              // Top section: Image + Title
+              Row(
+                children: [
+                  // Food image
+                  _buildFoodImage(item),
+                  
+                  const SizedBox(width: 12),
+                  
+                  // Title section
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.name,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textDark,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      Text(
-                        '•',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[400],
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_formatTime(item.timestamp)}${itemCost > 0 ? ' • \$${itemCost.toStringAsFixed(2)}' : ''}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
                         ),
-                      ),
-                      Text(
-                        '${protein}P • ${carbs}C • ${fat}F',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                
-                // Calories
-                Text(
-                  '$itemCalories cal',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textDark,
+                ],
+              ),
+              
+              const SizedBox(height: 12),
+              
+              // Divider
+              Container(
+                height: 1,
+                color: Colors.grey[300],
+              ),
+              
+              const SizedBox(height: 12),
+              
+              // Bottom section: Quantity + Macros | Calories
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Quantity + Macros
+                  Expanded(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        Text(
+                          '×${item.servingSize.toStringAsFixed(item.servingSize.truncateToDouble() == item.servingSize ? 0 : 1)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[800],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          '•',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                        Text(
+                          '${protein}P • ${carbs}C • ${fat}F',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  
+                  // Calories
+                  Text(
+                    '$itemCalories cal',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
