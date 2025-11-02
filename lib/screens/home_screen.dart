@@ -19,9 +19,32 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => false; // ✅ Don't keep state alive to allow fresh loads
+
+  @override
+  void initState() {
+    super.initState();
+    // ✅ Refresh data when screen is first created
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HomeProvider>().refreshData();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ✅ Refresh data whenever we return to this screen
+    if (mounted) {
+      context.read<HomeProvider>().refreshData();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return Container(
@@ -45,62 +68,72 @@ class _HomeScreenState extends State<HomeScreen> {
                   return _buildErrorState(context, homeProvider);
                 }
                 
-                return NotificationListener<OverscrollIndicatorNotification>(
-                  onNotification: (notification) {
-                    notification.disallowIndicator();
-                    return true;
+                // ✅ Wrap in RefreshIndicator for pull-to-refresh with styled indicator
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    await homeProvider.refreshData();
                   },
-                  child: SingleChildScrollView(
-                    physics: const ClampingScrollPhysics(),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 20),
-                        
-                        // 1. Calorie Summary (MOVED TO TOP - largest card)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: CalorieSummaryWidget(),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // 2. Week Navigation
-                        WeekNavigationWidget(
-                          selectedDate: homeProvider.selectedDate,
-                          onDateChanged: (date) => homeProvider.changeDate(date),
-                          daysToShow: 8,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // 3. Macronutrient Widget
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: MacronutrientWidget(),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // 4. Cost Summary Widget
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: CostSummaryWidget(),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // 5. Food Log Widget
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: FoodLogWidget(
-                            onFoodAdded: () => homeProvider.refreshData(),
+                  color: Colors.white, // ✅ White spinner to match theme
+                  backgroundColor: Colors.white.withValues(alpha: 0.2), // ✅ Subtle background
+                  strokeWidth: 2.5, // ✅ Thin, elegant stroke
+                  displacement: 40, // ✅ Small displacement
+                  child: NotificationListener<OverscrollIndicatorNotification>(
+                    onNotification: (notification) {
+                      notification.disallowIndicator();
+                      return true;
+                    },
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(), // ✅ Enable pull even when content doesn't scroll
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 20),
+                          
+                          // 1. Calorie Summary (TOP - largest card)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            child: CalorieSummaryWidget(),
                           ),
-                        ),
 
-                        // Bottom padding for navigation bar
-                        const SizedBox(height: 100),
-                      ],
+                          const SizedBox(height: 20),
+
+                          // 2. Macronutrient Widget (MOVED UP)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            child: MacronutrientWidget(),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // 3. Week Navigation (MOVED DOWN)
+                          WeekNavigationWidget(
+                            selectedDate: homeProvider.selectedDate,
+                            onDateChanged: (date) => homeProvider.changeDate(date),
+                            daysToShow: 8,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // 4. Cost Summary Widget
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            child: CostSummaryWidget(),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // 5. Food Log Widget
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: FoodLogWidget(
+                              onFoodAdded: () => homeProvider.refreshData(),
+                            ),
+                          ),
+
+                          // Bottom padding for navigation bar
+                          const SizedBox(height: 100),
+                        ],
+                      ),
                     ),
                   ),
                 );

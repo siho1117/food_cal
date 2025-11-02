@@ -1,9 +1,17 @@
 // lib/widgets/home/macronutrient_widget.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:math' as math;
 import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
 import '../../providers/home_provider.dart';
+import '../../providers/theme_provider.dart';
+
+/// Widget-specific design constants
+class _MacronutrientDesign {
+  static const double triangleSize = 140.0;
+  static const double triangleStrokeWidth = 6.0;
+}
 
 class MacronutrientWidget extends StatefulWidget {
   const MacronutrientWidget({super.key});
@@ -12,7 +20,7 @@ class MacronutrientWidget extends StatefulWidget {
   State<MacronutrientWidget> createState() => _MacronutrientWidgetState();
 }
 
-class _MacronutrientWidgetState extends State<MacronutrientWidget> 
+class _MacronutrientWidgetState extends State<MacronutrientWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
@@ -23,19 +31,16 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
   @override
   void initState() {
     super.initState();
-    
-    // Initialize controller first
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
-    
-    // Then create animation
+
     _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
-    
-    // Start animation after widget is built
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _controller.forward();
@@ -50,8 +55,11 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
   }
 
   void _checkForRefresh(Map<String, double> consumed, Map<String, int> target) {
-    final currentHash = '${consumed.values.join(',')}_${target.values.join(',')}';
-    if (_previousDataHash != null && _previousDataHash != currentHash && mounted) {
+    final currentHash =
+        '${consumed.values.join(',')}_${target.values.join(',')}';
+    if (_previousDataHash != null &&
+        _previousDataHash != currentHash &&
+        mounted) {
       _controller.reset();
       _controller.forward();
     }
@@ -60,61 +68,65 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<HomeProvider>(
-      builder: (context, homeProvider, child) {
+    return Consumer2<HomeProvider, ThemeProvider>(
+      builder: (context, homeProvider, themeProvider, child) {
         final consumed = homeProvider.consumedMacros;
         final target = homeProvider.targetMacros;
         final progress = homeProvider.macroProgressPercentages;
 
         _checkForRefresh(consumed, target);
 
+        // Get theme-adaptive colors
+        final borderColor = AppColors.getBorderColorForTheme(
+          themeProvider.selectedGradient,
+          AppEffects.borderOpacity,
+        );
+        final textColor = AppColors.getTextColorForTheme(
+          themeProvider.selectedGradient,
+        );
+
         return Container(
-          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(AppDimensions.cardBorderRadius),
+            border: Border.all(
+              color: borderColor,
+              width: AppDimensions.cardBorderWidth,
+            ),
           ),
-          child: AnimatedBuilder(
-            animation: _animation,
-            builder: (context, child) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Opacity(
-                  opacity: _animation.value,
-                  child: Row(
-                    children: [
-                      const Text('💪', style: TextStyle(fontSize: 18)),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Macronutrients',
-                        style: AppTypography.displaySmall.copyWith(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppLegacyColors.primaryBlue,
-                        ),
+          child: Padding(
+            padding: AppDimensions.cardPadding,
+            child: AnimatedBuilder(
+              animation: _animation,
+              builder: (context, child) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Opacity(
+                    opacity: _animation.value,
+                    child: Text(
+                      'Macronutrients',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: textColor,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.3,
+                        shadows: AppEffects.textShadows,
                       ),
-                    ],
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
-                // Hybrid compact macro rows (Option 2 style with mini dots)
-                ..._buildCompactMacroRows(consumed, target, progress),
-
-                const SizedBox(height: 12),
-
-                // Option 1 style balance summary
-                _buildCompactBalanceSummary(consumed),
-              ],
+                  // Triangle + Legend Layout
+                  _buildTriangleWithLegend(
+                    consumed,
+                    target,
+                    progress,
+                    textColor,
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -122,190 +134,264 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
     );
   }
 
-  List<Widget> _buildCompactMacroRows(Map<String, double> consumed, Map<String, int> target, Map<String, double> progress) {
-    final macros = [
-      {'key': 'protein', 'symbol': '🥩', 'name': 'Protein', 'color': Colors.red[500]!},
-      {'key': 'carbs', 'symbol': '🍞', 'name': 'Carbs', 'color': Colors.blue[500]!},
-      {'key': 'fat', 'symbol': '🧀', 'name': 'Fat', 'color': Colors.orange[500]!},
-    ];
-
-    return macros.asMap().entries.map((entry) {
-      final index = entry.key;
-      final macro = entry.value;
-      final key = macro['key'] as String;
-      final delay = index * 0.15; // Stagger animation
-
-      return Padding(
-        padding: EdgeInsets.only(bottom: index < 2 ? 8 : 0),
-        child: Opacity(
-          opacity: (_animation.value - delay).clamp(0.0, 1.0),
-          child: _buildCompactMacroRow(
-            symbol: macro['symbol'] as String,
-            name: macro['name'] as String,
-            consumed: consumed[key]! * _animation.value,
-            target: target[key]!.toDouble() * _animation.value,
-            progress: progress[key]! * _animation.value,
-            color: macro['color'] as Color,
+  Widget _buildTriangleWithLegend(
+    Map<String, double> consumed,
+    Map<String, int> target,
+    Map<String, double> progress,
+    Color textColor,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Equilateral triangle on the left
+        Opacity(
+          opacity: _animation.value,
+          child: SizedBox(
+            width: _MacronutrientDesign.triangleSize,
+            height: _MacronutrientDesign.triangleSize,
+            child: CustomPaint(
+              painter: _EquilateralTrianglePainter(
+                proteinProgress: progress['protein']! * _animation.value,
+                carbsProgress: progress['carbs']! * _animation.value,
+                fatProgress: progress['fat']! * _animation.value,
+              ),
+            ),
           ),
         ),
-      );
-    }).toList();
-  }
 
-  // Hybrid compact row: single line with mini dots (Option 2 style)
-  Widget _buildCompactMacroRow({
-    required String symbol,
-    required String name,
-    required double consumed,
-    required double target,
-    required double progress,
-    required Color color,
-  }) {
-    return Row(
-      children: [
-        // Left side: Icon + Name + Values
+        const SizedBox(width: 20),
+
+        // Legend on the right
         Expanded(
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(symbol, style: const TextStyle(fontSize: 16)),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 60,
-                child: Text(
-                  name,
-                  style: AppTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: Colors.grey[800],
-                  ),
-                ),
+              _buildLegendItem(
+                name: 'Protein',
+                consumed: consumed['protein']!,
+                target: target['protein']!.toDouble(),
+                progress: progress['protein']!,
+                color: const Color(0xFFEF4444),
+                delay: 0.0,
               ),
-              const SizedBox(width: 8),
-              Text(
-                '${consumed.round()}g / ${target.round()}g',
-                style: AppTypography.dataSmall.copyWith(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
+              const SizedBox(height: 12),
+              _buildLegendItem(
+                name: 'Carbs',
+                consumed: consumed['carbs']!,
+                target: target['carbs']!.toDouble(),
+                progress: progress['carbs']!,
+                color: const Color(0xFF3B82F6),
+                delay: 0.15,
+              ),
+              const SizedBox(height: 12),
+              _buildLegendItem(
+                name: 'Fat',
+                consumed: consumed['fat']!,
+                target: target['fat']!.toDouble(),
+                progress: progress['fat']!,
+                color: const Color(0xFFF97316),
+                delay: 0.30,
               ),
             ],
           ),
-        ),
-        
-        // Right side: Percentage + Mini Dots
-        Row(
-          children: [
-            SizedBox(
-              width: 35,
-              child: Text(
-                '${progress.round()}%',
-                style: AppTypography.dataSmall.copyWith(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-                textAlign: TextAlign.right,
-              ),
-            ),
-            const SizedBox(width: 8),
-            _buildMiniDotProgress(progress / 100, color),
-          ],
         ),
       ],
     );
   }
 
-  // Mini dot progress (Option 2 style with 10 dots, 4px size)
-  Widget _buildMiniDotProgress(double progress, Color color) {
-    const dots = 10;
-    final filled = (progress * dots).round().clamp(0, dots);
-    
-    return Row(
-      children: List.generate(dots, (i) => Padding(
-        padding: const EdgeInsets.only(right: 2),
-        child: Container(
-          width: 4,
-          height: 4,
-          decoration: BoxDecoration(
-            color: i < filled ? color : Colors.grey[300],
-            shape: BoxShape.circle,
+  Widget _buildLegendItem({
+    required String name,
+    required double consumed,
+    required double target,
+    required double progress,
+    required Color color,
+    required double delay,
+  }) {
+    return Opacity(
+      opacity: (_animation.value - delay).clamp(0.0, 1.0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white, // ✅ SOLID WHITE background
+          borderRadius: BorderRadius.circular(10),
+          border: Border(
+            left: BorderSide(
+              color: color,
+              width: 3,
+            ),
           ),
         ),
-      )),
-    );
-  }
-
-  // Compact balance summary (Option 1 style)
-  Widget _buildCompactBalanceSummary(Map<String, double> consumed) {
-    final totalCals = consumed['protein']! * 4 + consumed['carbs']! * 4 + consumed['fat']! * 9;
-    if (totalCals == 0) return const SizedBox.shrink();
-
-    final percentages = {
-      'protein': ((consumed['protein']! * 4) / totalCals * 100).round(),
-      'carbs': ((consumed['carbs']! * 4) / totalCals * 100).round(),
-      'fat': ((consumed['fat']! * 9) / totalCals * 100).round(),
-    };
-
-    return Opacity(
-      opacity: _animation.value,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!, width: 1),
-        ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Balance items on the left
+            // Left: Name and values
             Expanded(
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildBalanceItem('🥩', '${percentages['protein']}%', Colors.red[500]!),
-                  const SizedBox(width: 12),
-                  _buildBalanceItem('🍞', '${percentages['carbs']}%', Colors.blue[500]!),
-                  const SizedBox(width: 12),
-                  _buildBalanceItem('🧀', '${percentages['fat']}%', Colors.orange[500]!),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A1A1A), // Dark text on white
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${(consumed * _animation.value).round()}g / ${(target * _animation.value).round()}g',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF6B7280), // Gray text on white
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
-            
-            // Label on the right
-            Row(
-              children: [
-                const Text('📊', style: TextStyle(fontSize: 12)),
-                const SizedBox(width: 4),
-                Text(
-                  'Macro Balance',
-                  style: AppTypography.bodySmall.copyWith(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: AppLegacyColors.primaryBlue,
-                  ),
-                ),
-              ],
+
+            const SizedBox(width: 8),
+
+            // Right: Percentage
+            Text(
+              '${(progress * 100 * _animation.value).round()}%',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildBalanceItem(String emoji, String percentage, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(emoji, style: const TextStyle(fontSize: 10)),
-        const SizedBox(width: 2),
-        Text(
-          percentage,
-          style: AppTypography.dataSmall.copyWith(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: color,
-          ),
-        ),
-      ],
+// ═══════════════════════════════════════════════════════════════
+// EQUILATERAL TRIANGLE PAINTER
+// ═══════════════════════════════════════════════════════════════
+
+class _EquilateralTrianglePainter extends CustomPainter {
+  final double proteinProgress;
+  final double carbsProgress;
+  final double fatProgress;
+
+  _EquilateralTrianglePainter({
+    required this.proteinProgress,
+    required this.carbsProgress,
+    required this.fatProgress,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Calculate equilateral triangle vertices
+    final padding = size.width * 0.1;
+    final availableWidth = size.width - (2 * padding);
+    final sideLength = availableWidth;
+    
+    // Height of equilateral triangle = (sqrt(3) / 2) * side
+    final height = (math.sqrt(3) / 2) * sideLength;
+    
+    // Center the triangle vertically
+    final verticalOffset = (size.height - height) / 2;
+    
+    // Define vertices for proper equilateral triangle
+    final top = Offset(size.width / 2, verticalOffset);
+    final bottomLeft = Offset(padding, verticalOffset + height);
+    final bottomRight = Offset(size.width - padding, verticalOffset + height);
+
+    // Background triangle outline - ✅ SOLID WHITE
+    final bgPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _MacronutrientDesign.triangleStrokeWidth
+      ..strokeJoin = StrokeJoin.round;
+
+    final bgPath = Path()
+      ..moveTo(top.dx, top.dy)
+      ..lineTo(bottomRight.dx, bottomRight.dy)
+      ..lineTo(bottomLeft.dx, bottomLeft.dy)
+      ..close();
+    canvas.drawPath(bgPath, bgPaint);
+
+    // Draw progress sides
+    // Protein: top → bottom-right
+    _drawProgressSide(
+      canvas: canvas,
+      start: top,
+      end: bottomRight,
+      progress: proteinProgress,
+      color: const Color(0xFFEF4444),
     );
+
+    // Carbs: bottom-right → bottom-left
+    _drawProgressSide(
+      canvas: canvas,
+      start: bottomRight,
+      end: bottomLeft,
+      progress: carbsProgress,
+      color: const Color(0xFF3B82F6),
+    );
+
+    // Fat: bottom-left → top
+    _drawProgressSide(
+      canvas: canvas,
+      start: bottomLeft,
+      end: top,
+      progress: fatProgress,
+      color: const Color(0xFFF97316),
+    );
+
+    // ✅ CENTER DOT REMOVED - no more centroid dot
+  }
+
+  void _drawProgressSide({
+    required Canvas canvas,
+    required Offset start,
+    required Offset end,
+    required double progress,
+    required Color color,
+  }) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _MacronutrientDesign.triangleStrokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path()..moveTo(start.dx, start.dy);
+    path.lineTo(end.dx, end.dy);
+
+    final pathMetrics = path.computeMetrics();
+    final progressPath = Path();
+
+    for (final metric in pathMetrics) {
+      final extractPath = metric.extractPath(
+        0,
+        (metric.length * progress.clamp(0.0, 1.0)),
+      );
+      progressPath.addPath(extractPath, Offset.zero);
+    }
+
+    // Glow effect
+    final glowPaint = Paint()
+      ..color = color.withValues(alpha: 0.35)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _MacronutrientDesign.triangleStrokeWidth + 3
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+    canvas.drawPath(progressPath, glowPaint);
+    canvas.drawPath(progressPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(_EquilateralTrianglePainter oldDelegate) {
+    return oldDelegate.proteinProgress != proteinProgress ||
+        oldDelegate.carbsProgress != carbsProgress ||
+        oldDelegate.fatProgress != fatProgress;
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // ✅ ADDED THIS LINE
 
 // Screens
 import 'screens/splash_screen.dart';
@@ -31,6 +32,14 @@ import 'widgets/common/custom_bottom_nav.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ ADDED: Load .env file before anything else
+  try {
+    await dotenv.load(fileName: ".env");
+    debugPrint('✅ .env file loaded successfully');
+  } catch (e) {
+    debugPrint('❌ Error loading .env file: $e');
+  }
 
   // Initialize SharedPreferences
   try {
