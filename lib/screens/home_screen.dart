@@ -82,10 +82,6 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                       });
                     }
                   },
-                  color: Colors.white,
-                  backgroundColor: Colors.white.withValues(alpha: 0.2),
-                  strokeWidth: 2.5,
-                  displacement: 40,
                   child: NotificationListener<OverscrollIndicatorNotification>(
                     onNotification: (notification) {
                       notification.disallowIndicator();
