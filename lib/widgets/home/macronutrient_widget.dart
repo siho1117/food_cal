@@ -9,8 +9,8 @@ import '../../providers/theme_provider.dart';
 
 /// Widget-specific design constants
 class _MacronutrientDesign {
-  static const double triangleSize = 140.0;
-  static const double triangleStrokeWidth = 6.0;
+  static const double triangleSize = 170.0; // ✅ INCREASED to 170px
+  static const double triangleStrokeWidth = 7.5; // ✅ INCREASED: 5.0 × 1.5 = 7.5
 }
 
 class MacronutrientWidget extends StatefulWidget {
@@ -34,7 +34,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 2000), // ✅ SLOWED: 1500ms → 2000ms (~30% slower)
     );
 
     _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -87,7 +87,8 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
 
         return Container(
           decoration: BoxDecoration(
-            color: Colors.transparent,
+            // ✅ CHANGED: 25% opacity white background
+            color: Colors.white.withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(AppDimensions.cardBorderRadius),
             border: Border.all(
               color: borderColor,
@@ -95,7 +96,8 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
             ),
           ),
           child: Padding(
-            padding: AppDimensions.cardPadding,
+            // ✅ REDUCED: Smaller padding for compactness
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: AnimatedBuilder(
               animation: _animation,
               builder: (context, child) => Column(
@@ -107,7 +109,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                     child: Text(
                       'Macronutrients',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 18, // ✅ REDUCED from 20
                         color: textColor,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.3,
@@ -116,7 +118,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14), // ✅ REDUCED from 20
 
                   // Triangle + Legend Layout
                   _buildTriangleWithLegend(
@@ -159,7 +161,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
           ),
         ),
 
-        const SizedBox(width: 20),
+        const SizedBox(width: 12), // ✅ REDUCED from 16 to make legend narrower
 
         // Legend on the right
         Expanded(
@@ -174,7 +176,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                 color: const Color(0xFFEF4444),
                 delay: 0.0,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8), // ✅ REDUCED from 12
               _buildLegendItem(
                 name: 'Carbs',
                 consumed: consumed['carbs']!,
@@ -183,7 +185,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                 color: const Color(0xFF3B82F6),
                 delay: 0.15,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8), // ✅ REDUCED from 12
               _buildLegendItem(
                 name: 'Fat',
                 consumed: consumed['fat']!,
@@ -207,67 +209,66 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
     required Color color,
     required double delay,
   }) {
-    return Opacity(
-      opacity: (_animation.value - delay).clamp(0.0, 1.0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white, // ✅ SOLID WHITE background
-          borderRadius: BorderRadius.circular(10),
-          border: Border(
-            left: BorderSide(
-              color: color,
-              width: 3,
-            ),
+    // ✅ REMOVED opacity wrapper - all items now fully opaque
+    return Container(
+      // ✅ REDUCED: Even narrower horizontal padding (8 → 6)
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border(
+          left: BorderSide(
+            color: color,
+            width: 3,
           ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Left: Name and values
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1A1A1A), // Dark text on white
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Left: Name and values
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A1A1A), // ✅ Solid color - fully opaque
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${(consumed * _animation.value).round()}g / ${(target * _animation.value).round()}g',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF6B7280), // Gray text on white
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  '${(consumed * _animation.value).round()}g / ${(target * _animation.value).round()}g',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF6B7280), // ✅ Solid color - fully opaque
                   ),
-                ],
-              ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
+          ),
 
-            const SizedBox(width: 8),
+          const SizedBox(width: 6), // ✅ REDUCED from 8
 
-            // Right: Percentage
-            Text(
-              '${(progress * 100 * _animation.value).round()}%',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
+          // Right: Percentage
+          Text(
+            '${(progress * 100 * _animation.value).round()}%',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: color, // ✅ Solid color - fully opaque
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -306,7 +307,7 @@ class _EquilateralTrianglePainter extends CustomPainter {
     final bottomLeft = Offset(padding, verticalOffset + height);
     final bottomRight = Offset(size.width - padding, verticalOffset + height);
 
-    // Background triangle outline - ✅ SOLID WHITE
+    // Background triangle outline - solid white
     final bgPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
@@ -347,8 +348,6 @@ class _EquilateralTrianglePainter extends CustomPainter {
       progress: fatProgress,
       color: const Color(0xFFF97316),
     );
-
-    // ✅ CENTER DOT REMOVED - no more centroid dot
   }
 
   void _drawProgressSide({
@@ -378,13 +377,7 @@ class _EquilateralTrianglePainter extends CustomPainter {
       progressPath.addPath(extractPath, Offset.zero);
     }
 
-    // Glow effect
-    final glowPaint = Paint()
-      ..color = color.withValues(alpha: 0.35)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = _MacronutrientDesign.triangleStrokeWidth + 3
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
-    canvas.drawPath(progressPath, glowPaint);
+    // ✅ REMOVED: Glow effect omitted - draw only the colored progress line
     canvas.drawPath(progressPath, paint);
   }
 
