@@ -1,12 +1,14 @@
 // lib/widgets/home/cost_summary_widget.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
+import '../../config/design_system/dialog_theme.dart';
+import '../../config/constants/app_constants.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/theme_provider.dart';
-import '../dialogs/budget_edit_dialog.dart';
 
 class CostSummaryWidget extends StatefulWidget {
   const CostSummaryWidget({super.key});
@@ -88,60 +90,55 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14), // Much smaller padding
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Left: Title
-                  Text(
-                    'Food Cost',
-                    style: TextStyle(
-                      fontSize: 14, // Smaller title
-                      color: textColor,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.3,
-                      shadows: AppEffects.textShadows,
-                    ),
-                  ),
-                  
-                  const SizedBox(width: 16),
-                  
-                  // Center: Cost display
+                  // Left: Cost display
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Animated cost - Much smaller
-                        AnimatedBuilder(
-                          animation: _animation,
-                          builder: (context, child) {
-                            final animatedCost = totalCost * _animation.value;
-                            return Text(
-                              '\$${animatedCost.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: 28, // Reduced from 36
-                                fontWeight: FontWeight.bold,
-                                color: textColor, // No color change
-                                letterSpacing: -0.5,
-                                height: 1.0,
-                                shadows: AppEffects.textShadows,
-                              ),
-                            );
-                          },
-                        ),
-                        
-                        const SizedBox(height: 2),
-                        
-                        // Budget amount - Much smaller
+                        // Title matching Food Log style
                         Text(
-                          '/ \$${dailyBudget.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontSize: 12, // Reduced from 14
-                            fontWeight: FontWeight.w500,
-                            color: textColor.withValues(alpha: 0.7),
+                          'Food Cost',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textDark,
+                          ).copyWith(
+                            color: textColor,
                             shadows: AppEffects.textShadows,
                           ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Animated cost amount with inline budget
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            AnimatedBuilder(
+                              animation: _animation,
+                              builder: (context, child) {
+                                final animatedCost = totalCost * _animation.value;
+                                return Text(
+                                  '\$${animatedCost.toStringAsFixed(2)}',
+                                  style: AppTypography.dataMedium.copyWith(
+                                    color: textColor,
+                                    shadows: AppEffects.textShadows,
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '/ \$${dailyBudget.toStringAsFixed(2)}',
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: textColor.withValues(alpha: 0.6),
+                                shadows: AppEffects.textShadows,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -149,7 +146,7 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
                   
                   const SizedBox(width: 16),
                   
-                  // Right: Circular progress - Much smaller
+                  // Right: Circular progress indicator with animation
                   AnimatedBuilder(
                     animation: _animation,
                     builder: (context, child) {
@@ -171,7 +168,9 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
 
   Widget _buildCircularProgress(double totalCost, double dailyBudget, Color textColor) {
     // Calculate actual percentage (can go beyond 100%)
-    final actualPercentage = dailyBudget > 0 ? (totalCost / dailyBudget) : 0.0;
+    final actualPercentage = dailyBudget > 0 
+        ? (totalCost / dailyBudget) 
+        : 0.0;
     final animatedPercentage = actualPercentage * _animation.value;
     final displayPercentage = (animatedPercentage * 100).round();
     
@@ -179,21 +178,20 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
     final ringProgress = animatedPercentage.clamp(0.0, 1.0);
     
     return CustomPaint(
-      size: const Size(60, 60), // Much smaller: 80 -> 60
+      size: const Size(64, 64),
       painter: _CircularProgressPainter(
         progress: ringProgress,
         baseColor: textColor,
       ),
       child: SizedBox(
-        width: 60,
-        height: 60,
+        width: 64,
+        height: 64,
         child: Center(
           child: Text(
-            '$displayPercentage%', // Can show beyond 100%
-            style: TextStyle(
-              fontSize: 14, // Reduced from 18
+            '$displayPercentage%',
+            style: AppTypography.labelMedium.copyWith(
+              color: textColor,
               fontWeight: FontWeight.bold,
-              color: textColor, // No color change
               shadows: AppEffects.textShadows,
             ),
           ),
@@ -205,11 +203,9 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
   void _showBudgetEditDialog(BuildContext context, HomeProvider homeProvider, double currentBudget) {
     showDialog(
       context: context,
-      builder: (context) => BudgetEditDialog(
+      builder: (context) => _BudgetEditDialog(
         currentBudget: currentBudget,
         homeProvider: homeProvider,
-        title: 'Update Daily Budget',
-        showAdvancedOptions: false,
       ),
     );
   }
@@ -228,22 +224,22 @@ class _CircularProgressPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 5; // Adjusted for smaller size
+    final radius = size.width / 2 - 4;
     
     // Background circle
     final bgPaint = Paint()
       ..color = baseColor.withValues(alpha: 0.2)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 6 // Reduced from 8
+      ..strokeWidth = 4  // Thinner line
       ..strokeCap = StrokeCap.round;
     
     canvas.drawCircle(center, radius, bgPaint);
     
-    // Progress arc - NO COLOR CHANGE, always uses baseColor
+    // Progress arc
     final progressPaint = Paint()
       ..color = baseColor.withValues(alpha: 0.9)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 6 // Reduced from 8
+      ..strokeWidth = 4  // Thinner line
       ..strokeCap = StrokeCap.round;
     
     final sweepAngle = 2 * math.pi * progress;
@@ -260,5 +256,118 @@ class _CircularProgressPainter extends CustomPainter {
   bool shouldRepaint(_CircularProgressPainter oldDelegate) {
     return oldDelegate.progress != progress || 
            oldDelegate.baseColor != baseColor;
+  }
+}
+
+/// Simplified budget edit dialog
+class _BudgetEditDialog extends StatefulWidget {
+  final double currentBudget;
+  final HomeProvider homeProvider;
+
+  const _BudgetEditDialog({
+    required this.currentBudget,
+    required this.homeProvider,
+  });
+
+  @override
+  State<_BudgetEditDialog> createState() => _BudgetEditDialogState();
+}
+
+class _BudgetEditDialogState extends State<_BudgetEditDialog> {
+  late final TextEditingController _budgetController;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _budgetController = TextEditingController(
+      text: widget.currentBudget.toStringAsFixed(2),
+    );
+  }
+
+  @override
+  void dispose() {
+    _budgetController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppDialogTheme.backgroundColor,
+      shape: AppDialogTheme.shape,
+      contentPadding: AppDialogTheme.contentPadding,
+      actionsPadding: AppDialogTheme.actionsPadding,
+      
+      title: const Text(
+        'Budget', // Minimal text
+        style: AppDialogTheme.titleStyle,
+      ),
+      
+      content: TextField(
+        controller: _budgetController,
+        autofocus: true,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
+        ],
+        style: AppDialogTheme.inputTextStyle,
+        decoration: AppDialogTheme.inputDecoration(
+          hintText: '0.00',
+        ),
+      ),
+      
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+          style: AppDialogTheme.cancelButtonStyle,
+          child: const Text('Cancel'),
+        ),
+        const SizedBox(width: AppDialogTheme.buttonGap),
+        FilledButton(
+          onPressed: _isLoading ? null : _handleSave,
+          style: AppDialogTheme.primaryButtonStyle,
+          child: Text(_isLoading ? 'Saving...' : 'Save'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleSave() async {
+    final budgetText = _budgetController.text.trim();
+    final budget = double.tryParse(budgetText);
+    
+    if (budget == null || budget <= 0) {
+      _showError('Invalid amount');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await widget.homeProvider.updateFoodBudget(budget);
+      
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      debugPrint('Error saving budget: $e');
+      _showError('Save failed');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 }

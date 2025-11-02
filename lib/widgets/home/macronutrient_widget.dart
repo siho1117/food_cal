@@ -153,7 +153,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
             width: AppDimensions.cardBorderWidth,
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12), // Reduced from 16 to 12
         child: Column(
           children: [
             // 1. Circular Progress with Percentage inside
@@ -186,20 +186,20 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
               ),
             ),
             
-            const SizedBox(height: 12),
+            const SizedBox(height: 8), // Reduced from 12 to 8
             
-            // 2. Current Value
+            // 2. Current Value (slightly smaller)
             Text(
               animatedCurrent.round().toString(),
               style: const TextStyle(
-                fontSize: 28,
+                fontSize: 24, // Reduced from 28 to 24
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF1A1A1A), // Black text
                 height: 1.0,
               ),
             ),
             
-            const SizedBox(height: 4),
+            const SizedBox(height: 2), // Reduced from 4 to 2
             
             // 3. Target
             Text(
@@ -211,7 +211,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
               ),
             ),
             
-            const SizedBox(height: 12),
+            const SizedBox(height: 8), // Reduced from 12 to 8
             
             // 4. Macro Name (Bottom)
             Text(

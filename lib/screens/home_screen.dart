@@ -5,7 +5,7 @@ import '../config/design_system/theme_background.dart';
 import '../config/design_system/theme_design.dart';
 import '../providers/home_provider.dart';
 import '../providers/theme_provider.dart';
-import '../providers/exercise_provider.dart'; // ✅ Add for refreshing exercise data
+import '../providers/exercise_provider.dart';
 import '../widgets/home/calorie_summary_widget.dart';
 import '../widgets/home/macronutrient_widget.dart';
 import '../widgets/home/cost_summary_widget.dart';
@@ -22,15 +22,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMixin {
   @override
-  bool get wantKeepAlive => false; // ✅ Don't keep state alive to allow fresh loads
+  bool get wantKeepAlive => false;
 
-  // ✅ Add key to force widget rebuild and animation restart
   Key _refreshKey = UniqueKey();
 
   @override
   void initState() {
     super.initState();
-    // ✅ Refresh data when screen is first created
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<HomeProvider>().refreshData();
     });
@@ -39,7 +37,6 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // ✅ Refresh data whenever we return to this screen
     if (mounted) {
       context.read<HomeProvider>().refreshData();
     }
@@ -47,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    super.build(context);
     
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
@@ -72,36 +69,32 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                   return _buildErrorState(context, homeProvider);
                 }
                 
-                // ✅ Wrap in RefreshIndicator for pull-to-refresh with styled indicator
                 return RefreshIndicator(
                   onRefresh: () async {
-                    // ✅ Refresh all data sources
                     await homeProvider.refreshData();
                     
-                    // ✅ Also refresh exercise data if available
                     final exerciseProvider = context.read<ExerciseProvider>();
                     await exerciseProvider.loadData();
                     
-                    // ✅ Force all widgets to rebuild with fresh data AND restart animations
                     if (mounted) {
                       setState(() {
-                        _refreshKey = UniqueKey(); // ✅ New key forces complete widget rebuild and animation restart
+                        _refreshKey = UniqueKey();
                       });
                     }
                   },
-                  color: Colors.white, // ✅ White spinner to match theme
-                  backgroundColor: Colors.white.withValues(alpha: 0.2), // ✅ Subtle background
-                  strokeWidth: 2.5, // ✅ Thin, elegant stroke
-                  displacement: 40, // ✅ Small displacement
+                  color: Colors.white,
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  strokeWidth: 2.5,
+                  displacement: 40,
                   child: NotificationListener<OverscrollIndicatorNotification>(
                     onNotification: (notification) {
                       notification.disallowIndicator();
                       return true;
                     },
                     child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(), // ✅ Enable pull even when content doesn't scroll
+                      physics: const AlwaysScrollableScrollPhysics(),
                       child: Column(
-                        key: _refreshKey, // ✅ Key forces animations to restart when changed
+                        key: _refreshKey,
                         children: [
                           const SizedBox(height: 20),
                           
@@ -113,20 +106,20 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
 
                           const SizedBox(height: 20),
 
-                          // 2. Macronutrient Widget (MOVED UP)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 20),
-                            child: MacronutrientWidget(),
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          // 3. Week Navigation (MOVED DOWN)
+                          // 2. Week Navigation (MOVED UP - now above Macros)
                           WeekNavigationWidget(
                             selectedDate: homeProvider.selectedDate,
                             onDateChanged: (date) => homeProvider.changeDate(date),
                             daysToShow: 8,
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // 3. Macronutrient Widget (MOVED DOWN - now below Week Nav)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            child: MacronutrientWidget(),
                           ),
 
                           const SizedBox(height: 20),
