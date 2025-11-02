@@ -64,8 +64,6 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
       builder: (context, homeProvider, themeProvider, child) {
         final totalCost = homeProvider.totalFoodCost;
         final dailyBudget = homeProvider.dailyFoodBudget;
-        final progress = (totalCost / dailyBudget).clamp(0.0, 1.0);
-        final isOverBudget = homeProvider.isOverFoodBudget;
 
         _checkForRefresh(totalCost, dailyBudget);
 
@@ -90,14 +88,15 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
               ),
             ),
             child: Padding(
-              padding: AppDimensions.cardPadding,
-              child: Column(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14), // Much smaller padding
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Title
+                  // Left: Title
                   Text(
                     'Food Cost',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 14, // Smaller title
                       color: textColor,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.3,
@@ -105,70 +104,61 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
                     ),
                   ),
                   
-                  const SizedBox(height: 24),
+                  const SizedBox(width: 16),
                   
-                  // Main content: Cost + Progress Ring
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Left: Cost display
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            // Animated cost
-                            AnimatedBuilder(
-                              animation: _animation,
-                              builder: (context, child) {
-                                final animatedCost = totalCost * _animation.value;
-                                return Text(
-                                  '\$${animatedCost.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                    fontSize: 48,
-                                    fontWeight: FontWeight.bold,
-                                    color: isOverBudget 
-                                      ? const Color(0xFFFF6B6B)
-                                      : textColor,
-                                    letterSpacing: -1,
-                                    height: 1.0,
-                                    shadows: AppEffects.textShadows,
-                                  ),
-                                );
-                              },
-                            ),
-                            
-                            const SizedBox(height: 8),
-                            
-                            // Budget amount
-                            Text(
-                              '/ \$${dailyBudget.toStringAsFixed(2)}',
+                  // Center: Cost display
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Animated cost - Much smaller
+                        AnimatedBuilder(
+                          animation: _animation,
+                          builder: (context, child) {
+                            final animatedCost = totalCost * _animation.value;
+                            return Text(
+                              '\$${animatedCost.toStringAsFixed(2)}',
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: textColor.withValues(alpha: 0.7),
+                                fontSize: 28, // Reduced from 36
+                                fontWeight: FontWeight.bold,
+                                color: textColor, // No color change
+                                letterSpacing: -0.5,
+                                height: 1.0,
                                 shadows: AppEffects.textShadows,
                               ),
-                            ),
-                          ],
+                            );
+                          },
                         ),
-                      ),
-                      
-                      const SizedBox(width: 32),
-                      
-                      // Right: Circular progress
-                      AnimatedBuilder(
-                        animation: _animation,
-                        builder: (context, child) {
-                          final animatedProgress = progress * _animation.value;
-                          return _buildCircularProgress(
-                            animatedProgress,
-                            isOverBudget,
-                            textColor,
-                          );
-                        },
-                      ),
-                    ],
+                        
+                        const SizedBox(height: 2),
+                        
+                        // Budget amount - Much smaller
+                        Text(
+                          '/ \$${dailyBudget.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 12, // Reduced from 14
+                            fontWeight: FontWeight.w500,
+                            color: textColor.withValues(alpha: 0.7),
+                            shadows: AppEffects.textShadows,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(width: 16),
+                  
+                  // Right: Circular progress - Much smaller
+                  AnimatedBuilder(
+                    animation: _animation,
+                    builder: (context, child) {
+                      return _buildCircularProgress(
+                        totalCost,
+                        dailyBudget,
+                        textColor,
+                      );
+                    },
                   ),
                 ],
               ),
@@ -179,28 +169,31 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
     );
   }
 
-  Widget _buildCircularProgress(double progress, bool isOverBudget, Color textColor) {
+  Widget _buildCircularProgress(double totalCost, double dailyBudget, Color textColor) {
+    // Calculate actual percentage (can go beyond 100%)
+    final actualPercentage = dailyBudget > 0 ? (totalCost / dailyBudget) : 0.0;
+    final animatedPercentage = actualPercentage * _animation.value;
+    final displayPercentage = (animatedPercentage * 100).round();
+    
+    // For ring display, cap at 100%
+    final ringProgress = animatedPercentage.clamp(0.0, 1.0);
+    
     return CustomPaint(
-      size: const Size(100, 100),
+      size: const Size(60, 60), // Much smaller: 80 -> 60
       painter: _CircularProgressPainter(
-        progress: progress,
-        isOverBudget: isOverBudget,
+        progress: ringProgress,
         baseColor: textColor,
       ),
       child: SizedBox(
-        width: 100,
-        height: 100,
+        width: 60,
+        height: 60,
         child: Center(
           child: Text(
-            '${(progress * 100).round()}%',
+            '$displayPercentage%', // Can show beyond 100%
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 14, // Reduced from 18
               fontWeight: FontWeight.bold,
-              color: isOverBudget 
-                ? const Color(0xFFFF6B6B)
-                : progress >= 0.9
-                  ? const Color(0xFFF97316)
-                  : textColor,
+              color: textColor, // No color change
               shadows: AppEffects.textShadows,
             ),
           ),
@@ -225,34 +218,32 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
 /// Custom painter for circular progress indicator
 class _CircularProgressPainter extends CustomPainter {
   final double progress;
-  final bool isOverBudget;
   final Color baseColor;
 
   _CircularProgressPainter({
     required this.progress,
-    required this.isOverBudget,
     required this.baseColor,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 8;
+    final radius = size.width / 2 - 5; // Adjusted for smaller size
     
     // Background circle
     final bgPaint = Paint()
       ..color = baseColor.withValues(alpha: 0.2)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 10
+      ..strokeWidth = 6 // Reduced from 8
       ..strokeCap = StrokeCap.round;
     
     canvas.drawCircle(center, radius, bgPaint);
     
-    // Progress arc
+    // Progress arc - NO COLOR CHANGE, always uses baseColor
     final progressPaint = Paint()
-      ..color = _getProgressColor()
+      ..color = baseColor.withValues(alpha: 0.9)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 10
+      ..strokeWidth = 6 // Reduced from 8
       ..strokeCap = StrokeCap.round;
     
     final sweepAngle = 2 * math.pi * progress;
@@ -265,16 +256,9 @@ class _CircularProgressPainter extends CustomPainter {
     );
   }
 
-  Color _getProgressColor() {
-    if (isOverBudget) return const Color(0xFFFF6B6B); // Soft red
-    if (progress >= 0.9) return const Color(0xFFF97316); // Orange
-    return baseColor.withValues(alpha: 0.9); // Theme color
-  }
-
   @override
   bool shouldRepaint(_CircularProgressPainter oldDelegate) {
     return oldDelegate.progress != progress || 
-           oldDelegate.isOverBudget != isOverBudget ||
            oldDelegate.baseColor != baseColor;
   }
 }
