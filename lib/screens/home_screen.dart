@@ -5,6 +5,7 @@ import '../config/design_system/theme_background.dart';
 import '../config/design_system/theme_design.dart';
 import '../providers/home_provider.dart';
 import '../providers/theme_provider.dart';
+import '../providers/exercise_provider.dart'; // ✅ Add for refreshing exercise data
 import '../widgets/home/calorie_summary_widget.dart';
 import '../widgets/home/macronutrient_widget.dart';
 import '../widgets/home/cost_summary_widget.dart';
@@ -22,6 +23,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => false; // ✅ Don't keep state alive to allow fresh loads
+
+  // ✅ Add key to force widget rebuild and animation restart
+  Key _refreshKey = UniqueKey();
 
   @override
   void initState() {
@@ -71,7 +75,19 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                 // ✅ Wrap in RefreshIndicator for pull-to-refresh with styled indicator
                 return RefreshIndicator(
                   onRefresh: () async {
+                    // ✅ Refresh all data sources
                     await homeProvider.refreshData();
+                    
+                    // ✅ Also refresh exercise data if available
+                    final exerciseProvider = context.read<ExerciseProvider>();
+                    await exerciseProvider.loadData();
+                    
+                    // ✅ Force all widgets to rebuild with fresh data AND restart animations
+                    if (mounted) {
+                      setState(() {
+                        _refreshKey = UniqueKey(); // ✅ New key forces complete widget rebuild and animation restart
+                      });
+                    }
                   },
                   color: Colors.white, // ✅ White spinner to match theme
                   backgroundColor: Colors.white.withValues(alpha: 0.2), // ✅ Subtle background
@@ -85,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(), // ✅ Enable pull even when content doesn't scroll
                       child: Column(
+                        key: _refreshKey, // ✅ Key forces animations to restart when changed
                         children: [
                           const SizedBox(height: 20),
                           
