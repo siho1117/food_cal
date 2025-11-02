@@ -9,8 +9,8 @@ import '../../providers/theme_provider.dart';
 
 /// Widget-specific design constants
 class _MacronutrientDesign {
-  static const double triangleSize = 170.0; // ✅ INCREASED to 170px
-  static const double triangleStrokeWidth = 7.5; // ✅ INCREASED: 5.0 × 1.5 = 7.5
+  static const double triangleSize = 160.0; // ✅ Size of the triangle area
+  static const double triangleStrokeWidth = 16.0; // ✅ Thickness: 12.0
 }
 
 class MacronutrientWidget extends StatefulWidget {
@@ -34,7 +34,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000), // ✅ SLOWED: 1500ms → 2000ms (~30% slower)
+      duration: const Duration(milliseconds: 2600), // ✅ 30% slower animation
     );
 
     _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -87,8 +87,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
 
         return Container(
           decoration: BoxDecoration(
-            // ✅ CHANGED: 25% opacity white background
-            color: Colors.white.withValues(alpha: 0.25),
+            color: Colors.white.withValues(alpha: 0.50), // ✅ 50% opacity
             borderRadius: BorderRadius.circular(AppDimensions.cardBorderRadius),
             border: Border.all(
               color: borderColor,
@@ -96,7 +95,6 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
             ),
           ),
           child: Padding(
-            // ✅ REDUCED: Smaller padding for compactness
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: AnimatedBuilder(
               animation: _animation,
@@ -109,7 +107,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                     child: Text(
                       'Macronutrients',
                       style: TextStyle(
-                        fontSize: 18, // ✅ REDUCED from 20
+                        fontSize: 18,
                         color: textColor,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.3,
@@ -118,7 +116,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                     ),
                   ),
 
-                  const SizedBox(height: 14), // ✅ REDUCED from 20
+                  const SizedBox(height: 14),
 
                   // Triangle + Legend Layout
                   _buildTriangleWithLegend(
@@ -161,7 +159,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
           ),
         ),
 
-        const SizedBox(width: 12), // ✅ REDUCED from 16 to make legend narrower
+        const SizedBox(width: 12),
 
         // Legend on the right
         Expanded(
@@ -176,7 +174,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                 color: const Color(0xFFEF4444),
                 delay: 0.0,
               ),
-              const SizedBox(height: 8), // ✅ REDUCED from 12
+              const SizedBox(height: 8),
               _buildLegendItem(
                 name: 'Carbs',
                 consumed: consumed['carbs']!,
@@ -185,7 +183,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                 color: const Color(0xFF3B82F6),
                 delay: 0.15,
               ),
-              const SizedBox(height: 8), // ✅ REDUCED from 12
+              const SizedBox(height: 8),
               _buildLegendItem(
                 name: 'Fat',
                 consumed: consumed['fat']!,
@@ -209,9 +207,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
     required Color color,
     required double delay,
   }) {
-    // ✅ REMOVED opacity wrapper - all items now fully opaque
     return Container(
-      // ✅ REDUCED: Even narrower horizontal padding (8 → 6)
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -238,7 +234,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1A1A), // ✅ Solid color - fully opaque
+                    color: Color(0xFF1A1A1A),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -248,7 +244,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                   '${(consumed * _animation.value).round()}g / ${(target * _animation.value).round()}g',
                   style: const TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF6B7280), // ✅ Solid color - fully opaque
+                    color: Color(0xFF6B7280),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -257,7 +253,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
             ),
           ),
 
-          const SizedBox(width: 6), // ✅ REDUCED from 8
+          const SizedBox(width: 6),
 
           // Right: Percentage
           Text(
@@ -265,7 +261,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: color, // ✅ Solid color - fully opaque
+              color: color,
             ),
           ),
         ],
@@ -377,7 +373,6 @@ class _EquilateralTrianglePainter extends CustomPainter {
       progressPath.addPath(extractPath, Offset.zero);
     }
 
-    // ✅ REMOVED: Glow effect omitted - draw only the colored progress line
     canvas.drawPath(progressPath, paint);
   }
 
