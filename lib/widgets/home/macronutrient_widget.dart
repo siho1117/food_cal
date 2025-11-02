@@ -3,15 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../../config/design_system/theme_design.dart';
-import '../../config/design_system/typography.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/theme_provider.dart';
-
-/// Widget-specific design constants
-class _MacronutrientDesign {
-  static const double triangleSize = 160.0; // ✅ Size of the triangle area
-  static const double triangleStrokeWidth = 16.0; // ✅ Thickness: 16.0
-}
 
 class MacronutrientWidget extends StatefulWidget {
   const MacronutrientWidget({super.key});
@@ -25,7 +18,6 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
   late AnimationController _controller;
   late Animation<double> _animation;
 
-  // Track previous values for refresh detection
   String? _previousDataHash;
 
   @override
@@ -34,7 +26,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2600), // ✅ 30% slower animation
+      duration: const Duration(milliseconds: 1200),
     );
 
     _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -81,305 +73,210 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
           themeProvider.selectedGradient,
           AppEffects.borderOpacity,
         );
-        final textColor = AppColors.getTextColorForTheme(
-          themeProvider.selectedGradient,
-        );
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.50), // ✅ 50% opacity
-            borderRadius: BorderRadius.circular(AppDimensions.cardBorderRadius),
-            border: Border.all(
-              color: borderColor,
-              width: AppDimensions.cardBorderWidth,
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: AnimatedBuilder(
-              animation: _animation,
-              builder: (context, child) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Opacity(
-                    opacity: _animation.value,
-                    child: Text(
-                      'Macronutrients',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: textColor,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.3,
-                        shadows: AppEffects.textShadows,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Triangle + Legend Layout
-                  _buildTriangleWithLegend(
-                    consumed,
-                    target,
-                    progress,
-                    textColor,
-                  ),
-                ],
+        return AnimatedBuilder(
+          animation: _animation,
+          builder: (context, child) => Row(
+            children: [
+              // Protein Card
+              Expanded(
+                child: _buildMacroCard(
+                  name: 'Protein',
+                  current: consumed['protein']!,
+                  target: target['protein']!.toDouble(),
+                  progress: progress['protein']!,
+                  color: const Color(0xFFEF4444), // Red
+                  borderColor: borderColor,
+                ),
               ),
-            ),
+              
+              const SizedBox(width: 10),
+              
+              // Carbs Card
+              Expanded(
+                child: _buildMacroCard(
+                  name: 'Carbs',
+                  current: consumed['carbs']!,
+                  target: target['carbs']!.toDouble(),
+                  progress: progress['carbs']!,
+                  color: const Color(0xFFF97316), // Orange
+                  borderColor: borderColor,
+                ),
+              ),
+              
+              const SizedBox(width: 10),
+              
+              // Fat Card
+              Expanded(
+                child: _buildMacroCard(
+                  name: 'Fat',
+                  current: consumed['fat']!,
+                  target: target['fat']!.toDouble(),
+                  progress: progress['fat']!,
+                  color: const Color(0xFF3B82F6), // Blue
+                  borderColor: borderColor,
+                ),
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildTriangleWithLegend(
-    Map<String, double> consumed,
-    Map<String, int> target,
-    Map<String, double> progress,
-    Color textColor,
-  ) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Equilateral triangle on the left
-        Opacity(
-          opacity: _animation.value,
-          child: SizedBox(
-            width: _MacronutrientDesign.triangleSize,
-            height: _MacronutrientDesign.triangleSize,
-            child: CustomPaint(
-              painter: _EquilateralTrianglePainter(
-                proteinProgress: progress['protein']! * _animation.value,
-                carbsProgress: progress['carbs']! * _animation.value,
-                fatProgress: progress['fat']! * _animation.value,
-              ),
-            ),
-          ),
-        ),
-
-        const SizedBox(width: 12),
-
-        // Legend on the right
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildLegendItem(
-                name: 'Protein',
-                consumed: consumed['protein']!,
-                target: target['protein']!.toDouble(),
-                progress: progress['protein']!,
-                color: const Color(0xFFEF4444),
-                delay: 0.0,
-              ),
-              const SizedBox(height: 8),
-              _buildLegendItem(
-                name: 'Carbs',
-                consumed: consumed['carbs']!,
-                target: target['carbs']!.toDouble(),
-                progress: progress['carbs']!,
-                color: const Color(0xFF3B82F6),
-                delay: 0.15,
-              ),
-              const SizedBox(height: 8),
-              _buildLegendItem(
-                name: 'Fat',
-                consumed: consumed['fat']!,
-                target: target['fat']!.toDouble(),
-                progress: progress['fat']!,
-                color: const Color(0xFFF97316),
-                delay: 0.30,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLegendItem({
+  Widget _buildMacroCard({
     required String name,
-    required double consumed,
+    required double current,
     required double target,
     required double progress,
     required Color color,
-    required double delay,
+    required Color borderColor,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border(
-          left: BorderSide(
-            color: color,
-            width: 3,
+    final animatedProgress = progress * _animation.value;
+    final animatedCurrent = current * _animation.value;
+    final animatedTarget = target * _animation.value;
+    
+    // Calculate percentage from raw values (can go beyond 100%)
+    final actualPercentage = animatedTarget > 0 
+        ? (animatedCurrent / animatedTarget) 
+        : 0.0;
+    final displayPercentage = (actualPercentage * 100).round();
+
+    return Opacity(
+      opacity: _animation.value,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.3), // Transparent background
+          borderRadius: BorderRadius.circular(AppDimensions.cardBorderRadius),
+          border: Border.all(
+            color: borderColor,
+            width: AppDimensions.cardBorderWidth,
           ),
         ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Left: Name and values
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1A1A),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
+        child: Column(
+          children: [
+            // 1. Circular Progress with Percentage inside
+            SizedBox(
+              width: 56,
+              height: 56,
+              child: Stack(
+                children: [
+                  // Progress Ring (capped at 100%)
+                  CustomPaint(
+                    size: const Size(56, 56),
+                    painter: _CircularProgressPainter(
+                      progress: animatedProgress,
+                      color: color,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  '${(consumed * _animation.value).round()}g / ${(target * _animation.value).round()}g',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF6B7280),
+                  
+                  // Percentage in Center (can show beyond 100%)
+                  Center(
+                    child: Text(
+                      '$displayPercentage%',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1A1A1A), // Black text
+                      ),
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-
-          const SizedBox(width: 6),
-
-          // Right: Percentage
-          Text(
-            '${(progress * 100 * _animation.value).round()}%',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: color,
+            
+            const SizedBox(height: 12),
+            
+            // 2. Current Value
+            Text(
+              animatedCurrent.round().toString(),
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1A1A1A), // Black text
+                height: 1.0,
+              ),
             ),
-          ),
-        ],
+            
+            const SizedBox(height: 4),
+            
+            // 3. Target
+            Text(
+              '/ ${target.round()}g',
+              style: TextStyle(
+                fontSize: 12,
+                color: const Color(0xFF1A1A1A).withValues(alpha: 0.6), // Black with 60% opacity
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            // 4. Macro Name (Bottom)
+            Text(
+              name.toUpperCase(),
+              style: TextStyle(
+                fontSize: 11,
+                color: const Color(0xFF1A1A1A).withValues(alpha: 0.7), // Black with 70% opacity
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 // ═══════════════════════════════════════════════════════════════
-// EQUILATERAL TRIANGLE PAINTER
+// CIRCULAR PROGRESS PAINTER
 // ═══════════════════════════════════════════════════════════════
 
-class _EquilateralTrianglePainter extends CustomPainter {
-  final double proteinProgress;
-  final double carbsProgress;
-  final double fatProgress;
+class _CircularProgressPainter extends CustomPainter {
+  final double progress;
+  final Color color;
 
-  _EquilateralTrianglePainter({
-    required this.proteinProgress,
-    required this.carbsProgress,
-    required this.fatProgress,
+  _CircularProgressPainter({
+    required this.progress,
+    required this.color,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Calculate equilateral triangle vertices
-    final padding = size.width * 0.1;
-    final availableWidth = size.width - (2 * padding);
-    final sideLength = availableWidth;
-    
-    // Height of equilateral triangle = (sqrt(3) / 2) * side
-    final height = (math.sqrt(3) / 2) * sideLength;
-    
-    // Center the triangle vertically
-    final verticalOffset = (size.height - height) / 2;
-    
-    // Define vertices for proper equilateral triangle
-    final top = Offset(size.width / 2, verticalOffset);
-    final bottomLeft = Offset(padding, verticalOffset + height);
-    final bottomRight = Offset(size.width - padding, verticalOffset + height);
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 3;
 
-    // Background triangle outline - solid white
+    // Background circle (light gray)
     final bgPaint = Paint()
-      ..color = Colors.white
+      ..color = const Color(0xFFE5E7EB)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = _MacronutrientDesign.triangleStrokeWidth
-      ..strokeJoin = StrokeJoin.round;
-
-    final bgPath = Path()
-      ..moveTo(top.dx, top.dy)
-      ..lineTo(bottomRight.dx, bottomRight.dy)
-      ..lineTo(bottomLeft.dx, bottomLeft.dy)
-      ..close();
-    canvas.drawPath(bgPath, bgPaint);
-
-    // Draw progress sides
-    // Protein: top → bottom-right
-    _drawProgressSide(
-      canvas: canvas,
-      start: top,
-      end: bottomRight,
-      progress: proteinProgress,
-      color: const Color(0xFFEF4444),
-    );
-
-    // Carbs: bottom-right → bottom-left
-    _drawProgressSide(
-      canvas: canvas,
-      start: bottomRight,
-      end: bottomLeft,
-      progress: carbsProgress,
-      color: const Color(0xFF3B82F6),
-    );
-
-    // Fat: bottom-left → top
-    _drawProgressSide(
-      canvas: canvas,
-      start: bottomLeft,
-      end: top,
-      progress: fatProgress,
-      color: const Color(0xFFF97316),
-    );
-  }
-
-  void _drawProgressSide({
-    required Canvas canvas,
-    required Offset start,
-    required Offset end,
-    required double progress,
-    required Color color,
-  }) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = _MacronutrientDesign.triangleStrokeWidth
+      ..strokeWidth = 5
       ..strokeCap = StrokeCap.round;
 
-    final path = Path()..moveTo(start.dx, start.dy);
-    path.lineTo(end.dx, end.dy);
+    canvas.drawCircle(center, radius, bgPaint);
 
-    final pathMetrics = path.computeMetrics();
-    final progressPath = Path();
+    // Progress arc (capped at 100% = full circle)
+    final progressPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round;
 
-    for (final metric in pathMetrics) {
-      final extractPath = metric.extractPath(
-        0,
-        (metric.length * progress.clamp(0.0, 1.0)),
-      );
-      progressPath.addPath(extractPath, Offset.zero);
-    }
-
-    canvas.drawPath(progressPath, paint);
+    final sweepAngle = 2 * math.pi * progress.clamp(0.0, 1.0);
+    
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2, // Start from top
+      sweepAngle,
+      false,
+      progressPaint,
+    );
   }
 
   @override
-  bool shouldRepaint(_EquilateralTrianglePainter oldDelegate) {
-    return oldDelegate.proteinProgress != proteinProgress ||
-        oldDelegate.carbsProgress != carbsProgress ||
-        oldDelegate.fatProgress != fatProgress;
+  bool shouldRepaint(_CircularProgressPainter oldDelegate) {
+    return oldDelegate.progress != progress || oldDelegate.color != color;
   }
 }
