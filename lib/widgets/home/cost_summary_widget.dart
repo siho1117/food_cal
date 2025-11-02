@@ -1,8 +1,11 @@
 // lib/widgets/home/cost_summary_widget.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:math' as math;
+import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
 import '../../providers/home_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../dialogs/budget_edit_dialog.dart';
 
 class CostSummaryWidget extends StatefulWidget {
@@ -13,301 +16,199 @@ class CostSummaryWidget extends StatefulWidget {
 }
 
 class _CostSummaryWidgetState extends State<CostSummaryWidget> 
-    with TickerProviderStateMixin {
-  late AnimationController _countController;
-  late AnimationController _slideController;
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
   
-  late Animation<double> _countAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _fadeAnimation;
-
-  // Track previous values for refresh detection
   String? _previousDataHash;
 
   @override
   void initState() {
     super.initState();
     
-    // Initialize animation controllers
-    _countController = AnimationController(
+    _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
     
-    _slideController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
     );
     
-    // Create animations
-    _countAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _countController,
-        curve: Curves.easeOutQuart,
-      ),
-    );
-    
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeOutBack,
-    ));
-    
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _slideController,
-        curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
-      ),
-    );
-    
-    // Start animations after everything is initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _startAnimations();
+        _controller.forward();
       }
     });
   }
 
-  void _startAnimations() async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    if (mounted) _countController.forward();
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (mounted) _slideController.forward();
-  }
-
-  // Restart animations when data refreshes
-  void _restartAnimations() {
-    if (mounted) {
-      _countController.reset();
-      _slideController.reset();
-      _startAnimations();
-    }
-  }
-
-  void _checkForRefresh(double totalCost, double budget, double remaining) {
-    final currentHash = '$totalCost-$budget-$remaining';
+  void _checkForRefresh(double totalCost, double budget) {
+    final currentHash = '$totalCost-$budget';
     if (_previousDataHash != null && _previousDataHash != currentHash && mounted) {
-      _restartAnimations();
+      _controller.reset();
+      _controller.forward();
     }
     _previousDataHash = currentHash;
   }
 
   @override
   void dispose() {
-    _countController.dispose();
-    _slideController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<HomeProvider>(
-      builder: (context, homeProvider, child) {
+    return Consumer2<HomeProvider, ThemeProvider>(
+      builder: (context, homeProvider, themeProvider, child) {
         final totalCost = homeProvider.totalFoodCost;
         final dailyBudget = homeProvider.dailyFoodBudget;
-        final remaining = dailyBudget - totalCost;
-        final budgetProgress = totalCost / dailyBudget;
+        final progress = (totalCost / dailyBudget).clamp(0.0, 1.0);
         final isOverBudget = homeProvider.isOverFoodBudget;
 
-        // Check for data refresh
-        _checkForRefresh(totalCost, dailyBudget, remaining);
+        _checkForRefresh(totalCost, dailyBudget);
 
-        // Get dynamic status data
-        final statusData = _getStatusData(budgetProgress, isOverBudget);
+        // Get theme-adaptive colors
+        final borderColor = AppColors.getBorderColorForTheme(
+          themeProvider.selectedGradient,
+          AppEffects.borderOpacity,
+        );
+        final textColor = AppColors.getTextColorForTheme(
+          themeProvider.selectedGradient,
+        );
 
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 10,
-                spreadRadius: 0,
-                offset: const Offset(0, 4),
+        return GestureDetector(
+          onTap: () => _showBudgetEditDialog(context, homeProvider, dailyBudget),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(AppDimensions.cardBorderRadius),
+              border: Border.all(
+                color: borderColor,
+                width: AppDimensions.cardBorderWidth,
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              // Left side: Cost info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Section header
-                    Row(
-                      children: [
-                        const Text('💸', style: TextStyle(fontSize: 16)),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Daily Food Cost',
-                          style: AppTypography.displaySmall.copyWith(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ],
+            ),
+            child: Padding(
+              padding: AppDimensions.cardPadding,
+              child: Column(
+                children: [
+                  // Title
+                  Text(
+                    'Food Cost',
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: textColor,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.3,
+                      shadows: AppEffects.textShadows,
                     ),
-                    
-                    const SizedBox(height: 12),
-                    
-                    // Animated total cost
-                    AnimatedBuilder(
-                      animation: _countAnimation,
-                      builder: (context, child) {
-                        final animatedCost = totalCost * _countAnimation.value;
-                        return Text(
-                          '\$${animatedCost.toStringAsFixed(2)}',
-                          style: AppTypography.dataLarge.copyWith(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: isOverBudget ? Colors.red[600] : Colors.green[700],
-                          ),
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 2),
-
-                    // Budget info (tappable)
-                    GestureDetector(
-                      onTap: () => _showBudgetEditDialog(context, homeProvider, dailyBudget),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(4),
-                          color: Colors.transparent,
-                        ),
-                        child: Text(
-                          'of \$${dailyBudget.toStringAsFixed(2)} budget',
-                          style: AppTypography.bodyMedium.copyWith(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[600],
-                            decoration: TextDecoration.underline,
-                            decorationStyle: TextDecorationStyle.dotted,
-                          ),
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Main content: Cost + Progress Ring
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Left: Cost display
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Animated cost
+                            AnimatedBuilder(
+                              animation: _animation,
+                              builder: (context, child) {
+                                final animatedCost = totalCost * _animation.value;
+                                return Text(
+                                  '\$${animatedCost.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 48,
+                                    fontWeight: FontWeight.bold,
+                                    color: isOverBudget 
+                                      ? const Color(0xFFFF6B6B)
+                                      : textColor,
+                                    letterSpacing: -1,
+                                    height: 1.0,
+                                    shadows: AppEffects.textShadows,
+                                  ),
+                                );
+                              },
+                            ),
+                            
+                            const SizedBox(height: 8),
+                            
+                            // Budget amount
+                            Text(
+                              '/ \$${dailyBudget.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: textColor.withValues(alpha: 0.7),
+                                shadows: AppEffects.textShadows,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 16),
-
-              // Right side: Status badge and progress bar
-              SlideTransition(
-                position: _slideAnimation,
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      // Status badge
-                      _buildStatusBadge(statusData, remaining, isOverBudget, budgetProgress),
                       
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 32),
                       
-                      // Compact progress bar
-                      _buildProgressBar(budgetProgress, isOverBudget),
+                      // Right: Circular progress
+                      AnimatedBuilder(
+                        animation: _animation,
+                        builder: (context, child) {
+                          final animatedProgress = progress * _animation.value;
+                          return _buildCircularProgress(
+                            animatedProgress,
+                            isOverBudget,
+                            textColor,
+                          );
+                        },
+                      ),
                     ],
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildStatusBadge(Map<String, dynamic> statusData, double remaining, bool isOverBudget, double progress) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: statusData['color'],
-        borderRadius: BorderRadius.circular(12),
+  Widget _buildCircularProgress(double progress, bool isOverBudget, Color textColor) {
+    return CustomPaint(
+      size: const Size(100, 100),
+      painter: _CircularProgressPainter(
+        progress: progress,
+        isOverBudget: isOverBudget,
+        baseColor: textColor,
       ),
-      child: Text(
-        isOverBudget 
-          ? 'Over \$${(-remaining).toStringAsFixed(2)}'
-          : '\$${remaining.toStringAsFixed(2)} left',
-        style: AppTypography.dataSmall.copyWith(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProgressBar(double progress, bool isOverBudget) {
-    return Container(
-      width: 80,
-      height: 6,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(3),
-        color: Colors.grey[200],
-      ),
-      child: FractionallySizedBox(
-        alignment: Alignment.centerLeft,
-        widthFactor: (progress).clamp(0.0, 1.0),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(3),
-            color: isOverBudget 
-              ? Colors.red[600]
-              : progress >= 0.9 
-                ? Colors.orange[600]
-                : Colors.green[600],
+      child: SizedBox(
+        width: 100,
+        height: 100,
+        child: Center(
+          child: Text(
+            '${(progress * 100).round()}%',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: isOverBudget 
+                ? const Color(0xFFFF6B6B)
+                : progress >= 0.9
+                  ? const Color(0xFFF97316)
+                  : textColor,
+              shadows: AppEffects.textShadows,
+            ),
           ),
         ),
       ),
     );
   }
 
-  Map<String, dynamic> _getStatusData(double progress, bool isOverBudget) {
-    if (isOverBudget) {
-      return {
-        'color': Colors.red[600]!,
-        'message': '🚨 Over budget!',
-      };
-    }
-    
-    if (progress >= 0.9) {
-      return {
-        'color': Colors.orange[600]!,
-        'message': '⚠️ Approaching your budget limit!',
-      };
-    }
-    
-    if (progress >= 0.7) {
-      return {
-        'color': Colors.green[600]!,
-        'message': '📊 On track with your budget!',
-      };
-    }
-    
-    if (progress >= 0.4) {
-      return {
-        'color': Colors.green[600]!,
-        'message': '💡 Great spending discipline!',
-      };
-    }
-    
-    return {
-      'color': Colors.green[600]!,
-      'message': '🎯 Excellent budget management!',
-    };
-  }
-
-  // Use the proper BudgetEditDialog
   void _showBudgetEditDialog(BuildContext context, HomeProvider homeProvider, double currentBudget) {
     showDialog(
       context: context,
@@ -318,5 +219,62 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
         showAdvancedOptions: false,
       ),
     );
+  }
+}
+
+/// Custom painter for circular progress indicator
+class _CircularProgressPainter extends CustomPainter {
+  final double progress;
+  final bool isOverBudget;
+  final Color baseColor;
+
+  _CircularProgressPainter({
+    required this.progress,
+    required this.isOverBudget,
+    required this.baseColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 8;
+    
+    // Background circle
+    final bgPaint = Paint()
+      ..color = baseColor.withValues(alpha: 0.2)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 10
+      ..strokeCap = StrokeCap.round;
+    
+    canvas.drawCircle(center, radius, bgPaint);
+    
+    // Progress arc
+    final progressPaint = Paint()
+      ..color = _getProgressColor()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 10
+      ..strokeCap = StrokeCap.round;
+    
+    final sweepAngle = 2 * math.pi * progress;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2, // Start from top
+      sweepAngle,
+      false,
+      progressPaint,
+    );
+  }
+
+  Color _getProgressColor() {
+    if (isOverBudget) return const Color(0xFFFF6B6B); // Soft red
+    if (progress >= 0.9) return const Color(0xFFF97316); // Orange
+    return baseColor.withValues(alpha: 0.9); // Theme color
+  }
+
+  @override
+  bool shouldRepaint(_CircularProgressPainter oldDelegate) {
+    return oldDelegate.progress != progress || 
+           oldDelegate.isOverBudget != isOverBudget ||
+           oldDelegate.baseColor != baseColor;
   }
 }
