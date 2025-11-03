@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../../config/design_system/theme_design.dart';
-import '../../config/design_system/typography.dart';
+import '../../config/design_system/dialog_theme.dart';
 import '../../providers/progress_data.dart';
+import '../../providers/theme_provider.dart';
 
 class CombinedWeightWidget extends StatefulWidget {
   final double? currentWeight;
@@ -24,18 +25,16 @@ class CombinedWeightWidget extends StatefulWidget {
 
 class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
     with TickerProviderStateMixin {
-  late AnimationController _segmentController;
+  late AnimationController _progressController;
   late AnimationController _fadeController;
+  late Animation<double> _progressAnimation;
   late Animation<double> _fadeAnimation;
-  late List<Animation<double>> _segmentAnimations;
-
-  static const int totalSegments = 10;
 
   @override
   void initState() {
     super.initState();
     
-    _segmentController = AnimationController(
+    _progressController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
@@ -45,18 +44,12 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
       duration: const Duration(milliseconds: 600),
     );
     
-    // Create staggered animations for each segment
-    _segmentAnimations = List.generate(totalSegments, (index) {
-      final start = (index / totalSegments) * 0.6;
-      final end = start + 0.4;
-      
-      return Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-          parent: _segmentController,
-          curve: Interval(start, end, curve: Curves.easeOutCubic),
-        ),
-      );
-    });
+    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _progressController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
     
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
@@ -70,7 +63,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
         _fadeController.forward();
         Future.delayed(const Duration(milliseconds: 200), () {
           if (mounted) {
-            _segmentController.forward();
+            _progressController.forward();
           }
         });
       }
@@ -79,7 +72,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
 
   @override
   void dispose() {
-    _segmentController.dispose();
+    _progressController.dispose();
     _fadeController.dispose();
     super.dispose();
   }
@@ -92,19 +85,6 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
     final progress = (1 - difference / maxWeight) * 100;
     
     return progress.clamp(0.0, 100.0);
-  }
-
-  int _getFilledSegments(double progressPercentage) {
-    return (progressPercentage / 100 * totalSegments).round();
-  }
-
-  Color _getProgressColor(double progressPercentage) {
-    if (progressPercentage >= 95) return const Color(0xFF10B981);
-    if (progressPercentage >= 85) return const Color(0xFF22C55E);
-    if (progressPercentage >= 70) return const Color(0xFF84CC16);
-    if (progressPercentage >= 50) return const Color(0xFFF59E0B);
-    if (progressPercentage >= 30) return const Color(0xFF3B82F6);
-    return const Color(0xFF6366F1);
   }
 
   String _formatWeight(double? weight) {
@@ -126,198 +106,180 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
     final displayDifference = widget.isMetric ? difference : difference * 2.20462;
     
     if (progressPercentage >= 99.5) {
-      return 'Goal reached! 🏆';
+      return 'Goal reached!';
     } else if (difference <= 0.1) {
       return 'At target!';
     } else {
-      return '${displayDifference.toStringAsFixed(1)} $unit to go';
+      return '${displayDifference.toStringAsFixed(1)} $unit left';
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ProgressData>(
-      builder: (context, progressData, child) {
+    return Consumer2<ProgressData, ThemeProvider>(
+      builder: (context, progressData, themeProvider, child) {
         final currentWeight = widget.currentWeight;
-        const targetWeight = null;
+        // ✅ UPDATED: Read target weight from ProgressData provider
+        final targetWeight = progressData.targetWeight;
         final progressPercentage = _calculateProgress(currentWeight, targetWeight);
-        final filledSegments = _getFilledSegments(progressPercentage);
-        final progressColor = _getProgressColor(progressPercentage);
         final remainingText = _getRemainingText(currentWeight, targetWeight, progressPercentage);
-
+        
+        // Get theme-adaptive colors
+        final borderColor = AppColors.getBorderColorForTheme(
+          themeProvider.selectedGradient,
+          AppEffects.borderOpacity,
+        );
+        final textColor = AppColors.getTextColorForTheme(
+          themeProvider.selectedGradient,
+        );
+        
         return FadeTransition(
           opacity: _fadeAnimation,
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 20,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 4),
+          child: GestureDetector(
+            onTap: _showWeightDialog,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: borderColor,
+                  width: 4,
                 ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Weight Progress',
-                          style: AppTypography.displaySmall.copyWith(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppLegacyColors.primaryBlue,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          targetWeight != null ? 'Tracking to goal' : 'Set your target',
-                          style: AppTypography.bodySmall.copyWith(
-                            fontSize: 11,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
+                    // Title with edit button
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildMinimalButton(
-                          icon: Icons.add,
-                          color: AppLegacyColors.primaryBlue,
-                          isColored: true,
-                          onPressed: _showWeightInputDialog,
+                        Text(
+                          'Weight',
+                          style: TextStyle(
+                            fontSize: 17,
+                            color: textColor,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.2,
+                            shadows: AppEffects.textShadows,
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        _buildMinimalButton(
-                          icon: Icons.flag_outlined,
-                          color: AppLegacyColors.accentColor,
-                          isColored: targetWeight != null,
-                          onPressed: _showTargetWeightDialog,
+                        // Edit button
+                        GestureDetector(
+                          onTap: _showWeightDialog,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: textColor.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.edit_outlined,
+                              size: 16,
+                              color: textColor,
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Progress bar
-                Container(
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: AnimatedBuilder(
-                    animation: _segmentController,
-                    builder: (context, child) {
-                      return Row(
-                        children: List.generate(totalSegments, (index) {
-                          final isFilled = index < filledSegments;
-                          final segmentColor = isFilled 
-                              ? progressColor.withValues(alpha: _segmentAnimations[index].value)
-                              : Colors.grey[200];
-                          
-                          return Expanded(
-                            child: Container(
-                              margin: EdgeInsets.symmetric(
-                                horizontal: index == 0 || index == totalSegments - 1 ? 0 : 0.5,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(2),
-                                color: segmentColor,
-                              ),
-                            ),
-                          );
-                        }),
-                      );
-                    },
-                  ),
-                ),
-                
-                const SizedBox(height: 10),
-                
-                // Weight Info Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+                    
+                    const SizedBox(height: 18),
+                    
                     // Weight Display
-                    RichText(
-                      text: TextSpan(
+                    Center(
+                      child: Column(
                         children: [
-                          TextSpan(
-                            text: _formatWeight(currentWeight),
-                            style: AppTypography.labelLarge.copyWith(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
+                          Text(
+                            currentWeight?.toStringAsFixed(1) ?? '--',
+                            style: TextStyle(
+                              fontSize: 52,
+                              fontWeight: FontWeight.w600,
+                              color: textColor,
+                              height: 1.0,
+                              shadows: AppEffects.textShadows,
                             ),
                           ),
-                          if (targetWeight != null) ...[
-                            TextSpan(
-                              text: ' → ',
+                          const SizedBox(height: 6),
+                          if (targetWeight != null)
+                            Text(
+                              '/ ${_formatWeight(targetWeight)}',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey[500],
                                 fontWeight: FontWeight.w500,
+                                color: textColor.withValues(alpha: 0.7),
+                                shadows: AppEffects.textShadows,
+                              ),
+                            )
+                          else
+                            Text(
+                              widget.isMetric ? 'kg' : 'lbs',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: textColor.withValues(alpha: 0.7),
+                                shadows: AppEffects.textShadows,
                               ),
                             ),
-                            TextSpan(
-                              text: _formatWeight(targetWeight),
-                              style: AppTypography.labelLarge.copyWith(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),
                     
+                    const SizedBox(height: 16),
+                    
+                    // Progress Bar
+                    AnimatedBuilder(
+                      animation: _progressAnimation,
+                      builder: (context, child) {
+                        return Container(
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: textColor.withValues(alpha: 0.25),
+                            borderRadius: BorderRadius.circular(2.5),
+                          ),
+                          child: FractionallySizedBox(
+                            alignment: Alignment.centerLeft,
+                            widthFactor: (_progressAnimation.value * progressPercentage / 100).clamp(0.0, 1.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: textColor.withValues(alpha: 0.9),
+                                borderRadius: BorderRadius.circular(2.5),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    
+                    const SizedBox(height: 12),
+                    
                     // Progress Info
-                    RichText(
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text: '${progressPercentage.toInt()}%',
-                            style: AppTypography.bodyMedium.copyWith(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: progressColor,
-                            ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${progressPercentage.toInt()}%',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: textColor.withValues(alpha: 0.8),
+                            fontWeight: FontWeight.w500,
+                            shadows: AppEffects.textShadows,
                           ),
-                          TextSpan(
-                            text: ' • ',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[400],
-                            ),
+                        ),
+                        Text(
+                          remainingText,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: textColor.withValues(alpha: 0.8),
+                            fontWeight: FontWeight.w500,
+                            shadows: AppEffects.textShadows,
                           ),
-                          TextSpan(
-                            text: remainingText,
-                            style: AppTypography.bodyMedium.copyWith(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         );
@@ -325,75 +287,107 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
     );
   }
 
-  Widget _buildMinimalButton({
-    required IconData icon,
-    required Color color,
-    required bool isColored,
-    required VoidCallback onPressed,
-  }) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(
-          color: isColored ? color : Colors.grey[100],
-          borderRadius: BorderRadius.circular(6),
-          border: isColored ? null : Border.all(color: Colors.grey[300]!, width: 1),
-        ),
-        child: Icon(
-          icon,
-          size: 14,
-          color: isColored ? Colors.white : color,
-        ),
-      ),
+  void _showWeightDialog() {
+    final progressData = Provider.of<ProgressData>(context, listen: false);
+    final currentTarget = progressData.targetWeight;
+    
+    final TextEditingController weightController = TextEditingController();
+    final TextEditingController targetController = TextEditingController(
+      text: currentTarget?.toStringAsFixed(1) ?? '',
     );
-  }
-
-  void _showWeightInputDialog() {
-    final TextEditingController controller = TextEditingController();
     
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Log Weight'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              autofocus: true,
-              decoration: InputDecoration(
-                labelText: 'Weight (${widget.isMetric ? 'kg' : 'lbs'})',
-                border: const OutlineInputBorder(),
-                suffixText: widget.isMetric ? 'kg' : 'lbs',
+        backgroundColor: AppDialogTheme.backgroundColor,
+        shape: AppDialogTheme.shape,
+        contentPadding: AppDialogTheme.contentPadding,
+        actionsPadding: AppDialogTheme.actionsPadding,
+        title: const Text(
+          'Update Weight',
+          style: AppDialogTheme.titleStyle,
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Current Weight Section
+              _buildSectionLabel('Current Weight'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: weightController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                autofocus: true,
+                style: AppDialogTheme.inputTextStyle,
+                decoration: AppDialogTheme.inputDecoration(
+                  hintText: widget.isMetric ? 'kg' : 'lbs',
+                ),
               ),
-            ),
-          ],
+              
+              const SizedBox(height: 24),
+              
+              // Target Weight Section
+              _buildSectionLabel('Target Weight'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: targetController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                style: AppDialogTheme.inputTextStyle,
+                decoration: AppDialogTheme.inputDecoration(
+                  hintText: widget.isMetric ? 'kg' : 'lbs',
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: AppDialogTheme.cancelButtonStyle,
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              final text = controller.text.trim();
-              if (text.isNotEmpty) {
-                final weight = double.tryParse(text);
-                if (weight != null && weight > 0) {
-                  widget.onWeightEntered(weight, widget.isMetric);
-                  Navigator.of(context).pop();
+          const SizedBox(width: AppDialogTheme.buttonGap),
+          FilledButton(
+            onPressed: () async {
+              bool hasUpdates = false;
+              
+              // Update current weight if entered
+              final weight = double.tryParse(weightController.text);
+              if (weight != null && weight > 0) {
+                widget.onWeightEntered(weight, widget.isMetric);
+                hasUpdates = true;
+              }
+              
+              // Update target weight if entered
+              final targetWeight = double.tryParse(targetController.text);
+              if (targetWeight != null && targetWeight > 0) {
+                // Convert to kg if user is using lbs
+                final weightInKg = widget.isMetric 
+                    ? targetWeight 
+                    : targetWeight / 2.20462;
+                
+                await progressData.updateTargetWeight(weightInKg);
+                hasUpdates = true;
+              }
+              
+              if (context.mounted) {
+                Navigator.of(context).pop();
+                
+                // Show success message only if something was updated
+                if (hasUpdates) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Weight logged: ${weight.toStringAsFixed(1)} ${widget.isMetric ? 'kg' : 'lbs'}'),
+                    const SnackBar(
+                      content: Text('Weight updated successfully'),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 2),
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
                 }
               }
             },
+            style: AppDialogTheme.primaryButtonStyle,
             child: const Text('Save'),
           ),
         ],
@@ -401,53 +395,14 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
     );
   }
 
-  void _showTargetWeightDialog() {
-    final TextEditingController controller = TextEditingController();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Set Target Weight'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              autofocus: true,
-              decoration: InputDecoration(
-                labelText: 'Target Weight (${widget.isMetric ? 'kg' : 'lbs'})',
-                border: const OutlineInputBorder(),
-                suffixText: widget.isMetric ? 'kg' : 'lbs',
-                helperText: 'Set your goal weight to track progress',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final text = controller.text.trim();
-              if (text.isNotEmpty) {
-                final weight = double.tryParse(text);
-                if (weight != null && weight > 0) {
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Target weight set: ${weight.toStringAsFixed(1)} ${widget.isMetric ? 'kg' : 'lbs'}'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Set Target'),
-          ),
-        ],
+  // Helper method to build section labels matching Edit Food Item style
+  Widget _buildSectionLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 14,
+        color: Color(0xFF374151),
+        fontWeight: FontWeight.bold,
       ),
     );
   }

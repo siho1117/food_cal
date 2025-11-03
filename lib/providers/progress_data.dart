@@ -49,6 +49,9 @@ class ProgressData extends ChangeNotifier {
   double? get tdeeValue => _tdeeValue;
   Map<String, int> get calorieGoals => _calorieGoals;
   List<WeightData> get weightHistory => _weightHistory;
+  
+  // ✅ NEW: Expose target weight from UserProfile
+  double? get targetWeight => _userProfile?.goalWeight;
 
   /// Load all necessary user data and calculate metrics
   Future<void> loadUserData() async {
