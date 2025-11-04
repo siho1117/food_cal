@@ -42,7 +42,6 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
     );
     _controller.addListener(() => setState(() {}));
     
-    // Initialize manual calories if editing
     if (widget.existingExercise != null) {
       _manualCaloriesController.text = widget.existingExercise!.caloriesBurned.toString();
     }
@@ -67,7 +66,6 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
 
   Future<void> _handleSave() async {
     if (_formKey.currentState?.validate() ?? false) {
-      // Override calories if manual mode is active
       if (_isManualCalories && _manualCaloriesController.text.isNotEmpty) {
         final manualCal = int.tryParse(_manualCaloriesController.text);
         if (manualCal != null && manualCal > 0) {
@@ -93,9 +91,12 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
     return Dialog(
       shape: AppDialogTheme.shape,
       backgroundColor: AppDialogTheme.backgroundColor,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 420, maxHeight: 700),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: 700,
+          maxHeight: 700,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -123,56 +124,35 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
           bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
         ),
       ),
-      child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Left: Title
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.existingExercise != null ? 'Edit Exercise' : 'Log Exercise',
-                      style: AppTypography.displaySmall.copyWith(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: AppDialogTheme.titleColor,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Track your workout',
-                      style: AppTypography.bodyMedium.copyWith(
-                        fontSize: 14,
-                        color: const Color(0xFF6B7280),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Right: Tab Switcher
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildTabButton('Preset', !_isCustomTab, () {
-                      setState(() => _isCustomTab = false);
-                    }),
-                    const SizedBox(width: 6),
-                    _buildTabButton('Custom', _isCustomTab, () {
-                      setState(() => _isCustomTab = true);
-                    }),
-                  ],
-                ),
-              ),
-            ],
+          // Title
+          Expanded(
+            child: Text(
+              widget.existingExercise != null ? 'Edit Exercise' : 'Log Exercise',
+              style: AppDialogTheme.titleStyle,
+            ),
+          ),
+          // Tab Switcher
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3F4F6),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildTabButton('Preset', !_isCustomTab, () {
+                  setState(() => _isCustomTab = false);
+                }),
+                const SizedBox(width: 6),
+                _buildTabButton('Custom', _isCustomTab, () {
+                  setState(() => _isCustomTab = true);
+                }),
+              ],
+            ),
           ),
         ],
       ),
@@ -188,7 +168,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
           color: isActive ? const Color(0xFF1A1A1A) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           boxShadow: isActive
-              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 4, offset: const Offset(0, 2))]
+              ? [const BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))]
               : null,
         ),
         child: Text(
@@ -241,13 +221,12 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
     );
   }
 
-  // Helper method for section labels (matching Food Dialog pattern)
   Widget _buildSectionLabel(String text, {bool required = false}) {
     return Text(
       required ? '$text *' : text,
       style: AppTypography.labelMedium.copyWith(
         fontSize: 14,
-        fontWeight: FontWeight.w700,  // Bold (was w600)
+        fontWeight: FontWeight.w700,
         color: const Color(0xFF374151),
       ),
     );
@@ -264,20 +243,19 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            childAspectRatio: 1.2,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
+            mainAxisExtent: 105,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
           ),
           itemCount: _controller.getExercises().length,
           itemBuilder: (context, index) {
-            final exercise = _controller.getExercises()[index];
-            final exerciseName = exercise['name']!;
+            final exerciseName = _controller.getExercises()[index];
             final isSelected = _controller.isExerciseSelected(exerciseName);
 
             return GestureDetector(
               onTap: () => _controller.selectExercise(exerciseName),
               child: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: isSelected ? const Color(0xFF1A1A1A) : const Color(0xFFD1D5DB),
@@ -288,23 +266,26 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       _getExerciseIcon(exerciseName),
-                      size: 28,
+                      size: 29,
                       color: const Color(0xFF4B5563),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      exerciseName,
-                      style: AppTypography.bodySmall.copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1A1A1A),
+                    const SizedBox(height: 6),
+                    Flexible(
+                      child: Text(
+                        exerciseName,
+                        style: AppTypography.bodySmall.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF1A1A1A),
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -611,13 +592,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Text(
-                      'Save',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                  : const Text('Save'),
             ),
           ),
         ],
