@@ -5,7 +5,7 @@ import '../providers/progress_data.dart';
 import '../providers/exercise_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/progress/combined_weight_widget.dart';
-import '../widgets/progress/combined_bmi_bodyfat_widget.dart';
+import '../widgets/progress/widget_bmi.dart'; // ✅ NEW: Import BMI widget
 import '../widgets/progress/weight_history_graph_widget.dart';
 import '../widgets/progress/energy_metrics_widget.dart';
 import '../widgets/progress/daily_burn_widget.dart';
@@ -81,21 +81,58 @@ class _ProgressScreenState extends State<ProgressScreen> {
                         
                         const SizedBox(height: 16),
                         
-                        // Weight Input Widget
-                        CombinedWeightWidget(
-                          currentWeight: progressData.currentWeight,
-                          isMetric: progressData.isMetric,
-                          onWeightEntered: progressData.addWeightEntry,
-                        ),
-                        
-                        const SizedBox(height: 20),
-                        
-                        // BMI and Body Fat Widget
-                        CombinedBMIBodyFatWidget(
-                          bmiValue: progressData.bmiValue,
-                          bmiClassification: progressData.bmiClassification,
-                          bodyFatPercentage: progressData.bodyFatValue,
-                          bodyFatClassification: progressData.bodyFatClassification,
+                        // ✅ NEW: Two-column layout - BMI (1/3) + Weight (2/3)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Left column - BMI Widget (1/3 width, matches weight height)
+                            Expanded(
+                              flex: 1, // Takes 1/3 of available width
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  // Calculate height to match the square weight widget
+                                  // Weight widget width = (total width - 16px gap) * 2/3
+                                  // Its height = its width (because it's square)
+                                  final totalWidth = constraints.maxWidth * 3; // Reverse the 1/3 to get total
+                                  final weightWidgetWidth = (totalWidth - 16) * 2 / 3;
+                                  final height = weightWidgetWidth;
+                                  
+                                  return SizedBox(
+                                    height: height,
+                                    child: BmiWidget(
+                                      currentWeight: progressData.currentWeight ?? 70.0,
+                                      targetWeight: progressData.targetWeight ?? 65.0,
+                                      height: progressData.userProfile?.height?.toDouble() ?? 170.0,
+                                      gradient: ThemeBackground.getGradient(
+                                        themeProvider.selectedGradient,
+                                      ),
+                                      textColor: AppColors.getTextColorForTheme(
+                                        themeProvider.selectedGradient,
+                                      ),
+                                      borderColor: themeProvider.selectedGradient == '01'
+                                          ? Colors.black.withOpacity(0.5)
+                                          : null,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            
+                            const SizedBox(width: 16),
+                            
+                            // Right column - Weight Widget (2/3 width, square)
+                            Expanded(
+                              flex: 2, // Takes 2/3 of available width
+                              child: AspectRatio(
+                                aspectRatio: 1.0, // Square shape
+                                child: CombinedWeightWidget(
+                                  currentWeight: progressData.currentWeight,
+                                  isMetric: progressData.isMetric,
+                                  onWeightEntered: progressData.addWeightEntry,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         
                         const SizedBox(height: 20),
@@ -184,7 +221,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
           child: Container(
             margin: const EdgeInsets.only(left: 12),
             height: 1,
-            color: Colors.white.withValues(alpha: 0.3),
+            color: Colors.white.withOpacity(0.3),
           ),
         ),
       ],
@@ -202,7 +239,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
+                color: Colors.red.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -224,7 +261,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
             Text(
               errorMessage,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.8),
+                color: Colors.white.withOpacity(0.8),
               ),
               textAlign: TextAlign.center,
             ),

@@ -1,13 +1,17 @@
-// lib/widgets/exercise/exercise_log_widget.dart
+// lib/widgets/progress/exercise_log_widget.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:math' as math;
-import '../../config/design_system/typography.dart'; // UPDATED: Changed from text_styles
 import '../../providers/exercise_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../data/models/exercise_entry.dart';
+import '../../config/design_system/theme_design.dart';
 import 'exercise_entry_dialog.dart';
 
-class ExerciseLogWidget extends StatefulWidget {
+// TODO: Add localization
+// Required translation keys: todaysActivity, calories, minutes, exercises, exercise,
+// noActivityYet, logFirstExercise, logExercise
+
+class ExerciseLogWidget extends StatelessWidget {
   final bool showHeader;
   final VoidCallback? onExerciseAdded;
 
@@ -17,634 +21,513 @@ class ExerciseLogWidget extends StatefulWidget {
     this.onExerciseAdded,
   });
 
-  @override
-  State<ExerciseLogWidget> createState() => _ExerciseLogWidgetState();
-}
-
-class _ExerciseLogWidgetState extends State<ExerciseLogWidget>
-    with TickerProviderStateMixin {
-  AnimationController? _animationController;
-  AnimationController? _fadeController;
-  Animation<double>? _fadeAnimation;
-  Animation<double>? _slideAnimation;
-  List<Animation<double>>? _itemAnimations;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeAnimations();
-  }
-
-  void _initializeAnimations() {
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    );
-    
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController!,
-      curve: Curves.easeOut,
-    ));
-    
-    _slideAnimation = Tween<double>(
-      begin: 30.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController!,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    // Create staggered animations for timeline items
-    _itemAnimations = List.generate(5, (index) {
-      final start = index * 0.15;
-      final end = start + 0.6;
-      
-      return Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-          parent: _animationController!,
-          curve: Interval(start, end, curve: Curves.easeOut),
-        ),
-      );
-    });
-    
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _fadeController != null && _animationController != null) {
-        _fadeController!.forward();
-        Future.delayed(const Duration(milliseconds: 400), () {
-          if (mounted && _animationController != null) {
-            _animationController!.forward();
-          }
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _animationController?.dispose();
-    _fadeController?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<ExerciseProvider>(
-      builder: (context, exerciseProvider, child) {
-        if (exerciseProvider.isLoading) {
-          return _buildLoadingState();
-        }
-
-        if (exerciseProvider.errorMessage != null) {
-          return _buildErrorState(exerciseProvider);
-        }
-
-        // Check if animations are initialized
-        if (_fadeAnimation == null || _slideAnimation == null) {
-          return _buildLoadingState();
-        }
-
-        return AnimatedBuilder(
-          animation: _fadeAnimation!,
-          builder: (context, child) {
-            return Transform.translate(
-              offset: Offset(0, _slideAnimation!.value),
-              child: Opacity(
-                opacity: _fadeAnimation!.value,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 16,
-                        spreadRadius: 0,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      if (widget.showHeader) _buildHeader(exerciseProvider),
-                      _buildProgressHeader(exerciseProvider),
-                      _buildTimelineContent(exerciseProvider),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildHeader(ExerciseProvider exerciseProvider) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFFF8FAFC),
-            Color(0xFFE2E8F0),
-          ],
-        ),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
-        ),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.local_fire_department,
-            color: Color(0xFF667EEA),
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Progress Timeline',
-              style: AppTypography.displaySmall.copyWith( // UPDATED
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E293B),
-              ),
-            ),
-          ),
-          _buildAddButton(exerciseProvider),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddButton(ExerciseProvider exerciseProvider) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-        ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: () => _showExerciseDialog(exerciseProvider),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              '+ Track',
-              style: AppTypography.bodyMedium.copyWith( // UPDATED
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProgressHeader(ExerciseProvider exerciseProvider) {
-    final totalBurned = exerciseProvider.totalCaloriesBurned;
-    final burnGoal = exerciseProvider.dailyBurnGoal;
-    final progress = burnGoal > 0 
-        ? (totalBurned / burnGoal).clamp(0.0, 1.0)
-        : 0.0;
-    final progressPercent = (progress * 100).round();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF667EEA).withValues(alpha: 0.05),
-            const Color(0xFF764BA2).withValues(alpha: 0.05),
-          ],
-        ),
-        border: Border(
-          bottom: BorderSide(
-            color: const Color(0xFFE2E8F0),
-            width: 1,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Today\'s Burn',
-                  style: AppTypography.bodySmall.copyWith( // UPDATED
-                    fontSize: 11,
-                    color: const Color(0xFF64748B),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      '$totalBurned',
-                      style: AppTypography.dataSmall.copyWith( // UPDATED
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF667EEA),
-                      ),
-                    ),
-                    Text(
-                      ' / $burnGoal cal',
-                      style: AppTypography.bodyMedium.copyWith( // UPDATED
-                        fontSize: 14,
-                        color: const Color(0xFF94A3B8),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF667EEA).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              '$progressPercent%',
-              style: AppTypography.bodyMedium.copyWith( // UPDATED
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF667EEA),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimelineContent(ExerciseProvider exerciseProvider) {
-    if (exerciseProvider.exerciseEntries.isEmpty) {
-      return _buildEmptyState();
-    }
-
-    return Column(
-      children: [
-        _buildTimeline(exerciseProvider),
-        _buildAddExerciseButtonWhenExercisesExist(exerciseProvider),
-      ],
-    );
-  }
-
-  Widget _buildTimeline(ExerciseProvider exerciseProvider) {
-    final exercises = exerciseProvider.exerciseEntries;
-    
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: exercises.length,
-      itemBuilder: (context, index) {
-        final exercise = exercises[index];
-        final animation = _itemAnimations![math.min(index, _itemAnimations!.length - 1)];
-        
-        return AnimatedBuilder(
-          animation: animation,
-          builder: (context, child) {
-            return Transform.translate(
-              offset: Offset(0, (1 - animation.value) * 30),
-              child: Opacity(
-                opacity: animation.value,
-                child: _buildTimelineItem(exercise, index == exercises.length - 1),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildTimelineItem(ExerciseEntry exercise, bool isLast) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            children: [
-              Container(
-                width: 12,
-                height: 12,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF667EEA),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              if (!isLast)
-                Container(
-                  width: 2,
-                  height: 40,
-                  color: const Color(0xFFE2E8F0),
-                ),
-            ],
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _buildExerciseCard(exercise),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExerciseCard(ExerciseEntry exercise) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFF667EEA).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.fitness_center,
-              color: Color(0xFF667EEA),
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  exercise.name,
-                  style: AppTypography.displaySmall.copyWith( // UPDATED
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${exercise.duration} min • ${exercise.intensity} • ${exercise.caloriesBurned} cal',
-                  style: AppTypography.bodyMedium.copyWith( // UPDATED
-                    fontSize: 12,
-                    color: const Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddExerciseButtonWhenExercisesExist(ExerciseProvider exerciseProvider) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFF667EEA), width: 1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(8),
-            onTap: () => _showExerciseDialog(exerciseProvider),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.add,
-                    color: Color(0xFF667EEA),
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Add Another Exercise',
-                    style: AppTypography.bodyMedium.copyWith( // UPDATED
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF667EEA),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Padding(
-      padding: const EdgeInsets.all(40),
-      child: Column(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: const Color(0xFF667EEA).withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.fitness_center,
-              size: 32,
-              color: Color(0xFF667EEA),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No exercises today',
-            style: AppTypography.displaySmall.copyWith( // UPDATED
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF64748B),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Start logging your workouts to track your progress',
-            style: AppTypography.bodyMedium.copyWith( // UPDATED
-              fontSize: 14,
-              color: const Color(0xFF94A3B8),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          Container(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () => _showExerciseDialog(
-                  Provider.of<ExerciseProvider>(context, listen: false),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  child: Text(
-                    'Log Your First Exercise',
-                    style: AppTypography.bodyMedium.copyWith( // UPDATED
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 16,
-            spreadRadius: 0,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF667EEA)),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorState(ExerciseProvider exerciseProvider) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 16,
-            spreadRadius: 0,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.error_outline,
-            color: Colors.red[400],
-            size: 48,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Error Loading Exercises',
-            style: AppTypography.displaySmall.copyWith( // UPDATED
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF1E293B),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            exerciseProvider.errorMessage ?? 'Something went wrong',
-            style: AppTypography.bodyMedium.copyWith( // UPDATED
-              fontSize: 14,
-              color: const Color(0xFF64748B),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () => exerciseProvider.refreshData(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF667EEA),
-            ),
-            child: const Text(
-              'Retry',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showExerciseDialog(ExerciseProvider exerciseProvider) {
+  void _showExerciseDialog(BuildContext context, ExerciseProvider provider) {
     showDialog(
       context: context,
       builder: (context) => ExerciseEntryDialog(
-        exerciseProvider: exerciseProvider,
+        exerciseProvider: provider,
         onExerciseSaved: () {
-          if (widget.onExerciseAdded != null) {
-            widget.onExerciseAdded!();
+          if (onExerciseAdded != null) {
+            onExerciseAdded!();
           }
         },
       ),
     );
   }
 
-  // Note: These methods are unused but kept for future reference
-  String _formatTime(DateTime time) {
-    final hour = time.hour;
-    final minute = time.minute;
-    final period = hour >= 12 ? 'PM' : 'AM';
-    final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-    return '${displayHour}:${minute.toString().padLeft(2, '0')} $period';
+  int _calculateTotalCalories(List<ExerciseEntry> exercises) {
+    return exercises.fold(0, (sum, exercise) => sum + exercise.caloriesBurned);
   }
 
-  String _formatNumber(int number) {
-    if (number >= 1000) {
-      return '${(number / 1000).toStringAsFixed(1)}K';
+  int _calculateTotalMinutes(List<ExerciseEntry> exercises) {
+    return exercises.fold(0, (sum, exercise) => sum + exercise.duration);
+  }
+
+  IconData _getExerciseIconData(String exerciseName) {
+    final iconMap = {
+      'running': Icons.directions_run,
+      'cycling': Icons.directions_bike,
+      'swimming': Icons.pool,
+      'walking': Icons.directions_walk,
+      'weight training': Icons.fitness_center,
+      'yoga': Icons.self_improvement,
+      'hiking': Icons.terrain,
+      'basketball': Icons.sports_basketball,
+      'soccer': Icons.sports_soccer,
+      'tennis': Icons.sports_tennis,
+    };
+
+    final key = exerciseName.toLowerCase();
+    for (var entry in iconMap.entries) {
+      if (key.contains(entry.key)) {
+        return entry.value;
+      }
     }
-    return number.toString();
+    return Icons.fitness_center;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer2<ExerciseProvider, ThemeProvider>(
+      builder: (context, exerciseProvider, themeProvider, child) {
+        if (exerciseProvider.isLoading) {
+          return _buildLoadingState(context, themeProvider);
+        }
+
+        if (exerciseProvider.errorMessage != null) {
+          return _buildErrorState(context, exerciseProvider, themeProvider);
+        }
+
+        final exercises = exerciseProvider.exerciseEntries;
+
+        if (exercises.isEmpty) {
+          return _buildEmptyState(context, exerciseProvider, themeProvider);
+        }
+
+        return _buildContent(context, exerciseProvider, themeProvider, exercises);
+      },
+    );
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    ExerciseProvider provider,
+    ThemeProvider themeProvider,
+    List<ExerciseEntry> exercises,
+  ) {
+    final textColor = AppColors.getTextColorForTheme(themeProvider.selectedGradient);
+    final totalCalories = _calculateTotalCalories(exercises);
+    final totalMinutes = _calculateTotalMinutes(exercises);
+
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(maxWidth: 700),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: themeProvider.selectedGradient == '01'
+              ? Colors.black.withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.5),
+          width: 4,
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Today's Activity",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
+                  color: textColor,
+                ),
+              ),
+              GestureDetector(
+                onTap: () => _showExerciseDialog(context, provider),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: textColor == Colors.black
+                        ? Colors.black.withValues(alpha: 0.1)
+                        : Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.add,
+                    size: 20,
+                    color: textColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Main Content - Side by Side
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Left: Stats Card
+              _buildStatsCard(
+                textColor,
+                totalCalories,
+                totalMinutes,
+                exercises.length,
+              ),
+              const SizedBox(width: 16),
+
+              // Right: Exercise List
+              Expanded(
+                child: _buildExerciseList(
+                  context,
+                  exercises,
+                  textColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsCard(
+    Color textColor,
+    int totalCalories,
+    int totalMinutes,
+    int exerciseCount,
+  ) {
+    return Container(
+      width: 110,
+      decoration: BoxDecoration(
+        color: textColor == Colors.black
+            ? Colors.black.withValues(alpha: 0.08)
+            : Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+      child: Column(
+        children: [
+          // Calories
+          _buildStatItem(textColor, totalCalories.toString(), 'Calories'),
+          Container(
+            height: 1,
+            width: 50,
+            margin: const EdgeInsets.symmetric(vertical: 10),
+            color: textColor.withValues(alpha: 0.2),
+          ),
+
+          // Minutes
+          _buildStatItem(textColor, totalMinutes.toString(), 'Minutes'),
+          Container(
+            height: 1,
+            width: 50,
+            margin: const EdgeInsets.symmetric(vertical: 10),
+            color: textColor.withValues(alpha: 0.2),
+          ),
+
+          // Exercises
+          _buildStatItem(
+            textColor,
+            exerciseCount.toString(),
+            exerciseCount == 1 ? 'Exercise' : 'Exercises',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(Color textColor, String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.w700,
+            height: 1,
+            color: textColor,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label.toUpperCase(),
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.4,
+            color: textColor.withValues(alpha: 0.7),
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExerciseList(
+    BuildContext context,
+    List<ExerciseEntry> exercises,
+    Color textColor,
+  ) {
+    return Column(
+      children: exercises.map((exercise) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: textColor == Colors.black
+                ? Colors.black.withValues(alpha: 0.06)
+                : Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center, // Changed to center for vertical alignment
+            children: [
+              // Icon
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: textColor == Colors.black
+                      ? Colors.black.withValues(alpha: 0.1)
+                      : Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  _getExerciseIconData(exercise.name),
+                  size: 20,
+                  color: textColor,
+                ),
+              ),
+              const SizedBox(width: 14),
+
+              // Exercise Info - 3 lines
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Line 1: Exercise name
+                    Text(
+                      exercise.name,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        height: 1.3,
+                        color: textColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    
+                    // Line 2: Calories (emphasized - key metric)
+                    Text(
+                      '${exercise.caloriesBurned} cal',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                        color: textColor.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    
+                    // Line 3: Duration
+                    Text(
+                      '${exercise.duration} min',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        height: 1.2,
+                        color: textColor.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildEmptyState(
+    BuildContext context,
+    ExerciseProvider provider,
+    ThemeProvider themeProvider,
+  ) {
+    final textColor = AppColors.getTextColorForTheme(themeProvider.selectedGradient);
+
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(maxWidth: 700),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: themeProvider.selectedGradient == '01'
+              ? Colors.black.withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.5),
+          width: 4,
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          // Header
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              "Today's Activity",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+                color: textColor,
+              ),
+            ),
+          ),
+          const SizedBox(height: 30),
+
+          // Empty state content
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: textColor == Colors.black
+                  ? Colors.black.withValues(alpha: 0.1)
+                  : Colors.white.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.fitness_center,
+              size: 24,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'No activity yet',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+              height: 1,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Log your first exercise',
+            style: TextStyle(
+              fontSize: 13,
+              color: textColor.withValues(alpha: 0.7),
+            ),
+          ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: () => _showExerciseDialog(context, provider),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: textColor == Colors.black
+                    ? Colors.black.withValues(alpha: 0.1)
+                    : Colors.white.withValues(alpha: 0.15),
+                border: Border.all(
+                  color: textColor.withValues(alpha: 0.3),
+                  width: 2,
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add, size: 16, color: textColor),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Log Exercise',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 30),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingState(BuildContext context, ThemeProvider themeProvider) {
+    final textColor = AppColors.getTextColorForTheme(themeProvider.selectedGradient);
+
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(maxWidth: 700),
+      height: 200,
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: themeProvider.selectedGradient == '01'
+              ? Colors.black.withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.5),
+          width: 4,
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Center(
+        child: CircularProgressIndicator(
+          color: textColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(
+    BuildContext context,
+    ExerciseProvider provider,
+    ThemeProvider themeProvider,
+  ) {
+    final textColor = AppColors.getTextColorForTheme(themeProvider.selectedGradient);
+
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(maxWidth: 700),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: themeProvider.selectedGradient == '01'
+              ? Colors.black.withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.5),
+          width: 4,
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 48,
+            color: textColor.withValues(alpha: 0.7),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Error Loading Exercises',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            provider.errorMessage ?? 'Unknown error occurred',
+            style: TextStyle(
+              fontSize: 14,
+              color: textColor.withValues(alpha: 0.7),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => provider.refreshData(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: textColor.withValues(alpha: 0.15),
+              foregroundColor: textColor,
+            ),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
   }
 }

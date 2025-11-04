@@ -1,7 +1,8 @@
-// lib/widgets/exercise/exercise_entry_dialog.dart
+// lib/widgets/progress/exercise_entry_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../config/design_system/theme_design.dart';
+import '../../config/design_system/dialog_theme.dart';
+import '../../config/design_system/typography.dart';
 import '../../providers/exercise_provider.dart';
 import '../../data/models/exercise_entry.dart';
 import 'exercise_dialog_controller.dart';
@@ -27,6 +28,9 @@ class ExerciseEntryDialog extends StatefulWidget {
 class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
   final _formKey = GlobalKey<FormState>();
   late ExerciseDialogController _controller;
+  bool _isCustomTab = false;
+  bool _isManualCalories = false;
+  final TextEditingController _manualCaloriesController = TextEditingController();
 
   @override
   void initState() {
@@ -37,48 +41,74 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
       preselectedExercise: widget.preselectedExercise,
     );
     _controller.addListener(() => setState(() {}));
+    
+    // Initialize manual calories if editing
+    if (widget.existingExercise != null) {
+      _manualCaloriesController.text = widget.existingExercise!.caloriesBurned.toString();
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _manualCaloriesController.dispose();
     super.dispose();
   }
 
   void _showSnackBar(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: color),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
   Future<void> _handleSave() async {
-    final result = await _controller.saveExercise();
-    if (result == 'success') {
-      if (mounted) {
-        Navigator.of(context).pop();
-        widget.onExerciseSaved?.call();
-        _showSnackBar('Exercise logged successfully!', Colors.green);
+    if (_formKey.currentState?.validate() ?? false) {
+      // Override calories if manual mode is active
+      if (_isManualCalories && _manualCaloriesController.text.isNotEmpty) {
+        final manualCal = int.tryParse(_manualCaloriesController.text);
+        if (manualCal != null && manualCal > 0) {
+          _controller.estimatedCalories = manualCal;
+        }
       }
-    } else {
-      _showSnackBar(result, Colors.red);
+
+      final result = await _controller.saveExercise();
+      if (result == 'success') {
+        if (mounted) {
+          Navigator.of(context).pop();
+          widget.onExerciseSaved?.call();
+          _showSnackBar('Exercise logged successfully!', Colors.green);
+        }
+      } else {
+        _showSnackBar(result, Colors.red);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      insetPadding: const EdgeInsets.all(16),
+      shape: AppDialogTheme.shape,
+      backgroundColor: AppDialogTheme.backgroundColor,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+        constraints: const BoxConstraints(maxWidth: 420, maxHeight: 700),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             _buildHeader(),
             Expanded(
               child: Form(
                 key: _formKey,
-                child: _buildContent(),
+                child: SingleChildScrollView(
+                  child: _isCustomTab ? _buildCustomTab() : _buildPresetTab(),
+                ),
               ),
             ),
+            _buildActions(),
           ],
         ),
       ),
@@ -87,41 +117,95 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
       decoration: const BoxDecoration(
-        color: AppLegacyColors.primaryBlue,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
         ),
       ),
-      child: Row(
+      child: Column(
         children: [
-          const Icon(Icons.fitness_center, color: Colors.white, size: 24),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.existingExercise != null ? 'Edit Exercise' : 'Log Exercise',
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Left: Title
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.existingExercise != null ? 'Edit Exercise' : 'Log Exercise',
+                      style: AppTypography.displaySmall.copyWith(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: AppDialogTheme.titleColor,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Track your workout',
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontSize: 14,
+                        color: const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
                 ),
-                const Text(
-                  'Track your workout',
-                  style: TextStyle(fontSize: 14, color: Colors.white70),
+              ),
+              // Right: Tab Switcher
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
-            ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildTabButton('Preset', !_isCustomTab, () {
+                      setState(() => _isCustomTab = false);
+                    }),
+                    const SizedBox(width: 6),
+                    _buildTabButton('Custom', _isCustomTab, () {
+                      setState(() => _isCustomTab = true);
+                    }),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildContent() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+  Widget _buildTabButton(String label, bool isActive, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFF1A1A1A) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: isActive
+              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 4, offset: const Offset(0, 2))]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: AppTypography.labelMedium.copyWith(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isActive ? Colors.white : const Color(0xFF6B7280),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPresetTab() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -130,15 +214,41 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
           _buildDurationSection(),
           const SizedBox(height: 24),
           _buildIntensitySection(),
-          if (_controller.estimatedCalories > 0) ...[
-            const SizedBox(height: 24),
-            _buildCalorieEstimate(),
-          ],
           const SizedBox(height: 24),
-          _buildNotesSection(),
-          const SizedBox(height: 32),
-          _buildActionButtons(),
+          _buildCalorieSection(),
+          const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCustomTab() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildCustomExerciseName(),
+          const SizedBox(height: 24),
+          _buildDurationSection(),
+          const SizedBox(height: 24),
+          _buildIntensitySection(),
+          const SizedBox(height: 24),
+          _buildCustomCaloriesInput(),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  // Helper method for section labels (matching Food Dialog pattern)
+  Widget _buildSectionLabel(String text, {bool required = false}) {
+    return Text(
+      required ? '$text *' : text,
+      style: AppTypography.labelMedium.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w700,  // Bold (was w600)
+        color: const Color(0xFF374151),
       ),
     );
   }
@@ -147,10 +257,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Choose Exercise *',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
+        _buildSectionLabel('Choose Exercise', required: true),
         const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,
@@ -166,35 +273,37 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
             final exercise = _controller.getExercises()[index];
             final exerciseName = exercise['name']!;
             final isSelected = _controller.isExerciseSelected(exerciseName);
-            
+
             return GestureDetector(
               onTap: () => _controller.selectExercise(exerciseName),
               child: Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: isSelected ? AppLegacyColors.primaryBlue : Colors.grey.shade300,
+                    color: isSelected ? const Color(0xFF1A1A1A) : const Color(0xFFD1D5DB),
                     width: 2,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  color: isSelected ? AppLegacyColors.primaryBlue.withValues(alpha: 0.1) : Colors.white,
+                  color: isSelected ? const Color(0xFFF9FAFB) : Colors.white,
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      exercise['icon']!,
-                      style: const TextStyle(fontSize: 24),
+                    Icon(
+                      _getExerciseIcon(exerciseName),
+                      size: 28,
+                      color: const Color(0xFF4B5563),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     Text(
                       exerciseName,
-                      style: const TextStyle(
+                      style: AppTypography.bodySmall.copyWith(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1A1A1A),
                       ),
                       textAlign: TextAlign.center,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -207,23 +316,55 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
     );
   }
 
+  IconData _getExerciseIcon(String exerciseName) {
+    final iconMap = {
+      'Running': Icons.directions_run,
+      'Walking': Icons.directions_walk,
+      'Cycling': Icons.directions_bike,
+      'Swimming': Icons.pool,
+      'Weight Training': Icons.fitness_center,
+      'Yoga': Icons.self_improvement,
+    };
+    return iconMap[exerciseName] ?? Icons.fitness_center;
+  }
+
+  Widget _buildCustomExerciseName() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionLabel('Exercise Name', required: true),
+        const SizedBox(height: 12),
+        TextFormField(
+          initialValue: _controller.selectedExercise,
+          onChanged: (value) => _controller.selectedExercise = value,
+          style: AppDialogTheme.inputTextStyle,
+          decoration: AppDialogTheme.inputDecoration(
+            hintText: 'e.g., Jump Rope, Pilates',
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Exercise name is required';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _buildDurationSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Duration *',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
+        _buildSectionLabel('Duration', required: true),
         const SizedBox(height: 12),
         TextFormField(
           controller: _controller.durationController,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: const InputDecoration(
-            labelText: 'Minutes',
-            border: OutlineInputBorder(),
-            suffixText: 'min',
+          style: AppDialogTheme.inputTextStyle,
+          decoration: AppDialogTheme.inputDecoration(
+            hintText: 'Minutes',
           ),
           validator: _controller.validateDuration,
           onChanged: _controller.onDurationChanged,
@@ -239,16 +380,16 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: isSelected ? AppLegacyColors.primaryBlue : Colors.grey.shade300,
+                    color: isSelected ? const Color(0xFF1A1A1A) : const Color(0xFFD1D5DB),
                   ),
                   borderRadius: BorderRadius.circular(16),
-                  color: isSelected ? AppLegacyColors.primaryBlue.withValues(alpha: 0.1) : Colors.white,
+                  color: isSelected ? const Color(0xFFF9FAFB) : Colors.white,
                 ),
                 child: Text(
                   '${preset}m',
-                  style: TextStyle(
+                  style: AppTypography.bodySmall.copyWith(
                     fontSize: 12,
-                    color: isSelected ? AppLegacyColors.primaryBlue : Colors.grey.shade700,
+                    color: isSelected ? const Color(0xFF1A1A1A) : const Color(0xFF6B7280),
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -264,10 +405,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Intensity',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
+        _buildSectionLabel('Intensity'),
         const SizedBox(height: 12),
         Row(
           children: _controller.getIntensityLevels().map((intensity) {
@@ -281,15 +419,19 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: isSelected ? AppLegacyColors.primaryBlue : Colors.grey.shade300,
+                        color: isSelected ? const Color(0xFF1A1A1A) : const Color(0xFFD1D5DB),
                         width: 2,
                       ),
                       borderRadius: BorderRadius.circular(8),
-                      color: isSelected ? AppLegacyColors.primaryBlue.withValues(alpha: 0.1) : Colors.white,
+                      color: isSelected ? const Color(0xFFF9FAFB) : Colors.white,
                     ),
                     child: Text(
                       intensity,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      style: AppTypography.labelMedium.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1A1A1A),
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -302,86 +444,184 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
     );
   }
 
-  Widget _buildCalorieEstimate() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.orange.shade50,
-        border: Border.all(color: Colors.orange.shade200),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.local_fire_department, color: Colors.orange),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Estimated Calories', style: TextStyle(fontWeight: FontWeight.w600)),
-              Text(
-                '${_controller.estimatedCalories} calories',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotesSection() {
+  Widget _buildCalorieSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Notes (Optional)',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
+        _buildSectionLabel('Calories Burned'),
         const SizedBox(height: 12),
-        TextFormField(
-          controller: _controller.notesController,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'Add any notes about your workout...',
-            border: OutlineInputBorder(),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9FAFB),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _isManualCalories ? 'MANUAL OVERRIDE' : 'ESTIMATED CALORIES',
+                      style: AppTypography.overline.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF6B7280),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    _isManualCalories
+                        ? SizedBox(
+                            width: 120,
+                            child: TextFormField(
+                              controller: _manualCaloriesController,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              style: AppTypography.dataSmall.copyWith(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF1A1A1A),
+                              ),
+                              decoration: const InputDecoration(
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                border: OutlineInputBorder(),
+                                enabledBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: Color(0xFFD1D5DB)),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: Color(0xFF1A1A1A), width: 2),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (_isManualCalories && (value == null || value.isEmpty)) {
+                                  return 'Required';
+                                }
+                                return null;
+                              },
+                            ),
+                          )
+                        : Text(
+                            '${_controller.estimatedCalories} cal',
+                            style: AppTypography.dataSmall.copyWith(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1A1A1A),
+                            ),
+                          ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isManualCalories = !_isManualCalories;
+                    if (!_isManualCalories) {
+                      _manualCaloriesController.clear();
+                    } else {
+                      _manualCaloriesController.text = _controller.estimatedCalories.toString();
+                    }
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: const Color(0xFFD1D5DB)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _isManualCalories ? 'Auto' : 'Edit',
+                    style: AppTypography.labelMedium.copyWith(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildCustomCaloriesInput() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _controller.canSave && !_controller.isLoading ? _handleSave : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppLegacyColors.primaryBlue,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-            child: _controller.isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                  )
-                : Text(
-                    widget.existingExercise != null ? 'Update' : 'Log Exercise',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                  ),
+        _buildSectionLabel('Calories Burned', required: true),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _manualCaloriesController,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          style: AppDialogTheme.inputTextStyle,
+          decoration: AppDialogTheme.inputDecoration(
+            hintText: 'Enter calories burned',
           ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Calories are required for custom exercises';
+            }
+            final cal = int.tryParse(value);
+            if (cal == null || cal <= 0) {
+              return 'Please enter a valid number';
+            }
+            return null;
+          },
+          onChanged: (value) {
+            final cal = int.tryParse(value);
+            if (cal != null) {
+              _controller.estimatedCalories = cal;
+            }
+          },
         ),
       ],
+    );
+  }
+
+  Widget _buildActions() {
+    return Padding(
+      padding: AppDialogTheme.actionsPadding,
+      child: Row(
+        children: [
+          Expanded(
+            child: TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: AppDialogTheme.cancelButtonStyle,
+              child: const Text('Cancel'),
+            ),
+          ),
+          const SizedBox(width: AppDialogTheme.buttonGap),
+          Expanded(
+            flex: 2,
+            child: FilledButton(
+              onPressed: _controller.canSave && !_controller.isLoading ? _handleSave : null,
+              style: AppDialogTheme.primaryButtonStyle,
+              child: _controller.isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Save',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
