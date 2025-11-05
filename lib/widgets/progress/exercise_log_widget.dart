@@ -6,6 +6,7 @@ import '../../providers/exercise_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../data/models/exercise_entry.dart';
 import '../../config/design_system/theme_design.dart';
+import '../../config/design_system/dialog_theme.dart';
 import 'exercise_entry_dialog.dart';
 
 // TODO: Add localization
@@ -45,24 +46,27 @@ class ExerciseLogWidget extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+        backgroundColor: AppDialogTheme.backgroundColor,
+        shape: AppDialogTheme.shape,
+        contentPadding: AppDialogTheme.contentPadding,
+        actionsPadding: AppDialogTheme.actionsPadding,
+        title: const Text(
+          'Delete Exercise',
+          style: AppDialogTheme.titleStyle,
         ),
-        title: const Text('Delete Exercise'),
-        // ✅ REMOVED: Content text - simplified dialog
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: AppDialogTheme.cancelButtonStyle,
             child: const Text('Cancel'),
           ),
-          TextButton(
+          const SizedBox(width: AppDialogTheme.buttonGap),
+          FilledButton(
             onPressed: () async {
               Navigator.pop(context);
               await provider.deleteExercise(exercise.id);
             },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
+            style: AppDialogTheme.destructiveButtonStyle,
             child: const Text('Delete'),
           ),
         ],
@@ -225,7 +229,7 @@ class ExerciseLogWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: textColor == Colors.black
             ? Colors.black.withValues(alpha: 0.08)
-            : Colors.white.withValues(alpha: 0.1),
+            : Colors.black.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
@@ -303,7 +307,6 @@ class ExerciseLogWidget extends StatelessWidget {
               motion: const ScrollMotion(),
               extentRatio: 0.25,
               children: [
-                // ✅ UPDATED: Custom action with zero padding and explicitly centered icon
                 CustomSlidableAction(
                   onPressed: (_) {
                     _showDeleteConfirmation(context, provider, exercise);
@@ -311,8 +314,8 @@ class ExerciseLogWidget extends StatelessWidget {
                   backgroundColor: Colors.red.shade600,
                   borderRadius: BorderRadius.circular(12),
                   autoClose: true,
-                  padding: EdgeInsets.zero,  // Remove default padding
-                  child: const Center(        // Explicitly center the icon
+                  padding: EdgeInsets.zero,
+                  child: const Center(
                     child: Icon(
                       Icons.delete_outline,
                       color: Colors.white,
@@ -336,7 +339,7 @@ class ExerciseLogWidget extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: textColor == Colors.black
                       ? Colors.black.withValues(alpha: 0.06)
-                      : Colors.white.withValues(alpha: 0.08),
+                      : Colors.black.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
