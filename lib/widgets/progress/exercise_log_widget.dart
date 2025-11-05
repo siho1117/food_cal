@@ -1,6 +1,7 @@
 // lib/widgets/progress/exercise_log_widget.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../providers/exercise_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../data/models/exercise_entry.dart';
@@ -21,16 +22,56 @@ class ExerciseLogWidget extends StatelessWidget {
     this.onExerciseAdded,
   });
 
-  void _showExerciseDialog(BuildContext context, ExerciseProvider provider) {
+  void _showExerciseDialog(
+    BuildContext context,
+    ExerciseProvider provider, {
+    ExerciseEntry? existingExercise,
+  }) {
     showDialog(
       context: context,
       builder: (context) => ExerciseEntryDialog(
         exerciseProvider: provider,
+        existingExercise: existingExercise,
         onExerciseSaved: () {
           if (onExerciseAdded != null) {
             onExerciseAdded!();
           }
         },
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(
+    BuildContext context,
+    ExerciseProvider provider,
+    ExerciseEntry exercise,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text('Delete Exercise'),
+        content: Text(
+          'Are you sure you want to delete "${exercise.name}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await provider.deleteExercise(exercise.id);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
   }
@@ -163,10 +204,11 @@ class ExerciseLogWidget extends StatelessWidget {
               ),
               const SizedBox(width: 16),
 
-              // Right: Exercise List
+              // Right: Exercise List with swipe-to-delete and tap-to-edit
               Expanded(
                 child: _buildExerciseList(
                   context,
+                  provider,
                   exercises,
                   textColor,
                 ),
@@ -253,6 +295,7 @@ class ExerciseLogWidget extends StatelessWidget {
 
   Widget _buildExerciseList(
     BuildContext context,
+    ExerciseProvider provider,
     List<ExerciseEntry> exercises,
     Color textColor,
   ) {
@@ -260,79 +303,118 @@ class ExerciseLogWidget extends StatelessWidget {
       children: exercises.map((exercise) {
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: textColor == Colors.black
-                ? Colors.black.withValues(alpha: 0.06)
-                : Colors.white.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center, // Changed to center for vertical alignment
-            children: [
-              // Icon
-              Container(
-                width: 40,
-                height: 40,
+          child: Slidable(
+            key: ValueKey(exercise.id),
+            endActionPane: ActionPane(
+              motion: const ScrollMotion(),
+              extentRatio: 0.25,
+              children: [
+                SlidableAction(
+                  onPressed: (_) {
+                    _showDeleteConfirmation(context, provider, exercise);
+                  },
+                  backgroundColor: Colors.red.shade600,
+                  foregroundColor: Colors.white,
+                  icon: Icons.delete_outline,
+                  label: 'Delete',
+                  borderRadius: BorderRadius.circular(12),
+                  autoClose: true,
+                ),
+              ],
+            ),
+            child: InkWell(
+              onTap: () {
+                _showExerciseDialog(
+                  context,
+                  provider,
+                  existingExercise: exercise,
+                );
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: textColor == Colors.black
-                      ? Colors.black.withValues(alpha: 0.1)
-                      : Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
+                      ? Colors.black.withValues(alpha: 0.06)
+                      : Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  _getExerciseIconData(exercise.name),
-                  size: 20,
-                  color: textColor,
-                ),
-              ),
-              const SizedBox(width: 14),
-
-              // Exercise Info - 3 lines
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Line 1: Exercise name
-                    Text(
-                      exercise.name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        height: 1.3,
+                    // Icon
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: textColor == Colors.black
+                            ? Colors.black.withValues(alpha: 0.1)
+                            : Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        _getExerciseIconData(exercise.name),
+                        size: 20,
                         color: textColor,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
-                    
-                    // Line 2: Calories (emphasized - key metric)
-                    Text(
-                      '${exercise.caloriesBurned} cal',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        height: 1.2,
-                        color: textColor.withValues(alpha: 0.8),
+                    const SizedBox(width: 14),
+
+                    // Exercise Info - 3 lines
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Line 1: Exercise name
+                          Text(
+                            exercise.name,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              height: 1.3,
+                              color: textColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          
+                          // Line 2: Calories (emphasized - key metric)
+                          Text(
+                            '${exercise.caloriesBurned} cal',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              height: 1.2,
+                              color: textColor.withValues(alpha: 0.8),
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          
+                          // Line 3: Duration
+                          Text(
+                            '${exercise.duration} min',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              height: 1.2,
+                              color: textColor.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 3),
                     
-                    // Line 3: Duration
-                    Text(
-                      '${exercise.duration} min',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        height: 1.2,
-                        color: textColor.withValues(alpha: 0.7),
-                      ),
+                    // Edit indicator (chevron)
+                    Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: textColor.withValues(alpha: 0.4),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
         );
       }).toList(),
