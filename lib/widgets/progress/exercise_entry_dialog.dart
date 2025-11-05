@@ -66,11 +66,25 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
 
   Future<void> _handleSave() async {
     if (_formKey.currentState?.validate() ?? false) {
-      if (_isManualCalories && _manualCaloriesController.text.isNotEmpty) {
+      // Handle manual calories for preset tab
+      if (!_isCustomTab && _isManualCalories && _manualCaloriesController.text.isNotEmpty) {
         final manualCal = int.tryParse(_manualCaloriesController.text);
         if (manualCal != null && manualCal > 0) {
           _controller.estimatedCalories = manualCal;
         }
+      }
+      
+      // Handle calories for custom tab (always from _manualCaloriesController)
+      if (_isCustomTab && _manualCaloriesController.text.isNotEmpty) {
+        final customCal = int.tryParse(_manualCaloriesController.text);
+        if (customCal != null && customCal > 0) {
+          _controller.estimatedCalories = customCal;
+        }
+      }
+
+      // For custom tab, set default intensity since user doesn't select it
+      if (_isCustomTab) {
+        _controller.selectedIntensity = 'Moderate';
       }
 
       final result = await _controller.saveExercise();
@@ -78,9 +92,10 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
         if (mounted) {
           Navigator.of(context).pop();
           widget.onExerciseSaved?.call();
-          _showSnackBar('Exercise logged successfully!', Colors.green);
+          // ✅ REMOVED: Success snackbar - dialog closes silently
         }
       } else {
+        // Only show snackbar for errors
         _showSnackBar(result, Colors.red);
       }
     }
@@ -211,8 +226,6 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
           _buildCustomExerciseName(),
           const SizedBox(height: 24),
           _buildDurationSection(),
-          const SizedBox(height: 24),
-          _buildIntensitySection(),
           const SizedBox(height: 24),
           _buildCustomCaloriesInput(),
           const SizedBox(height: 24),

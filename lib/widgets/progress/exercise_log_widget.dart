@@ -32,11 +32,7 @@ class ExerciseLogWidget extends StatelessWidget {
       builder: (context) => ExerciseEntryDialog(
         exerciseProvider: provider,
         existingExercise: existingExercise,
-        onExerciseSaved: () {
-          if (onExerciseAdded != null) {
-            onExerciseAdded!();
-          }
-        },
+        onExerciseSaved: onExerciseAdded,
       ),
     );
   }
@@ -53,9 +49,7 @@ class ExerciseLogWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
         ),
         title: const Text('Delete Exercise'),
-        content: Text(
-          'Are you sure you want to delete "${exercise.name}"?',
-        ),
+        // ✅ REMOVED: Content text - simplified dialog
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -309,16 +303,22 @@ class ExerciseLogWidget extends StatelessWidget {
               motion: const ScrollMotion(),
               extentRatio: 0.25,
               children: [
-                SlidableAction(
+                // ✅ UPDATED: Custom action with zero padding and explicitly centered icon
+                CustomSlidableAction(
                   onPressed: (_) {
                     _showDeleteConfirmation(context, provider, exercise);
                   },
                   backgroundColor: Colors.red.shade600,
-                  foregroundColor: Colors.white,
-                  icon: Icons.delete_outline,
-                  label: 'Delete',
                   borderRadius: BorderRadius.circular(12),
                   autoClose: true,
+                  padding: EdgeInsets.zero,  // Remove default padding
+                  child: const Center(        // Explicitly center the icon
+                    child: Icon(
+                      Icons.delete_outline,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
                 ),
               ],
             ),
