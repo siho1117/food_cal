@@ -5,11 +5,12 @@ import '../providers/progress_data.dart';
 import '../providers/exercise_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/progress/combined_weight_widget.dart';
-import '../widgets/progress/widget_bmi.dart'; // ✅ NEW: Import BMI widget
+import '../widgets/progress/widget_bmi.dart';
 import '../widgets/progress/weight_history_graph_widget.dart';
 import '../widgets/progress/energy_metrics_widget.dart';
 import '../widgets/progress/daily_burn_widget.dart';
 import '../widgets/progress/exercise_log_widget.dart';
+import '../widgets/common/week_navigation_widget.dart';
 import '../config/design_system/theme_background.dart';
 import '../config/design_system/theme_design.dart';
 import '../widgets/common/custom_app_bar.dart';
@@ -22,6 +23,18 @@ class ProgressScreen extends StatefulWidget {
 }
 
 class _ProgressScreenState extends State<ProgressScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Reset to today when screen is first created
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final exerciseProvider = context.read<ExerciseProvider>();
+      if (!exerciseProvider.isToday) {
+        exerciseProvider.changeDate(DateTime.now());
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
@@ -63,37 +76,38 @@ class _ProgressScreenState extends State<ProgressScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Main Header
-                        const Text(
-                          'ACTIVITY & PROGRESS',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 1.5,
-                          ),
+                        // Exercise Log Widget - TOP
+                        ExerciseLogWidget(
+                          showHeader: true,
+                          onExerciseAdded: () {
+                            exerciseProvider.refreshData();
+                          },
                         ),
                         
-                        const SizedBox(height: 30),
+                        const SizedBox(height: 20),
                         
-                        // Progress Section
-                        _buildSectionHeader('Progress Tracking'),
+                        // Week Navigation Widget - SECOND (with no horizontal padding to prevent overflow)
+                        WeekNavigationWidget(
+                          selectedDate: exerciseProvider.selectedDate,
+                          onDateChanged: (date) {
+                            exerciseProvider.changeDate(date);
+                          },
+                          daysToShow: 8,
+                          padding: EdgeInsets.zero, // Remove padding to prevent overflow
+                        ),
                         
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                         
-                        // ✅ NEW: Two-column layout - BMI (1/3) + Weight (2/3)
+                        // Two-column layout - BMI (1/3) + Weight (2/3)
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Left column - BMI Widget (1/3 width, matches weight height)
                             Expanded(
-                              flex: 1, // Takes 1/3 of available width
+                              flex: 1,
                               child: LayoutBuilder(
                                 builder: (context, constraints) {
-                                  // Calculate height to match the square weight widget
-                                  // Weight widget width = (total width - 16px gap) * 2/3
-                                  // Its height = its width (because it's square)
-                                  final totalWidth = constraints.maxWidth * 3; // Reverse the 1/3 to get total
+                                  final totalWidth = constraints.maxWidth * 3;
                                   final weightWidgetWidth = (totalWidth - 16) * 2 / 3;
                                   final height = weightWidgetWidth;
                                   
@@ -122,9 +136,9 @@ class _ProgressScreenState extends State<ProgressScreen> {
                             
                             // Right column - Weight Widget (2/3 width, square)
                             Expanded(
-                              flex: 2, // Takes 2/3 of available width
+                              flex: 2,
                               child: AspectRatio(
-                                aspectRatio: 1.0, // Square shape
+                                aspectRatio: 1.0,
                                 child: CombinedWeightWidget(
                                   currentWeight: progressData.currentWeight,
                                   isMetric: progressData.isMetric,
@@ -151,12 +165,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                           currentWeight: progressData.currentWeight,
                         ),
                         
-                        const SizedBox(height: 40),
-                        
-                        // Exercise Section
-                        _buildSectionHeader('Exercise Tracking'),
-                        
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                         
                         // Daily Burn Widget
                         DailyBurnWidget(
@@ -164,16 +173,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
                           currentWeight: progressData.currentWeight,
                           totalCaloriesBurned: exerciseProvider.totalCaloriesBurned,
                           weeklyCaloriesBurned: 0,
-                        ),
-                        
-                        const SizedBox(height: 20),
-                        
-                        // Exercise Log Widget
-                        ExerciseLogWidget(
-                          showHeader: true,
-                          onExerciseAdded: () {
-                            exerciseProvider.refreshData();
-                          },
                         ),
                         
                         // Bottom padding for navigation bar
@@ -187,44 +186,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    IconData icon;
-    if (title.contains('Progress')) {
-      icon = Icons.trending_up;
-    } else if (title.contains('Exercise')) {
-      icon = Icons.fitness_center_rounded;
-    } else {
-      icon = Icons.analytics_outlined;
-    }
-    
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: Colors.white,
-        ),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-            letterSpacing: 0.5,
-          ),
-        ),
-        Expanded(
-          child: Container(
-            margin: const EdgeInsets.only(left: 12),
-            height: 1,
-            color: Colors.white.withOpacity(0.3),
-          ),
-        ),
-      ],
     );
   }
 

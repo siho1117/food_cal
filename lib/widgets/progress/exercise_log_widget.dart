@@ -10,7 +10,7 @@ import '../../config/design_system/dialog_theme.dart';
 import 'exercise_entry_dialog.dart';
 
 // TODO: Add localization
-// Required translation keys: todaysActivity, calories, minutes, exercises, exercise,
+// Required translation keys: exercise, calories, minutes, exercises,
 // noActivityYet, logFirstExercise, logExercise
 
 class ExerciseLogWidget extends StatelessWidget {
@@ -154,12 +154,12 @@ class ExerciseLogWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // Header - Fixed title
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Today's Activity",
+                'Exercise',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -175,7 +175,7 @@ class ExerciseLogWidget extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: textColor == Colors.black
                         ? Colors.black.withValues(alpha: 0.1)
-                        : Colors.white.withValues(alpha: 0.15),
+                        : Colors.black.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -193,12 +193,12 @@ class ExerciseLogWidget extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left: Stats Card
-              _buildStatsCard(
-                textColor,
-                totalCalories,
-                totalMinutes,
-                exercises.length,
+              // Left: Stats Card with Animated Numbers
+              _AnimatedStatsCard(
+                textColor: textColor,
+                totalCalories: totalCalories,
+                totalMinutes: totalMinutes,
+                exerciseCount: exercises.length,
               ),
               const SizedBox(width: 16),
 
@@ -215,79 +215,6 @@ class ExerciseLogWidget extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStatsCard(
-    Color textColor,
-    int totalCalories,
-    int totalMinutes,
-    int exerciseCount,
-  ) {
-    return Container(
-      width: 110,
-      decoration: BoxDecoration(
-        color: textColor == Colors.black
-            ? Colors.black.withValues(alpha: 0.08)
-            : Colors.black.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-      child: Column(
-        children: [
-          // Calories
-          _buildStatItem(textColor, totalCalories.toString(), 'Calories'),
-          Container(
-            height: 1,
-            width: 50,
-            margin: const EdgeInsets.symmetric(vertical: 10),
-            color: textColor.withValues(alpha: 0.2),
-          ),
-
-          // Minutes
-          _buildStatItem(textColor, totalMinutes.toString(), 'Minutes'),
-          Container(
-            height: 1,
-            width: 50,
-            margin: const EdgeInsets.symmetric(vertical: 10),
-            color: textColor.withValues(alpha: 0.2),
-          ),
-
-          // Exercises
-          _buildStatItem(
-            textColor,
-            exerciseCount.toString(),
-            exerciseCount == 1 ? 'Exercise' : 'Exercises',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(Color textColor, String value, String label) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.w700,
-            height: 1,
-            color: textColor,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label.toUpperCase(),
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.4,
-            color: textColor.withValues(alpha: 0.7),
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
     );
   }
 
@@ -352,7 +279,7 @@ class ExerciseLogWidget extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: textColor == Colors.black
                             ? Colors.black.withValues(alpha: 0.1)
-                            : Colors.white.withValues(alpha: 0.15),
+                            : Colors.black.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
@@ -446,11 +373,11 @@ class ExerciseLogWidget extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          // Header
+          // Header - Fixed title
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              "Today's Activity",
+              'Exercise',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -468,7 +395,7 @@ class ExerciseLogWidget extends StatelessWidget {
             decoration: BoxDecoration(
               color: textColor == Colors.black
                   ? Colors.black.withValues(alpha: 0.1)
-                  : Colors.white.withValues(alpha: 0.15),
+                  : Colors.black.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -503,7 +430,7 @@ class ExerciseLogWidget extends StatelessWidget {
               decoration: BoxDecoration(
                 color: textColor == Colors.black
                     ? Colors.black.withValues(alpha: 0.1)
-                    : Colors.white.withValues(alpha: 0.15),
+                    : Colors.black.withValues(alpha: 0.15),
                 border: Border.all(
                   color: textColor.withValues(alpha: 0.3),
                   width: 2,
@@ -613,6 +540,179 @@ class ExerciseLogWidget extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// Animated Stats Card Widget
+class _AnimatedStatsCard extends StatefulWidget {
+  final Color textColor;
+  final int totalCalories;
+  final int totalMinutes;
+  final int exerciseCount;
+
+  const _AnimatedStatsCard({
+    required this.textColor,
+    required this.totalCalories,
+    required this.totalMinutes,
+    required this.exerciseCount,
+  });
+
+  @override
+  State<_AnimatedStatsCard> createState() => _AnimatedStatsCardState();
+}
+
+class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _caloriesAnimation;
+  late Animation<double> _minutesAnimation;
+  late Animation<double> _exerciseAnimation;
+
+  int _previousCalories = 0;
+  int _previousMinutes = 0;
+  int _previousExercises = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _updateAnimations();
+    _controller.forward();
+  }
+
+  @override
+  void didUpdateWidget(_AnimatedStatsCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    if (oldWidget.totalCalories != widget.totalCalories ||
+        oldWidget.totalMinutes != widget.totalMinutes ||
+        oldWidget.exerciseCount != widget.exerciseCount) {
+      _previousCalories = oldWidget.totalCalories;
+      _previousMinutes = oldWidget.totalMinutes;
+      _previousExercises = oldWidget.exerciseCount;
+      
+      _controller.reset();
+      _updateAnimations();
+      _controller.forward();
+    }
+  }
+
+  void _updateAnimations() {
+    _caloriesAnimation = Tween<double>(
+      begin: _previousCalories.toDouble(),
+      end: widget.totalCalories.toDouble(),
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _minutesAnimation = Tween<double>(
+      begin: _previousMinutes.toDouble(),
+      end: widget.totalMinutes.toDouble(),
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _exerciseAnimation = Tween<double>(
+      begin: _previousExercises.toDouble(),
+      end: widget.exerciseCount.toDouble(),
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 110,
+      decoration: BoxDecoration(
+        color: widget.textColor == Colors.black
+            ? Colors.black.withValues(alpha: 0.08)
+            : Colors.black.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Column(
+            children: [
+              // Calories
+              _buildStatItem(
+                widget.textColor,
+                _caloriesAnimation.value.round().toString(),
+                'Calories',
+              ),
+              Container(
+                height: 1,
+                width: 50,
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                color: widget.textColor.withValues(alpha: 0.2),
+              ),
+
+              // Minutes
+              _buildStatItem(
+                widget.textColor,
+                _minutesAnimation.value.round().toString(),
+                'Minutes',
+              ),
+              Container(
+                height: 1,
+                width: 50,
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                color: widget.textColor.withValues(alpha: 0.2),
+              ),
+
+              // Exercises
+              _buildStatItem(
+                widget.textColor,
+                _exerciseAnimation.value.round().toString(),
+                _exerciseAnimation.value.round() == 1 ? 'Exercise' : 'Exercises',
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStatItem(Color textColor, String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.w700,
+            height: 1,
+            color: textColor,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label.toUpperCase(),
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.4,
+            color: textColor.withValues(alpha: 0.7),
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }
