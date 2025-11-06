@@ -6,7 +6,8 @@ import '../data/repositories/food_repository.dart';
 import '../data/repositories/user_repository.dart';
 import '../data/models/food_item.dart';
 import '../data/models/user_profile.dart';
-import '../utils/home_statistics_calculator.dart';
+import '../utils/macro_calculator.dart';
+import '../utils/daily_calorie_calculator.dart';
 
 class HomeProvider extends ChangeNotifier {
   // Direct instantiation - both repositories use singleton services internally
@@ -93,14 +94,13 @@ class HomeProvider extends ChangeNotifier {
   double get budgetRemaining => (_dailyFoodBudget - _totalFoodCost).clamp(0.0, _dailyFoodBudget);
   double get budgetProgress => _dailyFoodBudget > 0 ? (_totalFoodCost / _dailyFoodBudget).clamp(0.0, 1.0) : 0.0;
 
-  // Macro targets
+  // Macro targets - NOW USING PERSONALIZED CALCULATIONS ✅
   Map<String, int> get targetMacros {
-    final calorieGoal = _calorieGoal;
-    return {
-      'protein': (calorieGoal * 0.30 / 4).round(), // 30% of calories from protein
-      'carbs': (calorieGoal * 0.40 / 4).round(),   // 40% of calories from carbs
-      'fat': (calorieGoal * 0.30 / 9).round(),     // 30% of calories from fat
-    };
+    return MacroCalculator.calculateTargets(
+      calorieGoal: _calorieGoal,
+      userProfile: _userProfile,
+      currentWeight: _currentWeight,
+    );
   }
 
   bool get isOverFoodBudget => _totalFoodCost > _dailyFoodBudget;
@@ -309,9 +309,9 @@ class HomeProvider extends ChangeNotifier {
     await updateFoodBudget(budget); // Delegate to existing method
   }
 
-  /// Calculate calorie goal based on user profile
+  /// Calculate calorie goal based on user profile - NOW USING NEW CALCULATOR ✅
   void _calculateCalorieGoal() {
-    _calorieGoal = HomeStatisticsCalculator.calculateCalorieGoal(
+    _calorieGoal = DailyCalorieCalculator.calculateDailyGoal(
       userProfile: _userProfile,
       currentWeight: _currentWeight,
     );
