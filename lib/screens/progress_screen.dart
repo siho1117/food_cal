@@ -76,17 +76,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Exercise Log Widget - TOP
-                        ExerciseLogWidget(
-                          showHeader: true,
-                          onExerciseAdded: () {
-                            exerciseProvider.refreshData();
-                          },
-                        ),
-                        
-                        const SizedBox(height: 20),
-                        
-                        // Week Navigation Widget - SECOND (with no horizontal padding to prevent overflow)
+                        // ✅ Week Navigation Widget - FIRST (at the top, no date display)
                         WeekNavigationWidget(
                           selectedDate: exerciseProvider.selectedDate,
                           onDateChanged: (date) {
@@ -94,6 +84,17 @@ class _ProgressScreenState extends State<ProgressScreen> {
                           },
                           daysToShow: 8,
                           padding: EdgeInsets.zero, // Remove padding to prevent overflow
+                          showDateDisplay: false, // ✅ Hide date display on progress screen
+                        ),
+                        
+                        const SizedBox(height: 20),
+                        
+                        // Exercise Log Widget - SECOND
+                        ExerciseLogWidget(
+                          showHeader: true,
+                          onExerciseAdded: () {
+                            exerciseProvider.refreshData();
+                          },
                         ),
                         
                         const SizedBox(height: 20),

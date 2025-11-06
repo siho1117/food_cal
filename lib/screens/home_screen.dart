@@ -30,7 +30,14 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<HomeProvider>().refreshData();
+      final homeProvider = context.read<HomeProvider>();
+      
+      // ✅ Reset to today when screen is first created (like progress screen)
+      if (!homeProvider.isToday) {
+        homeProvider.changeDate(DateTime.now());
+      } else {
+        homeProvider.refreshData();
+      }
     });
   }
 
@@ -102,17 +109,18 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
 
                           const SizedBox(height: 20),
 
-                          // 2. Week Navigation (MOVED UP - now above Macros)
+                          // 2. Week Navigation (shows date display on home)
                           WeekNavigationWidget(
                             selectedDate: homeProvider.selectedDate,
                             onDateChanged: (date) => homeProvider.changeDate(date),
                             daysToShow: 8,
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                            showDateDisplay: true, // ✅ Keep date display on home screen
                           ),
 
                           const SizedBox(height: 20),
 
-                          // 3. Macronutrient Widget (MOVED DOWN - now below Week Nav)
+                          // 3. Macronutrient Widget
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 20),
                             child: MacronutrientWidget(),
