@@ -23,13 +23,8 @@ class FoodLogWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer2<HomeProvider, ThemeProvider>(
       builder: (context, homeProvider, themeProvider, child) {
-        // Combine all food items from all meals
-        final List<FoodItem> allFoodItems = [];
-        
-        for (final mealType in ['breakfast', 'lunch', 'dinner', 'snack']) {
-          final mealItems = homeProvider.entriesByMeal[mealType] ?? [];
-          allFoodItems.addAll(mealItems);
-        }
+        // Get all food items
+        final allFoodItems = List<FoodItem>.from(homeProvider.foodEntries);
 
         // Sort by timestamp (newest first)
         allFoodItems.sort((a, b) => b.timestamp.compareTo(a.timestamp));
