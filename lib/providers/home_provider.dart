@@ -13,7 +13,7 @@ class HomeProvider extends ChangeNotifier {
   // Direct instantiation - both repositories use singleton services internally
   final FoodRepository _foodRepository = FoodRepository();
   final UserRepository _userRepository = UserRepository();
-  
+
   // Loading state
   bool _isLoading = true;
   bool get isLoading => _isLoading;
@@ -33,13 +33,8 @@ class HomeProvider extends ChangeNotifier {
   double? get currentWeight => _currentWeight;
 
   // Food entries
-  Map<String, List<FoodItem>> _entriesByMeal = {
-    'breakfast': [],
-    'lunch': [],
-    'dinner': [],
-    'snack': [],
-  };
-  Map<String, List<FoodItem>> get entriesByMeal => _entriesByMeal;
+  List<FoodItem> _foodEntries = [];
+  List<FoodItem> get foodEntries => _foodEntries;
 
   // Calorie tracking
   int _calorieGoal = 2000;
@@ -56,7 +51,7 @@ class HomeProvider extends ChangeNotifier {
   double get expectedDailyPercentage {
     final now = DateTime.now();
     if (!_isSameDay(now, _selectedDate)) return 1.0; // Past/future dates
-    
+
     const minutesInDay = 24 * 60;
     final currentMinutes = now.hour * 60 + now.minute;
     return (currentMinutes / minutesInDay).clamp(0.0, 1.0);
@@ -68,13 +63,11 @@ class HomeProvider extends ChangeNotifier {
     double carbs = 0;
     double fat = 0;
 
-    for (final mealItems in _entriesByMeal.values) {
-      for (final item in mealItems) {
-        final nutrition = item.getNutritionForServing();
-        protein += nutrition['proteins'] ?? 0;
-        carbs += nutrition['carbs'] ?? 0;
-        fat += nutrition['fats'] ?? 0;
-      }
+    for (final item in _foodEntries) {
+      final nutrition = item.getNutritionForServing();
+      protein += nutrition['proteins'] ?? 0;
+      carbs += nutrition['carbs'] ?? 0;
+      fat += nutrition['fats'] ?? 0;
     }
 
     return {
@@ -108,7 +101,7 @@ class HomeProvider extends ChangeNotifier {
   Map<String, double> get macroProgressPercentages {
     final consumed = consumedMacros;
     final targets = targetMacros;
-    
+
     return {
       'protein': targets['protein']! > 0 ? (consumed['protein']! / targets['protein']!).clamp(0.0, 1.0) : 0.0,
       'carbs': targets['carbs']! > 0 ? (consumed['carbs']! / targets['carbs']!).clamp(0.0, 1.0) : 0.0,
@@ -116,71 +109,51 @@ class HomeProvider extends ChangeNotifier {
     };
   }
 
-  int get mealsCount {
-    return (_entriesByMeal['breakfast']?.length ?? 0) +
-           (_entriesByMeal['lunch']?.length ?? 0) +
-           (_entriesByMeal['dinner']?.length ?? 0) +
-           (_entriesByMeal['snack']?.length ?? 0);
-  }
-
-  Map<String, int> get mealCountsByType {
-    return {
-      'breakfast': _entriesByMeal['breakfast']?.length ?? 0,
-      'lunch': _entriesByMeal['lunch']?.length ?? 0,
-      'dinner': _entriesByMeal['dinner']?.length ?? 0,
-      'snack': _entriesByMeal['snack']?.length ?? 0,
-    };
-  }
+  int get foodEntriesCount => _foodEntries.length;
 
   // Weekly cost calculation
   double get weeklyFoodCost {
     double total = 0.0;
-    
+
     try {
       final now = DateTime.now();
       final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-      
-      for (final mealType in ['breakfast', 'lunch', 'dinner', 'snack']) {
-        final mealItems = _entriesByMeal[mealType] ?? [];
-        for (final item in mealItems) {
-          if (item.timestamp.isAfter(startOfWeek) || _isSameDay(item.timestamp, startOfWeek)) {
-            final itemCost = item.getCostForServing();
-            if (itemCost != null && itemCost > 0) {
-              total += itemCost;
-            }
+
+      for (final item in _foodEntries) {
+        if (item.timestamp.isAfter(startOfWeek) || _isSameDay(item.timestamp, startOfWeek)) {
+          final itemCost = item.getCostForServing();
+          if (itemCost != null && itemCost > 0) {
+            total += itemCost;
           }
         }
       }
     } catch (e) {
       debugPrint('Error calculating weekly food cost: $e');
     }
-    
+
     return total;
   }
 
   // Monthly cost calculation
   double get monthlyFoodCost {
     double total = 0.0;
-    
+
     try {
       final now = DateTime.now();
       final startOfMonth = DateTime(now.year, now.month, 1);
-      
-      for (final mealType in ['breakfast', 'lunch', 'dinner', 'snack']) {
-        final mealItems = _entriesByMeal[mealType] ?? [];
-        for (final item in mealItems) {
-          if (item.timestamp.isAfter(startOfMonth) || _isSameDay(item.timestamp, startOfMonth)) {
-            final itemCost = item.getCostForServing();
-            if (itemCost != null && itemCost > 0) {
-              total += itemCost;
-            }
+
+      for (final item in _foodEntries) {
+        if (item.timestamp.isAfter(startOfMonth) || _isSameDay(item.timestamp, startOfMonth)) {
+          final itemCost = item.getCostForServing();
+          if (itemCost != null && itemCost > 0) {
+            total += itemCost;
           }
         }
       }
     } catch (e) {
       debugPrint('Error calculating monthly food cost: $e');
     }
-    
+
     return total;
   }
 
@@ -239,7 +212,7 @@ class HomeProvider extends ChangeNotifier {
     try {
       // Load user profile
       _userProfile = await _userRepository.getUserProfile();
-      
+
       // Load current weight
       final latestWeight = await _userRepository.getLatestWeightEntry();
       _currentWeight = latestWeight?.weight;
@@ -252,32 +225,10 @@ class HomeProvider extends ChangeNotifier {
   /// Load food entries for the selected date
   Future<void> _loadFoodEntries() async {
     try {
-      final entries = await _foodRepository.getFoodEntriesForDate(_selectedDate);
-      
-      // Clear existing entries
-      _entriesByMeal = {
-        'breakfast': [],
-        'lunch': [],
-        'dinner': [],
-        'snack': [],
-      };
-
-      // Group entries by meal type
-      for (final entry in entries) {
-        final mealType = entry.mealType.toLowerCase();
-        if (_entriesByMeal.containsKey(mealType)) {
-          _entriesByMeal[mealType]!.add(entry);
-        }
-      }
+      _foodEntries = await _foodRepository.getFoodEntriesForDate(_selectedDate);
     } catch (e) {
       debugPrint('Error loading food entries: $e');
-      // Initialize with empty data if loading fails
-      _entriesByMeal = {
-        'breakfast': [],
-        'lunch': [],
-        'dinner': [],
-        'snack': [],
-      };
+      _foodEntries = [];
     }
   }
 
@@ -305,10 +256,6 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> setDailyFoodBudget(double budget) async {
-    await updateFoodBudget(budget); // Delegate to existing method
-  }
-
   /// Calculate calorie goal based on user profile - NOW USING NEW CALCULATOR ✅
   void _calculateCalorieGoal() {
     _calorieGoal = DailyCalorieCalculator.calculateDailyGoal(
@@ -322,17 +269,15 @@ class HomeProvider extends ChangeNotifier {
     _totalCalories = 0;
     _totalFoodCost = 0.0;
 
-    for (final mealItems in _entriesByMeal.values) {
-      for (final item in mealItems) {
-        // Calculate calories
-        final nutrition = item.getNutritionForServing();
-        _totalCalories += (nutrition['calories'] ?? 0).round();
+    for (final item in _foodEntries) {
+      // Calculate calories
+      final nutrition = item.getNutritionForServing();
+      _totalCalories += (nutrition['calories'] ?? 0).round();
 
-        // Calculate cost
-        final cost = item.getCostForServing();
-        if (cost != null) {
-          _totalFoodCost += cost;
-        }
+      // Calculate cost
+      final cost = item.getCostForServing();
+      if (cost != null) {
+        _totalFoodCost += cost;
       }
     }
   }
@@ -342,17 +287,14 @@ class HomeProvider extends ChangeNotifier {
     try {
       // Save to storage
       await _foodRepository.saveFoodEntry(entry);
-      
+
       // If it's for the currently selected date, add to local state
       if (_isSameDay(entry.timestamp, _selectedDate)) {
-        final mealType = entry.mealType.toLowerCase();
-        if (_entriesByMeal.containsKey(mealType)) {
-          _entriesByMeal[mealType]!.add(entry);
-          
-          // Recalculate totals
-          _calculateTotals();
-          notifyListeners();
-        }
+        _foodEntries.add(entry);
+
+        // Recalculate totals
+        _calculateTotals();
+        notifyListeners();
       }
     } catch (e) {
       debugPrint('Error adding food entry: $e');
@@ -365,18 +307,14 @@ class HomeProvider extends ChangeNotifier {
     try {
       // Save to storage
       await _foodRepository.updateFoodEntry(updatedItem);
-      
+
       // Update in local state if it's for the current date
       if (_isSameDay(updatedItem.timestamp, _selectedDate)) {
-        final mealType = updatedItem.mealType.toLowerCase();
-        if (_entriesByMeal.containsKey(mealType)) {
-          final items = _entriesByMeal[mealType]!;
-          final index = items.indexWhere((item) => item.id == updatedItem.id);
-          if (index != -1) {
-            items[index] = updatedItem;
-            _calculateTotals();
-            notifyListeners();
-          }
+        final index = _foodEntries.indexWhere((item) => item.id == updatedItem.id);
+        if (index != -1) {
+          _foodEntries[index] = updatedItem;
+          _calculateTotals();
+          notifyListeners();
         }
       }
     } catch (e) {
@@ -389,31 +327,20 @@ class HomeProvider extends ChangeNotifier {
   Future<void> deleteFoodEntry(String entryId) async {
     try {
       // Find the item first to get its timestamp
-      FoodItem? itemToDelete;
-      for (final mealType in _entriesByMeal.keys) {
-        final items = _entriesByMeal[mealType]!;
-        for (final item in items) {
-          if (item.id == entryId) {
-            itemToDelete = item;
-            break;
-          }
-        }
-        if (itemToDelete != null) break;
-      }
+      final itemToDelete = _foodEntries.firstWhere(
+        (item) => item.id == entryId,
+        orElse: () => throw Exception('Food entry not found'),
+      );
 
-      if (itemToDelete != null) {
-        // Delete from storage with both id and timestamp
-        await _foodRepository.deleteFoodEntry(entryId, itemToDelete.timestamp);
-        
-        // Remove from local state
-        for (final mealType in _entriesByMeal.keys) {
-          _entriesByMeal[mealType]!.removeWhere((item) => item.id == entryId);
-        }
-        
-        // Recalculate totals
-        _calculateTotals();
-        notifyListeners();
-      }
+      // Delete from storage with both id and timestamp
+      await _foodRepository.deleteFoodEntry(entryId, itemToDelete.timestamp);
+
+      // Remove from local state
+      _foodEntries.removeWhere((item) => item.id == entryId);
+
+      // Recalculate totals
+      _calculateTotals();
+      notifyListeners();
     } catch (e) {
       debugPrint('Error deleting food entry: $e');
       rethrow;
@@ -427,11 +354,6 @@ class HomeProvider extends ChangeNotifier {
            date1.day == date2.day;
   }
 
-  /// Get meal items for a specific meal type
-  List<FoodItem> getMealItems(String mealType) {
-    return _entriesByMeal[mealType.toLowerCase()] ?? [];
-  }
-
   /// Check if the selected date is today
   bool get isToday => _isSameDay(_selectedDate, DateTime.now());
 
@@ -441,23 +363,23 @@ class HomeProvider extends ChangeNotifier {
   /// Get formatted date string for display
   String get formattedSelectedDate {
     if (isToday) return 'Today';
-    
+
     final now = DateTime.now();
     final yesterday = now.subtract(const Duration(days: 1));
     if (_isSameDay(_selectedDate, yesterday)) return 'Yesterday';
-    
+
     final tomorrow = now.add(const Duration(days: 1));
     if (_isSameDay(_selectedDate, tomorrow)) return 'Tomorrow';
-    
+
     // Format as "Mon, Dec 25"
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    
+
     final weekday = weekdays[_selectedDate.weekday - 1];
     final month = months[_selectedDate.month - 1];
     final day = _selectedDate.day;
-    
+
     return '$weekday, $month $day';
   }
 }
