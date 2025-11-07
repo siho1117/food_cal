@@ -1,19 +1,23 @@
 // lib/providers/home_provider.dart
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/repositories/food_repository.dart';
 import '../data/repositories/user_repository.dart';
+import '../data/services/budget_service.dart';
 import '../data/models/food_item.dart';
 import '../data/models/user_profile.dart';
 import '../utils/macro_calculator.dart';
 import '../utils/daily_calorie_calculator.dart';
+import '../utils/cost_calculator.dart';
+import '../utils/progress_calculator.dart';
+import '../utils/date_helper.dart';
 
 class HomeProvider extends ChangeNotifier {
   // Direct instantiation - both repositories use singleton services internally
   final FoodRepository _foodRepository = FoodRepository();
   final UserRepository _userRepository = UserRepository();
-  
+  final BudgetService _budgetService = BudgetService();
+
   // Loading state
   bool _isLoading = true;
   bool get isLoading => _isLoading;
@@ -33,13 +37,8 @@ class HomeProvider extends ChangeNotifier {
   double? get currentWeight => _currentWeight;
 
   // Food entries
-  Map<String, List<FoodItem>> _entriesByMeal = {
-    'breakfast': [],
-    'lunch': [],
-    'dinner': [],
-    'snack': [],
-  };
-  Map<String, List<FoodItem>> get entriesByMeal => _entriesByMeal;
+  List<FoodItem> _foodEntries = [];
+  List<FoodItem> get foodEntries => _foodEntries;
 
   // Calorie tracking
   int _calorieGoal = 2000;
@@ -48,19 +47,25 @@ class HomeProvider extends ChangeNotifier {
   int _totalCalories = 0;
   int get totalCalories => _totalCalories;
 
-  int get caloriesRemaining => (_calorieGoal - _totalCalories).clamp(0, _calorieGoal);
-  bool get isOverBudget => _totalCalories > _calorieGoal;
+  int get caloriesRemaining => ProgressCalculator.calculateRemaining(
+    consumed: _totalCalories.toDouble(),
+    target: _calorieGoal.toDouble(),
+  ).round();
+
+  bool get isOverBudget => ProgressCalculator.isOverTarget(
+    consumed: _totalCalories.toDouble(),
+    target: _calorieGoal.toDouble(),
+  );
 
   // Progress tracking
-  double get calorieProgress => _calorieGoal > 0 ? (_totalCalories / _calorieGoal).clamp(0.0, 1.0) : 0.0;
-  double get expectedDailyPercentage {
-    final now = DateTime.now();
-    if (!_isSameDay(now, _selectedDate)) return 1.0; // Past/future dates
-    
-    const minutesInDay = 24 * 60;
-    final currentMinutes = now.hour * 60 + now.minute;
-    return (currentMinutes / minutesInDay).clamp(0.0, 1.0);
-  }
+  double get calorieProgress => ProgressCalculator.calculateProgress(
+    consumed: _totalCalories.toDouble(),
+    target: _calorieGoal.toDouble(),
+  );
+
+  double get expectedDailyPercentage => ProgressCalculator.calculateExpectedDailyProgress(
+    selectedDate: _selectedDate,
+  );
 
   // Macronutrient tracking
   Map<String, double> get consumedMacros {
@@ -68,13 +73,11 @@ class HomeProvider extends ChangeNotifier {
     double carbs = 0;
     double fat = 0;
 
-    for (final mealItems in _entriesByMeal.values) {
-      for (final item in mealItems) {
-        final nutrition = item.getNutritionForServing();
-        protein += nutrition['proteins'] ?? 0;
-        carbs += nutrition['carbs'] ?? 0;
-        fat += nutrition['fats'] ?? 0;
-      }
+    for (final item in _foodEntries) {
+      final nutrition = item.getNutritionForServing();
+      protein += nutrition['proteins'] ?? 0;
+      carbs += nutrition['carbs'] ?? 0;
+      fat += nutrition['fats'] ?? 0;
     }
 
     return {
@@ -91,8 +94,19 @@ class HomeProvider extends ChangeNotifier {
   double _totalFoodCost = 0.0;
   double get totalFoodCost => _totalFoodCost;
 
-  double get budgetRemaining => (_dailyFoodBudget - _totalFoodCost).clamp(0.0, _dailyFoodBudget);
-  double get budgetProgress => _dailyFoodBudget > 0 ? (_totalFoodCost / _dailyFoodBudget).clamp(0.0, 1.0) : 0.0;
+  // Cost summaries (cached values loaded from repository)
+  double _weeklyFoodCost = 0.0;
+  double _monthlyFoodCost = 0.0;
+
+  double get budgetRemaining => ProgressCalculator.calculateRemaining(
+    consumed: _totalFoodCost,
+    target: _dailyFoodBudget,
+  );
+
+  double get budgetProgress => ProgressCalculator.calculateProgress(
+    consumed: _totalFoodCost,
+    target: _dailyFoodBudget,
+  );
 
   // Macro targets - NOW USING PERSONALIZED CALCULATIONS ✅
   Map<String, int> get targetMacros {
@@ -103,86 +117,24 @@ class HomeProvider extends ChangeNotifier {
     );
   }
 
-  bool get isOverFoodBudget => _totalFoodCost > _dailyFoodBudget;
+  bool get isOverFoodBudget => ProgressCalculator.isOverTarget(
+    consumed: _totalFoodCost,
+    target: _dailyFoodBudget,
+  );
 
   Map<String, double> get macroProgressPercentages {
-    final consumed = consumedMacros;
-    final targets = targetMacros;
-    
-    return {
-      'protein': targets['protein']! > 0 ? (consumed['protein']! / targets['protein']!).clamp(0.0, 1.0) : 0.0,
-      'carbs': targets['carbs']! > 0 ? (consumed['carbs']! / targets['carbs']!).clamp(0.0, 1.0) : 0.0,
-      'fat': targets['fat']! > 0 ? (consumed['fat']! / targets['fat']!).clamp(0.0, 1.0) : 0.0,
-    };
+    return ProgressCalculator.calculateMacroProgress(
+      consumed: consumedMacros,
+      targets: targetMacros,
+    );
   }
 
-  int get mealsCount {
-    return (_entriesByMeal['breakfast']?.length ?? 0) +
-           (_entriesByMeal['lunch']?.length ?? 0) +
-           (_entriesByMeal['dinner']?.length ?? 0) +
-           (_entriesByMeal['snack']?.length ?? 0);
-  }
+  int get foodEntriesCount => _foodEntries.length;
 
-  Map<String, int> get mealCountsByType {
-    return {
-      'breakfast': _entriesByMeal['breakfast']?.length ?? 0,
-      'lunch': _entriesByMeal['lunch']?.length ?? 0,
-      'dinner': _entriesByMeal['dinner']?.length ?? 0,
-      'snack': _entriesByMeal['snack']?.length ?? 0,
-    };
-  }
-
-  // Weekly cost calculation
-  double get weeklyFoodCost {
-    double total = 0.0;
-    
-    try {
-      final now = DateTime.now();
-      final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-      
-      for (final mealType in ['breakfast', 'lunch', 'dinner', 'snack']) {
-        final mealItems = _entriesByMeal[mealType] ?? [];
-        for (final item in mealItems) {
-          if (item.timestamp.isAfter(startOfWeek) || _isSameDay(item.timestamp, startOfWeek)) {
-            final itemCost = item.getCostForServing();
-            if (itemCost != null && itemCost > 0) {
-              total += itemCost;
-            }
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Error calculating weekly food cost: $e');
-    }
-    
-    return total;
-  }
-
-  // Monthly cost calculation
-  double get monthlyFoodCost {
-    double total = 0.0;
-    
-    try {
-      final now = DateTime.now();
-      final startOfMonth = DateTime(now.year, now.month, 1);
-      
-      for (final mealType in ['breakfast', 'lunch', 'dinner', 'snack']) {
-        final mealItems = _entriesByMeal[mealType] ?? [];
-        for (final item in mealItems) {
-          if (item.timestamp.isAfter(startOfMonth) || _isSameDay(item.timestamp, startOfMonth)) {
-            final itemCost = item.getCostForServing();
-            if (itemCost != null && itemCost > 0) {
-              total += itemCost;
-            }
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Error calculating monthly food cost: $e');
-    }
-    
-    return total;
-  }
+  // Weekly and monthly cost getters (return cached values)
+  // These are loaded via _loadCostSummaries() during data load
+  double get weeklyFoodCost => _weeklyFoodCost;
+  double get monthlyFoodCost => _monthlyFoodCost;
 
   /// Load all data for the home screen
   Future<void> loadData({DateTime? date}) async {
@@ -204,6 +156,9 @@ class HomeProvider extends ChangeNotifier {
 
       // Load food budget
       await loadFoodBudget();
+
+      // Load cost summaries (weekly & monthly) - ✅ FIXED BUG
+      await _loadCostSummaries();
 
       // Calculate calorie goal
       _calculateCalorieGoal();
@@ -239,7 +194,7 @@ class HomeProvider extends ChangeNotifier {
     try {
       // Load user profile
       _userProfile = await _userRepository.getUserProfile();
-      
+
       // Load current weight
       final latestWeight = await _userRepository.getLatestWeightEntry();
       _currentWeight = latestWeight?.weight;
@@ -252,61 +207,51 @@ class HomeProvider extends ChangeNotifier {
   /// Load food entries for the selected date
   Future<void> _loadFoodEntries() async {
     try {
-      final entries = await _foodRepository.getFoodEntriesForDate(_selectedDate);
-      
-      // Clear existing entries
-      _entriesByMeal = {
-        'breakfast': [],
-        'lunch': [],
-        'dinner': [],
-        'snack': [],
-      };
-
-      // Group entries by meal type
-      for (final entry in entries) {
-        final mealType = entry.mealType.toLowerCase();
-        if (_entriesByMeal.containsKey(mealType)) {
-          _entriesByMeal[mealType]!.add(entry);
-        }
-      }
+      _foodEntries = await _foodRepository.getFoodEntriesForDate(_selectedDate);
     } catch (e) {
       debugPrint('Error loading food entries: $e');
-      // Initialize with empty data if loading fails
-      _entriesByMeal = {
-        'breakfast': [],
-        'lunch': [],
-        'dinner': [],
-        'snack': [],
-      };
+      _foodEntries = [];
+    }
+  }
+
+  /// Load weekly and monthly cost summaries
+  ///
+  /// ✅ FIXED: Now properly queries ALL food entries across date ranges
+  /// instead of only checking the currently selected date's entries.
+  Future<void> _loadCostSummaries() async {
+    try {
+      // Load weekly cost (Monday to today)
+      _weeklyFoodCost = await CostCalculator.calculateWeeklyCost(_foodRepository);
+
+      // Load monthly cost (1st of month to today)
+      _monthlyFoodCost = await CostCalculator.calculateMonthlyCost(_foodRepository);
+    } catch (e) {
+      debugPrint('Error loading cost summaries: $e');
+      _weeklyFoodCost = 0.0;
+      _monthlyFoodCost = 0.0;
     }
   }
 
   /// Load food budget from preferences
   Future<void> loadFoodBudget() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      _dailyFoodBudget = prefs.getDouble('daily_food_budget') ?? 25.0;
+      _dailyFoodBudget = await _budgetService.getDailyBudget();
     } catch (e) {
       debugPrint('Error loading food budget: $e');
-      _dailyFoodBudget = 25.0; // Default fallback
+      _dailyFoodBudget = BudgetService.getDefaultBudget(); // Default fallback
     }
   }
 
   /// Update daily food budget
   Future<void> updateFoodBudget(double budget) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setDouble('daily_food_budget', budget);
+      await _budgetService.updateDailyBudget(budget);
       _dailyFoodBudget = budget;
       notifyListeners();
     } catch (e) {
       debugPrint('Error updating food budget: $e');
       rethrow;
     }
-  }
-
-  Future<void> setDailyFoodBudget(double budget) async {
-    await updateFoodBudget(budget); // Delegate to existing method
   }
 
   /// Calculate calorie goal based on user profile - NOW USING NEW CALCULATOR ✅
@@ -322,17 +267,15 @@ class HomeProvider extends ChangeNotifier {
     _totalCalories = 0;
     _totalFoodCost = 0.0;
 
-    for (final mealItems in _entriesByMeal.values) {
-      for (final item in mealItems) {
-        // Calculate calories
-        final nutrition = item.getNutritionForServing();
-        _totalCalories += (nutrition['calories'] ?? 0).round();
+    for (final item in _foodEntries) {
+      // Calculate calories
+      final nutrition = item.getNutritionForServing();
+      _totalCalories += (nutrition['calories'] ?? 0).round();
 
-        // Calculate cost
-        final cost = item.getCostForServing();
-        if (cost != null) {
-          _totalFoodCost += cost;
-        }
+      // Calculate cost
+      final cost = item.getCostForServing();
+      if (cost != null) {
+        _totalFoodCost += cost;
       }
     }
   }
@@ -342,17 +285,14 @@ class HomeProvider extends ChangeNotifier {
     try {
       // Save to storage
       await _foodRepository.saveFoodEntry(entry);
-      
+
       // If it's for the currently selected date, add to local state
       if (_isSameDay(entry.timestamp, _selectedDate)) {
-        final mealType = entry.mealType.toLowerCase();
-        if (_entriesByMeal.containsKey(mealType)) {
-          _entriesByMeal[mealType]!.add(entry);
-          
-          // Recalculate totals
-          _calculateTotals();
-          notifyListeners();
-        }
+        _foodEntries.add(entry);
+
+        // Recalculate totals
+        _calculateTotals();
+        notifyListeners();
       }
     } catch (e) {
       debugPrint('Error adding food entry: $e');
@@ -365,18 +305,14 @@ class HomeProvider extends ChangeNotifier {
     try {
       // Save to storage
       await _foodRepository.updateFoodEntry(updatedItem);
-      
+
       // Update in local state if it's for the current date
       if (_isSameDay(updatedItem.timestamp, _selectedDate)) {
-        final mealType = updatedItem.mealType.toLowerCase();
-        if (_entriesByMeal.containsKey(mealType)) {
-          final items = _entriesByMeal[mealType]!;
-          final index = items.indexWhere((item) => item.id == updatedItem.id);
-          if (index != -1) {
-            items[index] = updatedItem;
-            _calculateTotals();
-            notifyListeners();
-          }
+        final index = _foodEntries.indexWhere((item) => item.id == updatedItem.id);
+        if (index != -1) {
+          _foodEntries[index] = updatedItem;
+          _calculateTotals();
+          notifyListeners();
         }
       }
     } catch (e) {
@@ -389,31 +325,20 @@ class HomeProvider extends ChangeNotifier {
   Future<void> deleteFoodEntry(String entryId) async {
     try {
       // Find the item first to get its timestamp
-      FoodItem? itemToDelete;
-      for (final mealType in _entriesByMeal.keys) {
-        final items = _entriesByMeal[mealType]!;
-        for (final item in items) {
-          if (item.id == entryId) {
-            itemToDelete = item;
-            break;
-          }
-        }
-        if (itemToDelete != null) break;
-      }
+      final itemToDelete = _foodEntries.firstWhere(
+        (item) => item.id == entryId,
+        orElse: () => throw Exception('Food entry not found'),
+      );
 
-      if (itemToDelete != null) {
-        // Delete from storage with both id and timestamp
-        await _foodRepository.deleteFoodEntry(entryId, itemToDelete.timestamp);
-        
-        // Remove from local state
-        for (final mealType in _entriesByMeal.keys) {
-          _entriesByMeal[mealType]!.removeWhere((item) => item.id == entryId);
-        }
-        
-        // Recalculate totals
-        _calculateTotals();
-        notifyListeners();
-      }
+      // Delete from storage with both id and timestamp
+      await _foodRepository.deleteFoodEntry(entryId, itemToDelete.timestamp);
+
+      // Remove from local state
+      _foodEntries.removeWhere((item) => item.id == entryId);
+
+      // Recalculate totals
+      _calculateTotals();
+      notifyListeners();
     } catch (e) {
       debugPrint('Error deleting food entry: $e');
       rethrow;
@@ -421,43 +346,14 @@ class HomeProvider extends ChangeNotifier {
   }
 
   /// Check if two dates are the same day
-  bool _isSameDay(DateTime date1, DateTime date2) {
-    return date1.year == date2.year &&
-           date1.month == date2.month &&
-           date1.day == date2.day;
-  }
-
-  /// Get meal items for a specific meal type
-  List<FoodItem> getMealItems(String mealType) {
-    return _entriesByMeal[mealType.toLowerCase()] ?? [];
-  }
+  bool _isSameDay(DateTime date1, DateTime date2) => DateHelper.isSameDay(date1, date2);
 
   /// Check if the selected date is today
-  bool get isToday => _isSameDay(_selectedDate, DateTime.now());
+  bool get isToday => DateHelper.isToday(_selectedDate);
 
   /// Check if the selected date is in the future
-  bool get isFutureDate => _selectedDate.isAfter(DateTime.now()) && !isToday;
+  bool get isFutureDate => DateHelper.isFutureDate(_selectedDate);
 
   /// Get formatted date string for display
-  String get formattedSelectedDate {
-    if (isToday) return 'Today';
-    
-    final now = DateTime.now();
-    final yesterday = now.subtract(const Duration(days: 1));
-    if (_isSameDay(_selectedDate, yesterday)) return 'Yesterday';
-    
-    final tomorrow = now.add(const Duration(days: 1));
-    if (_isSameDay(_selectedDate, tomorrow)) return 'Tomorrow';
-    
-    // Format as "Mon, Dec 25"
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    
-    final weekday = weekdays[_selectedDate.weekday - 1];
-    final month = months[_selectedDate.month - 1];
-    final day = _selectedDate.day;
-    
-    return '$weekday, $month $day';
-  }
+  String get formattedSelectedDate => DateHelper.formatRelativeDate(_selectedDate);
 }
