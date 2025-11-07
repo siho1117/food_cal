@@ -115,9 +115,9 @@ class SummaryDataCalculator {
     ExerciseProvider exerciseProvider,
   ) {
     return {
-      'mealsLogged': homeProvider.mealsCount.toString(),
-      'avgPerMeal': homeProvider.mealsCount > 0 
-          ? '\$${(homeProvider.totalFoodCost / homeProvider.mealsCount).toStringAsFixed(2)}'
+      'mealsLogged': homeProvider.foodEntriesCount.toString(),
+      'avgPerMeal': homeProvider.foodEntriesCount > 0
+          ? '\$${(homeProvider.totalFoodCost / homeProvider.foodEntriesCount).toStringAsFixed(2)}'
           : '\$0.00',
       'netCalories': (homeProvider.totalCalories - exerciseProvider.totalCaloriesBurned).toString(),
       'exerciseDuration': getTotalExerciseTime(exerciseProvider.exerciseEntries),
