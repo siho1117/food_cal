@@ -41,6 +41,15 @@ class HomeProvider extends ChangeNotifier {
   };
   Map<String, List<FoodItem>> get entriesByMeal => _entriesByMeal;
 
+  /// Get all food entries as a flat list (across all meal types)
+  List<FoodItem> get foodEntries {
+    final allItems = <FoodItem>[];
+    for (final mealItems in _entriesByMeal.values) {
+      allItems.addAll(mealItems);
+    }
+    return allItems;
+  }
+
   // Calorie tracking
   int _calorieGoal = 2000;
   int get calorieGoal => _calorieGoal;
