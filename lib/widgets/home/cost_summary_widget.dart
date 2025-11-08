@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
-import '../../config/design_system/theme_design.dart';
+import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/typography.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../config/constants/app_constants.dart';
@@ -70,11 +70,11 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
         _checkForRefresh(totalCost, dailyBudget);
 
         // Get theme-adaptive colors
-        final borderColor = AppColors.getBorderColorForTheme(
+        final borderColor = AppWidgetTheme.getBorderColor(
           themeProvider.selectedGradient,
-          AppEffects.borderOpacity,
+          AppWidgetTheme.cardBorderOpacity,
         );
-        final textColor = AppColors.getTextColorForTheme(
+        final textColor = AppWidgetTheme.getTextColor(
           themeProvider.selectedGradient,
         );
 
@@ -83,10 +83,10 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
           child: Container(
             decoration: BoxDecoration(
               color: Colors.transparent,
-              borderRadius: BorderRadius.circular(AppDimensions.cardBorderRadius),
+              borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
               border: Border.all(
                 color: borderColor,
-                width: AppDimensions.cardBorderWidth,
+                width: AppWidgetTheme.cardBorderWidth,
               ),
             ),
             child: Padding(
@@ -102,13 +102,11 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
                         // Title matching Food Log style
                         Text(
                           'Food Cost',
-                          style: const TextStyle(
-                            fontSize: 20,
+                          style: TextStyle(
+                            fontSize: AppWidgetTheme.fontSizeLG,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textDark,
-                          ).copyWith(
                             color: textColor,
-                            shadows: AppEffects.textShadows,
+                            shadows: AppWidgetTheme.textShadows,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -125,7 +123,7 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
                                   '\$${animatedCost.toStringAsFixed(2)}',
                                   style: AppTypography.dataMedium.copyWith(
                                     color: textColor,
-                                    shadows: AppEffects.textShadows,
+                                    shadows: AppWidgetTheme.textShadows,
                                   ),
                                 );
                               },
@@ -134,8 +132,8 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
                             Text(
                               '/ \$${dailyBudget.toStringAsFixed(2)}',
                               style: AppTypography.bodyMedium.copyWith(
-                                color: textColor.withValues(alpha: 0.6),
-                                shadows: AppEffects.textShadows,
+                                color: textColor.withValues(alpha: AppWidgetTheme.opacityVeryHigh),
+                                shadows: AppWidgetTheme.textShadows,
                               ),
                             ),
                           ],
@@ -192,7 +190,7 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
             style: AppTypography.labelMedium.copyWith(
               color: textColor,
               fontWeight: FontWeight.bold,
-              shadows: AppEffects.textShadows,
+              shadows: AppWidgetTheme.textShadows,
             ),
           ),
         ),
@@ -228,16 +226,16 @@ class _CircularProgressPainter extends CustomPainter {
     
     // Background circle
     final bgPaint = Paint()
-      ..color = baseColor.withValues(alpha: 0.2)
+      ..color = baseColor.withValues(alpha: AppWidgetTheme.opacityMediumHigh)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4  // Thinner line
       ..strokeCap = StrokeCap.round;
-    
+
     canvas.drawCircle(center, radius, bgPaint);
-    
+
     // Progress arc
     final progressPaint = Paint()
-      ..color = baseColor.withValues(alpha: 0.9)
+      ..color = baseColor.withValues(alpha: AppWidgetTheme.opacityHighest)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4  // Thinner line
       ..strokeCap = StrokeCap.round;

@@ -4,7 +4,7 @@ import 'dart:ui';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
-import '../../config/design_system/theme_design.dart';  // ✅ NEW: Using theme_design instead of theme
+import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/dialog_theme.dart';
 
 class ProfileSectionWidget extends StatelessWidget {
@@ -36,34 +36,34 @@ class ProfileSectionWidget extends StatelessWidget {
     required ThemeProvider themeProvider,
     required VoidCallback onTap,
   }) {
-    // ✅ NEW: Get theme-adaptive colors using new helper functions
-    final borderColor = AppColors.getBorderColorForTheme(
+    // Get theme-adaptive colors using widget theme
+    final borderColor = AppWidgetTheme.getBorderColor(
       themeProvider.selectedGradient,
-      AppEffects.borderOpacity,
+      AppWidgetTheme.cardBorderOpacity,
     );
-    final textColor = AppColors.getTextColorForTheme(
+    final textColor = AppWidgetTheme.getTextColor(
       themeProvider.selectedGradient,
     );
     
     return ClipRRect(
-      borderRadius: BorderRadius.circular(52), // Pill shape
+      borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXL),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.transparent, // Fully transparent to show gradient
-            borderRadius: BorderRadius.circular(52), // Pill shape
+            borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXL),
             border: Border.all(
-              color: borderColor,  // ✅ Using new helper
-              width: AppDimensions.cardBorderWidth,  // ✅ Using AppDimensions
+              color: borderColor,
+              width: AppWidgetTheme.cardBorderWidth,
             ),
           ),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: onTap,
-              borderRadius: BorderRadius.circular(52), // Pill shape
-              splashColor: textColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXL),
+              splashColor: textColor.withValues(alpha: AppWidgetTheme.opacityMediumLight),
               highlightColor: textColor.withValues(alpha: 0.05),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
@@ -71,8 +71,8 @@ class ProfileSectionWidget extends StatelessWidget {
                   children: [
                     // Avatar circle with gradient letter or empty icon
                     _buildAvatar(context, userName, hasName, themeProvider, textColor),
-                    
-                    const SizedBox(width: 16),
+
+                    SizedBox(width: AppWidgetTheme.spaceLG),
                     
                     // Name section
                     Expanded(
@@ -83,12 +83,12 @@ class ProfileSectionWidget extends StatelessWidget {
                           Text(
                             hasName ? userName! : 'Tap to edit',
                             style: TextStyle(
-                              fontSize: 24,
+                              fontSize: AppWidgetTheme.fontSizeXL,
                               fontWeight: FontWeight.w600,
-                              color: hasName 
+                              color: hasName
                                   ? textColor
-                                  : textColor.withValues(alpha: 0.6),
-                              shadows: AppEffects.textShadows,  // ✅ Using AppEffects
+                                  : textColor.withValues(alpha: AppWidgetTheme.opacityVeryHigh),
+                              shadows: AppWidgetTheme.textShadows,
                             ),
                           ),
                         ],
@@ -98,8 +98,8 @@ class ProfileSectionWidget extends StatelessWidget {
                     // Arrow icon
                     Icon(
                       Icons.arrow_forward_ios_rounded,
-                      size: 18,
-                      color: textColor.withValues(alpha: 0.6),
+                      size: AppWidgetTheme.fontSizeLG,
+                      color: textColor.withValues(alpha: AppWidgetTheme.opacityVeryHigh),
                     ),
                   ],
                 ),
@@ -112,39 +112,33 @@ class ProfileSectionWidget extends StatelessWidget {
   }
 
   Widget _buildAvatar(
-    BuildContext context, 
-    String? userName, 
+    BuildContext context,
+    String? userName,
     bool hasName,
     ThemeProvider themeProvider,
-    Color textColor,  // ✅ Pass textColor as parameter
+    Color textColor,
   ) {
-    // ✅ NEW: Get solid avatar color based on theme
-    final solidAvatarColor = themeProvider.selectedGradient == '01' 
-        ? Colors.black      // Solid black for Theme 01
-        : Colors.white;     // Solid white for Theme 02-09
-    
+    // Get solid avatar color based on theme
+    final solidAvatarColor = AppWidgetTheme.getAvatarColor(
+      themeProvider.selectedGradient,
+    );
+
     return Container(
-      width: 52,
-      height: 52,
+      width: AppWidgetTheme.iconContainerLarge,
+      height: AppWidgetTheme.iconContainerLarge,
       decoration: BoxDecoration(
-        color: hasName 
+        color: hasName
             ? solidAvatarColor
             : textColor.withValues(alpha: 0.25),
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: [AppWidgetTheme.standardBoxShadow],
       ),
       child: Center(
-        child: hasName 
+        child: hasName
             ? _buildGradientLetter(context, userName!, themeProvider)
             : Icon(
                 Icons.person,
-                size: 28,
+                size: AppWidgetTheme.iconSizeLarge,
                 color: textColor,
               ),
       ),
@@ -152,23 +146,23 @@ class ProfileSectionWidget extends StatelessWidget {
   }
 
   Widget _buildGradientLetter(
-    BuildContext context, 
+    BuildContext context,
     String userName,
     ThemeProvider themeProvider,
   ) {
     // Get first character and uppercase it
     final letter = userName.isNotEmpty ? userName[0].toUpperCase() : '?';
-    
+
     // Get gradient from theme provider
     final gradient = themeProvider.getCurrentGradient();
-    
+
     return ShaderMask(
       shaderCallback: (bounds) => gradient.createShader(bounds),
       blendMode: BlendMode.srcIn,
       child: Text(
         letter,
-        style: const TextStyle(
-          fontSize: 24,
+        style: TextStyle(
+          fontSize: AppWidgetTheme.fontSizeXL,
           fontWeight: FontWeight.w700,
           color: Colors.white, // This color gets replaced by gradient
         ),

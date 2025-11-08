@@ -5,7 +5,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../providers/exercise_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../data/models/exercise_entry.dart';
-import '../../config/design_system/theme_design.dart';
+import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/dialog_theme.dart';
 import 'exercise_entry_dialog.dart';
 
@@ -134,23 +134,24 @@ class ExerciseLogWidget extends StatelessWidget {
     ThemeProvider themeProvider,
     List<ExerciseEntry> exercises,
   ) {
-    final textColor = AppColors.getTextColorForTheme(themeProvider.selectedGradient);
+    final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
     final totalCalories = _calculateTotalCalories(exercises);
     final totalMinutes = _calculateTotalMinutes(exercises);
 
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(maxWidth: 700),
+      constraints: BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
       decoration: BoxDecoration(
         border: Border.all(
-          color: themeProvider.selectedGradient == '01'
-              ? Colors.black.withValues(alpha: 0.5)
-              : Colors.white.withValues(alpha: 0.5),
-          width: 4,
+          color: AppWidgetTheme.getBorderColor(
+            themeProvider.selectedGradient,
+            AppWidgetTheme.cardBorderOpacity,
+          ),
+          width: AppWidgetTheme.cardBorderWidth,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
       ),
-      padding: const EdgeInsets.all(20),
+      padding: AppWidgetTheme.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -161,7 +162,7 @@ class ExerciseLogWidget extends StatelessWidget {
               Text(
                 'Exercise',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: AppWidgetTheme.fontSizeLG,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.2,
                   color: textColor,
@@ -170,24 +171,25 @@ class ExerciseLogWidget extends StatelessWidget {
               GestureDetector(
                 onTap: () => _showExerciseDialog(context, provider),
                 child: Container(
-                  width: 32,
-                  height: 32,
+                  width: AppWidgetTheme.iconContainerSmall,
+                  height: AppWidgetTheme.iconContainerSmall,
                   decoration: BoxDecoration(
-                    color: textColor == Colors.black
-                        ? Colors.black.withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppWidgetTheme.getIconContainerColor(
+                      textColor,
+                      AppWidgetTheme.opacityMediumLight,
+                    ),
+                    borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXS),
                   ),
                   child: Icon(
                     Icons.add,
-                    size: 20,
+                    size: AppWidgetTheme.iconSizeSmall,
                     color: textColor,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: AppWidgetTheme.spaceLG),
 
           // Main Content - Side by Side
           Row(
@@ -200,7 +202,7 @@ class ExerciseLogWidget extends StatelessWidget {
                 totalMinutes: totalMinutes,
                 exerciseCount: exercises.length,
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: AppWidgetTheme.spaceLG),
 
               // Right: Exercise List with swipe-to-delete and tap-to-edit
               Expanded(
@@ -227,7 +229,7 @@ class ExerciseLogWidget extends StatelessWidget {
     return Column(
       children: exercises.map((exercise) {
         return Container(
-          margin: const EdgeInsets.only(bottom: 10),
+          margin: EdgeInsets.only(bottom: AppWidgetTheme.spaceMS),
           child: Slidable(
             key: ValueKey(exercise.id),
             endActionPane: ActionPane(
@@ -238,15 +240,15 @@ class ExerciseLogWidget extends StatelessWidget {
                   onPressed: (_) {
                     _showDeleteConfirmation(context, provider, exercise);
                   },
-                  backgroundColor: Colors.red.shade600,
-                  borderRadius: BorderRadius.circular(12),
+                  backgroundColor: AppDialogTheme.colorDestructive,
+                  borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusSM),
                   autoClose: true,
                   padding: EdgeInsets.zero,
-                  child: const Center(
+                  child: Center(
                     child: Icon(
                       Icons.delete_outline,
                       color: Colors.white,
-                      size: 24,
+                      size: AppWidgetTheme.iconSizeMedium,
                     ),
                   ),
                 ),
@@ -260,35 +262,37 @@ class ExerciseLogWidget extends StatelessWidget {
                   existingExercise: exercise,
                 );
               },
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusSM),
               child: Container(
-                padding: const EdgeInsets.all(14),
+                padding: EdgeInsets.all(AppWidgetTheme.spaceML),
                 decoration: BoxDecoration(
-                  color: textColor == Colors.black
-                      ? Colors.black.withValues(alpha: 0.06)
-                      : Colors.black.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppWidgetTheme.getBackgroundColor(
+                    textColor,
+                    AppWidgetTheme.opacityLight,
+                  ),
+                  borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusSM),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     // Icon
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: AppWidgetTheme.iconContainerMedium,
+                      height: AppWidgetTheme.iconContainerMedium,
                       decoration: BoxDecoration(
-                        color: textColor == Colors.black
-                            ? Colors.black.withValues(alpha: 0.1)
-                            : Colors.black.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
+                        color: AppWidgetTheme.getIconContainerColor(
+                          textColor,
+                          AppWidgetTheme.opacityMedium,
+                        ),
+                        borderRadius: BorderRadius.circular(AppWidgetTheme.spaceMS),
                       ),
                       child: Icon(
                         _getExerciseIconData(exercise.name),
-                        size: 20,
+                        size: AppWidgetTheme.iconSizeSmall,
                         color: textColor,
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    SizedBox(width: AppWidgetTheme.spaceML),
 
                     // Exercise Info - 3 lines
                     Expanded(
@@ -299,7 +303,7 @@ class ExerciseLogWidget extends StatelessWidget {
                           Text(
                             exercise.name,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: AppWidgetTheme.fontSizeML,
                               fontWeight: FontWeight.w600,
                               height: 1.3,
                               color: textColor,
@@ -307,39 +311,39 @@ class ExerciseLogWidget extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 6),
-                          
+                          SizedBox(height: AppWidgetTheme.spaceXS),
+
                           // Line 2: Calories (emphasized - key metric)
                           Text(
                             '${exercise.caloriesBurned} cal',
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: AppWidgetTheme.fontSizeMD,
                               fontWeight: FontWeight.w600,
                               height: 1.2,
-                              color: textColor.withValues(alpha: 0.8),
+                              color: textColor.withValues(alpha: AppWidgetTheme.opacityHighest),
                             ),
                           ),
-                          const SizedBox(height: 3),
-                          
+                          SizedBox(height: AppWidgetTheme.spaceXXS),
+
                           // Line 3: Duration
                           Text(
                             '${exercise.duration} min',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: AppWidgetTheme.fontSizeMS,
                               fontWeight: FontWeight.w500,
                               height: 1.2,
-                              color: textColor.withValues(alpha: 0.7),
+                              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    
+
                     // Edit indicator (chevron)
                     Icon(
                       Icons.chevron_right,
-                      size: 18,
-                      color: textColor.withValues(alpha: 0.4),
+                      size: AppWidgetTheme.fontSizeLG,
+                      color: textColor.withValues(alpha: AppWidgetTheme.opacityHigh),
                     ),
                   ],
                 ),
@@ -356,21 +360,22 @@ class ExerciseLogWidget extends StatelessWidget {
     ExerciseProvider provider,
     ThemeProvider themeProvider,
   ) {
-    final textColor = AppColors.getTextColorForTheme(themeProvider.selectedGradient);
+    final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
 
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(maxWidth: 700),
+      constraints: BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
       decoration: BoxDecoration(
         border: Border.all(
-          color: themeProvider.selectedGradient == '01'
-              ? Colors.black.withValues(alpha: 0.5)
-              : Colors.white.withValues(alpha: 0.5),
-          width: 4,
+          color: AppWidgetTheme.getBorderColor(
+            themeProvider.selectedGradient,
+            AppWidgetTheme.cardBorderOpacity,
+          ),
+          width: AppWidgetTheme.cardBorderWidth,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
       ),
-      padding: const EdgeInsets.all(20),
+      padding: AppWidgetTheme.cardPadding,
       child: Column(
         children: [
           // Header - Fixed title
@@ -379,73 +384,78 @@ class ExerciseLogWidget extends StatelessWidget {
             child: Text(
               'Exercise',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: AppWidgetTheme.fontSizeLG,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.2,
                 color: textColor,
               ),
             ),
           ),
-          const SizedBox(height: 30),
+          SizedBox(height: AppWidgetTheme.spaceXXXL),
 
           // Empty state content
           Container(
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: textColor == Colors.black
-                  ? Colors.black.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.15),
+              color: AppWidgetTheme.getIconContainerColor(
+                textColor,
+                AppWidgetTheme.opacityMediumLight,
+              ),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.fitness_center,
-              size: 24,
+              size: AppWidgetTheme.iconSizeMedium,
               color: textColor,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: AppWidgetTheme.spaceMD),
           Text(
             'No activity yet',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: AppWidgetTheme.fontSizeML,
               fontWeight: FontWeight.w600,
               color: textColor,
               height: 1,
             ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: AppWidgetTheme.spaceXS),
           Text(
             'Log your first exercise',
             style: TextStyle(
-              fontSize: 13,
-              color: textColor.withValues(alpha: 0.7),
+              fontSize: AppWidgetTheme.fontSizeSM,
+              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: AppWidgetTheme.spaceLG),
           GestureDetector(
             onTap: () => _showExerciseDialog(context, provider),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(
+                horizontal: AppWidgetTheme.spaceLG,
+                vertical: AppWidgetTheme.spaceSM,
+              ),
               decoration: BoxDecoration(
-                color: textColor == Colors.black
-                    ? Colors.black.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.15),
+                color: AppWidgetTheme.getBackgroundColor(
+                  textColor,
+                  AppWidgetTheme.opacityMediumLight,
+                ),
                 border: Border.all(
                   color: textColor.withValues(alpha: 0.3),
                   width: 2,
                 ),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXS),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add, size: 16, color: textColor),
-                  const SizedBox(width: 6),
+                  Icon(Icons.add, size: AppWidgetTheme.spaceLG, color: textColor),
+                  SizedBox(width: AppWidgetTheme.spaceXS),
                   Text(
                     'Log Exercise',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: AppWidgetTheme.fontSizeSM,
                       fontWeight: FontWeight.w600,
                       color: textColor,
                     ),
@@ -454,27 +464,28 @@ class ExerciseLogWidget extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 30),
+          SizedBox(height: AppWidgetTheme.spaceXXXL),
         ],
       ),
     );
   }
 
   Widget _buildLoadingState(BuildContext context, ThemeProvider themeProvider) {
-    final textColor = AppColors.getTextColorForTheme(themeProvider.selectedGradient);
+    final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
 
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(maxWidth: 700),
+      constraints: BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
       height: 200,
       decoration: BoxDecoration(
         border: Border.all(
-          color: themeProvider.selectedGradient == '01'
-              ? Colors.black.withValues(alpha: 0.5)
-              : Colors.white.withValues(alpha: 0.5),
-          width: 4,
+          color: AppWidgetTheme.getBorderColor(
+            themeProvider.selectedGradient,
+            AppWidgetTheme.cardBorderOpacity,
+          ),
+          width: AppWidgetTheme.cardBorderWidth,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
       ),
       child: Center(
         child: CircularProgressIndicator(
@@ -489,51 +500,52 @@ class ExerciseLogWidget extends StatelessWidget {
     ExerciseProvider provider,
     ThemeProvider themeProvider,
   ) {
-    final textColor = AppColors.getTextColorForTheme(themeProvider.selectedGradient);
+    final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
 
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(maxWidth: 700),
+      constraints: BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
       decoration: BoxDecoration(
         border: Border.all(
-          color: themeProvider.selectedGradient == '01'
-              ? Colors.black.withValues(alpha: 0.5)
-              : Colors.white.withValues(alpha: 0.5),
-          width: 4,
+          color: AppWidgetTheme.getBorderColor(
+            themeProvider.selectedGradient,
+            AppWidgetTheme.cardBorderOpacity,
+          ),
+          width: AppWidgetTheme.cardBorderWidth,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
       ),
-      padding: const EdgeInsets.all(20),
+      padding: AppWidgetTheme.cardPadding,
       child: Column(
         children: [
           Icon(
             Icons.error_outline,
             size: 48,
-            color: textColor.withValues(alpha: 0.7),
+            color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: AppWidgetTheme.spaceLG),
           Text(
             'Error Loading Exercises',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: AppWidgetTheme.fontSizeLG,
               fontWeight: FontWeight.w600,
               color: textColor,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: AppWidgetTheme.spaceSM),
           Text(
             provider.errorMessage ?? 'Unknown error occurred',
             style: TextStyle(
-              fontSize: 14,
-              color: textColor.withValues(alpha: 0.7),
+              fontSize: AppWidgetTheme.fontSizeMS,
+              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: AppWidgetTheme.spaceLG),
           ElevatedButton(
             onPressed: () => provider.refreshData(),
             style: ElevatedButton.styleFrom(
-              backgroundColor: textColor.withValues(alpha: 0.15),
+              backgroundColor: textColor.withValues(alpha: AppWidgetTheme.opacityMedium),
               foregroundColor: textColor,
             ),
             child: const Text('Retry'),
@@ -639,12 +651,16 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
     return Container(
       width: 110,
       decoration: BoxDecoration(
-        color: widget.textColor == Colors.black
-            ? Colors.black.withValues(alpha: 0.08)
-            : Colors.black.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
+        color: AppWidgetTheme.getBackgroundColor(
+          widget.textColor,
+          AppWidgetTheme.opacityLight,
+        ),
+        borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppWidgetTheme.spaceMS,
+        vertical: AppWidgetTheme.spaceML,
+      ),
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
@@ -659,8 +675,8 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
               Container(
                 height: 1,
                 width: 50,
-                margin: const EdgeInsets.symmetric(vertical: 10),
-                color: widget.textColor.withValues(alpha: 0.2),
+                margin: EdgeInsets.symmetric(vertical: AppWidgetTheme.spaceMS),
+                color: widget.textColor.withValues(alpha: AppWidgetTheme.opacityMediumHigh),
               ),
 
               // Minutes
@@ -672,8 +688,8 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
               Container(
                 height: 1,
                 width: 50,
-                margin: const EdgeInsets.symmetric(vertical: 10),
-                color: widget.textColor.withValues(alpha: 0.2),
+                margin: EdgeInsets.symmetric(vertical: AppWidgetTheme.spaceMS),
+                color: widget.textColor.withValues(alpha: AppWidgetTheme.opacityMediumHigh),
               ),
 
               // Exercises
@@ -695,20 +711,20 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
         Text(
           value,
           style: TextStyle(
-            fontSize: 30,
+            fontSize: AppWidgetTheme.fontSizeXXL,
             fontWeight: FontWeight.w700,
             height: 1,
             color: textColor,
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         Text(
           label.toUpperCase(),
           style: TextStyle(
-            fontSize: 10,
+            fontSize: AppWidgetTheme.fontSizeXS,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.4,
-            color: textColor.withValues(alpha: 0.7),
+            color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
           ),
           textAlign: TextAlign.center,
         ),

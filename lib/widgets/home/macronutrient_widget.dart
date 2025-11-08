@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
-import '../../config/design_system/theme_design.dart';
+import '../../config/design_system/widget_theme.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/theme_provider.dart';
 
@@ -69,9 +69,9 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
         _checkForRefresh(consumed, target);
 
         // Get theme-adaptive colors
-        final borderColor = AppColors.getBorderColorForTheme(
+        final borderColor = AppWidgetTheme.getBorderColor(
           themeProvider.selectedGradient,
-          AppEffects.borderOpacity,
+          AppWidgetTheme.cardBorderOpacity,
         );
 
         return AnimatedBuilder(
@@ -147,10 +147,10 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.3), // Transparent background
-          borderRadius: BorderRadius.circular(AppDimensions.cardBorderRadius),
+          borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
           border: Border.all(
             color: borderColor,
-            width: AppDimensions.cardBorderWidth,
+            width: AppWidgetTheme.cardBorderWidth,
           ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12), // Reduced from 16 to 12

@@ -2,7 +2,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../config/design_system/theme_design.dart';
+import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/typography.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -30,25 +30,25 @@ class FoodLogWidget extends StatelessWidget {
         allFoodItems.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
         // Get theme-adaptive colors
-        final borderColor = AppColors.getBorderColorForTheme(
+        final borderColor = AppWidgetTheme.getBorderColor(
           themeProvider.selectedGradient,
-          AppEffects.borderOpacity,
+          AppWidgetTheme.cardBorderOpacity,
         );
-        final textColor = AppColors.getTextColorForTheme(
+        final textColor = AppWidgetTheme.getTextColor(
           themeProvider.selectedGradient,
         );
 
         return Container(
           decoration: BoxDecoration(
             color: Colors.transparent,
-            borderRadius: BorderRadius.circular(AppDimensions.cardBorderRadius),
+            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
             border: Border.all(
               color: borderColor,
-              width: AppDimensions.cardBorderWidth,
+              width: AppWidgetTheme.cardBorderWidth,
             ),
           ),
           child: Padding(
-            padding: AppDimensions.cardPadding,
+            padding: AppWidgetTheme.cardPadding,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -56,11 +56,11 @@ class FoodLogWidget extends StatelessWidget {
                 Text(
                   'Food Log',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: AppWidgetTheme.fontSizeLG,
                     color: textColor,
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.3,
-                    shadows: AppEffects.textShadows,
+                    shadows: AppWidgetTheme.textShadows,
                   ),
                 ),
                 
@@ -96,25 +96,25 @@ class FoodLogWidget extends StatelessWidget {
           Icon(
             Icons.restaurant_menu,
             size: 48,
-            color: textColor.withValues(alpha: 0.3),
+            color: textColor.withValues(alpha: AppWidgetTheme.opacityMedium),
           ),
           const SizedBox(height: 16),
           Text(
             'No food logged today',
             style: TextStyle(
-              color: textColor.withValues(alpha: 0.6),
-              fontSize: 16,
+              color: textColor.withValues(alpha: AppWidgetTheme.opacityVeryHigh),
+              fontSize: AppWidgetTheme.fontSizeML,
               fontWeight: FontWeight.w500,
-              shadows: AppEffects.textShadows,
+              shadows: AppWidgetTheme.textShadows,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Take a photo of your food to get started!',
             style: TextStyle(
-              color: textColor.withValues(alpha: 0.4),
-              fontSize: 14,
-              shadows: AppEffects.textShadows,
+              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigh),
+              fontSize: AppWidgetTheme.fontSizeMS,
+              shadows: AppWidgetTheme.textShadows,
             ),
             textAlign: TextAlign.center,
           ),
@@ -186,10 +186,10 @@ class FoodLogWidget extends StatelessWidget {
                       children: [
                         Text(
                           item.name,
-                          style: const TextStyle(
-                            fontSize: 15,
+                          style: TextStyle(
+                            fontSize: AppWidgetTheme.fontSizeMD,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textDark,
+                            color: AppWidgetTheme.colorPrimaryDark,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -257,10 +257,10 @@ class FoodLogWidget extends StatelessWidget {
                   // Calories
                   Text(
                     '$itemCalories cal',
-                    style: const TextStyle(
-                      fontSize: 20,
+                    style: TextStyle(
+                      fontSize: AppWidgetTheme.fontSizeLG,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textDark,
+                      color: AppWidgetTheme.colorPrimaryDark,
                     ),
                   ),
                 ],
@@ -355,7 +355,7 @@ class FoodLogWidget extends StatelessWidget {
           'Delete Food Item',
           style: AppTypography.displaySmall.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppColors.textDark,
+            color: AppWidgetTheme.colorPrimaryDark,
           ),
         ),
         content: Text(
