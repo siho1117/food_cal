@@ -30,7 +30,16 @@ class ProgressData extends ChangeNotifier {
   double? _bmrValue;
   double? _tdeeValue;
   Map<String, int> _calorieGoals = {};
-  
+
+  // Progress tracking metrics
+  double? _startingWeight;
+  double? _startingBMI;
+  double? _targetBMI;
+  double? _bmiProgress;
+  double? _startingBodyFat;
+  double? _targetBodyFat;
+  double? _bodyFatProgress;
+
   // UI state
   bool _isLoading = true;
   String? _errorMessage;
@@ -49,9 +58,18 @@ class ProgressData extends ChangeNotifier {
   double? get tdeeValue => _tdeeValue;
   Map<String, int> get calorieGoals => _calorieGoals;
   List<WeightData> get weightHistory => _weightHistory;
-  
+
   // ✅ NEW: Expose target weight from UserProfile
   double? get targetWeight => _userProfile?.goalWeight;
+
+  // Progress tracking getters
+  double? get startingWeight => _startingWeight;
+  double? get startingBMI => _startingBMI;
+  double? get targetBMI => _targetBMI;
+  double? get bmiProgress => _bmiProgress;
+  double? get startingBodyFat => _startingBodyFat;
+  double? get targetBodyFat => _targetBodyFat;
+  double? get bodyFatProgress => _bodyFatProgress;
 
   /// Load all necessary user data and calculate metrics
   Future<void> loadUserData() async {
@@ -130,8 +148,61 @@ class ProgressData extends ChangeNotifier {
             currentWeight: currentWeight,
           );
         }
+
+        // Calculate progress tracking metrics
+        // Get starting weight from history
+        final startingWeight = HealthMetrics.getStartingWeight(weightHistory);
+
+        // Calculate starting BMI
+        final startingBMI = startingWeight != null
+            ? HealthMetrics.calculateBMI(height: userProfile.height, weight: startingWeight)
+            : null;
+
+        // Calculate target BMI
+        final targetBMI = userProfile.goalWeight != null
+            ? HealthMetrics.calculateBMI(height: userProfile.height, weight: userProfile.goalWeight)
+            : null;
+
+        // Calculate BMI progress
+        final bmiProgress = HealthMetrics.calculateProgress(
+          startValue: startingBMI,
+          currentValue: bmi,
+          targetValue: targetBMI,
+        );
+
+        // Calculate starting body fat
+        final startingBodyFat = HealthMetrics.calculateStartingBodyFat(
+          startingWeight: startingWeight,
+          height: userProfile.height,
+          age: userProfile.age,
+          gender: userProfile.gender,
+        );
+
+        // Calculate target body fat
+        final targetBodyFat = HealthMetrics.calculateTargetBodyFat(
+          targetWeight: userProfile.goalWeight,
+          height: userProfile.height,
+          age: userProfile.age,
+          gender: userProfile.gender,
+        );
+
+        // Calculate body fat progress
+        final bodyFatProgress = HealthMetrics.calculateProgress(
+          startValue: startingBodyFat,
+          currentValue: bodyFatValue,
+          targetValue: targetBodyFat,
+        );
+
+        // Store progress tracking values
+        _startingWeight = startingWeight;
+        _startingBMI = startingBMI;
+        _targetBMI = targetBMI;
+        _bmiProgress = bmiProgress;
+        _startingBodyFat = startingBodyFat;
+        _targetBodyFat = targetBodyFat;
+        _bodyFatProgress = bodyFatProgress;
       }
-      
+
       // Update all instance variables
       _userProfile = userProfile;
       _currentWeight = currentWeight;

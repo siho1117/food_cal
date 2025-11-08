@@ -516,4 +516,83 @@ class HealthMetrics {
 
     return missingData;
   }
+
+  // ============================================================================
+  // PROGRESS TRACKING METRICS
+  // ============================================================================
+
+  /// Calculate progress percentage toward a goal
+  /// Returns value between 0.0 (no progress) and 1.0 (goal reached)
+  ///
+  /// Formula: (start - current) / (start - target)
+  static double? calculateProgress({
+    required double? startValue,
+    required double? currentValue,
+    required double? targetValue,
+  }) {
+    if (startValue == null || currentValue == null || targetValue == null) {
+      return null;
+    }
+
+    // If already at target, return 100%
+    if ((currentValue - targetValue).abs() < 0.01) {
+      return 1.0;
+    }
+
+    // If start equals target, can't calculate progress
+    if ((startValue - targetValue).abs() < 0.01) {
+      return null;
+    }
+
+    // Calculate progress
+    return ((startValue - currentValue) / (startValue - targetValue)).clamp(0.0, 1.0);
+  }
+
+  /// Get starting weight from weight history (oldest entry)
+  static double? getStartingWeight(List<WeightData> weightHistory) {
+    if (weightHistory.isEmpty) return null;
+
+    final sortedHistory = List<WeightData>.from(weightHistory)
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    return sortedHistory.first.weight;
+  }
+
+  /// Calculate target body fat percentage based on target weight
+  static double? calculateTargetBodyFat({
+    required double? targetWeight,
+    required double? height, // in cm
+    required int? age,
+    required String? gender,
+  }) {
+    if (targetWeight == null || height == null) {
+      return null;
+    }
+
+    // Calculate target BMI
+    final targetBMI = calculateBMI(height: height, weight: targetWeight);
+    if (targetBMI == null) return null;
+
+    // Calculate body fat from target BMI
+    return calculateBodyFat(bmi: targetBMI, age: age, gender: gender);
+  }
+
+  /// Calculate starting body fat percentage based on starting weight
+  static double? calculateStartingBodyFat({
+    required double? startingWeight,
+    required double? height, // in cm
+    required int? age,
+    required String? gender,
+  }) {
+    if (startingWeight == null || height == null) {
+      return null;
+    }
+
+    // Calculate starting BMI
+    final startingBMI = calculateBMI(height: height, weight: startingWeight);
+    if (startingBMI == null) return null;
+
+    // Calculate body fat from starting BMI
+    return calculateBodyFat(bmi: startingBMI, age: age, gender: gender);
+  }
 }

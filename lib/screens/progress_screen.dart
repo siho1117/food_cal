@@ -5,10 +5,8 @@ import '../providers/progress_data.dart';
 import '../providers/exercise_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/progress/combined_weight_widget.dart';
-import '../widgets/progress/widget_bmi.dart';
 import '../widgets/progress/weight_history_graph_widget.dart';
-import '../widgets/progress/energy_metrics_widget.dart';
-import '../widgets/progress/daily_burn_widget.dart';
+import '../widgets/progress/health_metrics_widget.dart';
 import '../widgets/progress/exercise_log_widget.dart';
 import '../widgets/common/week_navigation_widget.dart';
 import '../config/design_system/theme_background.dart';
@@ -98,87 +96,44 @@ class _ProgressScreenState extends State<ProgressScreen> {
                         ),
                         
                         const SizedBox(height: 20),
-                        
-                        // Two-column layout - BMI (1/3) + Weight (2/3)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Left column - BMI Widget (1/3 width, matches weight height)
-                            Expanded(
-                              flex: 1,
-                              child: LayoutBuilder(
-                                builder: (context, constraints) {
-                                  final totalWidth = constraints.maxWidth * 3;
-                                  final weightWidgetWidth = (totalWidth - 16) * 2 / 3;
-                                  final height = weightWidgetWidth;
-                                  
-                                  return SizedBox(
-                                    height: height,
-                                    child: BmiWidget(
-                                      currentWeight: progressData.currentWeight ?? 70.0,
-                                      targetWeight: progressData.targetWeight ?? 65.0,
-                                      height: progressData.userProfile?.height?.toDouble() ?? 170.0,
-                                      gradient: ThemeBackground.getGradient(
-                                        themeProvider.selectedGradient,
-                                      ),
-                                      textColor: AppColors.getTextColorForTheme(
-                                        themeProvider.selectedGradient,
-                                      ),
-                                      borderColor: themeProvider.selectedGradient == '01'
-                                          ? Colors.black.withOpacity(0.5)
-                                          : null,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            
-                            const SizedBox(width: 16),
-                            
-                            // Right column - Weight Widget (2/3 width, square)
-                            Expanded(
-                              flex: 2,
-                              child: AspectRatio(
-                                aspectRatio: 1.0,
-                                child: CombinedWeightWidget(
-                                  currentWeight: progressData.currentWeight,
-                                  isMetric: progressData.isMetric,
-                                  onWeightEntered: progressData.addWeightEntry,
-                                ),
-                              ),
-                            ),
-                          ],
+
+                        // Weight Widget (full width, square aspect ratio)
+                        AspectRatio(
+                          aspectRatio: 1.0,
+                          child: CombinedWeightWidget(
+                            currentWeight: progressData.currentWeight,
+                            isMetric: progressData.isMetric,
+                            onWeightEntered: progressData.addWeightEntry,
+                          ),
                         ),
-                        
+
                         const SizedBox(height: 20),
-                        
+
                         // Weight History Graph
                         WeightHistoryGraphWidget(
                           weightHistory: progressData.weightHistory,
                           isMetric: progressData.isMetric,
                         ),
-                        
+
                         const SizedBox(height: 20),
-                        
-                        // Energy Metrics
-                        EnergyMetricsWidget(
-                          userProfile: progressData.userProfile,
+
+                        // Health Metrics (BMI, Body Fat, BMR, TDEE combined)
+                        HealthMetricsWidget(
                           currentWeight: progressData.currentWeight,
+                          targetWeight: progressData.targetWeight,
+                          userProfile: progressData.userProfile,
+                          bmi: progressData.bmiValue,
+                          bmiCategory: progressData.bmiClassification,
+                          bodyFat: progressData.bodyFatValue,
+                          bodyFatCategory: progressData.bodyFatClassification,
                           bmr: progressData.bmrValue,
                           tdee: progressData.tdeeValue,
-                          calorieGoals: progressData.calorieGoals,
+                          targetBMI: progressData.targetBMI,
+                          bmiProgress: progressData.bmiProgress,
+                          targetBodyFat: progressData.targetBodyFat,
+                          bodyFatProgress: progressData.bodyFatProgress,
                         ),
-                        
-                        const SizedBox(height: 20),
-                        
-                        // Daily Burn Widget
-                        DailyBurnWidget(
-                          userProfile: exerciseProvider.userProfile,
-                          currentWeight: progressData.currentWeight,
-                          totalCaloriesBurned: exerciseProvider.totalCaloriesBurned,
-                          weeklyCaloriesBurned: 0,
-                        ),
-                        
+
                         // Bottom padding for navigation bar
                         const SizedBox(height: 100),
                       ],

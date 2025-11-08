@@ -78,10 +78,6 @@ class ExerciseLogWidget extends StatelessWidget {
     return exercises.fold(0, (sum, exercise) => sum + exercise.caloriesBurned);
   }
 
-  int _calculateTotalMinutes(List<ExerciseEntry> exercises) {
-    return exercises.fold(0, (sum, exercise) => sum + exercise.duration);
-  }
-
   IconData _getExerciseIconData(String exerciseName) {
     final iconMap = {
       'running': Icons.directions_run,
@@ -136,7 +132,6 @@ class ExerciseLogWidget extends StatelessWidget {
   ) {
     final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
     final totalCalories = _calculateTotalCalories(exercises);
-    final totalMinutes = _calculateTotalMinutes(exercises);
 
     return Container(
       width: double.infinity,
@@ -198,9 +193,9 @@ class ExerciseLogWidget extends StatelessWidget {
               // Left: Stats Card with Animated Numbers
               _AnimatedStatsCard(
                 textColor: textColor,
-                totalCalories: totalCalories,
-                totalMinutes: totalMinutes,
-                exerciseCount: exercises.length,
+                currentCalories: totalCalories,
+                targetCalories: provider.dailyBurnGoal,
+                progressPercentage: provider.burnProgress,
               ),
               SizedBox(width: AppWidgetTheme.spaceLG),
 
@@ -559,15 +554,15 @@ class ExerciseLogWidget extends StatelessWidget {
 // Animated Stats Card Widget
 class _AnimatedStatsCard extends StatefulWidget {
   final Color textColor;
-  final int totalCalories;
-  final int totalMinutes;
-  final int exerciseCount;
+  final int currentCalories;
+  final int targetCalories;
+  final double progressPercentage;
 
   const _AnimatedStatsCard({
     required this.textColor,
-    required this.totalCalories,
-    required this.totalMinutes,
-    required this.exerciseCount,
+    required this.currentCalories,
+    required this.targetCalories,
+    required this.progressPercentage,
   });
 
   @override
@@ -577,13 +572,13 @@ class _AnimatedStatsCard extends StatefulWidget {
 class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _caloriesAnimation;
-  late Animation<double> _minutesAnimation;
-  late Animation<double> _exerciseAnimation;
+  late Animation<double> _currentCaloriesAnimation;
+  late Animation<double> _targetCaloriesAnimation;
+  late Animation<double> _percentageAnimation;
 
-  int _previousCalories = 0;
-  int _previousMinutes = 0;
-  int _previousExercises = 0;
+  int _previousCurrentCalories = 0;
+  int _previousTargetCalories = 0;
+  double _previousPercentage = 0.0;
 
   @override
   void initState() {
@@ -600,14 +595,14 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
   @override
   void didUpdateWidget(_AnimatedStatsCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
-    if (oldWidget.totalCalories != widget.totalCalories ||
-        oldWidget.totalMinutes != widget.totalMinutes ||
-        oldWidget.exerciseCount != widget.exerciseCount) {
-      _previousCalories = oldWidget.totalCalories;
-      _previousMinutes = oldWidget.totalMinutes;
-      _previousExercises = oldWidget.exerciseCount;
-      
+
+    if (oldWidget.currentCalories != widget.currentCalories ||
+        oldWidget.targetCalories != widget.targetCalories ||
+        oldWidget.progressPercentage != widget.progressPercentage) {
+      _previousCurrentCalories = oldWidget.currentCalories;
+      _previousTargetCalories = oldWidget.targetCalories;
+      _previousPercentage = oldWidget.progressPercentage;
+
       _controller.reset();
       _updateAnimations();
       _controller.forward();
@@ -615,25 +610,25 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
   }
 
   void _updateAnimations() {
-    _caloriesAnimation = Tween<double>(
-      begin: _previousCalories.toDouble(),
-      end: widget.totalCalories.toDouble(),
+    _currentCaloriesAnimation = Tween<double>(
+      begin: _previousCurrentCalories.toDouble(),
+      end: widget.currentCalories.toDouble(),
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutCubic,
     ));
 
-    _minutesAnimation = Tween<double>(
-      begin: _previousMinutes.toDouble(),
-      end: widget.totalMinutes.toDouble(),
+    _targetCaloriesAnimation = Tween<double>(
+      begin: _previousTargetCalories.toDouble(),
+      end: widget.targetCalories.toDouble(),
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutCubic,
     ));
 
-    _exerciseAnimation = Tween<double>(
-      begin: _previousExercises.toDouble(),
-      end: widget.exerciseCount.toDouble(),
+    _percentageAnimation = Tween<double>(
+      begin: _previousPercentage,
+      end: widget.progressPercentage,
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutCubic,
@@ -664,13 +659,17 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
+          final currentCal = _currentCaloriesAnimation.value.round();
+          final targetCal = _targetCaloriesAnimation.value.round();
+          final percentage = (_percentageAnimation.value * 100).round();
+
           return Column(
             children: [
-              // Calories
-              _buildStatItem(
+              // Calories (current / target)
+              _buildCaloriesFractionItem(
                 widget.textColor,
-                _caloriesAnimation.value.round().toString(),
-                'Calories',
+                currentCal,
+                targetCal,
               ),
               Container(
                 height: 1,
@@ -679,24 +678,11 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
                 color: widget.textColor.withValues(alpha: AppWidgetTheme.opacityMediumHigh),
               ),
 
-              // Minutes
-              _buildStatItem(
+              // Percentage with circular progress ring
+              _buildPercentageRing(
                 widget.textColor,
-                _minutesAnimation.value.round().toString(),
-                'Minutes',
-              ),
-              Container(
-                height: 1,
-                width: 50,
-                margin: EdgeInsets.symmetric(vertical: AppWidgetTheme.spaceMS),
-                color: widget.textColor.withValues(alpha: AppWidgetTheme.opacityMediumHigh),
-              ),
-
-              // Exercises
-              _buildStatItem(
-                widget.textColor,
-                _exerciseAnimation.value.round().toString(),
-                _exerciseAnimation.value.round() == 1 ? 'Exercise' : 'Exercises',
+                percentage,
+                _percentageAnimation.value,
               ),
             ],
           );
@@ -705,11 +691,12 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
     );
   }
 
-  Widget _buildStatItem(Color textColor, String value, String label) {
+  Widget _buildCaloriesFractionItem(Color textColor, int current, int target) {
     return Column(
       children: [
+        // Calories Burned (current)
         Text(
-          value,
+          current.toString(),
           style: TextStyle(
             fontSize: AppWidgetTheme.fontSizeXXL,
             fontWeight: FontWeight.w700,
@@ -717,9 +704,27 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
             color: textColor,
           ),
         ),
+        SizedBox(height: 2),
+        // Divider
+        Container(
+          height: 1.5,
+          width: 40,
+          color: textColor.withValues(alpha: AppWidgetTheme.opacityHigh),
+        ),
+        SizedBox(height: 2),
+        // Target Calories
+        Text(
+          target.toString(),
+          style: TextStyle(
+            fontSize: AppWidgetTheme.fontSizeLG,
+            fontWeight: FontWeight.w600,
+            height: 1,
+            color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+          ),
+        ),
         SizedBox(height: 4),
         Text(
-          label.toUpperCase(),
+          'CALORIES',
           style: TextStyle(
             fontSize: AppWidgetTheme.fontSizeXS,
             fontWeight: FontWeight.w600,
@@ -731,4 +736,67 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
       ],
     );
   }
+
+  Widget _buildPercentageRing(Color textColor, int percentage, double progress) {
+    return Column(
+      children: [
+        // Circular progress ring
+        SizedBox(
+          width: 55,
+          height: 55,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Background ring
+              SizedBox(
+                width: 55,
+                height: 55,
+                child: CircularProgressIndicator(
+                  value: 1.0,
+                  strokeWidth: 4.5,
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    textColor.withValues(alpha: AppWidgetTheme.opacityMedium),
+                  ),
+                ),
+              ),
+              // Progress ring
+              SizedBox(
+                width: 55,
+                height: 55,
+                child: CircularProgressIndicator(
+                  value: progress.clamp(0.0, 1.0),
+                  strokeWidth: 4.5,
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                ),
+              ),
+              // Percentage text
+              Text(
+                '$percentage%',
+                style: TextStyle(
+                  fontSize: AppWidgetTheme.fontSizeML,
+                  fontWeight: FontWeight.w700,
+                  height: 1,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'COMPLETE',
+          style: TextStyle(
+            fontSize: AppWidgetTheme.fontSizeXS,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.4,
+            color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
 }
