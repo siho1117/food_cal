@@ -7,12 +7,18 @@ import '../../data/models/user_profile.dart';
 class EnergyMetricsWidget extends StatefulWidget {
   final UserProfile? userProfile;
   final double? currentWeight;
+  final double? bmr;
+  final double? tdee;
+  final Map<String, int>? calorieGoals;
   final VoidCallback? onSettingsTap;
 
   const EnergyMetricsWidget({
     super.key,
     required this.userProfile,
     required this.currentWeight,
+    this.bmr,
+    this.tdee,
+    this.calorieGoals,
     this.onSettingsTap,
   });
 
@@ -60,55 +66,36 @@ class _EnergyMetricsWidgetState extends State<EnergyMetricsWidget>
     super.dispose();
   }
 
-  Map<String, dynamic> _calculateEnergy() {
+  /// Check what data is missing for display
+  List<String>? _getMissingData() {
     final profile = widget.userProfile;
     final weight = widget.currentWeight;
 
     if (profile == null || weight == null) {
-      return {'missingData': ['profile', 'weight']};
+      return ['profile', 'weight'];
     }
 
-    final age = profile.age;
-    final gender = profile.gender;
-    final height = profile.height;
-    final activityLevel = profile.activityLevel ?? 1.2;
-
-    if (age == null || gender == null || height == null) {
-      return {'missingData': ['age', 'gender', 'height']};
+    if (profile.age == null || profile.gender == null || profile.height == null) {
+      return ['age', 'gender', 'height'];
     }
 
-    double bmr;
-    if (gender.toLowerCase() == 'male') {
-      bmr = 10 * weight + 6.25 * height - 5 * age + 5;
-    } else {
-      bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+    if (widget.bmr == null || widget.tdee == null) {
+      return ['BMR/TDEE calculations'];
     }
 
-    final tdee = bmr * activityLevel;
-
-    final calorieGoals = {
-      'maintain': tdee.round(),
-      'mildLoss': (tdee - 250).round(),
-      'weightLoss': (tdee - 500).round(),
-      'gain': (tdee + 500).round(),
-    };
-
-    return {
-      'bmr': bmr,
-      'tdee': tdee,
-      'activityLevel': activityLevel,
-      'calorieGoals': calorieGoals,
-    };
+    return null; // All data is available
   }
 
   @override
   Widget build(BuildContext context) {
-    final calculationResults = _calculateEnergy();
-    final missingData = calculationResults['missingData'] as List<String>?;
-    final bmr = calculationResults['bmr'] as double?;
-    final tdee = calculationResults['tdee'] as double?;
-    final activityLevel = calculationResults['activityLevel'] as double?;
-    final calorieGoals = calculationResults['calorieGoals'] as Map<String, int>?;
+    // Check if we have the minimum required data
+    final List<String>? missingData = _getMissingData();
+
+    // Use props directly - no calculations in the widget
+    final bmr = widget.bmr;
+    final tdee = widget.tdee;
+    final activityLevel = widget.userProfile?.activityLevel ?? 1.2;
+    final calorieGoals = widget.calorieGoals;
 
     return FadeTransition(
       opacity: _fadeAnimation,

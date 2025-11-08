@@ -6,11 +6,11 @@ import '../data/repositories/user_repository.dart';
 import '../data/services/budget_service.dart';
 import '../data/models/food_item.dart';
 import '../data/models/user_profile.dart';
-import '../utils/macro_calculator.dart';
-import '../utils/daily_calorie_calculator.dart';
-import '../utils/cost_calculator.dart';
-import '../utils/progress_calculator.dart';
-import '../utils/date_helper.dart';
+import '../utils/home/macro_calculator.dart';
+import '../utils/home/daily_calorie_calculator.dart';
+import '../utils/home/cost_calculator.dart';
+import '../utils/progress/progress_calculator.dart';
+import '../utils/shared/date_helper.dart';
 
 class HomeProvider extends ChangeNotifier {
   // Direct instantiation - both repositories use singleton services internally

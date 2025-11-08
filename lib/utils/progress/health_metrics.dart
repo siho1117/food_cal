@@ -1,12 +1,23 @@
-// lib/utils/formula.dart
-import '../data/models/user_profile.dart';
-import '../data/models/weight_data.dart';  // Changed from weight_entry.dart
+// lib/utils/health_metrics.dart
+import '../../data/models/user_profile.dart';
+import '../../data/models/weight_data.dart';
 
-/// Centralized class for health-related formula calculations
+/// Centralized class for health and fitness metric calculations
+///
+/// Contains calculations for:
+/// - Body composition (BMI, body fat percentage)
+/// - Energy expenditure (BMR, TDEE)
+/// - Weight progress tracking
+/// - Calorie goals and recommendations
+///
 /// All methods are static to allow easy access without instantiation
-class Formula {
+class HealthMetrics {
   // Private constructor to prevent instantiation
-  Formula._();
+  HealthMetrics._();
+
+  // ============================================================================
+  // BODY COMPOSITION METRICS
+  // ============================================================================
 
   /// Calculate BMI using the standard formula: weight(kg) / height(m)²
   static double? calculateBMI({
@@ -93,6 +104,10 @@ class Formula {
     }
   }
 
+  // ============================================================================
+  // ENERGY EXPENDITURE METRICS
+  // ============================================================================
+
   /// Calculate BMR (Basal Metabolic Rate) using Mifflin-St Jeor Equation
   static double? calculateBMR({
     required double? weight, // in kg
@@ -142,6 +157,10 @@ class Formula {
     return 'Very Active';
   }
 
+  // ============================================================================
+  // CALORIE GOALS & TARGETS
+  // ============================================================================
+
   /// Calculate calorie targets for weight loss, maintenance, and gain
   static Map<String, int> getCalorieTargets(double? tdee) {
     if (tdee == null) {
@@ -153,158 +172,6 @@ class Formula {
     final int gain = (maintain * 1.15).round(); // 15% surplus for weight gain
 
     return {'lose': lose, 'maintain': maintain, 'gain': gain};
-  }
-
-  /// Calculate progress percentage toward goal weight
-  static double calculateGoalProgress({
-    required double? currentWeight,
-    required double? targetWeight,
-  }) {
-    if (currentWeight == null || targetWeight == null) {
-      return 0.0;
-    }
-
-    // If target equals current, return 100%
-    if ((targetWeight - currentWeight).abs() < 0.1) {
-      return 1.0;
-    }
-
-    // If losing weight
-    if (currentWeight > targetWeight) {
-      // Assume starting point was 20% higher than target
-      final startWeight = targetWeight * 1.2;
-      final totalToLose = startWeight - targetWeight;
-      final lost = startWeight - currentWeight;
-
-      return (lost / totalToLose).clamp(0.0, 1.0);
-    }
-    // If gaining weight
-    else {
-      // Assume starting point was 20% lower than target
-      final startWeight = targetWeight * 0.8;
-      final totalToGain = targetWeight - startWeight;
-      final gained = currentWeight - startWeight;
-
-      return (gained / totalToGain).clamp(0.0, 1.0);
-    }
-  }
-
-  /// Calculate remaining weight to goal
-  static double? getRemainingWeightToGoal({
-    required double? currentWeight,
-    required double? targetWeight,
-  }) {
-    if (currentWeight == null || targetWeight == null) {
-      return null;
-    }
-
-    return currentWeight - targetWeight;
-  }
-
-  /// Get weight change direction text (to lose/to gain)
-  static String getWeightChangeDirectionText({
-    required double? currentWeight,
-    required double? targetWeight,
-    required bool isMetric,
-  }) {
-    if (currentWeight == null || targetWeight == null) {
-      return 'Set a target weight to track progress';
-    }
-
-    final difference = currentWeight - targetWeight;
-    if (difference.abs() < 0.1) {
-      return 'Goal achieved! 🎉';
-    }
-
-    // Calculate the absolute difference
-    final absoluteDifference = difference.abs();
-
-    // Convert to display units (kg or lbs)
-    final displayDifference =
-        isMetric ? absoluteDifference : absoluteDifference * 2.20462;
-
-    final formattedDifference = displayDifference.toStringAsFixed(1);
-    final units = isMetric ? 'kg' : 'lbs';
-
-    // Return formatted text based on whether gaining or losing
-    return difference > 0
-        ? '$formattedDifference $units to lose'
-        : '$formattedDifference $units to gain';
-  }
-
-  /// Format height with proper units
-  static String formatHeight({
-    required double? height, // in cm
-    required bool isMetric,
-  }) {
-    if (height == null) return 'Not set';
-
-    if (isMetric) {
-      return '$height cm';
-    } else {
-      // Convert cm to feet and inches
-      final totalInches = height / 2.54;
-      final feet = (totalInches / 12).floor();
-      final inches = (totalInches % 12).round();
-      return '$feet\' $inches"';
-    }
-  }
-
-  /// Format weight with proper units
-  static String formatWeight({
-    required double? weight,
-    required bool isMetric,
-    int decimalPlaces = 1,
-  }) {
-    if (weight == null) return 'Not set';
-
-    final displayWeight = isMetric ? weight : weight * 2.20462;
-    return '${displayWeight.toStringAsFixed(decimalPlaces)} ${isMetric ? 'kg' : 'lbs'}';
-  }
-
-  /// Format monthly weight goal with proper units
-  static String formatMonthlyWeightGoal({
-    required double? goal,
-    required bool isMetric,
-  }) {
-    if (goal == null) return 'Not set';
-
-    final isGain = goal > 0;
-    final absGoal = goal.abs();
-    final displayGoal = isMetric ? absGoal : absGoal * 2.20462;
-    final units = isMetric ? 'kg' : 'lbs';
-
-    return '${isGain ? '+' : '-'}${displayGoal.toStringAsFixed(1)} $units/month';
-  }
-
-  /// Calculate weight change over a time period
-  static double? calculateWeightChange({
-    required List<WeightData> entries,
-    required DateTime startDate,
-  }) {
-    if (entries.isEmpty) return null;
-
-    // Sort by timestamp (newest first)
-    final sortedEntries = List<WeightData>.from(entries)
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-
-    // Get latest weight
-    final latestWeight = sortedEntries.first.weight;
-
-    // Find the closest entry to the start date
-    WeightData? startEntry;
-    for (final entry in sortedEntries.reversed) {
-      if (entry.timestamp.isAfter(startDate) ||
-          entry.timestamp.isAtSameMomentAs(startDate)) {
-        startEntry = entry;
-        break;
-      }
-    }
-
-    if (startEntry == null) return null;
-
-    // Calculate change (positive means weight gain, negative means weight loss)
-    return latestWeight - startEntry.weight;
   }
 
   /// Calculate average daily calorie needs based on goals
@@ -360,40 +227,123 @@ class Formula {
     };
   }
 
-  /// Get list of missing data for calculations
-  static List<String> getMissingData({
-    required UserProfile? profile,
+  // ============================================================================
+  // WEIGHT PROGRESS TRACKING
+  // ============================================================================
+
+  /// Calculate progress percentage toward goal weight
+  static double calculateGoalProgress({
     required double? currentWeight,
+    required double? targetWeight,
   }) {
-    final missingData = <String>[];
-
-    if (profile == null) {
-      missingData.add("Profile");
-      return missingData;
+    if (currentWeight == null || targetWeight == null) {
+      return 0.0;
     }
 
-    if (currentWeight == null) {
-      missingData.add("Weight");
+    // If target equals current, return 100%
+    if ((targetWeight - currentWeight).abs() < 0.1) {
+      return 1.0;
     }
 
-    if (profile.height == null) {
-      missingData.add("Height");
-    }
+    // If losing weight
+    if (currentWeight > targetWeight) {
+      // Assume starting point was 20% higher than target
+      final startWeight = targetWeight * 1.2;
+      final totalToLose = startWeight - targetWeight;
+      final lost = startWeight - currentWeight;
 
-    if (profile.age == null) {
-      missingData.add("Age");
+      return (lost / totalToLose).clamp(0.0, 1.0);
     }
+    // If gaining weight
+    else {
+      // Assume starting point was 20% lower than target
+      final startWeight = targetWeight * 0.8;
+      final totalToGain = targetWeight - startWeight;
+      final gained = currentWeight - startWeight;
 
-    if (profile.gender == null) {
-      missingData.add("Gender");
+      return (gained / totalToGain).clamp(0.0, 1.0);
     }
-
-    if (profile.activityLevel == null) {
-      missingData.add("Activity Level");
-    }
-
-    return missingData;
   }
+
+  /// Calculate remaining weight to goal
+  static double? getRemainingWeightToGoal({
+    required double? currentWeight,
+    required double? targetWeight,
+  }) {
+    if (currentWeight == null || targetWeight == null) {
+      return null;
+    }
+
+    return currentWeight - targetWeight;
+  }
+
+  /// Get weight change direction text (to lose/to gain)
+  ///
+  /// Note: This method includes formatting. Consider moving to FormatHelpers
+  /// if you need pure calculation without formatting.
+  static String getWeightChangeDirectionText({
+    required double? currentWeight,
+    required double? targetWeight,
+    required bool isMetric,
+  }) {
+    if (currentWeight == null || targetWeight == null) {
+      return 'Set a target weight to track progress';
+    }
+
+    final difference = currentWeight - targetWeight;
+    if (difference.abs() < 0.1) {
+      return 'Goal achieved! 🎉';
+    }
+
+    // Calculate the absolute difference
+    final absoluteDifference = difference.abs();
+
+    // Convert to display units (kg or lbs)
+    final displayDifference =
+        isMetric ? absoluteDifference : absoluteDifference * 2.20462;
+
+    final formattedDifference = displayDifference.toStringAsFixed(1);
+    final units = isMetric ? 'kg' : 'lbs';
+
+    // Return formatted text based on whether gaining or losing
+    return difference > 0
+        ? '$formattedDifference $units to lose'
+        : '$formattedDifference $units to gain';
+  }
+
+  /// Calculate weight change over a time period
+  static double? calculateWeightChange({
+    required List<WeightData> entries,
+    required DateTime startDate,
+  }) {
+    if (entries.isEmpty) return null;
+
+    // Sort by timestamp (newest first)
+    final sortedEntries = List<WeightData>.from(entries)
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    // Get latest weight
+    final latestWeight = sortedEntries.first.weight;
+
+    // Find the closest entry to the start date
+    WeightData? startEntry;
+    for (final entry in sortedEntries.reversed) {
+      if (entry.timestamp.isAfter(startDate) ||
+          entry.timestamp.isAtSameMomentAs(startDate)) {
+        startEntry = entry;
+        break;
+      }
+    }
+
+    if (startEntry == null) return null;
+
+    // Calculate change (positive means weight gain, negative means weight loss)
+    return latestWeight - startEntry.weight;
+  }
+
+  // ============================================================================
+  // EXERCISE RECOMMENDATIONS
+  // ============================================================================
 
   /// Calculate recommended daily exercise calorie burn based on weight goals
   static Map<String, dynamic> calculateRecommendedExerciseBurn({
@@ -526,5 +476,44 @@ class Formula {
       'recommendation_type': recommendationType,
       'safety_adjusted': safetyAdjusted,
     };
+  }
+
+  // ============================================================================
+  // UTILITY METHODS
+  // ============================================================================
+
+  /// Get list of missing data for calculations
+  static List<String> getMissingData({
+    required UserProfile? profile,
+    required double? currentWeight,
+  }) {
+    final missingData = <String>[];
+
+    if (profile == null) {
+      missingData.add("Profile");
+      return missingData;
+    }
+
+    if (currentWeight == null) {
+      missingData.add("Weight");
+    }
+
+    if (profile.height == null) {
+      missingData.add("Height");
+    }
+
+    if (profile.age == null) {
+      missingData.add("Age");
+    }
+
+    if (profile.gender == null) {
+      missingData.add("Gender");
+    }
+
+    if (profile.activityLevel == null) {
+      missingData.add("Activity Level");
+    }
+
+    return missingData;
   }
 }

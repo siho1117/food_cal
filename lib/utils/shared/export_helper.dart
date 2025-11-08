@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
-import '../widgets/summary/summary_controls_widget.dart';
+import '../../widgets/summary/summary_controls_widget.dart';
 
 class ExportHelper {
   ExportHelper._(); // Private constructor

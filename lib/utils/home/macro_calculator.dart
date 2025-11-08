@@ -1,5 +1,5 @@
 // lib/utils/macro_calculator.dart
-import '../data/models/user_profile.dart';
+import '../../data/models/user_profile.dart';
 
 /// Centralized macronutrient calculation logic
 /// 

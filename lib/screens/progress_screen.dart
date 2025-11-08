@@ -164,6 +164,9 @@ class _ProgressScreenState extends State<ProgressScreen> {
                         EnergyMetricsWidget(
                           userProfile: progressData.userProfile,
                           currentWeight: progressData.currentWeight,
+                          bmr: progressData.bmrValue,
+                          tdee: progressData.tdeeValue,
+                          calorieGoals: progressData.calorieGoals,
                         ),
                         
                         const SizedBox(height: 20),

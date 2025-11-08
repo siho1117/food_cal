@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../../config/design_system/typography.dart'; // UPDATED: Import typography
 import '../../data/models/user_profile.dart';
-import '../../utils/formula.dart';
+import '../../utils/progress/health_metrics.dart';
 
 class DailyBurnWidget extends StatefulWidget {
   final UserProfile? userProfile;
@@ -370,7 +370,7 @@ class _DailyBurnWidgetState extends State<DailyBurnWidget>
   Map<String, dynamic> _calculateBurnRecommendation() {
     try {
       // Calculate BMR for use in exercise recommendations
-      final bmr = Formula.calculateBMR(
+      final bmr = HealthMetrics.calculateBMR(
         weight: widget.currentWeight,
         height: widget.userProfile?.height,
         age: widget.userProfile?.age,
@@ -378,7 +378,7 @@ class _DailyBurnWidgetState extends State<DailyBurnWidget>
       );
 
       // Calculate recommended exercise burn
-      return Formula.calculateRecommendedExerciseBurn(
+      return HealthMetrics.calculateRecommendedExerciseBurn(
         monthlyWeightGoal: widget.userProfile?.monthlyWeightGoal,
         bmr: bmr,
         activityLevel: widget.userProfile?.activityLevel,

@@ -4,7 +4,8 @@ import 'package:flutter/foundation.dart';
 import '../data/repositories/user_repository.dart';
 import '../data/models/user_profile.dart';
 import '../data/models/weight_data.dart';
-import '../utils/formula.dart';
+import '../utils/shared/format_helpers.dart';
+import '../utils/progress/health_metrics.dart';
 
 class SettingsProvider extends ChangeNotifier {
   // Direct instantiation - UserRepository is effectively a singleton
@@ -31,24 +32,19 @@ class SettingsProvider extends ChangeNotifier {
   String? get avatarUrl => _avatarUrl;
 
   // Computed properties for UI display
-  String get formattedHeight => Formula.formatHeight(
-    height: _userProfile?.height,
-    isMetric: _isMetric,
-  );
-
-  String get formattedWeight => Formula.formatWeight(
-    weight: _currentWeight,
-    isMetric: _isMetric,
-  );
-
-  String get formattedMonthlyGoal => _userProfile?.monthlyWeightGoal != null
-      ? Formula.formatMonthlyWeightGoal(
-          goal: _userProfile!.monthlyWeightGoal,
-          isMetric: _isMetric,
-        )
+  String get formattedHeight => _userProfile?.height != null
+      ? FormatHelpers.formatHeight(_userProfile!.height!)
       : 'Not set';
 
-  String get activityLevelText => Formula.getActivityLevelText(
+  String get formattedWeight => _currentWeight != null
+      ? FormatHelpers.formatWeight(_currentWeight)
+      : 'Not set';
+
+  String get formattedMonthlyGoal => _userProfile?.monthlyWeightGoal != null
+      ? FormatHelpers.formatMonthlyWeightGoal(_userProfile!.monthlyWeightGoal)
+      : 'Not set';
+
+  String get activityLevelText => HealthMetrics.getActivityLevelText(
     _userProfile?.activityLevel,
   );
 

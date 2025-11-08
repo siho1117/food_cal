@@ -5,7 +5,7 @@ import '../data/repositories/user_repository.dart';
 import '../data/models/user_profile.dart';
 import '../data/models/exercise_entry.dart';
 import '../data/storage/local_storage.dart';
-import '../utils/formula.dart';
+import '../utils/progress/health_metrics.dart';
 
 class ExerciseProvider extends ChangeNotifier {
   // Direct instantiation - both are singletons
@@ -94,9 +94,9 @@ class ExerciseProvider extends ChangeNotifier {
       );
 
       // Calculate exercise recommendations
-      _burnRecommendation = Formula.calculateRecommendedExerciseBurn(
+      _burnRecommendation = HealthMetrics.calculateRecommendedExerciseBurn(
         monthlyWeightGoal: _userProfile?.monthlyWeightGoal,
-        bmr: Formula.calculateBMR(
+        bmr: HealthMetrics.calculateBMR(
           weight: _currentWeight,
           height: _userProfile?.height,
           age: _userProfile?.age,

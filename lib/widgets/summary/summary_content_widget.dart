@@ -5,7 +5,7 @@ import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/exercise_provider.dart';
-import '../../utils/summary_data_calculator.dart';
+import '../../utils/shared/summary_data_calculator.dart';
 import 'summary_controls_widget.dart';
 
 class SummaryContentWidget extends StatelessWidget {

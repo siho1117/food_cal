@@ -1,11 +1,11 @@
 // lib/utils/daily_calorie_calculator.dart
-import '../data/models/user_profile.dart';
-import '../utils/formula.dart';
+import '../../data/models/user_profile.dart';
+import '../progress/health_metrics.dart';
 
 /// Calculator for daily calorie goals based on TDEE and weight goals
-/// 
+///
 /// Handles:
-/// - BMR and TDEE calculations via Formula utility
+/// - BMR and TDEE calculations via HealthMetrics utility
 /// - Monthly weight goal adjustments
 /// - Safety caps (minimum 90% of BMR for weight loss)
 /// - Fallback defaults when user data is incomplete
@@ -41,8 +41,8 @@ class DailyCalorieCalculator {
     }
 
     try {
-      // Calculate BMR using Formula utility
-      final bmr = Formula.calculateBMR(
+      // Calculate BMR using HealthMetrics utility
+      final bmr = HealthMetrics.calculateBMR(
         weight: currentWeight,
         height: userProfile.height,
         age: userProfile.age,
@@ -115,7 +115,7 @@ class DailyCalorieCalculator {
 
     try {
       // Calculate BMR and TDEE
-      final bmr = Formula.calculateBMR(
+      final bmr = HealthMetrics.calculateBMR(
         weight: currentWeight,
         height: userProfile.height,
         age: userProfile.age,
@@ -166,7 +166,7 @@ class DailyCalorieCalculator {
 
     try {
       // Calculate what the goal would be without safety cap
-      final bmr = Formula.calculateBMR(
+      final bmr = HealthMetrics.calculateBMR(
         weight: currentWeight,
         height: userProfile.height,
         age: userProfile.age,

@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../providers/exercise_provider.dart';
 import '../../data/models/exercise_entry.dart';
-import '../../utils/calorie_estimator.dart';
+import '../../utils/progress/calorie_estimator.dart';
 
 /// Controller for exercise entry dialog
 /// 

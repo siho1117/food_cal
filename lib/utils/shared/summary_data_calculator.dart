@@ -1,8 +1,8 @@
 // lib/utils/summary_data_calculator.dart
-import '../providers/home_provider.dart';
-import '../providers/exercise_provider.dart';
-import '../data/models/exercise_entry.dart';
-import '../widgets/summary/summary_controls_widget.dart';
+import '../../providers/home_provider.dart';
+import '../../providers/exercise_provider.dart';
+import '../../data/models/exercise_entry.dart';
+import '../../widgets/summary/summary_controls_widget.dart';
 
 class SummaryDataCalculator {
   // Private constructor to prevent instantiation

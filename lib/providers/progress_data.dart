@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../data/repositories/user_repository.dart';
 import '../data/models/user_profile.dart';
 import '../data/models/weight_data.dart';
-import '../utils/formula.dart';
+import '../utils/progress/health_metrics.dart';
 
 /// A data provider class that manages progress screen data
 /// Uses ChangeNotifier to inform widgets when data changes
@@ -90,42 +90,42 @@ class ProgressData extends ChangeNotifier {
       
       if (userProfile != null && currentWeight != null && userProfile.height != null) {
         // Calculate BMI
-        bmi = Formula.calculateBMI(
+        bmi = HealthMetrics.calculateBMI(
           height: userProfile.height,
           weight: currentWeight,
         );
-        
+
         if (bmi != null) {
-          bmiClassification = Formula.getBMIClassification(bmi);
-          
+          bmiClassification = HealthMetrics.getBMIClassification(bmi);
+
           // Calculate body fat percentage
-          bodyFatValue = Formula.calculateBodyFat(
+          bodyFatValue = HealthMetrics.calculateBodyFat(
             bmi: bmi,
             age: userProfile.age,
             gender: userProfile.gender,
           );
-          
+
           if (bodyFatValue != null) {
-            bodyFatClassification = Formula.getBodyFatClassification(
+            bodyFatClassification = HealthMetrics.getBodyFatClassification(
               bodyFatValue,
               userProfile.gender,
             );
           }
         }
-        
+
         // Calculate BMR and TDEE
-        bmr = Formula.calculateBMR(
+        bmr = HealthMetrics.calculateBMR(
           weight: currentWeight,
           height: userProfile.height,
           age: userProfile.age,
           gender: userProfile.gender,
         );
-        
+
         if (bmr != null && userProfile.activityLevel != null) {
           tdee = bmr * userProfile.activityLevel!;
-          
+
           // Calculate different calorie goals
-          calorieGoals = Formula.calculateDailyCalorieNeeds(
+          calorieGoals = HealthMetrics.calculateDailyCalorieNeeds(
             profile: userProfile,
             currentWeight: currentWeight,
           );

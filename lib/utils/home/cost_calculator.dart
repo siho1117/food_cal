@@ -1,7 +1,7 @@
 // lib/utils/cost_calculator.dart
 import 'package:flutter/foundation.dart';
-import '../data/repositories/food_repository.dart';
-import '../data/models/food_item.dart';
+import '../../data/repositories/food_repository.dart';
+import '../../data/models/food_item.dart';
 
 /// Utility class for calculating food costs over different time ranges
 ///
