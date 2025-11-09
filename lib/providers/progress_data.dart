@@ -254,6 +254,33 @@ class ProgressData extends ChangeNotifier {
     }
   }
 
+  /// Add weight entry with custom timestamp (for forward-filled entries)
+  Future<void> addWeightEntryWithTimestamp(double weight, DateTime timestamp, bool isMetric) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Create new weight entry with custom timestamp
+      final entry = WeightData.create(weight: weight, timestamp: timestamp);
+
+      // Save to repository
+      await _userRepository.addWeightEntry(entry);
+
+      // Update unit preference if it changed
+      if (_userProfile != null && _userProfile!.isMetric != isMetric) {
+        final updatedProfile = _userProfile!.copyWith(isMetric: isMetric);
+        await _userRepository.saveUserProfile(updatedProfile);
+      }
+
+      // Reload data to reflect changes
+      await loadUserData();
+    } catch (e) {
+      _errorMessage = 'Error saving weight: $e';
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   /// Update an existing weight entry
   Future<void> updateWeightEntry(String entryId, double weight, DateTime timestamp, String? note) async {
     _isLoading = true;

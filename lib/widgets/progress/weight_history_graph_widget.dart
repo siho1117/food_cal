@@ -2,11 +2,88 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../data/models/weight_data.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/progress_data.dart';
 import 'weight_edit_dialog.dart';
+
+enum TimeRange { sevenDays, twentyEightDays, threeMonths, sixMonths, oneYear }
+
+extension TimeRangeExtension on TimeRange {
+  String get label {
+    switch (this) {
+      case TimeRange.sevenDays:
+        return '7D';
+      case TimeRange.twentyEightDays:
+        return '28D';
+      case TimeRange.threeMonths:
+        return '3M';
+      case TimeRange.sixMonths:
+        return '6M';
+      case TimeRange.oneYear:
+        return '1Y';
+    }
+  }
+
+  String get title {
+    switch (this) {
+      case TimeRange.sevenDays:
+        return 'Weight History (7 Days)';
+      case TimeRange.twentyEightDays:
+        return 'Weight History (28 Days)';
+      case TimeRange.threeMonths:
+        return 'Weight History (3 Months)';
+      case TimeRange.sixMonths:
+        return 'Weight History (6 Months)';
+      case TimeRange.oneYear:
+        return 'Weight History (1 Year)';
+    }
+  }
+
+  int get days {
+    switch (this) {
+      case TimeRange.sevenDays:
+        return 7;
+      case TimeRange.twentyEightDays:
+        return 28;
+      case TimeRange.threeMonths:
+        return 90;
+      case TimeRange.sixMonths:
+        return 180;
+      case TimeRange.oneYear:
+        return 365;
+    }
+  }
+
+  int get maxDots {
+    switch (this) {
+      case TimeRange.sevenDays:
+        return 7;
+      case TimeRange.twentyEightDays:
+        return 8;
+      case TimeRange.threeMonths:
+      case TimeRange.sixMonths:
+      case TimeRange.oneYear:
+        return 6;
+    }
+  }
+}
+
+class WeightDataPoint {
+  final DateTime timestamp;
+  final double weight;
+  final bool isForwardFilled;
+  final WeightData? originalData; // null for forward-filled points
+
+  WeightDataPoint({
+    required this.timestamp,
+    required this.weight,
+    this.isForwardFilled = false,
+    this.originalData,
+  });
+}
 
 class WeightHistoryGraphWidget extends StatefulWidget {
   final List<WeightData> weightHistory;
@@ -24,83 +101,98 @@ class WeightHistoryGraphWidget extends StatefulWidget {
   State<WeightHistoryGraphWidget> createState() => _WeightHistoryGraphWidgetState();
 }
 
-class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _animation;
-  int? _touchedIndex;
+class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
+  TimeRange _selectedRange = TimeRange.sevenDays;
 
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    );
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  /// Get last 7 days of weight data (max 7 entries, one per day)
-  List<WeightData> _getLast7Days(List<WeightData> weightHistory) {
+  /// Get data for selected time range
+  List<WeightDataPoint> _getDataForRange(List<WeightData> weightHistory) {
     if (weightHistory.isEmpty) return [];
 
     final now = DateTime.now();
-    final sevenDaysAgo = now.subtract(const Duration(days: 7));
+    final startDate = now.subtract(Duration(days: _selectedRange.days));
 
-    print('=== WEIGHT DATA DEBUG ===');
-    print('Total entries: ${weightHistory.length}');
-    print('Filtering from: ${DateFormat('yyyy-MM-dd HH:mm').format(sevenDaysAgo)} to ${DateFormat('yyyy-MM-dd HH:mm').format(now)}');
-
-    // Filter to last 7 days and sort by date
-    final last7Days = weightHistory
-        .where((entry) => entry.timestamp.isAfter(sevenDaysAgo))
+    // Filter to selected range
+    final filteredData = weightHistory
+        .where((entry) => entry.timestamp.isAfter(startDate))
         .toList()
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
-    print('Entries in last 7 days: ${last7Days.length}');
-    for (final entry in last7Days) {
-      print('  - ${DateFormat('yyyy-MM-dd HH:mm').format(entry.timestamp)}: ${entry.weight} kg');
-    }
+    if (filteredData.isEmpty) return [];
 
-    // Take only the last entry per day (max 7 days)
-    final Map<String, WeightData> entriesPerDay = {};
-    for (final entry in last7Days) {
-      final dateKey = DateFormat('yyyy-MM-dd').format(entry.timestamp);
-      // Keep only the latest entry for each day
-      if (!entriesPerDay.containsKey(dateKey) ||
-          entry.timestamp.isAfter(entriesPerDay[dateKey]!.timestamp)) {
-        entriesPerDay[dateKey] = entry;
+    // Calculate interval to get desired max dots
+    final totalDays = _selectedRange.days;
+    final maxDots = _selectedRange.maxDots;
+    final intervalDays = (totalDays / maxDots).ceil();
+
+    return _getSampledData(filteredData, startDate, now, intervalDays);
+  }
+
+  /// Get sampled data with forward AND backward filling
+  /// intervalDays: 1 for daily, 3-4 for 28D, ~15 for 3M, ~30 for 6M, ~60 for 1Y
+  List<WeightDataPoint> _getSampledData(
+    List<WeightData> data,
+    DateTime startDate,
+    DateTime endDate,
+    int intervalDays,
+  ) {
+    final result = <WeightDataPoint>[];
+    final totalDays = endDate.difference(startDate).inDays;
+    final numPeriods = (totalDays / intervalDays).ceil();
+
+    // Group data by period
+    final Map<int, List<WeightData>> periodMap = {};
+    for (final entry in data) {
+      final daysSinceStart = entry.timestamp.difference(startDate).inDays;
+      final periodIndex = (daysSinceStart / intervalDays).floor();
+      if (periodIndex >= 0 && periodIndex < numPeriods) {
+        periodMap.putIfAbsent(periodIndex, () => []).add(entry);
       }
     }
 
-    print('Unique days: ${entriesPerDay.keys.length}');
-    for (final dateKey in entriesPerDay.keys) {
-      print('  - $dateKey: ${entriesPerDay[dateKey]!.weight} kg');
+    // Find earliest entry for backward fill
+    WeightData? earliestEntry;
+    if (data.isNotEmpty) {
+      earliestEntry = data.reduce((a, b) =>
+        a.timestamp.isBefore(b.timestamp) ? a : b
+      );
     }
 
-    // Convert back to list and sort
-    final result = entriesPerDay.values.toList()
-      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    // Sample with forward AND backward filling
+    WeightData? lastKnownEntry;
+    for (var i = 0; i < numPeriods; i++) {
+      final periodEnd = startDate.add(Duration(days: (i + 1) * intervalDays));
 
-    // Limit to 7 entries max
-    final finalResult = result.length > 7 ? result.sublist(result.length - 7) : result;
-    print('Final result: ${finalResult.length} entries');
-    print('========================');
+      if (periodMap.containsKey(i)) {
+        // Get last weight in this period
+        final periodData = periodMap[i]!;
+        periodData.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+        lastKnownEntry = periodData.last;
 
-    return finalResult;
+        result.add(WeightDataPoint(
+          timestamp: lastKnownEntry.timestamp,
+          weight: lastKnownEntry.weight,
+          isForwardFilled: false,
+          originalData: lastKnownEntry,
+        ));
+      } else {
+        // Use forward-fill if we have a last known entry
+        // OR backward-fill if we haven't seen data yet but know earliest entry
+        final fillWeight = lastKnownEntry ?? earliestEntry;
+
+        if (fillWeight != null) {
+          result.add(WeightDataPoint(
+            timestamp: periodEnd,
+            weight: fillWeight.weight,
+            isForwardFilled: true,
+          ));
+        }
+      }
+    }
+
+    return result;
   }
 
-  Map<String, double> _calculateStats(List<WeightData> data) {
+  Map<String, double> _calculateStats(List<WeightDataPoint> data) {
     if (data.isEmpty) {
       return {'totalChange': 0.0, 'average': 0.0, 'weeklyRate': 0.0};
     }
@@ -127,70 +219,125 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
       builder: (context, themeProvider, progressData, child) {
         final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
 
-        // Use weightHistory from ProgressData provider instead of widget prop
         final allWeightHistory = progressData.weightHistory;
-        final last7DaysData = _getLast7Days(allWeightHistory);
+        final displayData = _getDataForRange(allWeightHistory);
 
-        if (last7DaysData.isEmpty) {
+        if (displayData.isEmpty) {
           return _buildEmptyState(textColor);
         }
 
-        final stats = _calculateStats(last7DaysData);
+        final stats = _calculateStats(displayData);
 
-        return AnimatedBuilder(
-          animation: _animation,
-          builder: (context, child) {
-            return Transform.translate(
-              offset: Offset(0, 30 * (1 - _animation.value)),
-              child: Opacity(
-                opacity: _animation.value,
-                child: Container(
-                  width: double.infinity,
-                  constraints: const BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: AppWidgetTheme.getBorderColor(
-                        themeProvider.selectedGradient,
-                        AppWidgetTheme.cardBorderOpacity,
-                      ),
-                      width: AppWidgetTheme.cardBorderWidth,
-                    ),
-                    borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-                  ),
-                  padding: AppWidgetTheme.cardPadding,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title
-                      Text(
-                        'Weight History (7 Days)',
-                        style: TextStyle(
-                          fontSize: AppWidgetTheme.fontSizeLG,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.2,
-                          color: textColor,
-                        ),
-                      ),
-                      SizedBox(height: AppWidgetTheme.spaceXL),
-                      _buildCompactChart(last7DaysData, textColor),
-                      SizedBox(height: AppWidgetTheme.spaceMD),
-                      _buildSimpleXAxisLabels(last7DaysData, textColor),
-                      SizedBox(height: AppWidgetTheme.spaceLG),
-                      _buildCompactStats(stats, textColor),
-                    ],
-                  ),
+        return Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: AppWidgetTheme.getBorderColor(
+                themeProvider.selectedGradient,
+                AppWidgetTheme.cardBorderOpacity,
+              ),
+              width: AppWidgetTheme.cardBorderWidth,
+            ),
+            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+          ),
+          padding: AppWidgetTheme.cardPadding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title
+              Text(
+                _selectedRange.title,
+                style: TextStyle(
+                  fontSize: AppWidgetTheme.fontSizeLG,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
+                  color: textColor,
                 ),
               ),
-            );
-          },
+              const SizedBox(height: AppWidgetTheme.spaceMD),
+              // Time range selector (simplified)
+              _buildTimeRangeSelector(textColor),
+              const SizedBox(height: AppWidgetTheme.spaceXL),
+              _buildFlChart(context, displayData, textColor, progressData),
+              const SizedBox(height: AppWidgetTheme.spaceLG),
+              _buildCompactStats(stats, textColor),
+            ],
+          ),
         );
       },
     );
   }
 
-  Widget _buildCompactChart(List<WeightData> displayData, Color textColor) {
+  Widget _buildTimeRangeSelector(Color textColor) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: TimeRange.values.map((range) {
+        final isSelected = _selectedRange == range;
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedRange = range;
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? textColor.withValues(alpha: 0.2)
+                  : Colors.transparent,
+              border: Border.all(
+                color: isSelected
+                    ? textColor.withValues(alpha: 0.5)
+                    : textColor.withValues(alpha: 0.2),
+                width: isSelected ? 2 : 1,
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              range.label,
+              style: TextStyle(
+                color: textColor,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                fontSize: AppWidgetTheme.fontSizeSM,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildFlChart(BuildContext context, List<WeightDataPoint> displayData, Color textColor, ProgressData progressData) {
+    if (displayData.isEmpty) return const SizedBox.shrink();
+
+    final weights = displayData.map((e) => e.weight).toList();
+    final minWeight = weights.reduce((a, b) => a < b ? a : b);
+    final maxWeight = weights.reduce((a, b) => a > b ? a : b);
+
+    // Add ±2kg buffer with whole numbers
+    final minY = (minWeight - 2).floorToDouble();
+    final maxY = (maxWeight + 2).ceilToDouble();
+
+    // Weight data line
+    final weightSpots = displayData.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.weight);
+    }).toList();
+
+    // Target weight line (horizontal)
+    final List<FlSpot> targetSpots = [];
+    if (widget.targetWeight != null && displayData.isNotEmpty) {
+      targetSpots.add(FlSpot(0, widget.targetWeight!));
+      targetSpots.add(FlSpot((displayData.length - 1).toDouble(), widget.targetWeight!));
+    }
+
+    // Calculate Y-axis interval for clean labels
+    final yRange = maxY - minY;
+    final yInterval = _calculateNiceInterval(yRange, 4);
+
     return Container(
-      height: 180,
+      height: 220,
       decoration: BoxDecoration(
         color: AppWidgetTheme.getBackgroundColor(textColor, AppWidgetTheme.opacityVeryLight),
         borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusSM),
@@ -199,85 +346,188 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
           width: 1,
         ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildYAxisLabels(displayData, textColor),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return GestureDetector(
-                  onTapDown: (details) => _handleChartTap(details, displayData, constraints.maxWidth),
-                  child: CustomPaint(
-                    painter: WeightChartPainter(
-                      data: displayData,
-                      isMetric: widget.isMetric,
-                      targetWeight: widget.targetWeight,
-                      animation: _animation.value,
-                      touchedIndex: _touchedIndex,
-                      textColor: textColor,
+      padding: const EdgeInsets.all(16),
+      child: LineChart(
+        LineChartData(
+          minY: minY,
+          maxY: maxY,
+          lineBarsData: [
+            // Actual weight line
+            LineChartBarData(
+              spots: weightSpots,
+              isCurved: true,
+              color: textColor,
+              barWidth: 2.5,
+              dotData: FlDotData(
+                show: true,
+                getDotPainter: (spot, percent, barData, index) {
+                  final point = displayData[index];
+
+                  // Hollow dots for forward-filled values
+                  if (point.isForwardFilled) {
+                    return FlDotCirclePainter(
+                      radius: 4,
+                      color: Colors.transparent,
+                      strokeWidth: 2,
+                      strokeColor: textColor,
+                    );
+                  }
+
+                  // Filled dots for actual values
+                  return FlDotCirclePainter(
+                    radius: 4,
+                    color: Colors.white,
+                    strokeWidth: 2,
+                    strokeColor: textColor,
+                  );
+                },
+              ),
+              belowBarData: BarAreaData(
+                show: true,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    textColor.withValues(alpha: 0.3),
+                    textColor.withValues(alpha: 0.05),
+                  ],
+                ),
+              ),
+            ),
+            // Target weight reference line (horizontal)
+            if (targetSpots.isNotEmpty)
+              LineChartBarData(
+                spots: targetSpots,
+                isCurved: false,
+                color: textColor.withValues(alpha: 0.5),
+                barWidth: 2,
+                dashArray: [5, 5],
+                dotData: const FlDotData(show: false),
+                belowBarData: BarAreaData(show: false),
+              ),
+          ],
+          titlesData: FlTitlesData(
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 45,
+                interval: yInterval,
+                getTitlesWidget: (value, meta) {
+                  return Text(
+                    '${value.toStringAsFixed(0)} ${widget.isMetric ? 'kg' : 'lbs'}',
+                    style: TextStyle(
+                      fontSize: AppWidgetTheme.fontSizeXS,
+                      color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
                     ),
-                  ),
-                );
+                  );
+                },
+              ),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+                  if (index >= 0 && index < displayData.length) {
+                    final format = _selectedRange == TimeRange.oneYear
+                        ? 'M/yy'
+                        : 'M/d';
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        DateFormat(format).format(displayData[index].timestamp),
+                        style: TextStyle(
+                          fontSize: AppWidgetTheme.fontSizeXS,
+                          color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: yInterval,
+            getDrawingHorizontalLine: (value) {
+              return FlLine(
+                color: textColor.withValues(alpha: 0.1),
+                strokeWidth: 1,
+              );
+            },
+          ),
+          borderData: FlBorderData(show: false),
+          lineTouchData: LineTouchData(
+            enabled: true,
+            touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
+              // Allow editing on ALL ranges, including hollow dots
+              if (event is FlTapUpEvent &&
+                  touchResponse != null &&
+                  touchResponse.lineBarSpots != null) {
+                final spot = touchResponse.lineBarSpots!.first;
+                final index = spot.x.toInt();
+                if (index >= 0 && index < displayData.length) {
+                  final point = displayData[index];
+                  if (point.isForwardFilled) {
+                    // Tapping hollow dot: create new entry at this timestamp
+                    _showAddDialog(context, point.timestamp, point.weight, progressData);
+                  } else if (point.originalData != null) {
+                    // Tapping filled dot: edit existing entry
+                    _showEditDialog(context, point.originalData!, progressData);
+                  }
+                }
+              }
+            },
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipItems: (List<LineBarSpot> touchedSpots) {
+                return touchedSpots.map((spot) {
+                  final index = spot.x.toInt();
+                  if (index >= 0 && index < displayData.length) {
+                    final point = displayData[index];
+                    String suffix = '';
+                    if (point.isForwardFilled) {
+                      suffix = ' (tap to add)';
+                    }
+                    return LineTooltipItem(
+                      '${spot.y.toStringAsFixed(1)} ${widget.isMetric ? 'kg' : 'lbs'}$suffix\n${DateFormat('MMM d').format(displayData[index].timestamp)}',
+                      const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: AppWidgetTheme.fontSizeSM,
+                      ),
+                    );
+                  }
+                  return null;
+                }).toList();
               },
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  void _handleChartTap(TapDownDetails details, List<WeightData> displayData, double chartWidth) {
-    if (displayData.isEmpty) return;
-
-    // Use localPosition directly - it's already relative to the GestureDetector
-    final tapX = details.localPosition.dx;
-
-    print('=== TAP DEBUG ===');
-    print('Tap X: $tapX');
-    print('Chart Width: $chartWidth');
-    print('Display Data Length: ${displayData.length}');
-
-    // Validate tap is within chart bounds
-    if (tapX < 0 || tapX > chartWidth) {
-      print('Tap outside chart bounds');
-      print('================');
-      return;
+  /// Calculate a nice interval for Y-axis labels based on range
+  /// Small range (< 10kg): Every 2kg
+  /// Medium range (10-20kg): Every 5kg
+  /// Large range (> 20kg): Every 10kg
+  double _calculateNiceInterval(double range, int targetDivisions) {
+    if (range < 10) {
+      return 2.0;
+    } else if (range < 20) {
+      return 5.0;
+    } else {
+      return 10.0;
     }
-
-    // Find closest data point using even spacing
-    final pointSpacing = displayData.length > 1
-        ? chartWidth / (displayData.length - 1)
-        : chartWidth / 2;
-
-    print('Point Spacing: $pointSpacing');
-
-    int closestIndex = (tapX / pointSpacing).round();
-    closestIndex = closestIndex.clamp(0, displayData.length - 1);
-
-    // Check if tap is close enough to the point (within 40 pixels)
-    final expectedX = closestIndex * pointSpacing;
-    print('Closest Index: $closestIndex');
-    print('Expected X: $expectedX');
-    print('Distance: ${(tapX - expectedX).abs()}');
-
-    if ((tapX - expectedX).abs() > 40) {
-      print('Tap too far from dot (tolerance: 40px)');
-      print('================');
-      return;
-    }
-
-    print('Selected Date: ${displayData[closestIndex].timestamp}');
-    print('Selected Weight: ${displayData[closestIndex].weight}');
-    print('================');
-
-    // Show edit dialog for the tapped entry
-    _showEditDialog(displayData[closestIndex]);
   }
 
-  void _showEditDialog(WeightData entry) {
-    final progressData = Provider.of<ProgressData>(context, listen: false);
-
+  void _showEditDialog(BuildContext context, WeightData entry, ProgressData progressData) {
     showWeightEditDialog(
       context: context,
       entry: entry,
@@ -286,7 +536,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
       onSave: (entryId, weight, timestamp, note) async {
         await progressData.updateWeightEntry(entryId, weight, timestamp, note);
 
-        if (mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Weight updated successfully'),
@@ -300,7 +550,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
       onSaveTarget: (targetWeight) async {
         await progressData.updateTargetWeight(targetWeight);
 
-        if (mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Target weight updated successfully'),
@@ -314,60 +564,41 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
     );
   }
 
-  Widget _buildYAxisLabels(List<WeightData> data, Color textColor) {
-    if (data.isEmpty) return const SizedBox.shrink();
+  void _showAddDialog(BuildContext context, DateTime timestamp, double carriedWeight, ProgressData progressData) {
+    showWeightEditDialog(
+      context: context,
+      initialWeight: carriedWeight,
+      isMetric: widget.isMetric,
+      targetWeight: progressData.targetWeight,
+      onAddWeight: (weight, isMetric) async {
+        // Add new entry with the specific timestamp
+        await progressData.addWeightEntryWithTimestamp(weight, timestamp, isMetric);
 
-    final weights = data.map((e) => e.weight).toList();
-    final minWeight = weights.reduce((a, b) => a < b ? a : b);
-    final maxWeight = weights.reduce((a, b) => a > b ? a : b);
-    final middle = (minWeight + maxWeight) / 2;
-    final unit = widget.isMetric ? 'kg' : 'lbs';
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        _buildYLabel(maxWeight, textColor, showUnit: true, unit: unit),
-        _buildYLabel(middle, textColor),
-        _buildYLabel(minWeight, textColor),
-      ],
-    );
-  }
-
-  Widget _buildYLabel(double value, Color textColor, {bool showUnit = false, String? unit}) {
-    return Padding(
-      padding: EdgeInsets.only(right: AppWidgetTheme.spaceXS),
-      child: Text(
-        showUnit && unit != null
-            ? '${value.toStringAsFixed(0)} $unit'
-            : value.toStringAsFixed(0),
-        style: TextStyle(
-          fontSize: AppWidgetTheme.fontSizeXS,
-          color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
-          fontWeight: showUnit ? FontWeight.w600 : FontWeight.w400,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSimpleXAxisLabels(List<WeightData> data, Color textColor) {
-    if (data.isEmpty) return const SizedBox.shrink();
-
-    // Show all dates for 7-day view (max 7 labels)
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0), // Match chart padding
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: data.map((entry) {
-          return Text(
-            DateFormat('M/d').format(entry.timestamp),
-            style: TextStyle(
-              fontSize: AppWidgetTheme.fontSizeXS,
-              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Weight entry added successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
             ),
           );
-        }).toList(),
-      ),
+        }
+      },
+      onSaveTarget: (targetWeight) async {
+        await progressData.updateTargetWeight(targetWeight);
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Target weight updated successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
     );
   }
 
@@ -379,7 +610,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
     ];
 
     return Container(
-      padding: EdgeInsets.symmetric(
+      padding: const EdgeInsets.symmetric(
         horizontal: AppWidgetTheme.spaceLG,
         vertical: AppWidgetTheme.spaceMD,
       ),
@@ -404,7 +635,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
             color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
           ),
         ),
-        SizedBox(height: AppWidgetTheme.spaceXXS),
+        const SizedBox(height: AppWidgetTheme.spaceXXS),
         Text(
           value,
           style: TextStyle(
@@ -437,7 +668,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
             size: 60,
             color: textColor.withValues(alpha: AppWidgetTheme.opacityMedium),
           ),
-          SizedBox(height: AppWidgetTheme.spaceLG),
+          const SizedBox(height: AppWidgetTheme.spaceLG),
           Text(
             'No Weight History',
             style: TextStyle(
@@ -446,7 +677,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
               color: textColor,
             ),
           ),
-          SizedBox(height: AppWidgetTheme.spaceXS),
+          const SizedBox(height: AppWidgetTheme.spaceXS),
           Text(
             'Add weight entries to see beautiful charts',
             style: TextStyle(
@@ -458,100 +689,5 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
         ],
       ),
     );
-  }
-}
-
-class WeightChartPainter extends CustomPainter {
-  final List<WeightData> data;
-  final bool isMetric;
-  final double? targetWeight;
-  final double animation;
-  final int? touchedIndex;
-  final Color textColor;
-
-  WeightChartPainter({
-    required this.data,
-    required this.isMetric,
-    this.targetWeight,
-    required this.animation,
-    this.touchedIndex,
-    required this.textColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (data.isEmpty) return;
-
-    // Add horizontal padding (8px on each side)
-    const double horizontalPadding = 8.0;
-    final chartWidth = size.width - (horizontalPadding * 2);
-
-    final weights = data.map((e) => e.weight).toList();
-    final minWeight = weights.reduce((a, b) => a < b ? a : b);
-    final maxWeight = weights.reduce((a, b) => a > b ? a : b);
-    final range = maxWeight - minWeight;
-    final padding = range * 0.1;
-
-    final linePaint = Paint()
-      ..color = textColor
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final gradientPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          textColor.withValues(alpha: AppWidgetTheme.opacityMedium),
-          textColor.withValues(alpha: AppWidgetTheme.opacityVeryLight),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final path = Path();
-    final gradientPath = Path();
-    final points = <Offset>[];
-
-    for (var i = 0; i < data.length; i++) {
-      // Add horizontal padding to X calculation
-      final x = horizontalPadding + (i / (data.length - 1)) * chartWidth;
-      final normalizedWeight = (data[i].weight - (minWeight - padding)) / (range + 2 * padding);
-      final y = size.height * (1 - normalizedWeight * animation);
-
-      points.add(Offset(x, y));
-
-      if (i == 0) {
-        path.moveTo(x, y);
-        gradientPath.moveTo(x, size.height);
-        gradientPath.lineTo(x, y);
-      } else {
-        path.lineTo(x, y);
-        gradientPath.lineTo(x, y);
-      }
-    }
-
-    gradientPath.lineTo(size.width - horizontalPadding, size.height);
-    gradientPath.lineTo(horizontalPadding, size.height);
-    gradientPath.close();
-
-    canvas.drawPath(gradientPath, gradientPaint);
-    canvas.drawPath(path, linePaint);
-
-    for (var i = 0; i < points.length; i++) {
-      final point = points[i];
-      final dotPaint = Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.fill;
-
-      canvas.drawCircle(point, 3, dotPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(WeightChartPainter oldDelegate) {
-    return oldDelegate.animation != animation ||
-        oldDelegate.touchedIndex != touchedIndex ||
-        oldDelegate.textColor != textColor;
   }
 }
