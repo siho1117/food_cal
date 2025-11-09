@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../../config/design_system/theme_design.dart';
-import '../../config/design_system/dialog_theme.dart';
 import '../../providers/progress_data.dart';
 import '../../providers/theme_provider.dart';
+import 'weight_edit_dialog.dart';
 
 class CombinedWeightWidget extends StatefulWidget {
   final double? currentWeight;
@@ -289,121 +289,42 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
 
   void _showWeightDialog() {
     final progressData = Provider.of<ProgressData>(context, listen: false);
-    final currentTarget = progressData.targetWeight;
-    
-    final TextEditingController weightController = TextEditingController();
-    final TextEditingController targetController = TextEditingController(
-      text: currentTarget?.toStringAsFixed(1) ?? '',
-    );
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppDialogTheme.backgroundColor,
-        shape: AppDialogTheme.shape,
-        contentPadding: AppDialogTheme.contentPadding,
-        actionsPadding: AppDialogTheme.actionsPadding,
-        title: const Text(
-          'Update Weight',
-          style: AppDialogTheme.titleStyle,
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Current Weight Section
-              _buildSectionLabel('Current Weight'),
-              const SizedBox(height: 12),
-              TextField(
-                controller: weightController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                autofocus: true,
-                style: AppDialogTheme.inputTextStyle,
-                decoration: AppDialogTheme.inputDecoration(
-                  hintText: widget.isMetric ? 'kg' : 'lbs',
-                ),
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // Target Weight Section
-              _buildSectionLabel('Target Weight'),
-              const SizedBox(height: 12),
-              TextField(
-                controller: targetController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: AppDialogTheme.inputTextStyle,
-                decoration: AppDialogTheme.inputDecoration(
-                  hintText: widget.isMetric ? 'kg' : 'lbs',
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: AppDialogTheme.cancelButtonStyle,
-            child: const Text('Cancel'),
-          ),
-          const SizedBox(width: AppDialogTheme.buttonGap),
-          FilledButton(
-            onPressed: () async {
-              bool hasUpdates = false;
-              
-              // Update current weight if entered
-              final weight = double.tryParse(weightController.text);
-              if (weight != null && weight > 0) {
-                widget.onWeightEntered(weight, widget.isMetric);
-                hasUpdates = true;
-              }
-              
-              // Update target weight if entered
-              final targetWeight = double.tryParse(targetController.text);
-              if (targetWeight != null && targetWeight > 0) {
-                // Convert to kg if user is using lbs
-                final weightInKg = widget.isMetric 
-                    ? targetWeight 
-                    : targetWeight / 2.20462;
-                
-                await progressData.updateTargetWeight(weightInKg);
-                hasUpdates = true;
-              }
-              
-              if (context.mounted) {
-                Navigator.of(context).pop();
-                
-                // Show success message only if something was updated
-                if (hasUpdates) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Weight updated successfully'),
-                      backgroundColor: Colors.green,
-                      duration: Duration(seconds: 2),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              }
-            },
-            style: AppDialogTheme.primaryButtonStyle,
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
 
-  // Helper method to build section labels matching Edit Food Item style
-  Widget _buildSectionLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 14,
-        color: Color(0xFF374151),
-        fontWeight: FontWeight.bold,
-      ),
+    showWeightEditDialog(
+      context: context,
+      initialWeight: widget.currentWeight ?? 70.0,
+      isMetric: widget.isMetric,
+      targetWeight: progressData.targetWeight,
+      onAddWeight: (weight, isMetric) async {
+        // Add new weight entry
+        widget.onWeightEntered(weight, isMetric);
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Weight updated successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
+      onSaveTarget: (targetWeight) async {
+        // Save target weight
+        await progressData.updateTargetWeight(targetWeight);
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Target weight updated successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
     );
   }
 }

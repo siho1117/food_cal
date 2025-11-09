@@ -231,24 +231,74 @@ class ProgressData extends ChangeNotifier {
   Future<void> addWeightEntry(double weight, bool isMetric) async {
     _isLoading = true;
     notifyListeners();
-    
+
     try {
       // Create new weight entry
       final entry = WeightData.create(weight: weight);
-      
+
       // Save to repository
       await _userRepository.addWeightEntry(entry);
-      
+
       // Update unit preference if it changed
       if (_userProfile != null && _userProfile!.isMetric != isMetric) {
         final updatedProfile = _userProfile!.copyWith(isMetric: isMetric);
         await _userRepository.saveUserProfile(updatedProfile);
       }
-      
+
       // Reload data to reflect changes
       await loadUserData();
     } catch (e) {
       _errorMessage = 'Error saving weight: $e';
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Update an existing weight entry
+  Future<void> updateWeightEntry(String entryId, double weight, DateTime timestamp, String? note) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Update via repository
+      final success = await _userRepository.updateWeightEntry(entryId, weight, timestamp, note);
+
+      if (!success) {
+        _errorMessage = 'Failed to update weight entry';
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      // Reload data to reflect changes
+      await loadUserData();
+    } catch (e) {
+      _errorMessage = 'Error updating weight: $e';
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Delete a weight entry
+  Future<void> deleteWeightEntry(String entryId) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Delete via repository
+      final success = await _userRepository.deleteWeightEntry(entryId);
+
+      if (!success) {
+        _errorMessage = 'Failed to delete weight entry';
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      // Reload data to reflect changes
+      await loadUserData();
+    } catch (e) {
+      _errorMessage = 'Error deleting weight: $e';
       _isLoading = false;
       notifyListeners();
     }

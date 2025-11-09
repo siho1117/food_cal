@@ -95,6 +95,30 @@ class UserRepository {
     }
   }
 
+  // Update a specific weight entry
+  Future<bool> updateWeightEntry(String entryId, double weight, DateTime timestamp, String? note) async {
+    try {
+      final entries = await getWeightEntries();
+      final index = entries.indexWhere((entry) => entry.id == entryId);
+
+      if (index == -1) return false;
+
+      // Create updated entry with new values
+      final updatedEntry = WeightData(
+        id: entryId,
+        weight: weight,
+        timestamp: timestamp,
+        note: note,
+      );
+
+      entries[index] = updatedEntry;
+      return await _saveWeightEntries(entries);
+    } catch (e) {
+      debugPrint('Error updating weight entry: $e');
+      return false;
+    }
+  }
+
   // Delete a specific weight entry
   Future<bool> deleteWeightEntry(String entryId) async {
     try {

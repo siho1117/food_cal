@@ -1,11 +1,12 @@
 // lib/widgets/progress/weight_history_graph_widget.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../config/design_system/theme_design.dart';
-import '../../config/design_system/typography.dart';
+import 'package:provider/provider.dart';
+import '../../config/design_system/widget_theme.dart';
 import '../../data/models/weight_data.dart';
-
-enum TimePeriod { sevenDays, thirtyDays, threeMonths, sixMonths, oneYear }
+import '../../providers/theme_provider.dart';
+import '../../providers/progress_data.dart';
+import 'weight_edit_dialog.dart';
 
 class WeightHistoryGraphWidget extends StatefulWidget {
   final List<WeightData> weightHistory;
@@ -27,8 +28,6 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
-  
-  TimePeriod _selectedPeriod = TimePeriod.thirtyDays;
   int? _touchedIndex;
 
   @override
@@ -40,7 +39,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
     );
     _animation = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeInOutCubic,
+      curve: Curves.easeInOut,
     );
     _animationController.forward();
   }
@@ -51,49 +50,54 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
     super.dispose();
   }
 
-  List<WeightData> _getFilteredData() {
+  /// Get last 7 days of weight data (max 7 entries, one per day)
+  List<WeightData> _getLast7Days(List<WeightData> weightHistory) {
+    if (weightHistory.isEmpty) return [];
+
     final now = DateTime.now();
-    DateTime cutoffDate;
+    final sevenDaysAgo = now.subtract(const Duration(days: 7));
 
-    switch (_selectedPeriod) {
-      case TimePeriod.sevenDays:
-        cutoffDate = now.subtract(const Duration(days: 7));
-        break;
-      case TimePeriod.thirtyDays:
-        cutoffDate = now.subtract(const Duration(days: 30));
-        break;
-      case TimePeriod.threeMonths:
-        cutoffDate = now.subtract(const Duration(days: 90));
-        break;
-      case TimePeriod.sixMonths:
-        cutoffDate = now.subtract(const Duration(days: 180));
-        break;
-      case TimePeriod.oneYear:
-        cutoffDate = now.subtract(const Duration(days: 365));
-        break;
-    }
+    print('=== WEIGHT DATA DEBUG ===');
+    print('Total entries: ${weightHistory.length}');
+    print('Filtering from: ${DateFormat('yyyy-MM-dd HH:mm').format(sevenDaysAgo)} to ${DateFormat('yyyy-MM-dd HH:mm').format(now)}');
 
-    return widget.weightHistory
-        .where((entry) => entry.timestamp.isAfter(cutoffDate))
+    // Filter to last 7 days and sort by date
+    final last7Days = weightHistory
+        .where((entry) => entry.timestamp.isAfter(sevenDaysAgo))
         .toList()
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
-  }
 
-  List<WeightData> _simplifyData(List<WeightData> data) {
-    if (data.length <= 30) return data;
-    
-    final step = (data.length / 30).ceil();
-    final simplified = <WeightData>[];
-    
-    for (var i = 0; i < data.length; i += step) {
-      simplified.add(data[i]);
+    print('Entries in last 7 days: ${last7Days.length}');
+    for (final entry in last7Days) {
+      print('  - ${DateFormat('yyyy-MM-dd HH:mm').format(entry.timestamp)}: ${entry.weight} kg');
     }
-    
-    if (simplified.last != data.last) {
-      simplified.add(data.last);
+
+    // Take only the last entry per day (max 7 days)
+    final Map<String, WeightData> entriesPerDay = {};
+    for (final entry in last7Days) {
+      final dateKey = DateFormat('yyyy-MM-dd').format(entry.timestamp);
+      // Keep only the latest entry for each day
+      if (!entriesPerDay.containsKey(dateKey) ||
+          entry.timestamp.isAfter(entriesPerDay[dateKey]!.timestamp)) {
+        entriesPerDay[dateKey] = entry;
+      }
     }
-    
-    return simplified;
+
+    print('Unique days: ${entriesPerDay.keys.length}');
+    for (final dateKey in entriesPerDay.keys) {
+      print('  - $dateKey: ${entriesPerDay[dateKey]!.weight} kg');
+    }
+
+    // Convert back to list and sort
+    final result = entriesPerDay.values.toList()
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    // Limit to 7 entries max
+    final finalResult = result.length > 7 ? result.sublist(result.length - 7) : result;
+    print('Final result: ${finalResult.length} entries');
+    print('========================');
+
+    return finalResult;
   }
 
   Map<String, double> _calculateStats(List<WeightData> data) {
@@ -101,12 +105,14 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
       return {'totalChange': 0.0, 'average': 0.0, 'weeklyRate': 0.0};
     }
 
-    final weights = data.map((e) => e.weight).toList();
-    final totalChange = (weights.last - weights.first).toDouble();
-    final average = (weights.reduce((a, b) => a + b) / weights.length).toDouble();
-    
-    final days = data.last.timestamp.difference(data.first.timestamp).inDays;
-    final weeklyRate = days > 0 ? ((totalChange / days) * 7).toDouble() : 0.0;
+    final firstWeight = data.first.weight;
+    final lastWeight = data.last.weight;
+    final totalChange = lastWeight - firstWeight;
+
+    final average = data.map((e) => e.weight).reduce((a, b) => a + b) / data.length;
+
+    final daysDiff = data.last.timestamp.difference(data.first.timestamp).inDays;
+    final weeklyRate = daysDiff > 0 ? (totalChange / daysDiff) * 7 : 0.0;
 
     return {
       'totalChange': totalChange,
@@ -115,145 +121,249 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
     };
   }
 
-  Map<String, dynamic> _calculateTrend(List<WeightData> data) {
-    if (data.length < 2) {
-      return {'type': 'stable', 'rate': 0.0};
-    }
-
-    final recentData = data.length > 7 ? data.sublist(data.length - 7) : data;
-    final weights = recentData.map((e) => e.weight).toList();
-    final change = (weights.last - weights.first).toDouble();
-    final days = recentData.last.timestamp.difference(recentData.first.timestamp).inDays;
-    final weeklyRate = days > 0 ? ((change / days) * 7).toDouble() : 0.0;
-
-    if (weeklyRate.abs() < 0.2) {
-      return {'type': 'stable', 'rate': weeklyRate.abs()};
-    } else if (weeklyRate < 0) {
-      return {'type': 'losing', 'rate': weeklyRate};
-    } else {
-      return {'type': 'gaining', 'rate': weeklyRate};
-    }
-  }
-
-  String _getPeriodLabel(TimePeriod period) {
-    switch (period) {
-      case TimePeriod.sevenDays:
-        return '7D';
-      case TimePeriod.thirtyDays:
-        return '30D';
-      case TimePeriod.threeMonths:
-        return '3M';
-      case TimePeriod.sixMonths:
-        return '6M';
-      case TimePeriod.oneYear:
-        return '1Y';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final filteredData = _getFilteredData();
-    
-    if (filteredData.isEmpty) {
-      return _buildEmptyState();
-    }
+    return Consumer2<ThemeProvider, ProgressData>(
+      builder: (context, themeProvider, progressData, child) {
+        final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
 
-    final simplifiedData = _simplifyData(filteredData);
-    final stats = _calculateStats(filteredData);
-    final trend = _calculateTrend(filteredData);
+        // Use weightHistory from ProgressData provider instead of widget prop
+        final allWeightHistory = progressData.weightHistory;
+        final last7DaysData = _getLast7Days(allWeightHistory);
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, 30 * (1 - _animation.value)),
-          child: Opacity(
-            opacity: _animation.value,
-            child: Card(
-              elevation: 6,
-              shadowColor: Colors.black.withValues(alpha: 0.08),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: Colors.white,
-                ),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Weight History',
-                              style: AppTypography.displaySmall.copyWith(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppLegacyColors.primaryBlue,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            _buildTrendIndicator(trend),
-                          ],
-                        ),
-                        _buildPeriodSelector(),
-                      ],
+        if (last7DaysData.isEmpty) {
+          return _buildEmptyState(textColor);
+        }
+
+        final stats = _calculateStats(last7DaysData);
+
+        return AnimatedBuilder(
+          animation: _animation,
+          builder: (context, child) {
+            return Transform.translate(
+              offset: Offset(0, 30 * (1 - _animation.value)),
+              child: Opacity(
+                opacity: _animation.value,
+                child: Container(
+                  width: double.infinity,
+                  constraints: const BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: AppWidgetTheme.getBorderColor(
+                        themeProvider.selectedGradient,
+                        AppWidgetTheme.cardBorderOpacity,
+                      ),
+                      width: AppWidgetTheme.cardBorderWidth,
                     ),
-                    const SizedBox(height: 20),
-                    _buildCompactChart(simplifiedData),
-                    const SizedBox(height: 12),
-                    _buildSimpleXAxisLabels(simplifiedData),
-                    const SizedBox(height: 16),
-                    _buildCompactStats(stats),
-                  ],
+                    borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+                  ),
+                  padding: AppWidgetTheme.cardPadding,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
+                      Text(
+                        'Weight History (7 Days)',
+                        style: TextStyle(
+                          fontSize: AppWidgetTheme.fontSizeLG,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.2,
+                          color: textColor,
+                        ),
+                      ),
+                      SizedBox(height: AppWidgetTheme.spaceXL),
+                      _buildCompactChart(last7DaysData, textColor),
+                      SizedBox(height: AppWidgetTheme.spaceMD),
+                      _buildSimpleXAxisLabels(last7DaysData, textColor),
+                      SizedBox(height: AppWidgetTheme.spaceLG),
+                      _buildCompactStats(stats, textColor),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildPeriodSelector() {
+  Widget _buildCompactChart(List<WeightData> displayData, Color textColor) {
     return Container(
-      padding: const EdgeInsets.all(4),
+      height: 180,
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(10),
+        color: AppWidgetTheme.getBackgroundColor(textColor, AppWidgetTheme.opacityVeryLight),
+        borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusSM),
+        border: Border.all(
+          color: textColor.withValues(alpha: AppWidgetTheme.opacityMediumHigh),
+          width: 1,
+        ),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: TimePeriod.values.map((period) {
-          final isSelected = period == _selectedPeriod;
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedPeriod = period;
-                _animationController.reset();
-                _animationController.forward();
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: isSelected ? AppLegacyColors.primaryBlue : Colors.transparent,
-                borderRadius: BorderRadius.circular(7),
-              ),
-              child: Text(
-                _getPeriodLabel(period),
-                style: AppTypography.bodyMedium.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : Colors.grey[600],
-                ),
-              ),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildYAxisLabels(displayData, textColor),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return GestureDetector(
+                  onTapDown: (details) => _handleChartTap(details, displayData, constraints.maxWidth),
+                  child: CustomPaint(
+                    painter: WeightChartPainter(
+                      data: displayData,
+                      isMetric: widget.isMetric,
+                      targetWeight: widget.targetWeight,
+                      animation: _animation.value,
+                      touchedIndex: _touchedIndex,
+                      textColor: textColor,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleChartTap(TapDownDetails details, List<WeightData> displayData, double chartWidth) {
+    if (displayData.isEmpty) return;
+
+    // Use localPosition directly - it's already relative to the GestureDetector
+    final tapX = details.localPosition.dx;
+
+    print('=== TAP DEBUG ===');
+    print('Tap X: $tapX');
+    print('Chart Width: $chartWidth');
+    print('Display Data Length: ${displayData.length}');
+
+    // Validate tap is within chart bounds
+    if (tapX < 0 || tapX > chartWidth) {
+      print('Tap outside chart bounds');
+      print('================');
+      return;
+    }
+
+    // Find closest data point using even spacing
+    final pointSpacing = displayData.length > 1
+        ? chartWidth / (displayData.length - 1)
+        : chartWidth / 2;
+
+    print('Point Spacing: $pointSpacing');
+
+    int closestIndex = (tapX / pointSpacing).round();
+    closestIndex = closestIndex.clamp(0, displayData.length - 1);
+
+    // Check if tap is close enough to the point (within 40 pixels)
+    final expectedX = closestIndex * pointSpacing;
+    print('Closest Index: $closestIndex');
+    print('Expected X: $expectedX');
+    print('Distance: ${(tapX - expectedX).abs()}');
+
+    if ((tapX - expectedX).abs() > 40) {
+      print('Tap too far from dot (tolerance: 40px)');
+      print('================');
+      return;
+    }
+
+    print('Selected Date: ${displayData[closestIndex].timestamp}');
+    print('Selected Weight: ${displayData[closestIndex].weight}');
+    print('================');
+
+    // Show edit dialog for the tapped entry
+    _showEditDialog(displayData[closestIndex]);
+  }
+
+  void _showEditDialog(WeightData entry) {
+    final progressData = Provider.of<ProgressData>(context, listen: false);
+
+    showWeightEditDialog(
+      context: context,
+      entry: entry,
+      isMetric: widget.isMetric,
+      targetWeight: progressData.targetWeight,
+      onSave: (entryId, weight, timestamp, note) async {
+        await progressData.updateWeightEntry(entryId, weight, timestamp, note);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Weight updated successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
+      onSaveTarget: (targetWeight) async {
+        await progressData.updateTargetWeight(targetWeight);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Target weight updated successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  Widget _buildYAxisLabels(List<WeightData> data, Color textColor) {
+    if (data.isEmpty) return const SizedBox.shrink();
+
+    final weights = data.map((e) => e.weight).toList();
+    final minWeight = weights.reduce((a, b) => a < b ? a : b);
+    final maxWeight = weights.reduce((a, b) => a > b ? a : b);
+    final middle = (minWeight + maxWeight) / 2;
+    final unit = widget.isMetric ? 'kg' : 'lbs';
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        _buildYLabel(maxWeight, textColor, showUnit: true, unit: unit),
+        _buildYLabel(middle, textColor),
+        _buildYLabel(minWeight, textColor),
+      ],
+    );
+  }
+
+  Widget _buildYLabel(double value, Color textColor, {bool showUnit = false, String? unit}) {
+    return Padding(
+      padding: EdgeInsets.only(right: AppWidgetTheme.spaceXS),
+      child: Text(
+        showUnit && unit != null
+            ? '${value.toStringAsFixed(0)} $unit'
+            : value.toStringAsFixed(0),
+        style: TextStyle(
+          fontSize: AppWidgetTheme.fontSizeXS,
+          color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+          fontWeight: showUnit ? FontWeight.w600 : FontWeight.w400,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSimpleXAxisLabels(List<WeightData> data, Color textColor) {
+    if (data.isEmpty) return const SizedBox.shrink();
+
+    // Show all dates for 7-day view (max 7 labels)
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0), // Match chart padding
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: data.map((entry) {
+          return Text(
+            DateFormat('M/d').format(entry.timestamp),
+            style: TextStyle(
+              fontSize: AppWidgetTheme.fontSizeXS,
+              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
             ),
           );
         }).toList(),
@@ -261,149 +371,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
     );
   }
 
-  Widget _buildTrendIndicator(Map<String, dynamic> trend) {
-    final trendType = trend['type'] as String;
-    final rate = trend['rate'] as double;
-    
-    Color bgColor;
-    Color textColor;
-    String emoji;
-    String description;
-
-    switch (trendType) {
-      case 'losing':
-        bgColor = AppLegacyColors.coralAccent.withValues(alpha: 0.1);
-        textColor = AppLegacyColors.coralAccent;
-        emoji = '📉';
-        description = 'Losing ${rate.abs().toStringAsFixed(1)} ${widget.isMetric ? 'kg' : 'lbs'}/week';
-        break;
-      case 'gaining':
-        bgColor = AppLegacyColors.goldAccent.withValues(alpha: 0.1);
-        textColor = AppLegacyColors.goldAccent;
-        emoji = '📈';
-        description = 'Gaining ${rate.toStringAsFixed(1)} ${widget.isMetric ? 'kg' : 'lbs'}/week';
-        break;
-      default:
-        bgColor = AppLegacyColors.primaryBlue.withValues(alpha: 0.1);
-        textColor = AppLegacyColors.primaryBlue;
-        emoji = '➡️';
-        description = 'Maintaining within ${rate.toStringAsFixed(1)} ${widget.isMetric ? 'kg' : 'lbs'} range';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: textColor.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 14)),
-          const SizedBox(width: 6),
-          Text(
-            description,
-            style: AppTypography.bodyMedium.copyWith(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: textColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCompactChart(List<WeightData> data) {
-    return Container(
-      height: 180,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.grey[50]!, Colors.white],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildYAxisLabels(data),
-          Expanded(
-            child: CustomPaint(
-              painter: WeightChartPainter(
-                data: data,
-                isMetric: widget.isMetric,
-                targetWeight: widget.targetWeight,
-                animation: _animation.value,
-                touchedIndex: _touchedIndex,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildYAxisLabels(List<WeightData> data) {
-    if (data.isEmpty) return const SizedBox.shrink();
-    
-    final weights = data.map((e) => e.weight).toList();
-    final minWeight = weights.reduce((a, b) => a < b ? a : b);
-    final maxWeight = weights.reduce((a, b) => a > b ? a : b);
-    final middle = (minWeight + maxWeight) / 2;
-    
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        _buildYLabel(maxWeight),
-        _buildYLabel(middle),
-        _buildYLabel(minWeight),
-      ],
-    );
-  }
-
-  Widget _buildYLabel(double value) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 6),
-      child: Text(
-        value.toStringAsFixed(0),
-        style: AppTypography.labelLarge.copyWith(
-          fontSize: 10,
-          color: Colors.grey[600],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSimpleXAxisLabels(List<WeightData> data) {
-    if (data.isEmpty) return const SizedBox.shrink();
-    
-    final indices = data.length > 2 
-        ? [0, data.length ~/ 2, data.length - 1]
-        : [0, data.length - 1];
-    
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: indices.map((index) {
-        final date = data[index].timestamp;
-        final format = data.length > 30 ? 'MMM' : 'M/d';
-        
-        return Text(
-          DateFormat(format).format(date),
-          style: AppTypography.bodyMedium.copyWith(
-            fontSize: 10,
-            color: Colors.grey[600],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildCompactStats(Map<String, double> stats) {
+  Widget _buildCompactStats(Map<String, double> stats, Color textColor) {
     final statsToShow = [
       {'label': 'Total Change', 'value': '${stats['totalChange']! >= 0 ? '+' : ''}${stats['totalChange']!.toStringAsFixed(1)}'},
       {'label': 'Average', 'value': stats['average']!.toStringAsFixed(1)},
@@ -411,97 +379,83 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget>
     ];
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppWidgetTheme.spaceLG,
+        vertical: AppWidgetTheme.spaceMD,
+      ),
       decoration: BoxDecoration(
-        color: AppLegacyColors.secondaryBeige.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(12),
+        color: AppWidgetTheme.getBackgroundColor(textColor, AppWidgetTheme.opacityLight),
+        borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusSM),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: statsToShow.map((stat) => _buildCompactStatCard(stat['label']!, stat['value']!)).toList(),
+        children: statsToShow.map((stat) => _buildCompactStatCard(stat['label']!, stat['value']!, textColor)).toList(),
       ),
     );
   }
 
-  Widget _buildCompactStatCard(String label, String value) {
+  Widget _buildCompactStatCard(String label, String value, Color textColor) {
     return Column(
       children: [
         Text(
           label,
-          style: AppTypography.bodySmall.copyWith(
-            fontSize: 10,
-            color: Colors.grey[600],
+          style: TextStyle(
+            fontSize: AppWidgetTheme.fontSizeXS,
+            color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: AppWidgetTheme.spaceXXS),
         Text(
           value,
-          style: AppTypography.labelLarge.copyWith(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: AppLegacyColors.primaryBlue,
+          style: TextStyle(
+            fontSize: AppWidgetTheme.fontSizeMS,
+            fontWeight: FontWeight.w700,
+            color: textColor,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyState() {
-    return Card(
-      elevation: 6,
-      shadowColor: Colors.black.withValues(alpha: 0.08),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.show_chart,
-              size: 60,
-              color: Colors.grey[300],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No Weight History',
-              style: AppTypography.displaySmall.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppLegacyColors.primaryBlue,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Add weight entries to see beautiful charts',
-              style: AppTypography.bodyMedium.copyWith(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppLegacyColors.primaryBlue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                elevation: 2,
-              ),
-              child: Text(
-                '+ Add Weight Entry',
-                style: AppTypography.bodyMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ],
+  Widget _buildEmptyState(Color textColor) {
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: textColor.withValues(alpha: AppWidgetTheme.cardBorderOpacity),
+          width: AppWidgetTheme.cardBorderWidth,
         ),
+        borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+      ),
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.show_chart,
+            size: 60,
+            color: textColor.withValues(alpha: AppWidgetTheme.opacityMedium),
+          ),
+          SizedBox(height: AppWidgetTheme.spaceLG),
+          Text(
+            'No Weight History',
+            style: TextStyle(
+              fontSize: AppWidgetTheme.fontSizeLG,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+          ),
+          SizedBox(height: AppWidgetTheme.spaceXS),
+          Text(
+            'Add weight entries to see beautiful charts',
+            style: TextStyle(
+              fontSize: AppWidgetTheme.fontSizeSM,
+              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -513,6 +467,7 @@ class WeightChartPainter extends CustomPainter {
   final double? targetWeight;
   final double animation;
   final int? touchedIndex;
+  final Color textColor;
 
   WeightChartPainter({
     required this.data,
@@ -520,11 +475,16 @@ class WeightChartPainter extends CustomPainter {
     this.targetWeight,
     required this.animation,
     this.touchedIndex,
+    required this.textColor,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (data.isEmpty) return;
+
+    // Add horizontal padding (8px on each side)
+    const double horizontalPadding = 8.0;
+    final chartWidth = size.width - (horizontalPadding * 2);
 
     final weights = data.map((e) => e.weight).toList();
     final minWeight = weights.reduce((a, b) => a < b ? a : b);
@@ -533,7 +493,7 @@ class WeightChartPainter extends CustomPainter {
     final padding = range * 0.1;
 
     final linePaint = Paint()
-      ..color = AppLegacyColors.primaryBlue
+      ..color = textColor
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
@@ -544,8 +504,8 @@ class WeightChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          AppLegacyColors.primaryBlue.withValues(alpha: 0.2),
-          AppLegacyColors.primaryBlue.withValues(alpha: 0.05),
+          textColor.withValues(alpha: AppWidgetTheme.opacityMedium),
+          textColor.withValues(alpha: AppWidgetTheme.opacityVeryLight),
         ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
@@ -554,7 +514,8 @@ class WeightChartPainter extends CustomPainter {
     final points = <Offset>[];
 
     for (var i = 0; i < data.length; i++) {
-      final x = (i / (data.length - 1)) * size.width;
+      // Add horizontal padding to X calculation
+      final x = horizontalPadding + (i / (data.length - 1)) * chartWidth;
       final normalizedWeight = (data[i].weight - (minWeight - padding)) / (range + 2 * padding);
       final y = size.height * (1 - normalizedWeight * animation);
 
@@ -570,7 +531,8 @@ class WeightChartPainter extends CustomPainter {
       }
     }
 
-    gradientPath.lineTo(size.width, size.height);
+    gradientPath.lineTo(size.width - horizontalPadding, size.height);
+    gradientPath.lineTo(horizontalPadding, size.height);
     gradientPath.close();
 
     canvas.drawPath(gradientPath, gradientPaint);
@@ -581,19 +543,15 @@ class WeightChartPainter extends CustomPainter {
       final dotPaint = Paint()
         ..color = Colors.white
         ..style = PaintingStyle.fill;
-      final borderPaint = Paint()
-        ..color = AppLegacyColors.primaryBlue
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2;
 
-      canvas.drawCircle(point, 4, dotPaint);
-      canvas.drawCircle(point, 4, borderPaint);
+      canvas.drawCircle(point, 3, dotPaint);
     }
   }
 
   @override
   bool shouldRepaint(WeightChartPainter oldDelegate) {
     return oldDelegate.animation != animation ||
-        oldDelegate.touchedIndex != touchedIndex;
+        oldDelegate.touchedIndex != touchedIndex ||
+        oldDelegate.textColor != textColor;
   }
 }
