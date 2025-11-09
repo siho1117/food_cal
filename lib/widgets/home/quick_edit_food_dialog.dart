@@ -291,7 +291,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
       );
 
       // Save to repository
-      final success = await _foodRepository.updateFoodEntry(updatedItem);
+      final success = await _foodRepository.storageService.updateFoodEntry(updatedItem);
 
       if (success) {
         if (mounted) {
@@ -346,7 +346,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
       setState(() => _isLoading = true);
 
       try {
-        final success = await _foodRepository.deleteFoodEntry(
+        final success = await _foodRepository.storageService.deleteFoodEntry(
           widget.foodItem.id,
           widget.foodItem.timestamp,
         );

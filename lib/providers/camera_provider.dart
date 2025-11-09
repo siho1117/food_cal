@@ -76,7 +76,7 @@ class CameraProvider extends ChangeNotifier {
       }
 
       // Step 4: Auto-save to food log
-      final saveSuccess = await _foodRepository.saveFoodEntries(recognizedItems);
+      final saveSuccess = await _foodRepository.storageService.saveFoodEntries(recognizedItems);
       
       if (!saveSuccess) {
         if (context.mounted) {

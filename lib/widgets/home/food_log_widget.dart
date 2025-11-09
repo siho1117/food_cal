@@ -383,7 +383,7 @@ class FoodLogWidget extends StatelessWidget {
 
     if (result == true) {
       try {
-        await FoodRepository().deleteFoodEntry(item.id, item.timestamp);
+        await FoodRepository().storageService.deleteFoodEntry(item.id, item.timestamp);
         homeProvider.refreshData();
         return true;
       } catch (e) {

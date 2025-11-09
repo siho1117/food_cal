@@ -29,7 +29,7 @@ class CostCalculator {
   }) async {
     try {
       // Query ALL food entries in the date range (not just selected date!)
-      final entries = await repository.getFoodEntriesForDateRange(startDate, endDate);
+      final entries = await repository.storageService.getFoodEntriesForDateRange(startDate, endDate);
 
       double total = 0.0;
       for (final item in entries) {
@@ -99,7 +99,7 @@ class CostCalculator {
     required DateTime date,
   }) async {
     try {
-      final entries = await repository.getFoodEntriesForDate(date);
+      final entries = await repository.storageService.getFoodEntries(date);
 
       double total = 0.0;
       for (final item in entries) {
@@ -196,7 +196,7 @@ class CostCalculator {
     required DateTime endDate,
   }) async {
     try {
-      final entries = await repository.getFoodEntriesForDateRange(startDate, endDate);
+      final entries = await repository.storageService.getFoodEntriesForDateRange(startDate, endDate);
 
       double total = 0.0;
       int entriesWithCost = 0;

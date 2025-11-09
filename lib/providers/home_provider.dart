@@ -207,7 +207,7 @@ class HomeProvider extends ChangeNotifier {
   /// Load food entries for the selected date
   Future<void> _loadFoodEntries() async {
     try {
-      _foodEntries = await _foodRepository.getFoodEntriesForDate(_selectedDate);
+      _foodEntries = await _foodRepository.storageService.getFoodEntries(_selectedDate);
     } catch (e) {
       debugPrint('Error loading food entries: $e');
       _foodEntries = [];
@@ -284,7 +284,7 @@ class HomeProvider extends ChangeNotifier {
   Future<void> addFoodEntry(FoodItem entry) async {
     try {
       // Save to storage
-      await _foodRepository.saveFoodEntry(entry);
+      await _foodRepository.storageService.saveFoodEntry(entry);
 
       // If it's for the currently selected date, add to local state
       if (_isSameDay(entry.timestamp, _selectedDate)) {
@@ -304,7 +304,7 @@ class HomeProvider extends ChangeNotifier {
   Future<void> updateFoodEntry(FoodItem updatedItem) async {
     try {
       // Save to storage
-      await _foodRepository.updateFoodEntry(updatedItem);
+      await _foodRepository.storageService.updateFoodEntry(updatedItem);
 
       // Update in local state if it's for the current date
       if (_isSameDay(updatedItem.timestamp, _selectedDate)) {
@@ -331,7 +331,7 @@ class HomeProvider extends ChangeNotifier {
       );
 
       // Delete from storage with both id and timestamp
-      await _foodRepository.deleteFoodEntry(entryId, itemToDelete.timestamp);
+      await _foodRepository.storageService.deleteFoodEntry(entryId, itemToDelete.timestamp);
 
       // Remove from local state
       _foodEntries.removeWhere((item) => item.id == entryId);

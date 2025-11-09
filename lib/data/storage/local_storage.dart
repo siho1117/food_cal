@@ -16,9 +16,15 @@ class LocalStorage {
   factory LocalStorage() => _instance;
   LocalStorage._internal();
 
-  // Get temporary directory for file storage
-  Future<Directory> getTemporaryDirectory() async {
+  // Get application documents directory for file storage
+  Future<Directory> getApplicationDirectory() async {
     return await getApplicationDocumentsDirectory();
+  }
+
+  // Deprecated: Use getApplicationDirectory() instead
+  @Deprecated('Use getApplicationDirectory() instead - this method name is misleading')
+  Future<Directory> getTemporaryDirectory() async {
+    return await getApplicationDirectory();
   }
 
   // Get string value by key

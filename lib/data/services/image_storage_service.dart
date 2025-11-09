@@ -281,51 +281,6 @@ class ImageStorageService {
     return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension);
   }
 
-  /// DEBUG: Enhanced image storage debugging
-  Future<Map<String, dynamic>> debugImageStorage() async {
-    try {
-      debugPrint('=== IMAGE STORAGE DEBUG ===');
-      
-      final foodImagesDir = await _getFoodImagesDirectory();
-      debugPrint('Food images directory: ${foodImagesDir.path}');
-      debugPrint('Directory exists: ${await foodImagesDir.exists()}');
-      
-      if (await foodImagesDir.exists()) {
-        final entities = await foodImagesDir.list().toList();
-        final imageFiles = entities.where((e) => e is File && _isImageFile(e.path)).toList();
-        
-        debugPrint('Files in directory: ${entities.length}');
-        debugPrint('Image files: ${imageFiles.length}');
-        
-        // Show first few image files
-        for (int i = 0; i < imageFiles.length && i < 5; i++) {
-          final file = imageFiles[i] as File;
-          final filename = file.path.split('/').last;
-          final size = await file.length();
-          final modified = await file.lastModified();
-          debugPrint('  $filename - $size bytes - $modified');
-        }
-        
-        if (imageFiles.length > 5) {
-          debugPrint('  ... and ${imageFiles.length - 5} more files');
-        }
-      }
-      
-      debugPrint('=== END IMAGE STORAGE DEBUG ===');
-      
-      return {
-        'directory': foodImagesDir.path,
-        'exists': await foodImagesDir.exists(),
-        'fileCount': await foodImagesDir.exists() 
-            ? (await foodImagesDir.list().toList()).length 
-            : 0,
-      };
-    } catch (e) {
-      debugPrint('Error in image storage debug: $e');
-      return {'error': e.toString()};
-    }
-  }
-
   /// MIGRATION: Convert absolute paths to relative paths
   Future<String?> migrateAbsoluteToRelativePath(String absolutePath) async {
     try {

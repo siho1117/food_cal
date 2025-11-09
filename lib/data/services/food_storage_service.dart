@@ -74,6 +74,8 @@ class FoodStorageService {
   }
 
   /// Get food entries for a specific date
+  /// Deprecated: Use getFoodEntries() instead
+  @Deprecated('Use getFoodEntries() instead - same functionality')
   Future<List<FoodItem>> getFoodEntriesForDate(DateTime date) async {
     return await getFoodEntries(date);
   }
@@ -147,7 +149,7 @@ class FoodStorageService {
   /// Get food entries for a specific meal type on a date
   Future<List<FoodItem>> getFoodEntriesForMeal(DateTime date, String mealType) async {
     try {
-      final dateEntries = await getFoodEntriesForDate(date);
+      final dateEntries = await getFoodEntries(date);
       
       return dateEntries.where((entry) {
         return entry.mealType.toLowerCase() == mealType.toLowerCase();
