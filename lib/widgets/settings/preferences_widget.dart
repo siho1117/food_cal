@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/theme_provider.dart';
-import '../../config/design_system/theme_design.dart';
+import '../../config/design_system/widget_theme.dart';
+import '../../config/design_system/dialog_theme.dart';
+import '../../config/design_system/typography.dart';
 import 'language_selector_dialog.dart';
 import 'theme_selector_dialog.dart';
 
@@ -18,19 +20,23 @@ class PreferencesWidget extends StatelessWidget {
         // Also watch LanguageProvider and ThemeProvider for changes
         final languageProvider = Provider.of<LanguageProvider>(context);
         final themeProvider = Provider.of<ThemeProvider>(context);
-        
+
+        final borderColor = AppWidgetTheme.getBorderColor(
+          themeProvider.selectedGradient,
+          AppWidgetTheme.cardBorderOpacity,
+        );
+        final textColor = AppWidgetTheme.getTextColor(
+          themeProvider.selectedGradient,
+        );
+
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                spreadRadius: 0,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            color: Colors.black.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+            border: Border.all(
+              color: borderColor,
+              width: AppWidgetTheme.cardBorderWidth,
+            ),
           ),
           child: Column(
             children: [
@@ -38,6 +44,8 @@ class PreferencesWidget extends StatelessWidget {
               _buildPreferenceItem(
                 context,
                 settingsProvider,
+                textColor,
+                borderColor,
                 icon: Icons.language,
                 title: 'Language',
                 value: languageProvider.currentLanguageName,
@@ -45,12 +53,18 @@ class PreferencesWidget extends StatelessWidget {
                 onTap: () => _showLanguageDialog(context),
               ),
 
-              const Divider(height: 1),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: borderColor.withValues(alpha: AppWidgetTheme.opacityMediumLight),
+              ),
 
               // Theme preference
               _buildPreferenceItem(
                 context,
                 settingsProvider,
+                textColor,
+                borderColor,
                 icon: Icons.palette,
                 title: 'Theme',
                 value: themeProvider.getGradientDisplayName(themeProvider.selectedGradient),
@@ -58,29 +72,42 @@ class PreferencesWidget extends StatelessWidget {
                 onTap: () => _showThemeDialog(context),
               ),
 
-              const Divider(height: 1),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: borderColor.withValues(alpha: AppWidgetTheme.opacityMediumLight),
+              ),
 
               // Units preference with inline toggle
               _buildPreferenceItem(
                 context,
                 settingsProvider,
+                textColor,
+                borderColor,
                 icon: Icons.straighten,
                 title: 'Units',
                 value: settingsProvider.isMetric ? 'Metric' : 'Imperial',
                 trailing: Switch(
                   value: settingsProvider.isMetric,
                   onChanged: (value) => _toggleUnits(context, settingsProvider),
-                  activeColor: AppLegacyColors.primaryBlue,
+                  activeColor: textColor,
+                  trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
                 ),
                 onTap: () => _toggleUnits(context, settingsProvider),
               ),
 
-              const Divider(height: 1),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: borderColor.withValues(alpha: AppWidgetTheme.opacityMediumLight),
+              ),
 
               // Monthly weight goal
               _buildPreferenceItem(
                 context,
                 settingsProvider,
+                textColor,
+                borderColor,
                 icon: Icons.speed,
                 title: 'Monthly Weight Goal',
                 value: settingsProvider.formattedMonthlyGoal,
@@ -96,7 +123,9 @@ class PreferencesWidget extends StatelessWidget {
 
   Widget _buildPreferenceItem(
     BuildContext context,
-    SettingsProvider settingsProvider, {
+    SettingsProvider settingsProvider,
+    Color textColor,
+    Color borderColor, {
     required IconData icon,
     required String title,
     required String value,
@@ -105,74 +134,56 @@ class PreferencesWidget extends StatelessWidget {
     String? leadingEmoji,
     bool isLast = false,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        child: Row(
-          children: [
-            // Leading emoji or icon
-            if (leadingEmoji != null)
-              Container(
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                child: Text(
-                  leadingEmoji,
-                  style: const TextStyle(fontSize: 24),
-                ),
-              )
-            else
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppLegacyColors.primaryBlue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: AppLegacyColors.primaryBlue, size: 20),
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppWidgetTheme.spaceLG,
+        vertical: AppWidgetTheme.spaceSM,
+      ),
+      leading: leadingEmoji != null
+          ? Container(
+              width: AppWidgetTheme.iconContainerMedium,
+              height: AppWidgetTheme.iconContainerMedium,
+              alignment: Alignment.center,
+              child: Text(
+                leadingEmoji,
+                style: const TextStyle(fontSize: 24),
               ),
-            
-            const SizedBox(width: 16),
-            
-            // Title and value
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: AppLegacyColors.primaryBlue,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
+            )
+          : Container(
+              width: AppWidgetTheme.iconContainerMedium,
+              height: AppWidgetTheme.iconContainerMedium,
+              decoration: BoxDecoration(
+                color: textColor.withValues(alpha: AppWidgetTheme.opacityLight),
+                borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
+              ),
+              child: Icon(
+                icon,
+                color: textColor,
+                size: AppWidgetTheme.iconSizeMedium,
               ),
             ),
-            
-            // Trailing widget or chevron
-            if (trailing != null)
-              trailing
-            else
-              Icon(
-                Icons.chevron_right,
-                color: Colors.grey[400],
-                size: 24,
-              ),
-          ],
+      title: Text(
+        title,
+        style: AppTypography.labelMedium.copyWith(
+          color: textColor,
         ),
       ),
+      subtitle: Text(
+        value,
+        style: AppTypography.bodyMedium.copyWith(
+          color: textColor.withValues(
+            alpha: AppWidgetTheme.opacityVeryHigh,
+          ),
+        ),
+      ),
+      trailing: trailing ??
+          Icon(
+            Icons.chevron_right,
+            color: textColor.withValues(
+              alpha: AppWidgetTheme.opacityHigh,
+            ),
+          ),
+      onTap: onTap,
     );
   }
 
@@ -205,7 +216,7 @@ class PreferencesWidget extends StatelessWidget {
 
   void _showWeightGoalDialog(BuildContext context, SettingsProvider settingsProvider) {
     final TextEditingController controller = TextEditingController();
-    
+
     // Pre-fill with current goal if it exists
     if (settingsProvider.userProfile?.monthlyWeightGoal != null) {
       final currentGoal = settingsProvider.userProfile!.monthlyWeightGoal!;
@@ -215,65 +226,80 @@ class PreferencesWidget extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Monthly Weight Goal'),
+        backgroundColor: AppDialogTheme.backgroundColor,
+        shape: AppDialogTheme.shape,
+        contentPadding: AppDialogTheme.contentPadding,
+        actionsPadding: AppDialogTheme.actionsPadding,
+        title: const Text(
+          'Monthly Weight Goal',
+          style: AppDialogTheme.titleStyle,
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'How much weight do you want to lose per month?',
-              style: TextStyle(fontSize: 14),
+              style: AppDialogTheme.bodyStyle,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppDialogTheme.elementSpacing),
             TextField(
               controller: controller,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: settingsProvider.isMetric ? 'Goal (kg)' : 'Goal (lbs)',
+              style: AppDialogTheme.inputTextStyle,
+              decoration: AppDialogTheme.inputDecoration(
                 hintText: '0.5',
-                border: const OutlineInputBorder(),
+              ).copyWith(
+                labelText: settingsProvider.isMetric ? 'Goal (kg)' : 'Goal (lbs)',
                 suffixText: settingsProvider.isMetric ? 'kg' : 'lbs',
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Recommended: 0.5-1 ${settingsProvider.isMetric ? 'kg' : 'lbs'} per month',
-              style: TextStyle(
+              style: AppDialogTheme.bodyStyle.copyWith(
                 fontSize: 12,
-                color: Colors.grey[600],
                 fontStyle: FontStyle.italic,
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final input = double.tryParse(controller.text);
-              if (input != null && input > 0) {
-                // Store as negative (weight loss)
-                final goalInKg = settingsProvider.isMetric 
-                    ? -input 
-                    : -input * 0.453592; // Convert lbs to kg
-                    
-                await settingsProvider.updateMonthlyWeightGoal(goalInKg);
-                
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Monthly weight goal updated'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Save'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: AppDialogTheme.cancelButtonStyle,
+                child: const Text('Cancel'),
+              ),
+              const SizedBox(width: AppDialogTheme.buttonGap),
+              FilledButton(
+                onPressed: () async {
+                  final input = double.tryParse(controller.text);
+                  if (input != null && input > 0) {
+                    // Store as negative (weight loss)
+                    final goalInKg = settingsProvider.isMetric
+                        ? -input
+                        : -input * 0.453592; // Convert lbs to kg
+
+                    await settingsProvider.updateMonthlyWeightGoal(goalInKg);
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Monthly weight goal updated'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  }
+                },
+                style: AppDialogTheme.primaryButtonStyle,
+                child: const Text('Save'),
+              ),
+            ],
           ),
         ],
       ),

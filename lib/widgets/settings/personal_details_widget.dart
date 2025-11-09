@@ -1,71 +1,100 @@
 // lib/widgets/settings/personal_details_widget.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
-import '../../config/design_system/theme_design.dart';
+import '../../providers/theme_provider.dart';
+import '../../config/design_system/widget_theme.dart';
+import '../../config/design_system/dialog_theme.dart';
+import '../../config/design_system/typography.dart';
+import 'height_scroll_dialog.dart';
 
 class PersonalDetailsWidget extends StatelessWidget {
   const PersonalDetailsWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
+    return Consumer2<SettingsProvider, ThemeProvider>(
+      builder: (context, settingsProvider, themeProvider, child) {
+        final borderColor = AppWidgetTheme.getBorderColor(
+          themeProvider.selectedGradient,
+          AppWidgetTheme.cardBorderOpacity,
+        );
+        final textColor = AppWidgetTheme.getTextColor(
+          themeProvider.selectedGradient,
+        );
+
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                spreadRadius: 0,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            color: Colors.black.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+            border: Border.all(
+              color: borderColor,
+              width: AppWidgetTheme.cardBorderWidth,
+            ),
           ),
           child: Column(
             children: [
               _buildDetailItem(
                 context,
                 settingsProvider,
+                textColor,
                 icon: Icons.cake,
                 title: 'Date of Birth',
                 value: settingsProvider.calculatedAge,
                 onTap: () => _showDatePicker(context, settingsProvider),
               ),
-              const Divider(height: 1),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: borderColor.withValues(alpha: AppWidgetTheme.opacityMediumLight),
+              ),
               _buildDetailItem(
                 context,
                 settingsProvider,
+                textColor,
                 icon: Icons.height,
                 title: 'Height',
                 value: settingsProvider.formattedHeight,
                 onTap: () => _showHeightDialog(context, settingsProvider),
               ),
-              const Divider(height: 1),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: borderColor.withValues(alpha: AppWidgetTheme.opacityMediumLight),
+              ),
               _buildDetailItem(
                 context,
                 settingsProvider,
+                textColor,
                 icon: Icons.monitor_weight,
                 title: 'Current Weight',
                 value: settingsProvider.formattedWeight,
                 onTap: () => _showWeightDialog(context, settingsProvider),
               ),
-              const Divider(height: 1),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: borderColor.withValues(alpha: AppWidgetTheme.opacityMediumLight),
+              ),
               _buildDetailItem(
                 context,
                 settingsProvider,
+                textColor,
                 icon: Icons.person,
                 title: 'Gender',
                 value: settingsProvider.userProfile?.gender ?? 'Not set',
                 onTap: () => _showGenderDialog(context, settingsProvider),
               ),
-              const Divider(height: 1),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: borderColor.withValues(alpha: AppWidgetTheme.opacityMediumLight),
+              ),
               _buildDetailItem(
                 context,
                 settingsProvider,
+                textColor,
                 icon: Icons.fitness_center,
                 title: 'Activity Level',
                 value: settingsProvider.activityLevelText,
@@ -80,46 +109,55 @@ class PersonalDetailsWidget extends StatelessWidget {
 
   Widget _buildDetailItem(
     BuildContext context,
-    SettingsProvider settingsProvider, {
+    SettingsProvider settingsProvider,
+    Color textColor, {
     required IconData icon,
     required String title,
     required String value,
     required VoidCallback onTap,
   }) {
     return ListTile(
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppWidgetTheme.spaceLG,
+        vertical: AppWidgetTheme.spaceSM,
+      ),
       leading: Container(
-        padding: const EdgeInsets.all(8),
+        width: AppWidgetTheme.iconContainerMedium,
+        height: AppWidgetTheme.iconContainerMedium,
         decoration: BoxDecoration(
-          color: AppLegacyColors.primaryBlue.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+          color: textColor.withValues(alpha: AppWidgetTheme.opacityLight),
+          borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
         ),
         child: Icon(
           icon,
-          color: AppLegacyColors.primaryBlue,
-          size: 20,
+          color: textColor,
+          size: AppWidgetTheme.iconSizeMedium,
         ),
       ),
       title: Text(
         title,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
+        style: AppTypography.labelMedium.copyWith(
+          color: textColor,
         ),
       ),
       subtitle: Text(
         value,
-        style: TextStyle(
-          color: Colors.grey[600],
-          fontSize: 13,
+        style: AppTypography.bodyMedium.copyWith(
+          color: textColor.withValues(
+            alpha: AppWidgetTheme.opacityVeryHigh,
+          ),
         ),
       ),
-      trailing: const Icon(
+      trailing: Icon(
         Icons.chevron_right,
-        color: Colors.grey,
+        color: textColor.withValues(
+          alpha: AppWidgetTheme.opacityHigh,
+        ),
       ),
       onTap: onTap,
     );
   }
+
 
   void _showDatePicker(BuildContext context, SettingsProvider settingsProvider) {
     final currentDate = settingsProvider.userProfile?.birthDate ?? DateTime.now().subtract(const Duration(days: 365 * 25));
@@ -157,125 +195,19 @@ class PersonalDetailsWidget extends StatelessWidget {
   }
 
   void _showHeightDialog(BuildContext context, SettingsProvider settingsProvider) {
-    final heightController = TextEditingController();
-    final isMetric = settingsProvider.isMetric;
-    final currentHeight = settingsProvider.userProfile?.height;
-    
-    if (currentHeight != null) {
-      final displayHeight = isMetric ? currentHeight : currentHeight / 2.54;
-      heightController.text = displayHeight.toStringAsFixed(isMetric ? 0 : 1);
-    }
-
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Height (${isMetric ? 'cm' : 'inches'})'),
-        content: TextField(
-          controller: heightController,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-          decoration: InputDecoration(
-            labelText: 'Height',
-            suffixText: isMetric ? 'cm' : 'in',
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final input = heightController.text.trim();
-              if (input.isNotEmpty) {
-                final inputHeight = double.tryParse(input);
-                if (inputHeight != null && inputHeight > 0) {
-                  final heightInCm = isMetric ? inputHeight : inputHeight * 2.54;
-                  
-                  try {
-                    await settingsProvider.updateHeight(heightInCm);
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Height updated'), behavior: SnackBarBehavior.floating),
-                      );
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-                      );
-                    }
-                  }
-                }
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
+      builder: (context) => HeightScrollDialog(
+        settingsProvider: settingsProvider,
       ),
     );
   }
 
   void _showWeightDialog(BuildContext context, SettingsProvider settingsProvider) {
-    final weightController = TextEditingController();
-    final isMetric = settingsProvider.isMetric;
-    final currentWeight = settingsProvider.currentWeight;
-    
-    if (currentWeight != null) {
-      final displayWeight = isMetric ? currentWeight : currentWeight * 2.20462;
-      weightController.text = displayWeight.toStringAsFixed(1);
-    }
-
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Weight (${isMetric ? 'kg' : 'lbs'})'),
-        content: TextField(
-          controller: weightController,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-          decoration: InputDecoration(
-            labelText: 'Weight',
-            suffixText: isMetric ? 'kg' : 'lbs',
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final input = weightController.text.trim();
-              if (input.isNotEmpty) {
-                final inputWeight = double.tryParse(input);
-                if (inputWeight != null && inputWeight > 0) {
-                  final weightInKg = isMetric ? inputWeight : inputWeight / 2.20462;
-                  
-                  try {
-                    await settingsProvider.updateWeight(weightInKg, isMetric);
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Weight updated'), behavior: SnackBarBehavior.floating),
-                      );
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-                      );
-                    }
-                  }
-                }
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
+      builder: (context) => _WeightScrollDialog(
+        settingsProvider: settingsProvider,
       ),
     );
   }
@@ -287,14 +219,32 @@ class PersonalDetailsWidget extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Gender'),
+        shape: AppDialogTheme.shape,
+        backgroundColor: AppDialogTheme.backgroundColor,
+        contentPadding: AppDialogTheme.contentPadding,
+        actionsPadding: AppDialogTheme.actionsPadding,
+        title: Text(
+          'Gender',
+          style: AppDialogTheme.titleStyle,
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: genders.map((gender) {
             final isSelected = gender == currentGender;
             return ListTile(
-              title: Text(gender, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-              trailing: isSelected ? const Icon(Icons.check, color: AppLegacyColors.primaryBlue) : null,
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                gender,
+                style: AppDialogTheme.bodyStyle.copyWith(
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color: isSelected
+                      ? AppDialogTheme.colorPrimaryDark
+                      : AppDialogTheme.colorTextSecondary,
+                ),
+              ),
+              trailing: isSelected
+                  ? Icon(Icons.check, color: AppDialogTheme.colorPrimaryDark)
+                  : null,
               onTap: () async {
                 try {
                   await settingsProvider.updateGender(gender);
@@ -317,6 +267,7 @@ class PersonalDetailsWidget extends StatelessWidget {
         ),
         actions: [
           TextButton(
+            style: AppDialogTheme.cancelButtonStyle,
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
@@ -333,27 +284,39 @@ class PersonalDetailsWidget extends StatelessWidget {
       1.725: 'Very active (hard exercise 6-7 days/week)',
       1.9: 'Super active (very hard exercise, physical job)',
     };
-    
+
     final currentLevel = settingsProvider.userProfile?.activityLevel;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Activity Level'),
+        shape: AppDialogTheme.shape,
+        backgroundColor: AppDialogTheme.backgroundColor,
+        contentPadding: AppDialogTheme.contentPadding,
+        actionsPadding: AppDialogTheme.actionsPadding,
+        title: Text(
+          'Activity Level',
+          style: AppDialogTheme.titleStyle,
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: activityLevels.entries.map((entry) {
               final isSelected = entry.key == currentLevel;
               return ListTile(
+                contentPadding: EdgeInsets.zero,
                 title: Text(
                   entry.value,
-                  style: TextStyle(
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    fontSize: 13,
+                  style: AppDialogTheme.bodyStyle.copyWith(
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected
+                        ? AppDialogTheme.colorPrimaryDark
+                        : AppDialogTheme.colorTextSecondary,
                   ),
                 ),
-                trailing: isSelected ? const Icon(Icons.check, color: AppLegacyColors.primaryBlue) : null,
+                trailing: isSelected
+                    ? Icon(Icons.check, color: AppDialogTheme.colorPrimaryDark)
+                    : null,
                 onTap: () async {
                   try {
                     await settingsProvider.updateActivityLevel(entry.key);
@@ -377,8 +340,307 @@ class PersonalDetailsWidget extends StatelessWidget {
         ),
         actions: [
           TextButton(
+            style: AppDialogTheme.cancelButtonStyle,
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Weight Scroll Picker Dialog (matches weight_edit_dialog design)
+// ═══════════════════════════════════════════════════════════════
+
+class _WeightScrollDialog extends StatefulWidget {
+  final SettingsProvider settingsProvider;
+
+  const _WeightScrollDialog({
+    required this.settingsProvider,
+  });
+
+  @override
+  State<_WeightScrollDialog> createState() => _WeightScrollDialogState();
+}
+
+class _WeightScrollDialogState extends State<_WeightScrollDialog> {
+  late FixedExtentScrollController _weightWholeController;
+  late FixedExtentScrollController _weightDecimalController;
+  late bool _isMetric;
+
+  static const int minWeight = 30;
+  static const int maxWeight = 300;
+
+  @override
+  void initState() {
+    super.initState();
+    _isMetric = widget.settingsProvider.isMetric;
+    final initialWeight = widget.settingsProvider.currentWeight ?? 70.0;
+    _initializeControllers(initialWeight);
+  }
+
+  void _initializeControllers(double weight) {
+    final displayWeight = _isMetric
+        ? weight
+        : weight * 2.20462;
+
+    final wholeWeight = displayWeight.floor();
+    final decimalWeight = ((displayWeight - wholeWeight) * 10).round();
+
+    final minDisplayWeight = _isMetric
+        ? minWeight
+        : (minWeight * 2.20462).round();
+    final maxDisplayWeight = _isMetric
+        ? maxWeight
+        : (maxWeight * 2.20462).round();
+
+    _weightWholeController = FixedExtentScrollController(
+      initialItem: (wholeWeight - minDisplayWeight).clamp(0, maxDisplayWeight - minDisplayWeight),
+    );
+    _weightDecimalController = FixedExtentScrollController(
+      initialItem: decimalWeight.clamp(0, 9),
+    );
+  }
+
+  void _toggleUnit() {
+    setState(() {
+      // Get current weight in kg
+      final currentWeightKg = _currentWeight;
+
+      // Toggle the unit
+      _isMetric = !_isMetric;
+
+      // Dispose old controllers
+      _weightWholeController.dispose();
+      _weightDecimalController.dispose();
+
+      // Reinitialize with the same weight value
+      _initializeControllers(currentWeightKg);
+    });
+  }
+
+  @override
+  void dispose() {
+    _weightWholeController.dispose();
+    _weightDecimalController.dispose();
+    super.dispose();
+  }
+
+  int get _minDisplayWeight => _isMetric
+      ? minWeight
+      : (minWeight * 2.20462).round();
+  int get _maxDisplayWeight => _isMetric
+      ? maxWeight
+      : (maxWeight * 2.20462).round();
+
+  double get _currentWeight {
+    final whole = _minDisplayWeight + _weightWholeController.selectedItem;
+    final decimal = _weightDecimalController.selectedItem / 10.0;
+    final displayWeight = whole + decimal;
+
+    return _isMetric
+        ? displayWeight
+        : displayWeight / 2.20462;
+  }
+
+  void _handleSave() async {
+    try {
+      // Update global isMetric if it changed
+      if (_isMetric != widget.settingsProvider.isMetric) {
+        await widget.settingsProvider.updateUnitPreference(_isMetric);
+      }
+
+      await widget.settingsProvider.updateWeight(
+        _currentWeight,
+        _isMetric,
+      );
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Weight updated'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final unit = _isMetric ? 'kg' : 'lbs';
+
+    return AlertDialog(
+      backgroundColor: AppDialogTheme.backgroundColor,
+      shape: AppDialogTheme.shape,
+      contentPadding: AppDialogTheme.contentPadding,
+      actionsPadding: AppDialogTheme.actionsPadding,
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'Weight',
+            style: AppDialogTheme.titleStyle,
+          ),
+          _buildUnitToggle(),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildWeightPicker(unit),
+        ],
+      ),
+      actions: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: AppDialogTheme.cancelButtonStyle,
+              child: const Text('Cancel'),
+            ),
+            const SizedBox(width: AppDialogTheme.buttonGap),
+            FilledButton(
+              onPressed: _handleSave,
+              style: AppDialogTheme.primaryButtonStyle,
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUnitToggle() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildUnitButton('kg', _isMetric),
+          _buildUnitButton('lbs', !_isMetric),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUnitButton(String label, bool isSelected) {
+    return GestureDetector(
+      onTap: () {
+        if ((label == 'kg' && !_isMetric) || (label == 'lbs' && _isMetric)) {
+          _toggleUnit();
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppDialogTheme.colorPrimaryDark : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : AppDialogTheme.colorTextSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeightPicker(String unit) {
+    return Container(
+      height: 180,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Whole number picker
+          Expanded(
+            child: CupertinoPicker(
+              scrollController: _weightWholeController,
+              itemExtent: 40,
+              onSelectedItemChanged: (index) {
+                setState(() {});
+              },
+              children: List.generate(
+                _maxDisplayWeight - _minDisplayWeight + 1,
+                (index) => Center(
+                  child: Text(
+                    '${_minDisplayWeight + index}',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Decimal point
+          const Text(
+            '.',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1F2937),
+            ),
+          ),
+          // Decimal picker
+          Expanded(
+            child: CupertinoPicker(
+              scrollController: _weightDecimalController,
+              itemExtent: 40,
+              onSelectedItemChanged: (index) {
+                setState(() {});
+              },
+              children: List.generate(
+                10,
+                (index) => Center(
+                  child: Text(
+                    '$index',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Unit label
+          Padding(
+            padding: const EdgeInsets.only(left: 8, right: 16),
+            child: Text(
+              unit,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF6B7280),
+              ),
+            ),
           ),
         ],
       ),
