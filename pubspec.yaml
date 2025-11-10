@@ -38,6 +38,7 @@ dependencies:
   image_picker: ^1.0.4
   flutter_image_compress: ^1.1.3
   image_gallery_saver: ^2.0.3
+  screenshot: ^3.0.0
 
   # ⚠️ PERMISSIONS - STABLE VERSION
   permission_handler: ^11.2.0

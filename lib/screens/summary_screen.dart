@@ -1,13 +1,19 @@
 // lib/screens/summary_screen.dart
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import '../config/design_system/theme_background.dart';
 import '../config/design_system/theme_design.dart';
 import '../providers/home_provider.dart';
 import '../providers/exercise_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/summary/summary_controls_widget.dart';
-import '../widgets/summary/summary_content_widget.dart';
+import '../widgets/summary/summary_export_widget.dart';
 import '../widgets/common/custom_app_bar.dart';
 
 class SummaryScreen extends StatefulWidget {
@@ -20,7 +26,7 @@ class SummaryScreen extends StatefulWidget {
 class _SummaryScreenState extends State<SummaryScreen> {
   SummaryPeriod _currentPeriod = SummaryPeriod.daily;
   bool _isExporting = false;
-  final GlobalKey _summaryKey = GlobalKey();
+  final ScreenshotController _screenshotController = ScreenshotController();
 
   @override
   Widget build(BuildContext context) {
@@ -72,11 +78,13 @@ class _SummaryScreenState extends State<SummaryScreen> {
                         const SizedBox(height: 16),
                         
                         // Main Summary Content (Wrapped for Export)
-                        RepaintBoundary(
-                          key: _summaryKey,
+                        Screenshot(
+                          controller: _screenshotController,
                           child: Container(
-                            color: Colors.transparent,
-                            child: SummaryContentWidget(
+                            decoration: BoxDecoration(
+                              gradient: ThemeBackground.getGradient(themeProvider.selectedGradient),
+                            ),
+                            child: SummaryExportWidget(
                               period: _currentPeriod,
                             ),
                           ),
@@ -152,18 +160,47 @@ class _SummaryScreenState extends State<SummaryScreen> {
 
   Future<void> _handleExport() async {
     if (_isExporting) return;
-    
+
     setState(() {
       _isExporting = true;
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
-      
+      // Capture the screenshot as PNG
+      final Uint8List? imageBytes = await _screenshotController.capture(
+        pixelRatio: 3.0, // High quality for retina displays
+      );
+
+      if (imageBytes == null) {
+        throw Exception('Failed to capture screenshot');
+      }
+
+      // Save to gallery (iOS Photos / Android Gallery)
+      final result = await ImageGallerySaver.saveImage(
+        imageBytes,
+        quality: 100,
+        name: 'fitness_summary_${DateTime.now().millisecondsSinceEpoch}',
+      );
+
+      if (result['isSuccess'] != true) {
+        throw Exception('Failed to save to gallery');
+      }
+
+      // Also save to temp file for sharing
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/fitness_summary.png');
+      await tempFile.writeAsBytes(imageBytes);
+
+      // Show native share dialog
+      await Share.shareXFiles(
+        [XFile(tempFile.path)],
+        text: 'Check out my fitness summary!',
+      );
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Summary exported successfully! 📸'),
+            content: Text('Summary exported successfully! Saved to Photos and ready to share.'),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 3),
           ),

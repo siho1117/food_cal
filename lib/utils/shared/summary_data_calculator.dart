@@ -16,79 +16,56 @@ class SummaryDataCalculator {
   ) {
     // For now, show daily data for all periods to avoid misleading multiplication
     // TODO: Implement actual weekly/monthly data aggregation in providers
+    final consumedProtein = homeProvider.consumedMacros['protein'] ?? 0.0;
+
     return {
       'calories': homeProvider.totalCalories.toString(),
-      'cost': '\$${homeProvider.totalFoodCost.toStringAsFixed(2)}',
-      'burned': exerciseProvider.totalCaloriesBurned.toString(),
+      'protein': '${consumedProtein.round()}g',
+      'exercise': '${exerciseProvider.totalCaloriesBurned} cal',
     };
   }
 
-  /// Calculate progress data for progress bars
-  static Map<String, Map<String, dynamic>> calculateProgressData(
+  /// Calculate progress data for status display
+  static Map<String, dynamic> calculateProgressData(
     SummaryPeriod period,
     HomeProvider homeProvider,
     ExerciseProvider exerciseProvider,
   ) {
+    final calorieProgress = homeProvider.calorieProgress;
+    final exerciseProgress = exerciseProvider.burnProgress;
+
+    String status;
+    String message;
+
+    // Determine overall status based on calorie and exercise goals
+    if (calorieProgress >= 0.9 && calorieProgress <= 1.1 && exerciseProgress >= 0.8) {
+      status = 'on_track';
+      message = 'Great job! You\'re on track with your nutrition and exercise goals.';
+    } else if (calorieProgress > 1.1) {
+      status = 'over';
+      message = 'You\'ve exceeded your calorie goal. Consider more exercise or adjusting your intake.';
+    } else {
+      status = 'under';
+      message = 'You\'re below your goals. Make sure you\'re eating enough and staying active.';
+    }
+
     return {
-      'calories': {
-        'label': 'Calories Consumed',
-        'value': homeProvider.totalCalories.toDouble(),
-        'target': homeProvider.calorieGoal.toDouble(),
-        'progress': homeProvider.calorieProgress,
-        'unit': '',
-      },
-      'exercise': {
-        'label': 'Exercise Burned',
-        'value': exerciseProvider.totalCaloriesBurned.toDouble(),
-        'target': exerciseProvider.dailyBurnGoal.toDouble(),
-        'progress': exerciseProvider.burnProgress,
-        'unit': '',
-      },
-      'budget': {
-        'label': 'Budget',
-        'value': homeProvider.totalFoodCost,
-        'target': homeProvider.dailyFoodBudget,
-        'progress': homeProvider.budgetProgress,
-        'unit': '\$',
-      },
+      'status': status,
+      'message': message,
     };
   }
 
   /// Calculate nutrition breakdown data
-  static Map<String, Map<String, dynamic>> calculateNutritionData(
+  static Map<String, String> calculateNutritionData(
     HomeProvider homeProvider,
   ) {
     final consumed = homeProvider.consumedMacros;
     final targets = homeProvider.targetMacros;
 
     return {
-      'protein': {
-        'icon': '🍳',
-        'name': 'Protein',
-        'consumed': consumed['protein']!.round(),
-        'target': targets['protein']!,
-        'progress': targets['protein']! > 0 
-            ? (consumed['protein']! / targets['protein']!).clamp(0.0, 1.0) 
-            : 0.0,
-      },
-      'carbs': {
-        'icon': '🍞',
-        'name': 'Carbs',
-        'consumed': consumed['carbs']!.round(),
-        'target': targets['carbs']!,
-        'progress': targets['carbs']! > 0 
-            ? (consumed['carbs']! / targets['carbs']!).clamp(0.0, 1.0) 
-            : 0.0,
-      },
-      'fat': {
-        'icon': '🥑',
-        'name': 'Fat',
-        'consumed': consumed['fat']!.round(),
-        'target': targets['fat']!,
-        'progress': targets['fat']! > 0 
-            ? (consumed['fat']! / targets['fat']!).clamp(0.0, 1.0) 
-            : 0.0,
-      },
+      'protein': '${consumed['protein']?.round() ?? 0}g / ${targets['protein']?.round() ?? 0}g',
+      'carbs': '${consumed['carbs']?.round() ?? 0}g / ${targets['carbs']?.round() ?? 0}g',
+      'fat': '${consumed['fat']?.round() ?? 0}g / ${targets['fat']?.round() ?? 0}g',
     };
   }
 

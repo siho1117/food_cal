@@ -1,7 +1,9 @@
 // lib/widgets/summary/summary_controls_widget.dart
 import 'package:flutter/material.dart';
-import '../../config/design_system/theme_design.dart';
+import 'package:provider/provider.dart';
+import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/typography.dart';
+import '../../providers/theme_provider.dart';
 
 enum SummaryPeriod { daily, weekly, monthly }
 
@@ -21,42 +23,50 @@ class SummaryControlsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
+        final borderColor = AppWidgetTheme.getBorderColor(
+          themeProvider.selectedGradient,
+          AppWidgetTheme.cardBorderOpacity,
+        );
+
+        return Container(
+          margin: EdgeInsets.symmetric(horizontal: AppWidgetTheme.spaceXL),
+          padding: EdgeInsets.all(AppWidgetTheme.spaceLG),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            border: Border.all(
+              color: borderColor,
+              width: AppWidgetTheme.cardBorderWidth,
+            ),
+            borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXL), // Pill shape
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Period Switcher
-          Expanded(
-            child: _buildPeriodSwitcher(),
+          child: Row(
+            children: [
+              // Period Switcher
+              Expanded(
+                child: _buildPeriodSwitcher(textColor, borderColor),
+              ),
+
+              SizedBox(width: AppWidgetTheme.spaceLG),
+
+              // Export Button (Icon Only)
+              _buildExportIconButton(textColor),
+            ],
           ),
-          
-          const SizedBox(width: 16),
-          
-          // Export Button (Icon Only)
-          _buildExportIconButton(),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildPeriodSwitcher() {
+  Widget _buildPeriodSwitcher(Color textColor, Color borderColor) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
+        color: textColor.withValues(alpha: AppWidgetTheme.opacityLight),
+        borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXL), // Pill shape
       ),
+      padding: EdgeInsets.all(AppWidgetTheme.spaceXXS), // Small padding around tabs
       child: Row(
         children: SummaryPeriod.values.map((period) {
           final isSelected = period == currentPeriod;
@@ -64,26 +74,44 @@ class SummaryControlsWidget extends StatelessWidget {
             child: GestureDetector(
               onTap: () => onPeriodChanged(period),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: EdgeInsets.symmetric(
+                  vertical: AppWidgetTheme.spaceMD,
+                  horizontal: AppWidgetTheme.spaceXS, // Horizontal padding to prevent overflow
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppLegacyColors.primaryBlue : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
+                  color: isSelected
+                      ? textColor.withValues(alpha: 1.0)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXL), // Pill shape tabs
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min, // Minimize space usage
                   children: [
                     Icon(
                       _getPeriodIcon(period),
-                      size: 16,
-                      color: isSelected ? Colors.white : Colors.grey[600],
+                      size: AppWidgetTheme.iconSizeSmall,
+                      color: isSelected
+                          ? (textColor == AppWidgetTheme.colorPrimaryDark
+                              ? Colors.white
+                              : AppWidgetTheme.colorPrimaryDark)
+                          : textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _getPeriodLabel(period),
-                      style: AppTypography.displaySmall.copyWith(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected ? Colors.white : Colors.grey[600],
+                    SizedBox(width: AppWidgetTheme.spaceXXS), // Smaller gap
+                    Flexible(
+                      child: Text(
+                        _getPeriodLabel(period),
+                        overflow: TextOverflow.ellipsis, // Prevent overflow
+                        maxLines: 1,
+                        style: AppTypography.displaySmall.copyWith(
+                          fontSize: AppWidgetTheme.fontSizeXS, // Smaller font
+                          fontWeight: FontWeight.w600,
+                          color: isSelected
+                              ? (textColor == AppWidgetTheme.colorPrimaryDark
+                                  ? Colors.white
+                                  : AppWidgetTheme.colorPrimaryDark)
+                              : textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                        ),
                       ),
                     ),
                   ],
@@ -96,45 +124,40 @@ class SummaryControlsWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildExportIconButton() {
+  Widget _buildExportIconButton(Color textColor) {
+    final bgColor = textColor == AppWidgetTheme.colorPrimaryDark
+        ? AppWidgetTheme.colorPrimaryDark
+        : Colors.white;
+    final iconColor = textColor == AppWidgetTheme.colorPrimaryDark
+        ? Colors.white
+        : AppWidgetTheme.colorPrimaryDark;
+
     return Container(
-      width: 48, // Fixed square size
-      height: 48, // Fixed square size
+      width: AppWidgetTheme.iconContainerLarge,
+      height: AppWidgetTheme.iconContainerLarge,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppLegacyColors.primaryBlue,
-            AppLegacyColors.primaryBlue.withValues(alpha: 0.8),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: AppLegacyColors.primaryBlue.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: bgColor,
+        shape: BoxShape.circle, // Perfect circle
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppWidgetTheme.iconContainerLarge / 2), // Circular ripple
           onTap: isExporting ? null : onExport,
           child: Center(
             child: isExporting
-                ? const SizedBox(
+                ? SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(iconColor),
                     ),
                   )
-                : const Icon(
+                : Icon(
                     Icons.file_download_outlined,
-                    size: 24,
-                    color: Colors.white,
+                    size: AppWidgetTheme.iconSizeLarge,
+                    color: iconColor,
                   ),
           ),
         ),
