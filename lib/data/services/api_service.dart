@@ -66,6 +66,22 @@ class FoodApiService {
     final bytes = await imageFile.readAsBytes();
     final base64Image = base64Encode(bytes);
 
+    // Detect image format from file extension for proper MIME type
+    final fileExtension = imageFile.path.split('.').last.toLowerCase();
+    final String mimeType;
+    if (fileExtension == 'webp') {
+      mimeType = 'image/webp';
+    } else if (fileExtension == 'jpg' || fileExtension == 'jpeg') {
+      mimeType = 'image/jpeg';
+    } else if (fileExtension == 'png') {
+      mimeType = 'image/png';
+    } else {
+      // Default to JPEG for unknown formats
+      mimeType = 'image/jpeg';
+    }
+
+    debugPrint('📤 Sending to OpenAI API with MIME type: $mimeType');
+
     // Create OpenAI API request body with improved prompt for concise food names
     final requestBody = {
       "model": ApiConfig.visionModel,
@@ -85,7 +101,7 @@ class FoodApiService {
             {
               "type": "image_url",
               "image_url": {
-                "url": "data:image/jpeg;base64,$base64Image",
+                "url": "data:$mimeType;base64,$base64Image",
                 "detail": "low"
               }
             }

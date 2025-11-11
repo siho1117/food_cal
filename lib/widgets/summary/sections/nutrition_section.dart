@@ -1,6 +1,10 @@
 // lib/widgets/summary/sections/nutrition_section.dart
 import 'package:flutter/material.dart';
-import '../../../config/design_system/summary_theme.dart';
+import 'package:provider/provider.dart';
+import '../../../config/design_system/widget_theme.dart';
+import '../../../config/design_system/typography.dart';
+import '../../../config/design_system/nutrition_colors.dart';
+import '../../../providers/theme_provider.dart';
 import '../../../utils/shared/summary_data_calculator.dart';
 import 'base_section_widget.dart';
 
@@ -41,48 +45,57 @@ class NutritionSection extends StatelessWidget {
           InfoRow(
             label: 'Remaining',
             value: '${calorieGoal - totalCalories} cal',
-            valueColor: totalCalories <= calorieGoal ? SummaryTheme.success : SummaryTheme.warning,
+            valueColor: totalCalories <= calorieGoal ? NutritionColors.success : NutritionColors.warning,
           ),
 
-          SummaryTheme.itemSpacingWidget,
+          SizedBox(height: AppWidgetTheme.spaceMD),
 
           // Macronutrient Breakdown Header
-          Text(
-            'Macronutrient Breakdown:',
-            style: SummaryTheme.sectionHeader.copyWith(fontSize: 13),
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, _) {
+              final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
+              return Text(
+                'Macronutrient Breakdown:',
+                style: AppTypography.labelLarge.copyWith(
+                  fontSize: AppWidgetTheme.fontSizeMS,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              );
+            },
           ),
 
-          SummaryTheme.itemSpacingWidget,
+          SizedBox(height: AppWidgetTheme.spaceMD),
 
           // Protein
           _buildMacroRow(
             'Protein',
             (consumedMacros['protein'] ?? 0).toDouble(),
             (targetMacros['protein'] ?? 0).toDouble(),
-            SummaryTheme.proteinColor,
+            NutritionColors.proteinColor,
           ),
 
-          SummaryTheme.smallSpacingWidget,
+          SizedBox(height: AppWidgetTheme.spaceSM),
 
           // Carbs
           _buildMacroRow(
             'Carbohydrates',
             (consumedMacros['carbs'] ?? 0).toDouble(),
             (targetMacros['carbs'] ?? 0).toDouble(),
-            SummaryTheme.carbsColor,
+            NutritionColors.carbsColor,
           ),
 
-          SummaryTheme.smallSpacingWidget,
+          SizedBox(height: AppWidgetTheme.spaceSM),
 
           // Fat
           _buildMacroRow(
             'Fat',
             (consumedMacros['fat'] ?? 0).toDouble(),
             (targetMacros['fat'] ?? 0).toDouble(),
-            SummaryTheme.fatColor,
+            NutritionColors.fatColor,
           ),
 
-          SummaryTheme.itemSpacingWidget,
+          SizedBox(height: AppWidgetTheme.spaceMD),
 
           // Meal Statistics
           InfoRow(label: 'Meals Logged', value: '$foodEntriesCount meals'),
@@ -99,7 +112,7 @@ class NutritionSection extends StatelessWidget {
           InfoRow(
             label: 'Budget Remaining',
             value: '\$${(budget - totalCost).toStringAsFixed(2)}',
-            valueColor: totalCost <= budget ? SummaryTheme.success : SummaryTheme.error,
+            valueColor: totalCost <= budget ? NutritionColors.success : NutritionColors.error,
           ),
         ],
       ),
@@ -110,33 +123,46 @@ class NutritionSection extends StatelessWidget {
     final percentage = target > 0 ? (consumed / target * 100).round() : 0;
     final progress = target > 0 ? (consumed / target).clamp(0.0, 1.0) : 0.0;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
+        final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: SummaryTheme.infoLabel),
-            Text(
-              '${consumed.round()}g / ${target.round()}g ($percentage%)',
-              style: SummaryTheme.infoValue.copyWith(
-                color: color,
-                fontWeight: FontWeight.bold,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  label,
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontSize: AppWidgetTheme.fontSizeSM,
+                    color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                  ),
+                ),
+                Text(
+                  '${consumed.round()}g / ${target.round()}g ($percentage%)',
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontSize: AppWidgetTheme.fontSizeSM,
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: Colors.grey[200],
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+                minHeight: 8.0,
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 4),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: progress,
-            backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: SummaryTheme.progressBarHeight,
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 }

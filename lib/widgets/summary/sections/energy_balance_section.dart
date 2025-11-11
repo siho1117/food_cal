@@ -1,10 +1,13 @@
 // lib/widgets/summary/sections/energy_balance_section.dart
 import 'package:flutter/material.dart';
-import '../../../config/design_system/summary_theme.dart';
+import '../../../config/design_system/widget_theme.dart';
+import '../../../config/design_system/typography.dart';
+import '../../../config/design_system/nutrition_colors.dart';
 import '../../../data/models/user_profile.dart';
 import 'base_section_widget.dart';
 
 /// Net Energy Balance Section
+/// Uses ReportColors for professional white background style
 class EnergyBalanceSection extends StatelessWidget {
   final int consumed;
   final int burned;
@@ -32,24 +35,24 @@ class EnergyBalanceSection extends StatelessWidget {
         children: [
           InfoRow(label: 'Calories Consumed', value: '$consumed cal'),
           InfoRow(label: 'Exercise Burned', value: '-$burned cal'),
-          const Divider(height: SummaryTheme.dividerHeight),
+          const Divider(height: AppWidgetTheme.spaceXL, color: ReportColors.divider),
           InfoRow(
             label: 'Net Calories',
             value: '$netCalories cal',
-            valueColor: SummaryTheme.primary,
+            valueColor: NutritionColors.primary,
           ),
 
-          SummaryTheme.itemSpacingWidget,
+          const SizedBox(height: AppWidgetTheme.spaceMD),
 
           if (tdee != null) ...[
             InfoRow(label: 'TDEE (Maintenance)', value: '${tdee!.round()} cal'),
             InfoRow(
               label: 'Net Deficit',
               value: netDeficit > 0 ? '-$netDeficit cal' : '+${netDeficit.abs()} cal',
-              valueColor: netDeficit > 0 ? SummaryTheme.success : SummaryTheme.warning,
+              valueColor: netDeficit > 0 ? NutritionColors.success : NutritionColors.warning,
             ),
 
-            SummaryTheme.itemSpacingWidget,
+            const SizedBox(height: AppWidgetTheme.spaceMD),
 
             if (netDeficit > 0) ...[
               InfoRow(
@@ -63,15 +66,18 @@ class EnergyBalanceSection extends StatelessWidget {
                   value: '${((profile!.monthlyWeightGoal!.abs() * 7) / 30).toStringAsFixed(2)} kg (${(((profile!.monthlyWeightGoal!.abs() * 7) / 30) * 2.20462).toStringAsFixed(2)} lbs)',
                 ),
 
-                SummaryTheme.smallSpacingWidget,
+                const SizedBox(height: AppWidgetTheme.spaceSM),
 
                 Text(
                   ((netDeficit * 7) / 7700) >= ((profile!.monthlyWeightGoal!.abs() * 7) / 30)
                       ? 'Status: Above target - Great progress!'
                       : 'Status: Below target - Consider adjusting',
-                  style: SummaryTheme.infoValue.copyWith(
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontSize: AppWidgetTheme.fontSizeSM,
                     fontWeight: FontWeight.w600,
-                    color: ((netDeficit * 7) / 7700) >= ((profile!.monthlyWeightGoal!.abs() * 7) / 30) ? SummaryTheme.success : SummaryTheme.warning,
+                    color: ((netDeficit * 7) / 7700) >= ((profile!.monthlyWeightGoal!.abs() * 7) / 30)
+                        ? NutritionColors.success
+                        : NutritionColors.warning,
                   ),
                 ),
               ],

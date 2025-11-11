@@ -1,16 +1,14 @@
 // lib/providers/camera_provider.dart
-import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 
+import '../data/services/photo_compression_service.dart';
 import '../data/repositories/food_repository.dart';
 
 class CameraProvider extends ChangeNotifier {
-  final ImagePicker _picker = ImagePicker();
-  
-  // Direct instantiation - FoodRepository uses singleton services internally
+  // Core service - isolated business logic
+  final PhotoCompressionService _recognitionService = PhotoCompressionService();
+
+  // Repository for data persistence
   final FoodRepository _foodRepository = FoodRepository();
 
   // Loading state
@@ -21,90 +19,158 @@ class CameraProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   /// Capture photo from camera and auto-save to food log
-  Future<void> captureFromCamera(BuildContext context, {VoidCallback? onDismissed}) async {
-    await _captureAnalyzeAndSave(ImageSource.camera, context, onDismissed: onDismissed);
+  Future<void> captureFromCamera(BuildContext context) async {
+    await _captureAnalyzeAndSave(context, isCamera: true);
   }
 
   /// Select image from gallery and auto-save to food log
-  Future<void> selectFromGallery(BuildContext context, {VoidCallback? onDismissed}) async {
-    await _captureAnalyzeAndSave(ImageSource.gallery, context, onDismissed: onDismissed);
+  Future<void> selectFromGallery(BuildContext context) async {
+    await _captureAnalyzeAndSave(context, isCamera: false);
   }
 
   /// Complete flow: capture → analyze → save → navigate home
+  /// Uses isolated PhotoCompressionService for core logic
   Future<void> _captureAnalyzeAndSave(
-    ImageSource source, 
-    BuildContext context, 
-    {VoidCallback? onDismissed}
-  ) async {
-    _setLoading(true);
-    _clearError();
-
+    BuildContext context, {
+    required bool isCamera,
+  }) async {
     try {
-      // Step 1: Capture image
-      final XFile? pickedFile = await _picker.pickImage(
-        source: source,
-        imageQuality: 90,
-        preferredCameraDevice: CameraDevice.rear,
-      );
+      _setLoading(true);
+      _clearError();
 
-      if (pickedFile == null) {
-        // User cancelled
+      // Step 1 & 2: Use core service to capture + optimize + recognize
+      // This handles: camera/gallery → save to gallery → optimize → API call
+      final FoodRecognitionResult result = isCamera
+          ? await _recognitionService.captureFromCamera()
+          : await _recognitionService.selectFromGallery();
+
+      // Handle cancellation (user closed camera/gallery)
+      if (result.isCancelled) {
         _setLoading(false);
         return;
       }
 
-      // Step 2: Process image
-      final File originalFile = File(pickedFile.path);
-      final File optimizedFile = await _resizeAndOptimizeImage(
-        originalFile, 
-        256, 
-        256, 
-        45
-      );
+      // Handle errors
+      if (result.hasError) {
+        _setLoading(false);
+        if (context.mounted) {
+          _showErrorAndReturn(context, result.error ?? 'Unknown error occurred');
+        }
+        return;
+      }
 
-      // Step 3: Analyze with API
-      final recognizedItems = await _foodRepository.recognizeFood(
-        optimizedFile,
-        _getSuggestedMealType(),
-      );
-
-      if (recognizedItems.isEmpty) {
+      // Handle success - but check if we got items
+      if (!result.isSuccess || result.items == null || result.items!.isEmpty) {
+        _setLoading(false);
         if (context.mounted) {
           _showErrorAndReturn(context, 'No food items were detected in the image. Please try again.');
         }
         return;
       }
 
-      // Step 4: Auto-save to food log
-      final saveSuccess = await _foodRepository.storageService.saveFoodEntries(recognizedItems);
-      
+      // Show loading dialog while saving to database
+      if (context.mounted) {
+        _showLoadingDialog(context);
+      }
+
+      // Step 3: Save to database
+      final saveSuccess = await _foodRepository.storageService.saveFoodEntries(result.items!);
+
       if (!saveSuccess) {
+        _hideLoadingDialog(context);
         if (context.mounted) {
           _showErrorAndReturn(context, 'Failed to save food items. Please try again.');
         }
         return;
       }
 
-      // Step 5: Navigate to home page and show success
+      // Step 4: Close loading and navigate
+      _hideLoadingDialog(context);
+
       if (context.mounted) {
-        _navigateToHomeWithSuccess(context, recognizedItems.length, onDismissed);
+        _navigateToHomeWithSuccess(context, result.items!.length);
       }
 
+    } on CameraException catch (e) {
+      debugPrint('Camera error: ${e.description}');
+      _hideLoadingDialog(context);
+      if (context.mounted) {
+        _showErrorAndReturn(context, 'Camera error: ${e.description}');
+      }
     } catch (e) {
       debugPrint('Error in camera flow: $e');
+      _hideLoadingDialog(context);
       if (context.mounted) {
-        _showErrorAndReturn(context, 'Error processing image: $e');
+        _showErrorAndReturn(context, 'Error: $e');
       }
     } finally {
       _setLoading(false);
     }
   }
 
+  /// Show loading dialog
+  void _showLoadingDialog(BuildContext context) {
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      builder: (dialogContext) => PopScope(
+        canPop: false,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            margin: const EdgeInsets.symmetric(horizontal: 24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3498DB)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Analyzing food...',
+                  style: TextStyle(
+                    color: const Color(0xFF1A1A1A),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Hide loading dialog
+  void _hideLoadingDialog(BuildContext context) {
+    if (context.mounted && Navigator.canPop(context)) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+  }
+
   /// Navigate to home page and show success message
-  void _navigateToHomeWithSuccess(BuildContext context, int itemCount, VoidCallback? onDismissed) {
-    // Call dismissal callback FIRST to update bottom nav immediately
-    onDismissed?.call();
-    
+  void _navigateToHomeWithSuccess(BuildContext context, int itemCount) {
     // Navigate to home (index 0 in bottom navigation)
     Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
     
@@ -155,47 +221,6 @@ class CameraProvider extends ChangeNotifier {
         ),
       );
     }
-  }
-
-  /// Resize and optimize image for better API performance
-  /// Optimizes in memory without creating temporary files
-  Future<File> _resizeAndOptimizeImage(
-    File originalFile, 
-    int targetWidth, 
-    int targetHeight, 
-    int quality
-  ) async {
-    try {
-      final Uint8List? compressedBytes = await FlutterImageCompress.compressWithFile(
-        originalFile.absolute.path,
-        minWidth: targetWidth,
-        minHeight: targetHeight,
-        quality: quality,
-        format: CompressFormat.jpeg,
-      );
-
-      if (compressedBytes != null) {
-        // Write compressed bytes back to the original file
-        await originalFile.writeAsBytes(compressedBytes);
-        return originalFile;
-      } else {
-        // Fallback to original file if compression fails
-        return originalFile;
-      }
-    } catch (e) {
-      debugPrint('Error compressing image: $e');
-      // Fallback to original file if compression fails
-      return originalFile;
-    }
-  }
-
-  /// Get suggested meal type based on time of day
-  String _getSuggestedMealType() {
-    final hour = DateTime.now().hour;
-    if (hour < 11) return 'breakfast';
-    if (hour < 15) return 'lunch'; 
-    if (hour < 18) return 'snack';
-    return 'dinner';
   }
 
   /// Set loading state and notify listeners

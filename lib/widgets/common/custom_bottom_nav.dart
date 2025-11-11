@@ -34,7 +34,7 @@ class CustomBottomNav extends StatelessWidget {
   static const List<String> _navLabels = [
     'Home',
     'Progress',
-    'Scan Food',
+    'Quick Add',
     'Summary',
     'Settings',
   ];

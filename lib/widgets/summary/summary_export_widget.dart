@@ -1,7 +1,7 @@
 // lib/widgets/summary/summary_export_widget.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../config/design_system/summary_theme.dart';
+import '../../config/design_system/widget_theme.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/exercise_provider.dart';
 import '../../providers/progress_data.dart';
@@ -19,7 +19,7 @@ import 'sections/report_footer_section.dart';
 import 'sections/placeholder_section.dart';
 
 /// Comprehensive fitness report widget optimized for PDF/image export
-/// Now modularized into reusable section widgets for better maintainability
+/// Uses professional white background with ReportColors for maximum readability
 class SummaryExportWidget extends StatelessWidget {
   final SummaryPeriod period;
 
@@ -47,18 +47,18 @@ class SummaryExportWidget extends StatelessWidget {
         );
 
         return Container(
-          color: Colors.white,
-          padding: const EdgeInsets.all(SummaryTheme.containerPadding),
+          color: ReportColors.background,
+          padding: const EdgeInsets.symmetric(vertical: AppWidgetTheme.spaceXL),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Report Header & Info
               ReportHeaderSection(period: period),
-              SummaryTheme.sectionSpacingWidget,
+              const SizedBox(height: AppWidgetTheme.spaceXL),
 
               // Client Information
               ClientInfoSection(profile: homeProvider.userProfile),
-              SummaryTheme.sectionSpacingWidget,
+              const SizedBox(height: AppWidgetTheme.spaceXL),
 
               // Body Measurements & Composition
               BodyMetricsSection(
@@ -66,7 +66,7 @@ class SummaryExportWidget extends StatelessWidget {
                 currentWeight: progressData.currentWeight,
                 weightHistory: progressData.weightHistory,
               ),
-              SummaryTheme.sectionSpacingWidget,
+              const SizedBox(height: AppWidgetTheme.spaceXL),
 
               // Metabolism & Energy Expenditure
               MetabolismSection(
@@ -74,7 +74,7 @@ class SummaryExportWidget extends StatelessWidget {
                 currentWeight: progressData.currentWeight,
                 calorieGoal: homeProvider.calorieGoal,
               ),
-              SummaryTheme.sectionSpacingWidget,
+              const SizedBox(height: AppWidgetTheme.spaceXL),
 
               // Daily Nutrition Summary
               NutritionSection(
@@ -86,7 +86,7 @@ class SummaryExportWidget extends StatelessWidget {
                 totalCost: homeProvider.totalFoodCost,
                 budget: homeProvider.dailyFoodBudget,
               ),
-              SummaryTheme.sectionSpacingWidget,
+              const SizedBox(height: AppWidgetTheme.spaceXL),
 
               // Exercise & Activity Log
               ExerciseSection(
@@ -94,7 +94,7 @@ class SummaryExportWidget extends StatelessWidget {
                 totalBurned: exerciseProvider.totalCaloriesBurned,
                 burnGoal: exerciseProvider.dailyBurnGoal,
               ),
-              SummaryTheme.sectionSpacingWidget,
+              const SizedBox(height: AppWidgetTheme.spaceXL),
 
               // Net Energy Balance
               EnergyBalanceSection(
@@ -103,7 +103,7 @@ class SummaryExportWidget extends StatelessWidget {
                 tdee: tdee,
                 profile: homeProvider.userProfile,
               ),
-              SummaryTheme.sectionSpacingWidget,
+              const SizedBox(height: AppWidgetTheme.spaceXL),
 
               // Weekly Summary (Placeholder)
               const PlaceholderSection(
@@ -116,7 +116,7 @@ class SummaryExportWidget extends StatelessWidget {
                   'Weight change and budget tracking',
                 ],
               ),
-              SummaryTheme.sectionSpacingWidget,
+              const SizedBox(height: AppWidgetTheme.spaceXL),
 
               // Progress & Achievements (Placeholder)
               const PlaceholderSection(
@@ -129,7 +129,7 @@ class SummaryExportWidget extends StatelessWidget {
                   'Overall progress statistics',
                 ],
               ),
-              SummaryTheme.sectionSpacingWidget,
+              const SizedBox(height: AppWidgetTheme.spaceXL),
 
               // Detailed Meal Log
               MealLogSection(
@@ -138,7 +138,7 @@ class SummaryExportWidget extends StatelessWidget {
                 totalCost: homeProvider.totalFoodCost,
                 consumedMacros: homeProvider.consumedMacros,
               ),
-              SummaryTheme.sectionSpacingWidget,
+              const SizedBox(height: AppWidgetTheme.spaceXL),
 
               // Footer
               const ReportFooterSection(),

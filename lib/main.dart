@@ -9,9 +9,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart'; // ✅ ADDED THIS LINE
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/progress_screen.dart';
-import 'screens/camera_screen.dart';
 import 'screens/summary_screen.dart';
 import 'screens/settings_screen.dart';
+
+// Widgets
+import 'widgets/common/quick_actions_dialog.dart';
+import 'widgets/common/custom_bottom_nav.dart';
 
 // Providers
 import 'providers/home_provider.dart';
@@ -26,9 +29,6 @@ import 'config/design_system/theme_design.dart';
 
 // Localization
 import 'l10n/generated/app_localizations.dart';
-
-// Widgets
-import 'widgets/common/custom_bottom_nav.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -107,7 +107,6 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
-  bool _showCamera = false;
 
   final List<Widget> _screens = const [
     HomeScreen(),
@@ -118,10 +117,22 @@ class _MainScreenState extends State<MainScreen> {
 
   // Map bottom nav index to screen index (handling camera special case)
   int _getScreenIndex(int navIndex) {
-    // Assuming 5 nav items: Home(0), Progress(1), Camera(2), Summary(3), Settings(4)
+    // Nav items: Home(0), Progress(1), Camera(2), Summary(3), Settings(4)
     if (navIndex == 2) return 0; // Camera - show home in background
     if (navIndex > 2) return navIndex - 1; // Adjust for camera offset
     return navIndex;
+  }
+
+  void _handleNavTap(int index) {
+    if (index == 2) {
+      // Show Quick Actions dialog instead of navigating
+      showQuickActionsDialog(context);
+      // Don't change _currentIndex - stay on current screen
+    } else {
+      setState(() {
+        _currentIndex = index;
+      });
+    }
   }
 
   @override
@@ -129,21 +140,9 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Show screen, with bounds checking
+          // Show current screen, with bounds checking
           _screens[_getScreenIndex(_currentIndex).clamp(0, _screens.length - 1)],
-          
-          // Show camera overlay if index 2 selected
-          if (_showCamera) 
-            CameraScreen(
-              onDismissed: () {
-                setState(() {
-                  _showCamera = false;
-                  // Return to home screen
-                  _currentIndex = 0;
-                });
-              },
-            ),
-          
+
           // Bottom navigation
           Positioned(
             left: 0,
@@ -151,12 +150,7 @@ class _MainScreenState extends State<MainScreen> {
             bottom: 0,
             child: CustomBottomNav(
               currentIndex: _currentIndex,
-              onTap: (index) {
-                setState(() {
-                  _currentIndex = index;
-                  _showCamera = (index == 2); // Camera is at index 2
-                });
-              },
+              onTap: _handleNavTap,
             ),
           ),
         ],

@@ -17,9 +17,10 @@ class FoodRepository {
 
   /// Recognize food from an image and return results with saved image
   /// This is the main business logic that coordinates API, image storage, and data parsing
-  /// Takes an image file and meal type (breakfast, lunch, dinner, snack)
-  /// Returns a list of recognized food items
-  Future<List<FoodItem>> recognizeFood(File imageFile, String mealType) async {
+  /// Takes an image file and returns a list of recognized food items
+  Future<List<FoodItem>> recognizeFood(File imageFile) async {
+    // Default meal type since app doesn't use meal categorization
+    const String mealType = 'meal';
     try {
       // Call the API to analyze the image
       final analysisResult = await _apiService.analyzeImage(imageFile);

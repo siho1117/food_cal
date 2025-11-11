@@ -228,3 +228,110 @@ class AppWidgetTheme {
         : Colors.black.withValues(alpha: opacity);
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// REPORT COLORS (WHITE BACKGROUND PROFESSIONAL STYLE)
+// ═══════════════════════════════════════════════════════════════
+
+/// Color scheme for professional white background reports
+/// Used in summary/export widgets for maximum readability and print-friendliness
+class ReportColors {
+  ReportColors._(); // Private constructor to prevent instantiation
+
+  // ═══════════════════════════════════════════════════════════════
+  // TEXT COLORS (HIERARCHICAL)
+  // ═══════════════════════════════════════════════════════════════
+
+  /// Primary text color for main content, values, and data
+  /// High emphasis - Material Design 87% black
+  static const Color textPrimary = Color(0xFF212121); // grey.shade900
+
+  /// Secondary text color for labels and headings
+  /// Medium emphasis - Material Design 60% black
+  static const Color textSecondary = Color(0xFF616161); // grey.shade700
+
+  /// Tertiary text color for helper text and metadata
+  /// Disabled/subtle - Material Design 38% black
+  static const Color textTertiary = Color(0xFF757575); // grey.shade600
+
+  // ═══════════════════════════════════════════════════════════════
+  // BACKGROUND COLORS
+  // ═══════════════════════════════════════════════════════════════
+
+  /// Pure white background for professional reports
+  static const Color background = Colors.white;
+
+  /// Light grey background for subtle sections
+  static const Color backgroundSubtle = Color(0xFFFAFAFA); // grey.shade50
+
+  // ═══════════════════════════════════════════════════════════════
+  // BORDER AND DIVIDER COLORS
+  // ═══════════════════════════════════════════════════════════════
+
+  /// Standard border color
+  static const Color border = Color(0xFFE0E0E0); // grey.shade300
+
+  /// Light divider color
+  static const Color divider = Color(0xFFEEEEEE); // grey.shade200
+
+  /// Subtle divider color
+  static const Color dividerSubtle = Color(0xFFF5F5F5); // grey.shade100
+
+  // ═══════════════════════════════════════════════════════════════
+  // SEMANTIC COLORS (CONVEYING MEANING)
+  // ═══════════════════════════════════════════════════════════════
+
+  /// Positive values (goal achieved, weight loss, etc.)
+  static const Color positive = Color(0xFF388E3C); // green.shade700
+
+  /// Negative values (over budget, weight gain, etc.)
+  static const Color negative = Color(0xFFD32F2F); // red.shade700
+
+  /// Neutral highlight (current value, info)
+  static const Color neutral = Color(0xFF1976D2); // blue.shade700
+
+  /// Warning (approaching limit, caution)
+  static const Color warning = Color(0xFFF57C00); // orange.shade700
+
+  // ═══════════════════════════════════════════════════════════════
+  // ICON AND ACCENT COLORS
+  // ═══════════════════════════════════════════════════════════════
+
+  /// Icon background color (subtle grey)
+  static const Color iconBackground = Color(0xFFF5F5F5); // grey.shade100
+
+  /// Icon color (medium grey for neutral icons)
+  static const Color iconNeutral = Color(0xFF9E9E9E); // grey.shade500
+
+  // ═══════════════════════════════════════════════════════════════
+  // HELPER METHODS
+  // ═══════════════════════════════════════════════════════════════
+
+  /// Get semantic color based on comparison (positive/negative/neutral)
+  /// Use for displaying deltas, comparisons, goal progress
+  static Color getSemanticColor({
+    required double value,
+    bool higherIsBetter = true,
+  }) {
+    if (value == 0) return neutral;
+    if (higherIsBetter) {
+      return value > 0 ? positive : negative;
+    } else {
+      return value > 0 ? negative : positive;
+    }
+  }
+
+  /// Get text color based on hierarchy level (1 = primary, 2 = secondary, 3 = tertiary)
+  static Color getTextColorByLevel(int level) {
+    switch (level) {
+      case 1:
+        return textPrimary;
+      case 2:
+        return textSecondary;
+      case 3:
+        return textTertiary;
+      default:
+        return textPrimary;
+    }
+  }
+}
