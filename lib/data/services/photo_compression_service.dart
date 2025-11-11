@@ -35,18 +35,26 @@ class PhotoCompressionService {
   // ═══════════════════════════════════════════════════════════
 
   /// Capture photo from camera → save to gallery → recognize food
-  Future<FoodRecognitionResult> captureFromCamera() async {
+  /// Optional [onImagePicked] callback fires after user picks image, before API call
+  Future<FoodRecognitionResult> captureFromCamera({
+    VoidCallback? onImagePicked,
+  }) async {
     return await _processImageSource(
       ImageSource.camera,
       saveToGallery: true,
+      onImagePicked: onImagePicked,
     );
   }
 
   /// Select photo from gallery → recognize food (no need to save again)
-  Future<FoodRecognitionResult> selectFromGallery() async {
+  /// Optional [onImagePicked] callback fires after user picks image, before API call
+  Future<FoodRecognitionResult> selectFromGallery({
+    VoidCallback? onImagePicked,
+  }) async {
     return await _processImageSource(
       ImageSource.gallery,
       saveToGallery: false, // Already in gallery
+      onImagePicked: onImagePicked,
     );
   }
 
@@ -58,6 +66,7 @@ class PhotoCompressionService {
   Future<FoodRecognitionResult> _processImageSource(
     ImageSource source, {
     required bool saveToGallery,
+    VoidCallback? onImagePicked,
   }) async {
     try {
       // STEP 1: Capture/Select Image (Robust camera handling)
@@ -76,6 +85,9 @@ class PhotoCompressionService {
           debugPrint('⚠️ Failed to save to gallery, continuing anyway...');
         }
       }
+
+      // Fire callback after image is picked but before API call
+      onImagePicked?.call();
 
       // STEP 3: Optimize for API (Reduce size, maintain quality)
       final File optimizedFile = await _optimizeForAPI(imageFile);
@@ -166,14 +178,15 @@ class PhotoCompressionService {
 
   /// Optimize image for API transmission
   /// - JPEG format (universal compatibility across all platforms)
-  /// - 512x512 @ 60% quality for optimal API performance (~55KB)
+  /// - 400x400 @ 55% quality for optimal API performance (~30KB)
   /// - Handles orientation correction automatically
   /// - OpenAI supports: png, jpeg, gif, webp (we use JPEG for simplicity)
+  /// - Aggressive compression to reduce costs at scale
   Future<File> _optimizeForAPI(File originalFile) async {
-    // Compression settings
-    const int targetWidth = 512;
-    const int targetHeight = 512;
-    const int quality = 60;
+    // Compression settings - optimized for cost/quality balance
+    const int targetWidth = 400;
+    const int targetHeight = 400;
+    const int quality = 55;
 
     debugPrint('🔄 Optimizing image for API...');
     debugPrint('   Original size: ${await originalFile.length()} bytes');

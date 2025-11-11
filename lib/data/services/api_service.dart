@@ -66,37 +66,25 @@ class FoodApiService {
     final bytes = await imageFile.readAsBytes();
     final base64Image = base64Encode(bytes);
 
-    // Detect image format from file extension for proper MIME type
-    final fileExtension = imageFile.path.split('.').last.toLowerCase();
-    final String mimeType;
-    if (fileExtension == 'webp') {
-      mimeType = 'image/webp';
-    } else if (fileExtension == 'jpg' || fileExtension == 'jpeg') {
-      mimeType = 'image/jpeg';
-    } else if (fileExtension == 'png') {
-      mimeType = 'image/png';
-    } else {
-      // Default to JPEG for unknown formats
-      mimeType = 'image/jpeg';
-    }
+    // MIME type: PhotoCompressionService always outputs JPEG
+    const String mimeType = 'image/jpeg';
 
     debugPrint('📤 Sending to OpenAI API with MIME type: $mimeType');
 
-    // Create OpenAI API request body with improved prompt for concise food names
+    // Create OpenAI API request body with token-optimized prompts
     final requestBody = {
       "model": ApiConfig.visionModel,
       "messages": [
         {
           "role": "system",
-          "content":
-              "You are a food recognition system. Identify food items in images and provide nutritional information. Respond with JSON format containing food name, calories, protein, carbs, and fat per serving."
+          "content": "Food recognition. Return JSON with exact values (no rounding). Name: capitalize first letter, max 8 words, no parentheses."
         },
         {
           "role": "user",
           "content": [
             {
               "type": "text",
-              "text": "Identify the food item in this image and provide nutritional information per serving in this exact JSON format: {\"name\": \"food_name\", \"calories\": number, \"protein\": number, \"carbs\": number, \"fat\": number}"
+              "text": "Identify food with precise nutrition: {\"name\": \"Food name\", \"calories\": 0, \"protein\": 0, \"carbs\": 0, \"fat\": 0}"
             },
             {
               "type": "image_url",
@@ -108,7 +96,8 @@ class FoodApiService {
           ]
         }
       ],
-      "max_tokens": 300
+      "max_completion_tokens": 1200,
+      "reasoning_effort": "low"
     };
 
     // Send request to OpenAI
@@ -131,6 +120,33 @@ class FoodApiService {
 
     // Parse OpenAI response
     final responseData = jsonDecode(response.body);
+
+    // Debug: Log full response and token usage (debug builds only)
+    if (kDebugMode) {
+      debugPrint('🔍 Full OpenAI Response: ${jsonEncode(responseData)}');
+
+      // Extract and log token usage details
+      final usage = responseData['usage'];
+      if (usage != null) {
+        debugPrint('📊 Token Usage Breakdown:');
+        debugPrint('   Prompt tokens: ${usage['prompt_tokens']}');
+        debugPrint('   Completion tokens: ${usage['completion_tokens']}');
+        debugPrint('   Total tokens: ${usage['total_tokens']}');
+
+        // GPT-5 specific: reasoning tokens
+        final completionDetails = usage['completion_tokens_details'];
+        if (completionDetails != null) {
+          debugPrint('   └─ Reasoning tokens: ${completionDetails['reasoning_tokens']}');
+          debugPrint('   └─ Output tokens: ${usage['completion_tokens'] - (completionDetails['reasoning_tokens'] ?? 0)}');
+        }
+
+        // Cost estimation (GPT-5 Mini pricing)
+        final inputCost = (usage['prompt_tokens'] ?? 0) * 0.0003 / 1000;
+        final outputCost = (usage['completion_tokens'] ?? 0) * 0.0012 / 1000;
+        final totalCost = inputCost + outputCost;
+        debugPrint('   💰 Estimated cost: \$${totalCost.toStringAsFixed(6)}');
+      }
+    }
 
     // Increment quota usage for successful requests
     await incrementQuotaUsage();
@@ -167,22 +183,21 @@ class FoodApiService {
 
   /// Get food information from OpenAI
   Future<Map<String, dynamic>> _getFoodInfoFromOpenAI(String name) async {
-    // Create OpenAI API request body with improved structured format
+    // Create OpenAI API request body with token-optimized format
     final requestBody = {
       "model": ApiConfig.textModel,
       "messages": [
         {
           "role": "system",
-          "content":
-              "You are a nutritional information system. Provide detailed nutritional facts for food items in a structured format."
+          "content": "Nutrition data with exact values (no rounding). Name: capitalize first letter, max 8 words, no parentheses."
         },
         {
           "role": "user",
-          "content":
-              "Provide nutritional information for $name. Reply in this exact format:\nFood Name: $name\nCalories: [number] cal\nProtein: [number] g\nCarbs: [number] g\nFat: [number] g"
+          "content": "Precise nutrition for $name:\nFood Name: $name\nCalories: ? cal\nProtein: ? g\nCarbs: ? g\nFat: ? g"
         }
       ],
-      "max_tokens": 300
+      "max_completion_tokens": 1200,
+      "reasoning_effort": "low"
     };
 
     // Send request to OpenAI

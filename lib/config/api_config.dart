@@ -6,8 +6,8 @@ class ApiConfig {
   // OpenAI Configuration
   static const String openAIBaseUrl = 'api.openai.com';
   static const String openAIImagesEndpoint = '/v1/chat/completions';
-  static const String visionModel = 'gpt-4.1-mini';
-  static const String textModel = 'gpt-4.1-mini';
+  static const String visionModel = 'gpt-5-mini';
+  static const String textModel = 'gpt-5-mini';
 
   // VM Proxy Configuration (Fallback Provider)
   static const String vmProxyUrl = '35.201.20.109';

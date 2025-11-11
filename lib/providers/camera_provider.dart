@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../data/services/photo_compression_service.dart';
 import '../data/repositories/food_repository.dart';
+import '../widgets/common/food_recognition_loading_dialog.dart';
 
 class CameraProvider extends ChangeNotifier {
   // Core service - isolated business logic
@@ -39,10 +40,27 @@ class CameraProvider extends ChangeNotifier {
       _clearError();
 
       // Step 1 & 2: Use core service to capture + optimize + recognize
-      // This handles: camera/gallery → save to gallery → optimize → API call
+      // Loading dialog shows after image is picked via callback
       final FoodRecognitionResult result = isCamera
-          ? await _recognitionService.captureFromCamera()
-          : await _recognitionService.selectFromGallery();
+          ? await _recognitionService.captureFromCamera(
+              onImagePicked: () {
+                if (context.mounted) {
+                  showFoodRecognitionLoading(context);
+                }
+              },
+            )
+          : await _recognitionService.selectFromGallery(
+              onImagePicked: () {
+                if (context.mounted) {
+                  showFoodRecognitionLoading(context);
+                }
+              },
+            );
+
+      // Close loading dialog after API call completes
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
 
       // Handle cancellation (user closed camera/gallery)
       if (result.isCancelled) {
