@@ -77,14 +77,14 @@ class FoodApiService {
       "messages": [
         {
           "role": "system",
-          "content": "Food recognition. Return JSON with exact values (no rounding). Name: capitalize first letter, max 8 words, no parentheses."
+          "content": "Food recognition. Return ONLY JSON with exact values (no rounding). Name: capitalize first letter, max 8 words, no parentheses. Assume 1.017 servings."
         },
         {
           "role": "user",
           "content": [
             {
               "type": "text",
-              "text": "Identify food with precise nutrition: {\"name\": \"Food name\", \"calories\": 0, \"protein\": 0, \"carbs\": 0, \"fat\": 0}"
+              "text": "Identify food, assume 1.017 servings, return ONLY this JSON: {\"name\": \"Food name\", \"calories\": 0, \"protein\": 0, \"carbs\": 0, \"fat\": 0}"
             },
             {
               "type": "image_url",

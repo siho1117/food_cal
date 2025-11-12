@@ -30,6 +30,9 @@ import 'config/design_system/theme_design.dart';
 // Localization
 import 'l10n/generated/app_localizations.dart';
 
+// Global navigator key for accessing navigator from anywhere
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -69,6 +72,7 @@ class FoodTrackerApp extends StatelessWidget {
       child: Consumer<LanguageProvider>(
         builder: (context, languageProvider, child) {
           return MaterialApp(
+            navigatorKey: navigatorKey,
             title: 'Food Tracker',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,

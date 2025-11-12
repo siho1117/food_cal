@@ -1,23 +1,19 @@
 // lib/providers/camera_provider.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../data/services/photo_compression_service.dart';
 import '../data/repositories/food_repository.dart';
 import '../widgets/common/food_recognition_loading_dialog.dart';
+import '../main.dart'; // Import for navigatorKey
+import 'home_provider.dart';
 
-class CameraProvider extends ChangeNotifier {
+class CameraProvider {
   // Core service - isolated business logic
   final PhotoCompressionService _recognitionService = PhotoCompressionService();
 
   // Repository for data persistence
   final FoodRepository _foodRepository = FoodRepository();
-
-  // Loading state
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
-
-  String? _errorMessage;
-  String? get errorMessage => _errorMessage;
 
   /// Capture photo from camera and auto-save to food log
   Future<void> captureFromCamera(BuildContext context) async {
@@ -35,42 +31,41 @@ class CameraProvider extends ChangeNotifier {
     BuildContext context, {
     required bool isCamera,
   }) async {
-    try {
-      _setLoading(true);
-      _clearError();
+    // Track if dialog is shown
+    bool dialogShown = false;
 
-      // Step 1 & 2: Use core service to capture + optimize + recognize
-      // Loading dialog shows after image is picked via callback
+    // Callback to show loading overlay
+    void showLoadingCallback() {
+      try {
+        showFoodRecognitionLoading(context);
+        dialogShown = true;
+      } catch (e) {
+        debugPrint('Error showing loading overlay: $e');
+      }
+    }
+
+    try {
+      // Step 1 & 2: Capture image and process (compression + API call)
       final FoodRecognitionResult result = isCamera
           ? await _recognitionService.captureFromCamera(
-              onImagePicked: () {
-                if (context.mounted) {
-                  showFoodRecognitionLoading(context);
-                }
-              },
+              onProcessingStart: showLoadingCallback,
             )
           : await _recognitionService.selectFromGallery(
-              onImagePicked: () {
-                if (context.mounted) {
-                  showFoodRecognitionLoading(context);
-                }
-              },
+              onProcessingStart: showLoadingCallback,
             );
 
-      // Close loading dialog after API call completes
-      if (context.mounted) {
-        Navigator.pop(context);
+      // Close loading overlay after processing completes (only if it was shown)
+      if (dialogShown) {
+        hideFoodRecognitionLoading();
       }
 
       // Handle cancellation (user closed camera/gallery)
       if (result.isCancelled) {
-        _setLoading(false);
         return;
       }
 
       // Handle errors
       if (result.hasError) {
-        _setLoading(false);
         if (context.mounted) {
           _showErrorAndReturn(context, result.error ?? 'Unknown error occurred');
         }
@@ -79,7 +74,6 @@ class CameraProvider extends ChangeNotifier {
 
       // Handle success - but check if we got items
       if (!result.isSuccess || result.items == null || result.items!.isEmpty) {
-        _setLoading(false);
         if (context.mounted) {
           _showErrorAndReturn(context, 'No food items were detected in the image. Please try again.');
         }
@@ -102,27 +96,28 @@ class CameraProvider extends ChangeNotifier {
         return;
       }
 
-      // Step 4: Close loading and navigate
-      _hideLoadingDialog(context);
-
+      // Step 4: Close loading dialog if context is still mounted
       if (context.mounted) {
-        _navigateToHomeWithSuccess(context, result.items!.length);
+        _hideLoadingDialog(context);
       }
+
+      // Step 5: Refresh home and show success (using global context)
+      _showSuccessAndRefreshHome(result.items!.length);
 
     } on CameraException catch (e) {
       debugPrint('Camera error: ${e.description}');
+      hideFoodRecognitionLoading(); // Hide overlay if shown
       _hideLoadingDialog(context);
       if (context.mounted) {
         _showErrorAndReturn(context, 'Camera error: ${e.description}');
       }
     } catch (e) {
       debugPrint('Error in camera flow: $e');
+      hideFoodRecognitionLoading(); // Hide overlay if shown
       _hideLoadingDialog(context);
       if (context.mounted) {
         _showErrorAndReturn(context, 'Error: $e');
       }
-    } finally {
-      _setLoading(false);
     }
   }
 
@@ -187,19 +182,31 @@ class CameraProvider extends ChangeNotifier {
     }
   }
 
-  /// Navigate to home page and show success message
-  void _navigateToHomeWithSuccess(BuildContext context, int itemCount) {
-    // Navigate to home (index 0 in bottom navigation)
-    Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
-    
-    // Show success message
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+  /// Refresh home page and show success message (no navigation needed)
+  void _showSuccessAndRefreshHome(int itemCount) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final globalContext = navigatorKey.currentContext;
+
+      if (globalContext == null) {
+        debugPrint('Warning: Global context unavailable for refresh');
+        return;
+      }
+
+      // Refresh HomeProvider to show latest data
+      try {
+        final homeProvider = Provider.of<HomeProvider>(globalContext, listen: false);
+        await homeProvider.refreshData();
+      } catch (e) {
+        debugPrint('Error refreshing HomeProvider: $e');
+      }
+
+      // Show success message
+      if (globalContext.mounted) {
+        ScaffoldMessenger.of(globalContext).showSnackBar(
           SnackBar(
             content: Text(
-              itemCount == 1 
-                ? 'Food item added to your log!' 
+              itemCount == 1
+                ? 'Food item added to your log!'
                 : '$itemCount food items added to your log!',
             ),
             backgroundColor: Colors.green,
@@ -220,8 +227,6 @@ class CameraProvider extends ChangeNotifier {
 
   /// Show error message and stay on camera page
   void _showErrorAndReturn(BuildContext context, String message) {
-    _setError(message);
-    
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -229,33 +234,9 @@ class CameraProvider extends ChangeNotifier {
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 4),
           behavior: SnackBarBehavior.floating,
-          action: SnackBarAction(
-            label: 'Retry',
-            textColor: Colors.white,
-            onPressed: () {
-              _clearError();
-            },
-          ),
         ),
       );
     }
   }
 
-  /// Set loading state and notify listeners
-  void _setLoading(bool loading) {
-    _isLoading = loading;
-    notifyListeners();
-  }
-
-  /// Set error message and notify listeners
-  void _setError(String error) {
-    _errorMessage = error;
-    notifyListeners();
-  }
-
-  /// Clear error message and notify listeners
-  void _clearError() {
-    _errorMessage = null;
-    notifyListeners();
-  }
 }

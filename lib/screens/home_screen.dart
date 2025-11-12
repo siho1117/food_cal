@@ -20,10 +20,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => false;
-
+class _HomeScreenState extends State<HomeScreen> {
   Key _refreshKey = UniqueKey();
 
   @override
@@ -41,18 +38,9 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
     });
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (mounted) {
-      context.read<HomeProvider>().refreshData();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-    
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return Container(
@@ -79,15 +67,15 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                 return RefreshIndicator(
                   onRefresh: () async {
                     await homeProvider.refreshData();
-                    
+
+                    if (!mounted) return;
                     final exerciseProvider = context.read<ExerciseProvider>();
                     await exerciseProvider.loadData();
-                    
-                    if (mounted) {
-                      setState(() {
-                        _refreshKey = UniqueKey();
-                      });
-                    }
+
+                    if (!mounted) return;
+                    setState(() {
+                      _refreshKey = UniqueKey();
+                    });
                   },
                   child: NotificationListener<OverscrollIndicatorNotification>(
                     onNotification: (notification) {

@@ -35,26 +35,26 @@ class PhotoCompressionService {
   // ═══════════════════════════════════════════════════════════
 
   /// Capture photo from camera → save to gallery → recognize food
-  /// Optional [onImagePicked] callback fires after user picks image, before API call
+  /// [onProcessingStart] callback fires when compression/API processing begins
   Future<FoodRecognitionResult> captureFromCamera({
-    VoidCallback? onImagePicked,
+    VoidCallback? onProcessingStart,
   }) async {
     return await _processImageSource(
       ImageSource.camera,
       saveToGallery: true,
-      onImagePicked: onImagePicked,
+      onProcessingStart: onProcessingStart,
     );
   }
 
   /// Select photo from gallery → recognize food (no need to save again)
-  /// Optional [onImagePicked] callback fires after user picks image, before API call
+  /// [onProcessingStart] callback fires when compression/API processing begins
   Future<FoodRecognitionResult> selectFromGallery({
-    VoidCallback? onImagePicked,
+    VoidCallback? onProcessingStart,
   }) async {
     return await _processImageSource(
       ImageSource.gallery,
       saveToGallery: false, // Already in gallery
-      onImagePicked: onImagePicked,
+      onProcessingStart: onProcessingStart,
     );
   }
 
@@ -66,7 +66,7 @@ class PhotoCompressionService {
   Future<FoodRecognitionResult> _processImageSource(
     ImageSource source, {
     required bool saveToGallery,
-    VoidCallback? onImagePicked,
+    VoidCallback? onProcessingStart,
   }) async {
     try {
       // STEP 1: Capture/Select Image (Robust camera handling)
@@ -86,8 +86,9 @@ class PhotoCompressionService {
         }
       }
 
-      // Fire callback after image is picked but before API call
-      onImagePicked?.call();
+      // 🔥 FIRE CALLBACK - Processing (compression + API) is about to start!
+      debugPrint('🔥 About to start compression and API call...');
+      onProcessingStart?.call();
 
       // STEP 3: Optimize for API (Reduce size, maintain quality)
       final File optimizedFile = await _optimizeForAPI(imageFile);
