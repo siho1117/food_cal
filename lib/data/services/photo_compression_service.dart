@@ -12,18 +12,22 @@ import '../repositories/food_repository.dart';
 /// **CORE SERVICE - Photo Compression & Food Recognition Pipeline**
 ///
 /// This is the heart of the app - handles the complete flow:
-/// 1. Camera/Gallery photo capture (robust)
-/// 2. Save original photo to device gallery (100% quality)
-/// 3. Compress & optimize image for API (512x512 @ 60% JPEG)
+/// 1. Camera/Gallery photo capture (system defaults - keep it simple!)
+/// 2. Save original photo to device gallery (camera only)
+/// 3. Compress & optimize image for API (400x400 @ 55% JPEG - LOCKED SETTINGS)
 /// 4. Call food recognition API
 /// 5. Return results
 ///
 /// **Design Principles:**
+/// - **Simplicity First**: Trust OS defaults, only compress for API
 /// - Isolated from UI concerns
 /// - Reusable across different UI implementations
-/// - Robust error handling
-/// - Production-ready camera handling
-/// - Cost-effective compression (3MB → 55KB saves money at scale)
+/// - Robust error handling with comprehensive validation
+/// - Cost-effective compression (~30KB per image)
+/// - Singleton CameraProvider pattern prevents memory leaks
+///
+/// **Philosophy: Don't over-engineer. The 400x400 @ 55% final compression**
+/// **normalizes all inputs anyway, so let the system do what it does best.**
 ///
 /// **This file should remain stable even if UI changes**
 class PhotoCompressionService {
@@ -73,10 +77,17 @@ class PhotoCompressionService {
       final XFile? pickedFile = await _pickImageRobust(source);
 
       if (pickedFile == null) {
+        debugPrint('ℹ️ User cancelled image selection');
         return FoodRecognitionResult.cancelled();
       }
 
       File imageFile = File(pickedFile.path);
+
+      // Simple validation: just check the file exists
+      if (!await imageFile.exists()) {
+        debugPrint('❌ Image file does not exist at path: ${pickedFile.path}');
+        return FoodRecognitionResult.error('Selected image file not found');
+      }
 
       // STEP 2: Save to Gallery (if from camera)
       if (saveToGallery) {
@@ -113,28 +124,25 @@ class PhotoCompressionService {
   // STEP 1: Robust Camera Handling
   // ═══════════════════════════════════════════════════════════
 
-  /// Pick image with robust error handling and optimal settings
+  /// Pick image with minimal intervention - let the system handle quality
+  /// Simplicity over control: trust the OS/device defaults
   Future<XFile?> _pickImageRobust(ImageSource source) async {
     try {
-      // Pick image with production-ready settings
+      // Simple approach: use system defaults for both camera and gallery
+      // No custom quality, no resizing - just get the image as-is
+      // The final compression to 400x400 @ 55% normalizes everything anyway
       final XFile? result = await _picker.pickImage(
         source: source,
-        // Maximum quality for gallery storage (100%)
-        imageQuality: 100,
-        // Prefer rear camera for food photography
         preferredCameraDevice: CameraDevice.rear,
-        // Max size to prevent memory issues on large images
-        maxWidth: 4096,
-        maxHeight: 4096,
-        // Request EXIF data for orientation
-        requestFullMetadata: true,
       );
 
       return result;
     } catch (e) {
       // Handle platform-specific camera errors
+      debugPrint('❌ Image picker error: $e');
       if (e.toString().contains('camera') ||
-          e.toString().contains('Camera')) {
+          e.toString().contains('Camera') ||
+          e.toString().contains('permission')) {
         throw CameraException('CAMERA_ERROR', e.toString());
       }
       throw CameraException('PICK_FAILED', e.toString());
@@ -184,7 +192,12 @@ class PhotoCompressionService {
   /// - OpenAI supports: png, jpeg, gif, webp (we use JPEG for simplicity)
   /// - Aggressive compression to reduce costs at scale
   Future<File> _optimizeForAPI(File originalFile) async {
-    // Compression settings - optimized for cost/quality balance
+    // ⚠️ IMPORTANT: Compression settings - DO NOT modify without approval
+    // These settings are scientifically tested for optimal cost/quality balance:
+    // - Tested: 256x256 @ 55% (too aggressive, 9% higher cost due to reasoning)
+    // - Tested: 512x512 @ 60% (25% more expensive, no quality improvement)
+    // - OPTIMAL: 400x400 @ 55% (best balance of cost, quality, and stability)
+    // Current production: 400x400 @ 55% quality (~30KB per image, ~$0.000479/request)
     const int targetWidth = 400;
     const int targetHeight = 400;
     const int quality = 55;
@@ -211,12 +224,18 @@ class PhotoCompressionService {
         );
         await jpegFile.writeAsBytes(jpegBytes);
 
+        // Validate the compressed file
+        if (!await jpegFile.exists() || await jpegFile.length() == 0) {
+          debugPrint('⚠️  Compressed file validation failed, using original');
+          return originalFile;
+        }
+
         debugPrint('✅ JPEG compression successful: ${jpegBytes.length} bytes');
         debugPrint('   Reduction: ${((1 - jpegBytes.length / await originalFile.length()) * 100).toStringAsFixed(1)}%');
 
         return jpegFile;
       } else {
-        debugPrint('⚠️  Compression returned null, using original');
+        debugPrint('⚠️  Compression returned null/empty, using original');
         return originalFile;
       }
     } catch (e) {

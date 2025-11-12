@@ -9,6 +9,11 @@ import '../main.dart'; // Import for navigatorKey
 import 'home_provider.dart';
 
 class CameraProvider {
+  // Singleton pattern
+  static final CameraProvider _instance = CameraProvider._internal();
+  factory CameraProvider() => _instance;
+  CameraProvider._internal();
+
   // Core service - isolated business logic
   final PhotoCompressionService _recognitionService = PhotoCompressionService();
 
@@ -158,10 +163,10 @@ class CameraProvider {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(
+                const Text(
                   'Analyzing food...',
                   style: TextStyle(
-                    color: const Color(0xFF1A1A1A),
+                    color: Color(0xFF1A1A1A),
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),

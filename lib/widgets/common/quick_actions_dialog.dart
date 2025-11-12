@@ -158,19 +158,33 @@ class _QuickActionsDialogContent extends StatelessWidget {
     );
   }
 
-  // Action Handlers - Just close dialog and call provider
-  void _handleCameraAction(BuildContext context) {
-    Navigator.of(context).pop(); // Close quick actions
+  // Action Handlers - Close dialog smoothly, then call provider
+  Future<void> _handleCameraAction(BuildContext context) async {
+    // Close quick actions dialog and wait for animation to complete
+    await Navigator.of(context).maybePop();
+
+    // Small delay to ensure smooth transition
+    await Future.delayed(const Duration(milliseconds: 100));
 
     // Call camera provider directly
-    CameraProvider().captureFromCamera(context);
+    if (context.mounted) {
+      CameraProvider().captureFromCamera(context);
+    }
   }
 
-  void _handleGalleryAction(BuildContext context) {
-    Navigator.of(context).pop(); // Close quick actions
+  Future<void> _handleGalleryAction(BuildContext context) async {
+    // Close quick actions dialog and wait for animation to complete
+    await Navigator.of(context).maybePop();
+
+    // Small delay for smooth transition (reduced from 400ms)
+    // Note: Cannot pre-load OS gallery picker - it requires user interaction
+    await Future.delayed(const Duration(milliseconds: 150));
 
     // Call camera provider directly
-    CameraProvider().selectFromGallery(context);
+    // Note: The gallery refresh glitch is OS behavior and cannot be fully prevented
+    if (context.mounted) {
+      CameraProvider().selectFromGallery(context);
+    }
   }
 
   void _handleExerciseAction(BuildContext context) {
