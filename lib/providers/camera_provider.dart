@@ -1,5 +1,9 @@
 // lib/providers/camera_provider.dart
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:provider/provider.dart';
 
 import '../data/services/photo_compression_service.dart';
@@ -8,14 +12,28 @@ import '../widgets/common/food_recognition_loading_dialog.dart';
 import '../main.dart'; // Import for navigatorKey
 import 'home_provider.dart';
 
+/// **Camera Provider - UI Orchestration Layer**
+///
+/// Responsibilities:
+/// - Handle image picker (camera/gallery)
+/// - Save images to gallery (camera only)
+/// - Coordinate loading states
+/// - Call pure API service
+/// - Handle results and update UI
+///
+/// This is the UI orchestration layer that coordinates:
+/// User Interaction → Loading States → API Service → Results Handling
 class CameraProvider {
   // Singleton pattern
   static final CameraProvider _instance = CameraProvider._internal();
   factory CameraProvider() => _instance;
   CameraProvider._internal();
 
-  // Core service - isolated business logic
-  final PhotoCompressionService _recognitionService = PhotoCompressionService();
+  // Image picker for camera/gallery
+  final ImagePicker _picker = ImagePicker();
+
+  // Pure API service - NO UI concerns
+  final PhotoCompressionService _apiService = PhotoCompressionService();
 
   // Repository for data persistence
   final FoodRepository _foodRepository = FoodRepository();
@@ -31,43 +49,64 @@ class CameraProvider {
   }
 
   /// Complete flow: capture → analyze → save → navigate home
-  /// Uses isolated PhotoCompressionService for core logic
+  /// Handles UI loading states and orchestrates API service
   Future<void> _captureAnalyzeAndSave(
     BuildContext context, {
     required bool isCamera,
   }) async {
-    // Track if dialog is shown
-    bool dialogShown = false;
-
-    // Callback to show loading overlay
-    void showLoadingCallback() {
-      try {
-        showFoodRecognitionLoading(context);
-        dialogShown = true;
-      } catch (e) {
-        debugPrint('Error showing loading overlay: $e');
-      }
-    }
+    File? imageFile;
+    FoodRecognitionResult? result;
 
     try {
-      // Step 1 & 2: Capture image and process (compression + API call)
-      final FoodRecognitionResult result = isCamera
-          ? await _recognitionService.captureFromCamera(
-              onProcessingStart: showLoadingCallback,
-            )
-          : await _recognitionService.selectFromGallery(
-              onProcessingStart: showLoadingCallback,
-            );
+      // ═══════════════════════════════════════════════════════════
+      // STEP 1: Pick Image - NO LOADING (let user select)
+      // ═══════════════════════════════════════════════════════════
+      final XFile? pickedFile = await _picker.pickImage(
+        source: isCamera ? ImageSource.camera : ImageSource.gallery,
+        preferredCameraDevice: CameraDevice.rear,
+      );
 
-      // Close loading overlay after processing completes (only if it was shown)
-      if (dialogShown) {
-        hideFoodRecognitionLoading();
-      }
-
-      // Handle cancellation (user closed camera/gallery)
-      if (result.isCancelled) {
+      // User cancelled? Exit early
+      if (pickedFile == null) {
+        debugPrint('ℹ️ User cancelled image selection');
         return;
       }
+
+      imageFile = File(pickedFile.path);
+
+      // Validate file exists
+      if (!await imageFile.exists()) {
+        debugPrint('❌ Image file does not exist');
+        if (context.mounted) {
+          _showErrorAndReturn(context, 'Selected image file not found');
+        }
+        return;
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      // STEP 2: Save to Gallery (camera only)
+      // ═══════════════════════════════════════════════════════════
+      if (isCamera) {
+        final saved = await _saveToGallery(imageFile);
+        if (!saved) {
+          debugPrint('⚠️ Failed to save to gallery, continuing anyway...');
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      // STEP 3: NOW Show Loading (user has selected, processing starts)
+      // ═══════════════════════════════════════════════════════════
+      showFoodRecognitionLoading(null);
+
+      // ═══════════════════════════════════════════════════════════
+      // STEP 4: Call Pure API Service (compression + API)
+      // ═══════════════════════════════════════════════════════════
+      result = await _apiService.processImage(imageFile);
+
+      // ═══════════════════════════════════════════════════════════
+      // STEP 5: Hide Loading
+      // ═══════════════════════════════════════════════════════════
+      hideFoodRecognitionLoading();
 
       // Handle errors
       if (result.hasError) {
@@ -85,105 +124,31 @@ class CameraProvider {
         return;
       }
 
-      // Show loading dialog while saving to database
-      if (context.mounted) {
-        _showLoadingDialog(context);
-      }
-
-      // Step 3: Save to database
+      // Step 3: Save to database (fast operation, no loading dialog needed)
       final saveSuccess = await _foodRepository.storageService.saveFoodEntries(result.items!);
 
       if (!saveSuccess) {
-        _hideLoadingDialog(context);
         if (context.mounted) {
           _showErrorAndReturn(context, 'Failed to save food items. Please try again.');
         }
         return;
       }
 
-      // Step 4: Close loading dialog if context is still mounted
-      if (context.mounted) {
-        _hideLoadingDialog(context);
-      }
-
-      // Step 5: Refresh home and show success (using global context)
+      // Step 4: Refresh home and show success (using global context)
       _showSuccessAndRefreshHome(result.items!.length);
 
     } on CameraException catch (e) {
       debugPrint('Camera error: ${e.description}');
       hideFoodRecognitionLoading(); // Hide overlay if shown
-      _hideLoadingDialog(context);
       if (context.mounted) {
         _showErrorAndReturn(context, 'Camera error: ${e.description}');
       }
     } catch (e) {
       debugPrint('Error in camera flow: $e');
       hideFoodRecognitionLoading(); // Hide overlay if shown
-      _hideLoadingDialog(context);
       if (context.mounted) {
         _showErrorAndReturn(context, 'Error: $e');
       }
-    }
-  }
-
-  /// Show loading dialog
-  void _showLoadingDialog(BuildContext context) {
-    if (!context.mounted) return;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black.withValues(alpha: 0.7),
-      builder: (dialogContext) => PopScope(
-        canPop: false,
-        child: Center(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            margin: const EdgeInsets.symmetric(horizontal: 24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(
-                  width: 48,
-                  height: 48,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3498DB)),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Analyzing food...',
-                  style: TextStyle(
-                    color: Color(0xFF1A1A1A),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Hide loading dialog
-  void _hideLoadingDialog(BuildContext context) {
-    if (context.mounted && Navigator.canPop(context)) {
-      Navigator.of(context, rootNavigator: true).pop();
     }
   }
 
@@ -241,6 +206,35 @@ class CameraProvider {
           behavior: SnackBarBehavior.floating,
         ),
       );
+    }
+  }
+
+  /// Save image to device gallery (camera only)
+  /// Moved from service to provider for clean separation
+  Future<bool> _saveToGallery(File imageFile) async {
+    try {
+      // Read image bytes
+      final Uint8List imageBytes = await imageFile.readAsBytes();
+
+      // Save to gallery with proper metadata
+      final result = await ImageGallerySaver.saveImage(
+        imageBytes,
+        quality: 100, // Keep original quality in gallery
+        name: 'food_${DateTime.now().millisecondsSinceEpoch}',
+        isReturnImagePathOfIOS: true,
+      );
+
+      // Check if save was successful
+      if (result == null || result == false) {
+        debugPrint('❌ Failed to save to gallery');
+        return false;
+      }
+
+      debugPrint('✅ Saved to gallery: $result');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error saving to gallery: $e');
+      return false;
     }
   }
 

@@ -1,118 +1,64 @@
 // lib/data/services/photo_compression_service.dart
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/food_item.dart';
 import '../repositories/food_repository.dart';
 
-/// **CORE SERVICE - Photo Compression & Food Recognition Pipeline**
+/// **PURE API SERVICE - Image Compression & Food Recognition**
 ///
-/// This is the heart of the app - handles the complete flow:
-/// 1. Camera/Gallery photo capture (system defaults - keep it simple!)
-/// 2. Save original photo to device gallery (camera only)
-/// 3. Compress & optimize image for API (400x400 @ 55% JPEG - LOCKED SETTINGS)
-/// 4. Call food recognition API
-/// 5. Return results
+/// This service is PURELY focused on API operations:
+/// 1. Compress & optimize images for API (400x400 @ 55% JPEG - LOCKED SETTINGS)
+/// 2. Call food recognition API
+/// 3. Return results
 ///
 /// **Design Principles:**
-/// - **Simplicity First**: Trust OS defaults, only compress for API
-/// - Isolated from UI concerns
+/// - **Pure API Focus**: No UI concerns, no image picker logic
+/// - Isolated business logic only
 /// - Reusable across different UI implementations
 /// - Robust error handling with comprehensive validation
 /// - Cost-effective compression (~30KB per image)
-/// - Singleton CameraProvider pattern prevents memory leaks
 ///
-/// **Philosophy: Don't over-engineer. The 400x400 @ 55% final compression**
-/// **normalizes all inputs anyway, so let the system do what it does best.**
+/// **What this service does NOT do:**
+/// - Does NOT handle image picker (that's Provider's job)
+/// - Does NOT save to gallery (that's Provider's job)
+/// - Does NOT show loading UI (that's Provider's job)
 ///
-/// **This file should remain stable even if UI changes**
+/// **Philosophy: Keep API service pure and focused.**
+/// **UI orchestration happens in the Provider layer.**
 class PhotoCompressionService {
-  final ImagePicker _picker = ImagePicker();
   final FoodRepository _repository = FoodRepository();
 
   // ═══════════════════════════════════════════════════════════
-  // PUBLIC API - Main entry points
+  // PUBLIC API - Pure API Operations Only
   // ═══════════════════════════════════════════════════════════
 
-  /// Capture photo from camera → save to gallery → recognize food
-  /// [onProcessingStart] callback fires when compression/API processing begins
-  Future<FoodRecognitionResult> captureFromCamera({
-    VoidCallback? onProcessingStart,
-  }) async {
-    return await _processImageSource(
-      ImageSource.camera,
-      saveToGallery: true,
-      onProcessingStart: onProcessingStart,
-    );
+  /// **Compress image for API transmission**
+  /// Takes any image file and returns optimized version
+  /// - JPEG format at 400x400 @ 55% quality (~30KB)
+  /// - Handles orientation correction automatically
+  Future<File> compressForAPI(File imageFile) async {
+    return await _optimizeForAPI(imageFile);
   }
 
-  /// Select photo from gallery → recognize food (no need to save again)
-  /// [onProcessingStart] callback fires when compression/API processing begins
-  Future<FoodRecognitionResult> selectFromGallery({
-    VoidCallback? onProcessingStart,
-  }) async {
-    return await _processImageSource(
-      ImageSource.gallery,
-      saveToGallery: false, // Already in gallery
-      onProcessingStart: onProcessingStart,
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // CORE PIPELINE - Private implementation
-  // ═══════════════════════════════════════════════════════════
-
-  /// Main processing pipeline
-  Future<FoodRecognitionResult> _processImageSource(
-    ImageSource source, {
-    required bool saveToGallery,
-    VoidCallback? onProcessingStart,
-  }) async {
+  /// **Process image through food recognition API**
+  /// Compresses image and calls API in one operation
+  /// This is the main method for the complete API flow
+  Future<FoodRecognitionResult> processImage(File imageFile) async {
     try {
-      // STEP 1: Capture/Select Image (Robust camera handling)
-      final XFile? pickedFile = await _pickImageRobust(source);
-
-      if (pickedFile == null) {
-        debugPrint('ℹ️ User cancelled image selection');
-        return FoodRecognitionResult.cancelled();
-      }
-
-      File imageFile = File(pickedFile.path);
-
-      // Simple validation: just check the file exists
-      if (!await imageFile.exists()) {
-        debugPrint('❌ Image file does not exist at path: ${pickedFile.path}');
-        return FoodRecognitionResult.error('Selected image file not found');
-      }
-
-      // STEP 2: Save to Gallery (if from camera)
-      if (saveToGallery) {
-        final saved = await _saveToGallery(imageFile);
-        if (!saved) {
-          debugPrint('⚠️ Failed to save to gallery, continuing anyway...');
-        }
-      }
-
-      // 🔥 FIRE CALLBACK - Processing (compression + API) is about to start!
-      debugPrint('🔥 About to start compression and API call...');
-      onProcessingStart?.call();
-
-      // STEP 3: Optimize for API (Reduce size, maintain quality)
+      // STEP 1: Optimize for API (Reduce size, maintain quality)
       final File optimizedFile = await _optimizeForAPI(imageFile);
 
-      // STEP 4: Call Food Recognition API (no meal type needed)
+      // STEP 2: Call Food Recognition API
+      debugPrint('🔥 Calling food recognition API...');
       final List<FoodItem> recognizedItems = await _repository.recognizeFood(
         optimizedFile,
       );
 
-      // STEP 5: Return Results
+      // STEP 3: Return Results
       return FoodRecognitionResult.success(recognizedItems);
-    } on CameraException catch (e) {
-      return FoodRecognitionResult.error('Camera error: ${e.description}');
     } on ImageCompressionException catch (e) {
       return FoodRecognitionResult.error('Image processing error: $e');
     } catch (e) {
@@ -121,68 +67,7 @@ class PhotoCompressionService {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // STEP 1: Robust Camera Handling
-  // ═══════════════════════════════════════════════════════════
-
-  /// Pick image with minimal intervention - let the system handle quality
-  /// Simplicity over control: trust the OS/device defaults
-  Future<XFile?> _pickImageRobust(ImageSource source) async {
-    try {
-      // Simple approach: use system defaults for both camera and gallery
-      // No custom quality, no resizing - just get the image as-is
-      // The final compression to 400x400 @ 55% normalizes everything anyway
-      final XFile? result = await _picker.pickImage(
-        source: source,
-        preferredCameraDevice: CameraDevice.rear,
-      );
-
-      return result;
-    } catch (e) {
-      // Handle platform-specific camera errors
-      debugPrint('❌ Image picker error: $e');
-      if (e.toString().contains('camera') ||
-          e.toString().contains('Camera') ||
-          e.toString().contains('permission')) {
-        throw CameraException('CAMERA_ERROR', e.toString());
-      }
-      throw CameraException('PICK_FAILED', e.toString());
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // STEP 2: Save to Gallery
-  // ═══════════════════════════════════════════════════════════
-
-  /// Save image to device gallery (like native camera app)
-  Future<bool> _saveToGallery(File imageFile) async {
-    try {
-      // Read image bytes
-      final Uint8List imageBytes = await imageFile.readAsBytes();
-
-      // Save to gallery with proper metadata
-      final result = await ImageGallerySaver.saveImage(
-        imageBytes,
-        quality: 100, // Keep original quality in gallery
-        name: 'food_${DateTime.now().millisecondsSinceEpoch}',
-        isReturnImagePathOfIOS: true,
-      );
-
-      // Check if save was successful
-      if (result == null || result == false) {
-        debugPrint('❌ Failed to save to gallery');
-        return false;
-      }
-
-      debugPrint('✅ Saved to gallery: $result');
-      return true;
-    } catch (e) {
-      debugPrint('❌ Error saving to gallery: $e');
-      return false;
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // STEP 3: Image Optimization for API
+  // PRIVATE METHODS - Image Optimization
   // ═══════════════════════════════════════════════════════════
 
   /// Optimize image for API transmission
