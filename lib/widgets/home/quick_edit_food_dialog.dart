@@ -11,9 +11,9 @@ import '../../config/design_system/theme_background.dart';
 import '../../config/design_system/color_utils.dart';
 import '../../config/constants/app_constants.dart';
 import '../../data/models/food_item.dart';
-import '../../data/repositories/food_repository.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/food_image_service.dart';
+import 'quick_edit_food_controller.dart';
 
 class QuickEditFoodDialog extends StatefulWidget {
   final FoodItem foodItem;
@@ -30,58 +30,38 @@ class QuickEditFoodDialog extends StatefulWidget {
 }
 
 class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
-  final FoodRepository _foodRepository = FoodRepository();
-
-  late final TextEditingController _nameController;
-  late final TextEditingController _servingSizeController;
-  late final TextEditingController _caloriesController;
-  late final TextEditingController _proteinController;
-  late final TextEditingController _carbsController;
-  late final TextEditingController _fatController;
-  late final TextEditingController _costController;
-
-  bool _isLoading = false;
-  String? _imagePath; // Track current image path (can be different from saved)
+  late final QuickEditFoodController _controller;
 
   @override
   void initState() {
     super.initState();
-
-    _nameController = TextEditingController(text: widget.foodItem.name);
-    _servingSizeController = TextEditingController(text: widget.foodItem.servingSize.toString());
-    _caloriesController = TextEditingController(text: widget.foodItem.calories.round().toString());
-    _proteinController = TextEditingController(text: widget.foodItem.proteins.round().toString());
-    _carbsController = TextEditingController(text: widget.foodItem.carbs.round().toString());
-    _fatController = TextEditingController(text: widget.foodItem.fats.round().toString());
-    _costController = TextEditingController(
-      text: widget.foodItem.cost?.toStringAsFixed(AppConstants.maxDecimalPlaces) ?? ''
+    _controller = QuickEditFoodController(
+      foodItem: widget.foodItem,
+      onUpdated: widget.onUpdated,
     );
-
-    // Initialize image path from food item
-    _imagePath = widget.foodItem.imagePath;
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _servingSizeController.dispose();
-    _caloriesController.dispose();
-    _proteinController.dispose();
-    _carbsController.dispose();
-    _fatController.dispose();
-    _costController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Dynamic card color based on theme (restored)
+    final cardColor = ColorUtils.getComplementaryColor(
+      ThemeBackground.getColors(
+        context.watch<ThemeProvider>().selectedGradient,
+      )![1], // Tone 2
+    );
+
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
         width: 340,
         constraints: const BoxConstraints(maxHeight: 680),
         decoration: BoxDecoration(
-          color: Colors.white,
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
@@ -91,88 +71,90 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             ),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: Stack(
           children: [
-            // Arch Window Header
-            _buildArchWindowHeader(),
-
-            // Content
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(28, 32, 28, 28),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Food Name Input
-                    _buildFoodNameInput(),
-
-                    const SizedBox(height: 32),
-
-                    // Calories and Serving Size Row
-                    _buildCaloriesServingRow(),
-
-                    const SizedBox(height: 28),
-
-                    // Macronutrients Section
-                    _buildMacronutrientsSection(),
-                  ],
-                ),
+            // 1. White background (bottom layer) - 310×330px, centered horizontally
+            Positioned(
+              left: 15,
+              top: 50,
+              right: 15,
+              height: 330,
+              child: Container(
+                color: Colors.white,
               ),
             ),
 
-            // Action Buttons
-            _buildActionButtons(),
+            // 2. Food image (middle layer) - fills entire white background
+            Positioned(
+              left: 15,
+              top: 50,
+              right: 15,
+              height: 330,
+              child: _buildFoodImage(), // No Center - let BoxFit.cover fill completely
+            ),
+
+            // 3. Colored card with arch cutout (top layer - masks the image)
+            Positioned.fill(
+              child: CustomPaint(
+                painter: ArchCardPainter(cardColor: cardColor),
+                child: Container(), // Empty container for painting
+              ),
+            ),
+
+            // Image picker button
+            Positioned(
+              top: 66,
+              right: 41,
+              child: _buildImagePickerButton(),
+            ),
+
+            // All content on colored card (NO SCROLLVIEW - everything fits)
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Spacer for arch window (50 + 320 = 370px)
+                const SizedBox(height: 370),
+
+                // Content on colored card (tighter spacing)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(28, 12, 28, 20), // Reduced top padding
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Food Name Input
+                      _buildFoodNameInput(),
+
+                      const SizedBox(height: 20), // Reduced from 24
+
+                      // Calories and Serving Size Row
+                      _buildCaloriesServingRow(),
+
+                      const SizedBox(height: 18), // Reduced from 20
+
+                      // Macronutrients Section (without title)
+                      _buildMacronutrientsSection(),
+                    ],
+                  ),
+                ),
+
+                // Action Buttons
+                _buildActionButtons(),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildArchWindowHeader() {
-    const double cardHeight = 550.0; // Fixed card height
-
-    return SizedBox(
-      height: cardHeight,
-      child: Stack(
-        children: [
-          // Food image background (behind the card)
-          Positioned.fill(
-            child: _buildFoodImage(),
-          ),
-
-          // Colored card with arch cutout using CustomPaint
-          // Card color is complementary to background theme (Tone 2)
-          Positioned.fill(
-            child: CustomPaint(
-              painter: ArchCardPainter(
-                cardColor: ColorUtils.getComplementaryColor(
-                  ThemeBackground.getColors(
-                    context.watch<ThemeProvider>().selectedGradient,
-                  )![1], // Tone 2 (index 1: second color from top)
-                ),
-              ),
-            ),
-          ),
-
-          // Image picker button (top-right corner)
-          Positioned(
-            top: 16,
-            right: 16,
-            child: _buildImagePickerButton(),
-          ),
-        ],
-      ),
-    );
-  }
 
   /// Build food image display (uses actual image or placeholder)
   Widget _buildFoodImage() {
     // If we have an image path, show the actual food image
-    if (_imagePath != null && _imagePath!.isNotEmpty) {
+    if (_controller.imagePath != null && _controller.imagePath!.isNotEmpty) {
       // Use FutureBuilder to asynchronously load the image file
       return FutureBuilder<File?>(
-        future: FoodImageService.getImageFile(_imagePath),
+        future: FoodImageService.getImageFile(_controller.imagePath),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             // Show placeholder while loading
@@ -180,10 +162,12 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
           }
 
           if (snapshot.hasData && snapshot.data != null) {
-            // Image file found - display it
+            // Image file found - display it filling entire container
             return Image.file(
               snapshot.data!,
               fit: BoxFit.cover,
+              width: double.infinity,  // Fill width
+              height: double.infinity, // Fill height
               errorBuilder: (context, error, stackTrace) {
                 // If file can't be loaded, show placeholder
                 return _buildImagePlaceholder();
@@ -250,7 +234,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
         child: Container(
           padding: const EdgeInsets.all(12),
           child: Icon(
-            _imagePath != null ? Icons.edit : Icons.add_a_photo,
+            _controller.imagePath != null ? Icons.edit : Icons.add_a_photo,
             size: 24,
             color: Colors.grey[800],
           ),
@@ -278,7 +262,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
               title: const Text('Choose from Gallery'),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
-            if (_imagePath != null)
+            if (_controller.imagePath != null)
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
                 title: const Text('Remove Photo'),
@@ -291,10 +275,10 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
 
     if (source != null) {
       await _pickImage(source);
-    } else if (source == null && _imagePath != null) {
+    } else if (source == null && _controller.imagePath != null) {
       // Remove photo option selected
       setState(() {
-        _imagePath = null;
+        _controller.removeImage();
       });
     }
   }
@@ -302,45 +286,40 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
   /// Pick image from camera or gallery
   Future<void> _pickImage(ImageSource source) async {
     try {
-      final imagePath = await FoodImageService.pickAndSaveImage(source: source);
-
+      final imagePath = await _controller.pickImage(source);
       if (imagePath != null) {
-        setState(() {
-          _imagePath = imagePath;
-        });
-        debugPrint('✅ Food card image saved: $imagePath');
+        setState(() {});
       }
     } catch (e) {
-      debugPrint('❌ Error picking image: $e');
       _showErrorSnackBar('Failed to add photo');
     }
   }
 
   Widget _buildFoodNameInput() {
     return TextField(
-      controller: _nameController,
+      controller: _controller.nameController,
       style: AppTypography.displaySmall.copyWith(
-        color: const Color(0xFF1A1A1A),
+        color: Colors.white,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.5,
       ),
       decoration: InputDecoration(
         hintText: 'Food name',
         hintStyle: AppTypography.displaySmall.copyWith(
-          color: const Color(0xFFD0D0D0),
+          color: Colors.white.withValues(alpha: 0.5),
           fontWeight: FontWeight.w700,
           letterSpacing: -0.5,
         ),
-        border: const UnderlineInputBorder(
-          borderSide: BorderSide(color: Color(0xFFE8E8E8), width: 2),
+        border: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3), width: 2),
         ),
-        enabledBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: Color(0xFFE8E8E8), width: 2),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3), width: 2),
         ),
-        focusedBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: NutritionColors.primary, width: 2.5),
+        focusedBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.white, width: 2.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(vertical: 12), // Reduced from 16
       ),
       inputFormatters: [
         LengthLimitingTextInputFormatter(AppConstants.maxFoodNameLength),
@@ -359,59 +338,45 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
               Text(
                 'CALORIES',
                 style: AppTypography.overline.copyWith(
-                  color: const Color(0xFF999999),
-                  fontSize: 10,
-                  letterSpacing: 1.2,
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: 10, // Reduced from 11
+                  letterSpacing: 1.0,
                 ),
               ),
-              const SizedBox(height: 12),
-              Container(
-                height: 64,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: NutritionColors.caloriesColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: NutritionColors.caloriesColor.withValues(alpha: 0.2),
-                    width: 1.5,
+              const SizedBox(height: 6), // Reduced from 8
+              Row(
+                children: [
+                  Icon(
+                    Icons.local_fire_department_rounded,
+                    size: 18, // Reduced from 20
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.local_fire_department_rounded,
-                      size: 22,
-                      color: NutritionColors.caloriesColor,
-                    ),
-                    const SizedBox(width: 12),
-                    Flexible(
-                      child: TextField(
-                        controller: _caloriesController,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: NutritionColors.caloriesColor,
-                          letterSpacing: -0.5,
-                        ),
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  const SizedBox(width: 7), // Reduced from 8
+                  Flexible(
+                    child: TextField(
+                      controller: _controller.caloriesController,
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(
+                        fontSize: 26, // Reduced from 28
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
                       ),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
 
-        const SizedBox(width: 16),
+        const SizedBox(width: 28), // Reduced from 32
 
         // Serving Size (Right - 50%)
         Expanded(
@@ -419,60 +384,46 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'SERVING SIZE',
+                'SERVING',
                 style: AppTypography.overline.copyWith(
-                  color: const Color(0xFF999999),
-                  fontSize: 10,
-                  letterSpacing: 1.2,
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: 10, // Reduced from 11
+                  letterSpacing: 1.0,
                 ),
               ),
-              const SizedBox(height: 12),
-              Container(
-                height: 64,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8F8F8),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: const Color(0xFFE0E0E0),
-                    width: 1.5,
+              const SizedBox(height: 6), // Reduced from 8
+              Row(
+                children: [
+                  Text(
+                    '×',
+                    style: TextStyle(
+                      fontSize: 18, // Reduced from 20
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
                   ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      '×',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF999999),
+                  const SizedBox(width: 7), // Reduced from 8
+                  Flexible(
+                    child: TextField(
+                      controller: _controller.servingSizeController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: const TextStyle(
+                        fontSize: 26, // Reduced from 28
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Flexible(
-                      child: TextField(
-                        controller: _servingSizeController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1A1A1A),
-                          letterSpacing: -0.5,
-                        ),
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
-                        ],
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
                       ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -482,50 +433,37 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
   }
 
   Widget _buildMacronutrientsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    // No title - just the macro pills
+    return Row(
       children: [
-        Text(
-          'MACRONUTRIENTS',
-          style: AppTypography.overline.copyWith(
-            color: const Color(0xFF999999),
-            fontSize: 10,
-            letterSpacing: 1.2,
+        // Protein
+        Expanded(
+          child: _buildMacroPill(
+            label: 'Protein',
+            controller: _controller.proteinController,
+            color: NutritionColors.proteinColor,
+            icon: Icons.fitness_center_rounded,
           ),
         ),
-        const SizedBox(height: 14),
-        Row(
-          children: [
-            // Protein
-            Expanded(
-              child: _buildMacroPill(
-                label: 'Protein',
-                controller: _proteinController,
-                color: NutritionColors.proteinColor,
-                icon: Icons.fitness_center_rounded,
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Carbs
-            Expanded(
-              child: _buildMacroPill(
-                label: 'Carbs',
-                controller: _carbsController,
-                color: NutritionColors.carbsColor,
-                icon: Icons.grain_rounded,
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Fat
-            Expanded(
-              child: _buildMacroPill(
-                label: 'Fat',
-                controller: _fatController,
-                color: NutritionColors.fatColor,
-                icon: Icons.water_drop_rounded,
-              ),
-            ),
-          ],
+        const SizedBox(width: 10),
+        // Carbs
+        Expanded(
+          child: _buildMacroPill(
+            label: 'Carbs',
+            controller: _controller.carbsController,
+            color: NutritionColors.carbsColor,
+            icon: Icons.grain_rounded,
+          ),
+        ),
+        const SizedBox(width: 10),
+        // Fat
+        Expanded(
+          child: _buildMacroPill(
+            label: 'Fat',
+            controller: _controller.fatController,
+            color: NutritionColors.fatColor,
+            icon: Icons.water_drop_rounded,
+          ),
         ),
       ],
     );
@@ -537,231 +475,126 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
     required Color color,
     required IconData icon,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: color.withValues(alpha: 0.25),
-          width: 1.5,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Label with unit (e.g., "PROTEIN / g")
+        Text(
+          '${label.toUpperCase()} / g',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withValues(alpha: 0.5),
+            letterSpacing: 1.0,
+          ),
         ),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            size: 22,
-            color: color,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: color,
-              letterSpacing: 0.3,
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: Colors.white.withValues(alpha: 0.9),
             ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: TextField(
-                  controller: controller,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                    letterSpacing: -0.5,
-                  ),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
-                  ],
+            const SizedBox(width: 5),
+            Flexible(
+              child: TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: -0.5,
                 ),
-              ),
-              Text(
-                'g',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: color.withValues(alpha: 0.6),
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
                 ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
+                ],
               ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
   Widget _buildActionButtons() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(28, 4, 28, 28),
+      padding: const EdgeInsets.fromLTRB(28, 0, 28, 24), // Reduced top and bottom padding
       child: Row(
         children: [
           // Delete button
           Expanded(
-            child: FilledButton(
-              onPressed: _isLoading ? null : _handleDelete,
-              style: FilledButton.styleFrom(
-                backgroundColor: NutritionColors.error.withValues(alpha: 0.1),
-                foregroundColor: NutritionColors.error,
-                padding: const EdgeInsets.symmetric(vertical: 18),
+            child: OutlinedButton(
+              onPressed: _controller.isLoading ? null : _handleDelete,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 2),
+                padding: const EdgeInsets.symmetric(vertical: 12), // Reduced from 14
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                elevation: 0,
               ),
               child: Text(
                 'Delete',
                 style: AppTypography.labelMedium.copyWith(
                   fontWeight: FontWeight.w700,
                   fontSize: 15,
+                  color: Colors.white,
                 ),
               ),
             ),
           ),
 
-          const SizedBox(width: 14),
+          const SizedBox(width: 12), // Reduced from 14
 
           // Save button
           Expanded(
             child: FilledButton(
-              onPressed: _isLoading ? null : _handleSave,
+              onPressed: _controller.isLoading ? null : _handleSave,
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF1A1A1A),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 18),
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black87,
+                padding: const EdgeInsets.symmetric(vertical: 12), // Reduced from 14
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 elevation: 0,
               ),
               child: Text(
-                _isLoading ? 'Saving...' : 'Save',
+                _controller.isLoading ? 'Saving...' : 'Save',
                 style: AppTypography.labelMedium.copyWith(
                   fontWeight: FontWeight.w700,
                   fontSize: 15,
+                  color: Colors.black87,
                 ),
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showCostEditDialog() {
-    final controller = TextEditingController(text: _costController.text);
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Cost'),
-        content: TextField(
-          controller: controller,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Cost per serving',
-            prefixText: '\$',
-          ),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              setState(() {
-                _costController.text = controller.text;
-              });
-              Navigator.pop(context);
-            },
-            child: const Text('Done'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _handleExport() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Export functionality coming soon!'),
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
   Future<void> _handleSave() async {
-    // Validate inputs
-    final name = _nameController.text.trim();
-    if (name.isEmpty) {
-      _showErrorSnackBar('Please enter a food name');
-      return;
-    }
-
-    final servingSize = double.tryParse(_servingSizeController.text);
-    if (servingSize == null || servingSize <= 0) {
-      _showErrorSnackBar('Please enter a valid serving size');
-      return;
-    }
-
-    final calories = double.tryParse(_caloriesController.text) ?? 0;
-    final protein = double.tryParse(_proteinController.text) ?? 0;
-    final carbs = double.tryParse(_carbsController.text) ?? 0;
-    final fat = double.tryParse(_fatController.text) ?? 0;
-
-    final costText = _costController.text.trim();
-    final cost = costText.isNotEmpty ? double.tryParse(costText) : null;
-
-    setState(() => _isLoading = true);
-
     try {
-      // Create updated food item (including image path)
-      final updatedItem = widget.foodItem.copyWith(
-        name: name,
-        servingSize: servingSize,
-        calories: calories,
-        proteins: protein,
-        carbs: carbs,
-        fats: fat,
-        cost: cost,
-        imagePath: _imagePath, // Save the food card image path
-      );
+      final success = await _controller.save();
 
-      // Save to repository
-      final success = await _foodRepository.storageService.updateFoodEntry(updatedItem);
-
-      if (success) {
-        if (mounted) {
-          widget.onUpdated?.call();
-          Navigator.of(context).pop();
-        }
+      if (success && mounted) {
+        Navigator.of(context).pop();
       } else {
         _showErrorSnackBar('Failed to save changes');
       }
     } catch (e) {
-      debugPrint('Error saving food item: $e');
-      _showErrorSnackBar('An error occurred while saving');
+      _showErrorSnackBar(e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {});
       }
     }
   }
@@ -798,34 +631,19 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
     );
 
     if (confirmed == true && mounted) {
-      setState(() => _isLoading = true);
-
       try {
-        // Delete the food entry from storage
-        final success = await _foodRepository.storageService.deleteFoodEntry(
-          widget.foodItem.id,
-          widget.foodItem.timestamp,
-        );
+        final success = await _controller.delete();
 
-        if (success) {
-          // Also delete the associated food card image
-          if (widget.foodItem.imagePath != null) {
-            await FoodImageService.deleteImage(widget.foodItem.imagePath);
-          }
-
-          if (mounted) {
-            widget.onUpdated?.call();
-            Navigator.of(context).pop();
-          }
+        if (success && mounted) {
+          Navigator.of(context).pop();
         } else {
           _showErrorSnackBar('Failed to delete item');
         }
       } catch (e) {
-        debugPrint('Error deleting food item: $e');
         _showErrorSnackBar('An error occurred while deleting');
       } finally {
         if (mounted) {
-          setState(() => _isLoading = false);
+          setState(() {});
         }
       }
     }
@@ -851,49 +669,49 @@ class ArchCardPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = cardColor
-      ..style = PaintingStyle.fill;
-
-    // SIMPLE APPROACH: Use RRect with rounded top corners for arch effect
+    // REFINED ARCH: Larger window with 145px radius
     // Fixed dimensions for consistent design
     const double marginLeft = 25.0;
     const double marginRight = 25.0;
-    const double marginTop = 60.0;
-    const double archRadius = 145.0; // Large radius creates arch effect
-    const double windowHeight = 345.0; // 145 (arch) + 200 (square portion)
+    const double marginTop = 50.0;
+    const double windowHeight = 320.0;  // Increased window height
+    const double archRadius = 145.0;    // Back to original 145px radius
 
-    // Create the arch window using rounded rectangle
-    // Large top corner radii create the arch effect
-    final windowRect = RRect.fromRectAndCorners(
+    // Create the arch window cutout using rounded rectangle
+    final archWindowRect = RRect.fromRectAndCorners(
       Rect.fromLTRB(
         marginLeft,        // 25 - left edge
-        marginTop,         // 60 - top edge
+        marginTop,         // 50 - top edge
         340 - marginRight, // 315 - right edge
-        marginTop + windowHeight, // 405 - bottom edge
+        marginTop + windowHeight, // 370 - bottom edge
       ),
-      topLeft: const Radius.circular(145),     // Large radius = arch curve
-      topRight: const Radius.circular(145),    // Large radius = arch curve
-      bottomLeft: Radius.zero,                 // Sharp bottom corners
-      bottomRight: Radius.zero,                // Sharp bottom corners
+      topLeft: const Radius.circular(archRadius),  // Classic arch curve
+      topRight: const Radius.circular(archRadius), // Classic arch curve
+      bottomLeft: Radius.zero,                     // Sharp bottom corners
+      bottomRight: Radius.zero,                    // Sharp bottom corners
     );
 
-    // Create paths for subtraction
+    // Create the colored card with arch cutout
+    final cardPaint = Paint()
+      ..color = cardColor
+      ..style = PaintingStyle.fill;
+
     final outerPath = Path()
       ..addRect(Rect.fromLTWH(0, 0, 340, size.height));
 
-    final windowPath = Path()
-      ..addRRect(windowRect);
+    final archWindowPath = Path()
+      ..addRRect(archWindowRect);
 
-    // Subtract window from card to create cutout
+    // Subtract arch window from card to create cutout
     final cardWithCutout = Path.combine(
       PathOperation.difference,
       outerPath,
-      windowPath,
+      archWindowPath,
     );
 
     // Draw the card with the arch window cutout
-    canvas.drawPath(cardWithCutout, paint);
+    // (This masks anything drawn below it in the arch window area)
+    canvas.drawPath(cardWithCutout, cardPaint);
   }
 
   @override
