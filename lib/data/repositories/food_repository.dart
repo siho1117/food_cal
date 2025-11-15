@@ -4,7 +4,7 @@ import 'dart:async';
 import '../models/food_item.dart';
 import '../services/api_service.dart';
 import '../services/food_storage_service.dart';
-import '../services/image_storage_service.dart';
+import '../../services/food_image_service.dart';
 import '../../config/constants/app_constants.dart';
 import 'package:flutter/foundation.dart';
 
@@ -13,7 +13,6 @@ import 'package:flutter/foundation.dart';
 class FoodRepository {
   final FoodApiService _apiService = FoodApiService();
   final FoodStorageService _storageService = FoodStorageService();
-  final ImageStorageService _imageService = ImageStorageService();
 
   /// Recognize food from an image and return results with saved image
   /// This is the main business logic that coordinates API, image storage, and data parsing
@@ -25,8 +24,8 @@ class FoodRepository {
       // Call the API to analyze the image
       final analysisResult = await _apiService.analyzeImage(imageFile);
 
-      // Save the image file for reference using ImageStorageService
-      final savedImagePath = await _imageService.saveImageFile(imageFile);
+      // Save the image file for reference using FoodImageService
+      final savedImagePath = await FoodImageService.saveImageFromFile(imageFile);
 
       // Process the results
       final List<FoodItem> recognizedItems = [];
@@ -102,8 +101,4 @@ class FoodRepository {
   /// Expose storage service for direct access by UI layer
   /// UI should use this instead of going through repository pass-through methods
   FoodStorageService get storageService => _storageService;
-
-  /// Expose image service for direct access by UI layer
-  /// UI should use this instead of going through repository pass-through methods
-  ImageStorageService get imageService => _imageService;
 }

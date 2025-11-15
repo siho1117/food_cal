@@ -127,7 +127,6 @@ class AppConstants {
   static const String dailyBudgetKey = 'daily_budget';
   static const String targetWeightKey = 'target_weight';
   static const String activityLevelKey = 'activity_level';
-  static const String tempImageFolderKey = 'food_images';
 
   // ═══════════════════════════════════════════════════════════════
   // COMMON BUTTON LABELS

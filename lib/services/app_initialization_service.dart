@@ -1,9 +1,12 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 import 'food_image_service.dart';
 
 /// Service for app initialization tasks
 ///
 /// Handles startup tasks like:
+/// - Cleaning up old food_images directory (deprecated ImageStorageService)
 /// - Cleaning up old food card images (35+ days)
 /// - Other initialization logic as needed
 class AppInitializationService {
@@ -26,10 +29,32 @@ class AppInitializationService {
   static Future<void> initialize() async {
     debugPrint('🚀 App initialization started...');
 
+    // Clean up old food_images directory (from old ImageStorageService)
+    await _cleanupOldImageDirectory();
+
     // Clean up old food card images
     await _cleanupOldImages();
 
     debugPrint('✅ App initialization complete');
+  }
+
+  /// Clean up old food_images directory from deprecated ImageStorageService
+  static Future<void> _cleanupOldImageDirectory() async {
+    try {
+      debugPrint('🧹 Cleaning up old food_images directory...');
+      final appDir = await getApplicationDocumentsDirectory();
+      final oldImageDir = Directory('${appDir.path}/food_images');
+
+      if (await oldImageDir.exists()) {
+        // Delete the entire directory and its contents
+        await oldImageDir.delete(recursive: true);
+        debugPrint('✅ Deleted old food_images directory');
+      } else {
+        debugPrint('✅ Old food_images directory not found (already cleaned)');
+      }
+    } catch (e) {
+      debugPrint('❌ Error during old directory cleanup: $e');
+    }
   }
 
   /// Clean up food card images older than 35 days

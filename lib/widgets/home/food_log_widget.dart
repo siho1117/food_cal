@@ -7,8 +7,8 @@ import '../../config/design_system/typography.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../data/models/food_item.dart';
-import '../../data/services/image_storage_service.dart';
 import '../../data/repositories/food_repository.dart';
+import '../../services/food_image_service.dart';
 import 'quick_edit_food_dialog.dart';
 
 class FoodLogWidget extends StatelessWidget {
@@ -287,27 +287,24 @@ class FoodLogWidget extends StatelessWidget {
       child: item.imagePath != null
           ? ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.file(
-                File(item.imagePath!),
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  // If file doesn't exist, try old ImageStorageService location (backward compatibility)
-                  return FutureBuilder<File?>(
-                    future: ImageStorageService().getImageFile(item.imagePath!),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.done &&
-                          snapshot.data != null) {
-                        return Image.file(
-                          snapshot.data!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildImagePlaceholder();
-                          },
-                        );
-                      }
-                      return _buildImagePlaceholder();
-                    },
-                  );
+              child: FutureBuilder<File?>(
+                future: FoodImageService.getImageFile(item.imagePath),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return _buildImagePlaceholder();
+                  }
+
+                  if (snapshot.hasData && snapshot.data != null) {
+                    return Image.file(
+                      snapshot.data!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return _buildImagePlaceholder();
+                      },
+                    );
+                  }
+
+                  return _buildImagePlaceholder();
                 },
               ),
             )

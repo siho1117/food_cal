@@ -63,7 +63,7 @@ class FoodImageService {
   /// This is used during food analysis to save the analysis photo
   /// as a good quality food card image BEFORE compression.
   ///
-  /// Returns the file path of the saved image.
+  /// Returns ONLY the filename (relative path) to avoid iOS container UUID issues
   ///
   /// The image is automatically optimized:
   /// - Resized to max 1200×1200 (preserves aspect ratio)
@@ -89,7 +89,8 @@ class FoodImageService {
 
       // Generate filename with timestamp
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final savedPath = '${imageDir.path}/food_$timestamp.jpg';
+      final fileName = 'food_$timestamp.jpg';
+      final savedPath = '${imageDir.path}/$fileName';
 
       // Compress and save the image
       final compressedBytes = await FlutterImageCompress.compressWithFile(
@@ -106,12 +107,14 @@ class FoodImageService {
         await savedFile.writeAsBytes(compressedBytes);
 
         debugPrint('✅ Saved food card image from file: $savedPath');
-        return savedPath;
+        // IMPORTANT: Return only filename (relative path)
+        return fileName;
       } else {
         // Fallback: just copy the original if compression fails
         await imageFile.copy(savedPath);
         debugPrint('⚠️ Compression failed, copied original: $savedPath');
-        return savedPath;
+        // IMPORTANT: Return only filename (relative path)
+        return fileName;
       }
     } catch (e) {
       debugPrint('❌ Error saving image from file: $e');
@@ -123,6 +126,8 @@ class FoodImageService {
   ///
   /// Creates directory structure:
   /// /app_documents/food_card_images/food_1234567890.jpg
+  ///
+  /// Returns ONLY the filename (relative path) to avoid iOS container UUID issues
   static Future<String> _saveImageToStorage(XFile photo) async {
     // Get app's permanent storage directory
     final appDir = await getApplicationDocumentsDirectory();
@@ -142,12 +147,70 @@ class FoodImageService {
     await File(photo.path).copy(savedPath);
 
     debugPrint('✅ Saved food card image: $savedPath');
-    return savedPath;
+
+    // IMPORTANT: Return only filename (relative path) to avoid iOS container issues
+    return fileName;
+  }
+
+  /// Get the full file path from a relative path (filename)
+  ///
+  /// Handles both:
+  /// - New relative paths (filename only): "food_1234567890.jpg"
+  /// - Old absolute paths (for backward compatibility): "/var/.../food_1234567890.jpg"
+  ///
+  /// Returns File object if exists, null otherwise.
+  ///
+  /// Usage:
+  /// ```dart
+  /// final imageFile = await FoodImageService.getImageFile(foodItem.imagePath);
+  /// if (imageFile != null) {
+  ///   // Display image
+  ///   Image.file(imageFile);
+  /// }
+  /// ```
+  static Future<File?> getImageFile(String? imagePath) async {
+    if (imagePath == null || imagePath.isEmpty) {
+      return null;
+    }
+
+    try {
+      String fullPath;
+
+      // Handle both relative and absolute paths for backward compatibility
+      if (imagePath.startsWith('/') || imagePath.contains('Application')) {
+        // It's an old absolute path - try to use it directly first
+        final file = File(imagePath);
+        if (await file.exists()) {
+          return file;
+        }
+
+        // If absolute path doesn't work, extract filename and try relative
+        final filename = imagePath.split('/').last;
+        final appDir = await getApplicationDocumentsDirectory();
+        final imageDir = Directory('${appDir.path}/$_imageDirectoryName');
+        fullPath = '${imageDir.path}/$filename';
+      } else {
+        // It's a new relative path (filename) - build full path
+        final appDir = await getApplicationDocumentsDirectory();
+        final imageDir = Directory('${appDir.path}/$_imageDirectoryName');
+        fullPath = '${imageDir.path}/$imagePath';
+      }
+
+      final file = File(fullPath);
+      if (await file.exists()) {
+        return file;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('❌ Error getting image file: $e');
+      return null;
+    }
   }
 
   /// Delete a specific food card image
   ///
   /// Call this when a food item is deleted by the user.
+  /// Handles both relative and absolute paths for backward compatibility.
   ///
   /// Usage:
   /// ```dart
@@ -159,8 +222,8 @@ class FoodImageService {
     }
 
     try {
-      final file = File(imagePath);
-      if (await file.exists()) {
+      final file = await getImageFile(imagePath);
+      if (file != null && await file.exists()) {
         await file.delete();
         debugPrint('✅ Deleted food card image: $imagePath');
         return true;
