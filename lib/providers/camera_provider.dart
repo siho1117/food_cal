@@ -10,6 +10,7 @@ import '../data/services/photo_compression_service.dart';
 import '../data/repositories/food_repository.dart';
 import '../widgets/common/food_recognition_loading_dialog.dart';
 import '../main.dart'; // Import for navigatorKey
+import '../services/food_image_service.dart';
 import 'home_provider.dart';
 
 /// **Camera Provider - UI Orchestration Layer**
@@ -94,12 +95,23 @@ class CameraProvider {
       }
 
       // ═══════════════════════════════════════════════════════════
-      // STEP 3: NOW Show Loading (user has selected, processing starts)
+      // STEP 3: Save Good Quality Copy for Food Card (BEFORE compression)
+      // ═══════════════════════════════════════════════════════════
+      String? foodCardImagePath;
+      try {
+        foodCardImagePath = await FoodImageService.saveImageFromFile(imageFile);
+        debugPrint('✅ Saved food card image: $foodCardImagePath');
+      } catch (e) {
+        debugPrint('⚠️ Failed to save food card image: $e (continuing anyway)');
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      // STEP 4: NOW Show Loading (user has selected, processing starts)
       // ═══════════════════════════════════════════════════════════
       showFoodRecognitionLoading(null);
 
       // ═══════════════════════════════════════════════════════════
-      // STEP 4: Call Pure API Service (compression + API)
+      // STEP 5: Call Pure API Service (compression + API)
       // ═══════════════════════════════════════════════════════════
       result = await _apiService.processImage(imageFile);
 
@@ -124,8 +136,17 @@ class CameraProvider {
         return;
       }
 
-      // Step 3: Save to database (fast operation, no loading dialog needed)
-      final saveSuccess = await _foodRepository.storageService.saveFoodEntries(result.items!);
+      // ═══════════════════════════════════════════════════════════
+      // STEP 6: Attach Food Card Image to All Detected Items
+      // ═══════════════════════════════════════════════════════════
+      final itemsWithImages = result.items!.map((item) {
+        return item.copyWith(imagePath: foodCardImagePath);
+      }).toList();
+
+      // ═══════════════════════════════════════════════════════════
+      // STEP 7: Save to Database (fast operation, no loading dialog needed)
+      // ═══════════════════════════════════════════════════════════
+      final saveSuccess = await _foodRepository.storageService.saveFoodEntries(itemsWithImages);
 
       if (!saveSuccess) {
         if (context.mounted) {

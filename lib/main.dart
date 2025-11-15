@@ -27,6 +27,9 @@ import 'providers/theme_provider.dart';
 // Config
 import 'config/design_system/theme_design.dart';
 
+// Services
+import 'services/app_initialization_service.dart';
+
 // Localization
 import 'l10n/generated/app_localizations.dart';
 
@@ -50,6 +53,13 @@ void main() async {
     debugPrint('✅ SharedPreferences initialized successfully');
   } catch (e) {
     debugPrint('❌ Error initializing SharedPreferences: $e');
+  }
+
+  // Initialize app (includes cleaning up old food card images)
+  try {
+    await AppInitializationService.initialize();
+  } catch (e) {
+    debugPrint('❌ Error during app initialization: $e');
   }
 
   runApp(const FoodTrackerApp());

@@ -1,7 +1,9 @@
 // lib/widgets/home/quick_edit_food_dialog.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../config/design_system/typography.dart';
 import '../../config/design_system/nutrition_colors.dart';
@@ -11,6 +13,7 @@ import '../../config/constants/app_constants.dart';
 import '../../data/models/food_item.dart';
 import '../../data/repositories/food_repository.dart';
 import '../../providers/theme_provider.dart';
+import '../../services/food_image_service.dart';
 
 class QuickEditFoodDialog extends StatefulWidget {
   final FoodItem foodItem;
@@ -38,6 +41,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
   late final TextEditingController _costController;
 
   bool _isLoading = false;
+  String? _imagePath; // Track current image path (can be different from saved)
 
   @override
   void initState() {
@@ -52,6 +56,9 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
     _costController = TextEditingController(
       text: widget.foodItem.cost?.toStringAsFixed(AppConstants.maxDecimalPlaces) ?? ''
     );
+
+    // Initialize image path from food item
+    _imagePath = widget.foodItem.imagePath;
   }
 
   @override
@@ -131,27 +138,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
         children: [
           // Food image background (behind the card)
           Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-              ),
-              child: Image.network(
-                'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[300],
-                    child: Center(
-                      child: Icon(
-                        Icons.restaurant_rounded,
-                        size: 120,
-                        color: Colors.grey[500],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
+            child: _buildFoodImage(),
           ),
 
           // Colored card with arch cutout using CustomPaint
@@ -167,9 +154,151 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
               ),
             ),
           ),
+
+          // Image picker button (top-right corner)
+          Positioned(
+            top: 16,
+            right: 16,
+            child: _buildImagePickerButton(),
+          ),
         ],
       ),
     );
+  }
+
+  /// Build food image display (uses actual image or placeholder)
+  Widget _buildFoodImage() {
+    // If we have an image path, show the actual food image
+    if (_imagePath != null && _imagePath!.isNotEmpty) {
+      final file = File(_imagePath!);
+
+      return Image.file(
+        file,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          // If file doesn't exist or can't be loaded, show placeholder
+          return _buildImagePlaceholder();
+        },
+      );
+    }
+
+    // No image - show placeholder
+    return _buildImagePlaceholder();
+  }
+
+  /// Build placeholder when no image is available
+  Widget _buildImagePlaceholder() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.grey[300]!,
+            Colors.grey[200]!,
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.restaurant_rounded,
+              size: 80,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Tap + to add photo',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build image picker button (floating action button style)
+  Widget _buildImagePickerButton() {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.9),
+      borderRadius: BorderRadius.circular(20),
+      elevation: 4,
+      child: InkWell(
+        onTap: _showImageSourceDialog,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          child: Icon(
+            _imagePath != null ? Icons.edit : Icons.add_a_photo,
+            size: 24,
+            color: Colors.grey[800],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Show dialog to choose image source (camera or gallery)
+  Future<void> _showImageSourceDialog() async {
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Food Photo'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take Photo'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from Gallery'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+            if (_imagePath != null)
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Remove Photo'),
+                onTap: () => Navigator.pop(context, null),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (source != null) {
+      await _pickImage(source);
+    } else if (source == null && _imagePath != null) {
+      // Remove photo option selected
+      setState(() {
+        _imagePath = null;
+      });
+    }
+  }
+
+  /// Pick image from camera or gallery
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final imagePath = await FoodImageService.pickAndSaveImage(source: source);
+
+      if (imagePath != null) {
+        setState(() {
+          _imagePath = imagePath;
+        });
+        debugPrint('✅ Food card image saved: $imagePath');
+      }
+    } catch (e) {
+      debugPrint('❌ Error picking image: $e');
+      _showErrorSnackBar('Failed to add photo');
+    }
   }
 
   Widget _buildFoodNameInput() {
@@ -582,7 +711,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
     setState(() => _isLoading = true);
 
     try {
-      // Create updated food item
+      // Create updated food item (including image path)
       final updatedItem = widget.foodItem.copyWith(
         name: name,
         servingSize: servingSize,
@@ -591,6 +720,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
         carbs: carbs,
         fats: fat,
         cost: cost,
+        imagePath: _imagePath, // Save the food card image path
       );
 
       // Save to repository
@@ -649,14 +779,22 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
       setState(() => _isLoading = true);
 
       try {
+        // Delete the food entry from storage
         final success = await _foodRepository.storageService.deleteFoodEntry(
           widget.foodItem.id,
           widget.foodItem.timestamp,
         );
 
-        if (success && mounted) {
-          widget.onUpdated?.call();
-          Navigator.of(context).pop();
+        if (success) {
+          // Also delete the associated food card image
+          if (widget.foodItem.imagePath != null) {
+            await FoodImageService.deleteImage(widget.foodItem.imagePath);
+          }
+
+          if (mounted) {
+            widget.onUpdated?.call();
+            Navigator.of(context).pop();
+          }
         } else {
           _showErrorSnackBar('Failed to delete item');
         }

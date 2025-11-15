@@ -287,20 +287,27 @@ class FoodLogWidget extends StatelessWidget {
       child: item.imagePath != null
           ? ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: FutureBuilder<File?>(
-                future: ImageStorageService().getImageFile(item.imagePath!),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.done &&
-                      snapshot.data != null) {
-                    return Image.file(
-                      snapshot.data!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return _buildImagePlaceholder();
-                      },
-                    );
-                  }
-                  return _buildImagePlaceholder();
+              child: Image.file(
+                File(item.imagePath!),
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  // If file doesn't exist, try old ImageStorageService location (backward compatibility)
+                  return FutureBuilder<File?>(
+                    future: ImageStorageService().getImageFile(item.imagePath!),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done &&
+                          snapshot.data != null) {
+                        return Image.file(
+                          snapshot.data!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return _buildImagePlaceholder();
+                          },
+                        );
+                      }
+                      return _buildImagePlaceholder();
+                    },
+                  );
                 },
               ),
             )
