@@ -73,11 +73,11 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
         ),
         child: Stack(
           children: [
-            // 1. White background (bottom layer) - 310×330px, centered horizontally
+            // 1. White background (bottom layer) - 330×330px square, centered horizontally
             Positioned(
-              left: 15,
+              left: 5,
               top: 50,
-              right: 15,
+              right: 5,
               height: 330,
               child: Container(
                 color: Colors.white,
@@ -86,9 +86,9 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
 
             // 2. Food image (middle layer) - fills entire white background
             Positioned(
-              left: 15,
+              left: 5,
               top: 50,
-              right: 15,
+              right: 5,
               height: 330,
               child: _buildFoodImage(), // No Center - let BoxFit.cover fill completely
             ),
@@ -101,11 +101,45 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
               ),
             ),
 
-            // Image picker button
+            // Tappable arch window area for image picker
             Positioned(
-              top: 66,
-              right: 41,
-              child: _buildImagePickerButton(),
+              left: 5,
+              top: 50,
+              right: 5,
+              height: 330,
+              child: GestureDetector(
+                onTap: _showImageSourceDialog,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  color: Colors.transparent,
+                ),
+              ),
+            ),
+
+            // Cost indicator - top left in header zone (above arch window)
+            Positioned(
+              left: 28,
+              top: 19,
+              child: Text(
+                '\$\$\$',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white.withValues(alpha: 0.9),
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ),
+
+            // Export icon - top right in header zone (above arch window)
+            Positioned(
+              right: 28,
+              top: 22,
+              child: Icon(
+                Icons.ios_share,
+                size: 28,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
             ),
 
             // All content on colored card (NO SCROLLVIEW - everything fits)
@@ -222,26 +256,6 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
     );
   }
 
-  /// Build image picker button (floating action button style)
-  Widget _buildImagePickerButton() {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.9),
-      borderRadius: BorderRadius.circular(20),
-      elevation: 4,
-      child: InkWell(
-        onTap: _showImageSourceDialog,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          child: Icon(
-            _controller.imagePath != null ? Icons.edit : Icons.add_a_photo,
-            size: 24,
-            color: Colors.grey[800],
-          ),
-        ),
-      ),
-    );
-  }
 
   /// Show dialog to choose image source (camera or gallery)
   Future<void> _showImageSourceDialog() async {
@@ -299,6 +313,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
     return TextField(
       controller: _controller.nameController,
       style: AppTypography.displaySmall.copyWith(
+        fontSize: 20,
         color: Colors.white,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.5,
@@ -306,6 +321,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
       decoration: InputDecoration(
         hintText: 'Food name',
         hintStyle: AppTypography.displaySmall.copyWith(
+          fontSize: 20,
           color: Colors.white.withValues(alpha: 0.5),
           fontWeight: FontWeight.w700,
           letterSpacing: -0.5,
