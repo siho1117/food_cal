@@ -1,9 +1,13 @@
 // lib/widgets/home/quick_edit_food_dialog.dart
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../config/design_system/typography.dart';
 import '../../config/design_system/nutrition_colors.dart';
@@ -31,6 +35,7 @@ class QuickEditFoodDialog extends StatefulWidget {
 
 class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
   late final QuickEditFoodController _controller;
+  final GlobalKey _cardKey = GlobalKey();
 
   @override
   void initState() {
@@ -58,25 +63,26 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      child: Container(
-        width: 340,
-        constraints: const BoxConstraints(maxHeight: 680),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 32,
-              offset: const Offset(0, 16),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
+      child: RepaintBoundary(
+        key: _cardKey,
+        child: Container(
+          width: 340,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 32,
+                offset: const Offset(0, 16),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
             // 1. White background (bottom layer) - 330×330px square, centered horizontally
             Positioned(
               left: 5,
-              top: 50,
+              top: 90,
               right: 5,
               height: 330,
               child: Container(
@@ -87,7 +93,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             // 2. Food image (middle layer) - fills entire white background
             Positioned(
               left: 5,
-              top: 50,
+              top: 90,
               right: 5,
               height: 330,
               child: _buildFoodImage(), // No Center - let BoxFit.cover fill completely
@@ -104,7 +110,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             // Tappable arch window area for image picker
             Positioned(
               left: 5,
-              top: 50,
+              top: 90,
               right: 5,
               height: 330,
               child: GestureDetector(
@@ -116,10 +122,25 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
               ),
             ),
 
-            // Cost indicator - top left in header zone (above arch window)
+            // App name - top left (Row 1)
             Positioned(
               left: 28,
-              top: 19,
+              top: 16,
+              child: Text(
+                'Food LLM',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+
+            // Cost indicator - left side (Row 2)
+            Positioned(
+              left: 28,
+              top: 56,
               child: Text(
                 '\$\$\$',
                 style: TextStyle(
@@ -131,14 +152,17 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
               ),
             ),
 
-            // Export icon - top right in header zone (above arch window)
+            // Export icon - right side (Row 2, aligned with $$$)
             Positioned(
               right: 28,
-              top: 22,
-              child: Icon(
-                Icons.ios_share,
-                size: 28,
-                color: Colors.white.withValues(alpha: 0.9),
+              top: 56,
+              child: GestureDetector(
+                onTap: _exportFoodCard,
+                child: Icon(
+                  Icons.ios_share,
+                  size: 28,
+                  color: Colors.white.withValues(alpha: 0.9),
+                ),
               ),
             ),
 
@@ -146,8 +170,8 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Spacer for arch window (50 + 320 = 370px)
-                const SizedBox(height: 370),
+                // Spacer for arch window (90 + 320 = 410px)
+                const SizedBox(height: 410),
 
                 // Content on colored card (tighter spacing)
                 Padding(
@@ -177,6 +201,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -355,7 +380,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
                 'CALORIES',
                 style: AppTypography.overline.copyWith(
                   color: Colors.white.withValues(alpha: 0.5),
-                  fontSize: 10, // Reduced from 11
+                  fontSize: 11,
                   letterSpacing: 1.0,
                 ),
               ),
@@ -403,7 +428,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
                 'SERVING',
                 style: AppTypography.overline.copyWith(
                   color: Colors.white.withValues(alpha: 0.5),
-                  fontSize: 10, // Reduced from 11
+                  fontSize: 11,
                   letterSpacing: 1.0,
                 ),
               ),
@@ -458,7 +483,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             label: 'Protein',
             controller: _controller.proteinController,
             color: NutritionColors.proteinColor,
-            icon: Icons.fitness_center_rounded,
+            icon: Icons.set_meal,
           ),
         ),
         const SizedBox(width: 10),
@@ -468,7 +493,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             label: 'Carbs',
             controller: _controller.carbsController,
             color: NutritionColors.carbsColor,
-            icon: Icons.grain_rounded,
+            icon: Icons.bakery_dining,
           ),
         ),
         const SizedBox(width: 10),
@@ -478,7 +503,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             label: 'Fat',
             controller: _controller.fatController,
             color: NutritionColors.fatColor,
-            icon: Icons.water_drop_rounded,
+            icon: Icons.grain_rounded,
           ),
         ),
       ],
@@ -498,7 +523,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
         Text(
           '${label.toUpperCase()} / g',
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: FontWeight.w600,
             color: Colors.white.withValues(alpha: 0.5),
             letterSpacing: 1.0,
@@ -675,6 +700,43 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
       );
     }
   }
+
+  /// Export food card as image and share
+  Future<void> _exportFoodCard() async {
+    try {
+      // Find the RenderRepaintBoundary
+      final boundary = _cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+
+      if (boundary == null) {
+        _showErrorSnackBar('Failed to capture food card');
+        return;
+      }
+
+      // Capture the widget as an image with high quality
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final imageBytes = byteData?.buffer.asUint8List();
+
+      if (imageBytes == null) {
+        _showErrorSnackBar('Failed to capture food card');
+        return;
+      }
+
+      // Save to temporary directory
+      final tempDir = await getTemporaryDirectory();
+      final fileName = '${widget.foodItem.name.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.png';
+      final file = File('${tempDir.path}/$fileName');
+      await file.writeAsBytes(imageBytes);
+
+      // Share the image
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: '${widget.foodItem.name} - Nutrition Info',
+      );
+    } catch (e) {
+      _showErrorSnackBar('Failed to export food card');
+    }
+  }
 }
 
 // Custom painter to create orange card with arch window cutout
@@ -689,7 +751,7 @@ class ArchCardPainter extends CustomPainter {
     // Fixed dimensions for consistent design
     const double marginLeft = 25.0;
     const double marginRight = 25.0;
-    const double marginTop = 50.0;
+    const double marginTop = 90.0;  // Adjusted for 12px gap from row 2
     const double windowHeight = 320.0;  // Increased window height
     const double archRadius = 145.0;    // Back to original 145px radius
 
