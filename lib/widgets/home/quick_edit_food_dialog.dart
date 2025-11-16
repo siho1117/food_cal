@@ -493,7 +493,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
             label: 'Carbs',
             controller: _controller.carbsController,
             color: NutritionColors.carbsColor,
-            icon: Icons.bakery_dining,
+            icon: Icons.local_pizza,
           ),
         ),
         const SizedBox(width: 10),
