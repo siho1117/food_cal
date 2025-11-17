@@ -33,6 +33,23 @@ class FoodItem {
     this.cost, // NEW: Optional cost parameter
   });
 
+  /// Create a skeleton FoodItem for loading placeholders
+  factory FoodItem.skeleton() {
+    return FoodItem(
+      id: 'skeleton',
+      name: '',
+      calories: 0.0,
+      proteins: 0.0,
+      carbs: 0.0,
+      fats: 0.0,
+      mealType: 'snack',
+      timestamp: DateTime.now(),
+      servingSize: 0.0,
+      servingUnit: 'serving',
+      cost: null,
+    );
+  }
+
   /// Create a FoodItem from API image analysis response (generic format)
   factory FoodItem.fromApiAnalysis(Map<String, dynamic> data, String mealType) {
     try {

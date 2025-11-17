@@ -108,7 +108,7 @@ class CameraProvider {
       // ═══════════════════════════════════════════════════════════
       // STEP 4: NOW Show Loading (user has selected, processing starts)
       // ═══════════════════════════════════════════════════════════
-      showFoodRecognitionLoading(null);
+      showFoodRecognitionLoading(null, imagePath: foodCardImagePath);
 
       // ═══════════════════════════════════════════════════════════
       // STEP 5: Call Pure API Service (compression + API)

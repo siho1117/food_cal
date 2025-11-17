@@ -9,6 +9,9 @@ import '../../config/design_system/color_utils.dart';
 import '../../data/models/food_item.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/food_image_service.dart';
+import '../common/pulse_widget.dart';
+import '../common/animated_text_widget.dart';
+import '../common/animated_ellipsis_widget.dart';
 
 /// Reusable food card widget that displays food information
 /// Can be used for:
@@ -18,6 +21,7 @@ import '../../services/food_image_service.dart';
 class FoodCardWidget extends StatelessWidget {
   final FoodItem foodItem;
   final bool isEditable;
+  final bool isLoading;
   final String? imagePath;
   final VoidCallback? onImageTap;
   final VoidCallback? onExportTap;
@@ -32,6 +36,7 @@ class FoodCardWidget extends StatelessWidget {
     super.key,
     required this.foodItem,
     this.isEditable = false,
+    this.isLoading = false,
     this.imagePath,
     this.onImageTap,
     this.onExportTap,
@@ -200,7 +205,7 @@ class FoodCardWidget extends StatelessWidget {
           }
 
           if (snapshot.hasData && snapshot.data != null) {
-            return Image.file(
+            final imageWidget = Image.file(
               snapshot.data!,
               fit: BoxFit.cover,
               width: double.infinity,
@@ -209,6 +214,33 @@ class FoodCardWidget extends StatelessWidget {
                 return _buildImagePlaceholder();
               },
             );
+
+            // If loading mode, show image with black overlay and spinner
+            if (isLoading) {
+              return Stack(
+                children: [
+                  // Background image
+                  imageWidget,
+                  // Black overlay
+                  Container(
+                    color: Colors.black.withValues(alpha: 0.6),
+                  ),
+                  // Centered spinner
+                  const Center(
+                    child: SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 4,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            return imageWidget;
           }
 
           return _buildImagePlaceholder();
@@ -220,6 +252,17 @@ class FoodCardWidget extends StatelessWidget {
 
   /// Build placeholder when no image is available
   Widget _buildImagePlaceholder() {
+    // Show pulse animation when in loading mode (no image available)
+    if (isLoading) {
+      return const PulseWidget(
+        width: double.infinity,
+        height: double.infinity,
+        borderRadius: BorderRadius.zero,
+        baseColor: Color(0xFFE0E0E0),
+      );
+    }
+
+    // Show normal placeholder with icon and text
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -257,6 +300,19 @@ class FoodCardWidget extends StatelessWidget {
 
   /// Build food name field (editable or display)
   Widget _buildFoodNameField() {
+    // Show "Analyzing your food..." text with animation when loading
+    if (isLoading) {
+      return const AnimatedTextWidget(
+        text: 'Analyzing your food...',
+        textStyle: TextStyle(
+          fontSize: 20,
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.5,
+        ),
+      );
+    }
+
     if (isEditable && nameController != null) {
       return TextField(
         controller: nameController,
@@ -343,6 +399,14 @@ class FoodCardWidget extends StatelessWidget {
                         ),
                       ),
                     )
+                  else if (isLoading)
+                    const AnimatedEllipsisWidget(
+                      textStyle: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    )
                   else
                     Text(
                       '${foodItem.calories.toInt()}',
@@ -400,6 +464,14 @@ class FoodCardWidget extends StatelessWidget {
                           contentPadding: EdgeInsets.zero,
                           isDense: true,
                         ),
+                      ),
+                    )
+                  else if (isLoading)
+                    const AnimatedEllipsisWidget(
+                      textStyle: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     )
                   else
@@ -504,6 +576,14 @@ class FoodCardWidget extends StatelessWidget {
                     contentPadding: EdgeInsets.zero,
                     isDense: true,
                   ),
+                ),
+              )
+            else if (isLoading)
+              const AnimatedEllipsisWidget(
+                textStyle: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               )
             else
