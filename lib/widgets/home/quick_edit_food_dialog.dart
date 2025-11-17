@@ -6,8 +6,12 @@ import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import '../../config/design_system/dialog_theme.dart';
+import '../../config/design_system/theme_background.dart';
+import '../../config/design_system/color_utils.dart';
 import '../../data/models/food_item.dart';
+import '../../providers/theme_provider.dart';
 import '../food/food_card.dart';
 import 'quick_edit_food_controller.dart';
 
@@ -129,59 +133,74 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
   }
 
   Widget _buildActionButtons() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(28, 0, 28, 24), // Reduced top and bottom padding
-      child: Row(
-        children: [
-          // Delete button
-          Expanded(
-            child: OutlinedButton(
-              onPressed: _controller.isLoading ? null : _handleDelete,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white,
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 2),
-                padding: const EdgeInsets.symmetric(vertical: 12), // Reduced from 14
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+    // Get the same card color as the food card (complementary color from theme)
+    final cardColor = ColorUtils.getComplementaryColor(
+      ThemeBackground.getColors(
+        context.watch<ThemeProvider>().selectedGradient,
+      )![1], // Tone 2
+    );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 24), // Spacing between food card and buttons
+      child: Container(
+        // Card container matching food card style and width
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(24), // Match food card rounded corners
+        ),
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            // Delete button (original white outline design)
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _controller.isLoading ? null : _handleDelete,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 2),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
-              ),
-              child: const Text(
-                'Delete',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                  color: Colors.white,
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
-          ),
 
-          const SizedBox(width: 12), // Reduced from 14
+            const SizedBox(width: 12),
 
-          // Save button
-          Expanded(
-            child: FilledButton(
-              onPressed: _controller.isLoading ? null : _handleSave,
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black87,
-                padding: const EdgeInsets.symmetric(vertical: 12), // Reduced from 14
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+            // Save button (original white filled design)
+            Expanded(
+              child: FilledButton(
+                onPressed: _controller.isLoading ? null : _handleSave,
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black87,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
                 ),
-                elevation: 0,
-              ),
-              child: Text(
-                _controller.isLoading ? 'Saving...' : 'Save',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                  color: Colors.black87,
+                child: Text(
+                  _controller.isLoading ? 'Saving...' : 'Save',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: Colors.black87,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
