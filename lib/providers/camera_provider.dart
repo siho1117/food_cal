@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../data/services/photo_compression_service.dart';
 import '../data/repositories/food_repository.dart';
-import '../widgets/common/food_recognition_loading_dialog.dart';
+import '../widgets/loading/food_recognition_loading_dialog.dart';
 import '../main.dart'; // Import for navigatorKey
 import '../services/food_image_service.dart';
 import 'home_provider.dart';
@@ -142,6 +142,15 @@ class CameraProvider {
       final itemsWithImages = result.items!.map((item) {
         return item.copyWith(imagePath: foodCardImagePath);
       }).toList();
+
+      // ═══════════════════════════════════════════════════════════
+      // STEP 6.5: Show Preview for 8 seconds (before saving)
+      // ═══════════════════════════════════════════════════════════
+      final firstItem = itemsWithImages.first;
+      await showFoodRecognitionPreview(
+        foodItem: firstItem,
+        imagePath: foodCardImagePath ?? '',
+      );
 
       // ═══════════════════════════════════════════════════════════
       // STEP 7: Save to Database (fast operation, no loading dialog needed)

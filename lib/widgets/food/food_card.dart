@@ -9,9 +9,9 @@ import '../../config/design_system/color_utils.dart';
 import '../../data/models/food_item.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/food_image_service.dart';
-import '../common/pulse_widget.dart';
-import '../common/animated_text_widget.dart';
-import '../common/animated_ellipsis_widget.dart';
+import '../loading/animations/pulse_widget.dart';
+import '../loading/animations/animated_text_widget.dart';
+import '../loading/animations/animated_ellipsis_widget.dart';
 
 /// Reusable food card widget that displays food information
 /// Can be used for:
