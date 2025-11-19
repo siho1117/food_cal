@@ -10,7 +10,6 @@ class FoodItem {
   final double carbs;
   final double fats;
   final String? imagePath;
-  final String mealType; // breakfast, lunch, dinner, snack
   final DateTime timestamp;
   final double servingSize;
   final String servingUnit;
@@ -25,7 +24,6 @@ class FoodItem {
     required this.carbs,
     required this.fats,
     this.imagePath,
-    required this.mealType,
     required this.timestamp,
     required this.servingSize,
     required this.servingUnit,
@@ -42,7 +40,6 @@ class FoodItem {
       proteins: 0.0,
       carbs: 0.0,
       fats: 0.0,
-      mealType: 'snack',
       timestamp: DateTime.now(),
       servingSize: 0.0,
       servingUnit: 'serving',
@@ -50,8 +47,26 @@ class FoodItem {
     );
   }
 
+  /// Create an empty FoodItem for manual entry
+  /// Returns a new FoodItem with all fields initialized to empty/default values
+  factory FoodItem.empty() {
+    final now = DateTime.now();
+    return FoodItem(
+      id: '${now.millisecondsSinceEpoch}_manual',
+      name: '',
+      calories: 0.0,
+      proteins: 0.0,
+      carbs: 0.0,
+      fats: 0.0,
+      timestamp: now,
+      servingSize: 1.0,
+      servingUnit: 'serving',
+      cost: null,
+    );
+  }
+
   /// Create a FoodItem from API image analysis response (generic format)
-  factory FoodItem.fromApiAnalysis(Map<String, dynamic> data, String mealType) {
+  factory FoodItem.fromApiAnalysis(Map<String, dynamic> data) {
     try {
       // Default values if something is missing
       double calories = 0.0;
@@ -120,7 +135,6 @@ class FoodItem {
         proteins: proteins,
         carbs: carbs,
         fats: fats,
-        mealType: mealType,
         timestamp: now,
         servingSize: 1.0,
         servingUnit: 'serving',
@@ -140,7 +154,6 @@ class FoodItem {
         proteins: 0.0,
         carbs: 0.0,
         fats: 0.0,
-        mealType: mealType,
         timestamp: now,
         servingSize: 1.0,
         servingUnit: 'serving',
@@ -158,7 +171,6 @@ class FoodItem {
     double? carbs,
     double? fats,
     String? imagePath,
-    String? mealType,
     DateTime? timestamp,
     double? servingSize,
     String? servingUnit,
@@ -173,7 +185,6 @@ class FoodItem {
       carbs: carbs ?? this.carbs,
       fats: fats ?? this.fats,
       imagePath: imagePath ?? this.imagePath,
-      mealType: mealType ?? this.mealType,
       timestamp: timestamp ?? this.timestamp,
       servingSize: servingSize ?? this.servingSize,
       servingUnit: servingUnit ?? this.servingUnit,
@@ -192,7 +203,7 @@ class FoodItem {
       'carbs': carbs,
       'fats': fats,
       'imagePath': imagePath,
-      'mealType': mealType,
+      'mealType': 'meal', // Keep for backward compatibility with existing DB
       'timestamp': timestamp.millisecondsSinceEpoch,
       'servingSize': servingSize,
       'servingUnit': servingUnit,
@@ -211,7 +222,7 @@ class FoodItem {
       carbs: (map['carbs'] as num?)?.toDouble() ?? 0.0,
       fats: (map['fats'] as num?)?.toDouble() ?? 0.0,
       imagePath: map['imagePath'],
-      mealType: map['mealType'] ?? 'snack',
+      // mealType removed - ignore value from DB for backward compatibility
       timestamp: DateTime.fromMillisecondsSinceEpoch(
         map['timestamp'] ?? DateTime.now().millisecondsSinceEpoch,
       ),
@@ -264,7 +275,7 @@ class FoodItem {
 
   @override
   String toString() {
-    return 'FoodItem(id: $id, name: $name, calories: $calories, mealType: $mealType, servingSize: $servingSize $servingUnit)';
+    return 'FoodItem(id: $id, name: $name, calories: $calories, servingSize: $servingSize $servingUnit)';
   }
 
   @override

@@ -53,6 +53,7 @@ dependencies:
   google_fonts: ^6.2.1
   percent_indicator: ^4.2.3
   fl_chart: ^0.69.0
+  numberpicker: ^2.1.2
 
   # ✅ INTERNATIONALIZATION
   intl: ^0.19.0

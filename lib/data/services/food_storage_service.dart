@@ -146,20 +146,6 @@ class FoodStorageService {
     }
   }
 
-  /// Get food entries for a specific meal type on a date
-  Future<List<FoodItem>> getFoodEntriesForMeal(DateTime date, String mealType) async {
-    try {
-      final dateEntries = await getFoodEntries(date);
-      
-      return dateEntries.where((entry) {
-        return entry.mealType.toLowerCase() == mealType.toLowerCase();
-      }).toList();
-    } catch (e) {
-      debugPrint('Error getting food entries for meal: $e');
-      return [];
-    }
-  }
-
   /// Get food entries for a date range
   Future<List<FoodItem>> getFoodEntriesForDateRange(DateTime startDate, DateTime endDate) async {
     try {
@@ -249,26 +235,21 @@ class FoodStorageService {
   Future<Map<String, dynamic>> getFoodStatistics(DateTime startDate, DateTime endDate) async {
     try {
       final entries = await getFoodEntriesForDateRange(startDate, endDate);
-      
+
       double totalCalories = 0;
       double totalProtein = 0;
       double totalCarbs = 0;
       double totalFat = 0;
       double totalCost = 0;
-      
-      final Map<String, int> mealCounts = {};
-      
+
       for (final entry in entries) {
         totalCalories += entry.calories;
         totalProtein += entry.proteins;
         totalCarbs += entry.carbs;
         totalFat += entry.fats;
         totalCost += entry.cost ?? 0;
-        
-        final mealType = entry.mealType.toLowerCase();
-        mealCounts[mealType] = (mealCounts[mealType] ?? 0) + 1;
       }
-      
+
       return {
         'totalEntries': entries.length,
         'totalCalories': totalCalories,
@@ -277,7 +258,6 @@ class FoodStorageService {
         'totalFat': totalFat,
         'totalCost': totalCost,
         'averageCaloriesPerDay': entries.isEmpty ? 0 : totalCalories / _daysBetween(startDate, endDate),
-        'mealCounts': mealCounts,
       };
     } catch (e) {
       debugPrint('Error getting food statistics: $e');

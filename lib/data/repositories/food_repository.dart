@@ -18,8 +18,6 @@ class FoodRepository {
   /// This is the main business logic that coordinates API, image storage, and data parsing
   /// Takes an image file and returns a list of recognized food items
   Future<List<FoodItem>> recognizeFood(File imageFile) async {
-    // Default meal type since app doesn't use meal categorization
-    const String mealType = 'meal';
     try {
       // Call the API to analyze the image
       final analysisResult = await _apiService.analyzeImage(imageFile);
@@ -33,7 +31,7 @@ class FoodRepository {
       // Process response based on structure
       if (analysisResult.containsKey('category')) {
         // Single food item recognized (typical case)
-        final item = FoodItem.fromApiAnalysis(analysisResult, mealType)
+        final item = FoodItem.fromApiAnalysis(analysisResult)
             .copyWith(imagePath: savedImagePath);
         recognizedItems.add(item);
       } else if (analysisResult.containsKey('annotations') &&
@@ -55,7 +53,6 @@ class FoodRepository {
                 proteins: _extractNutrientValue(foodInfo, 'protein') ?? 0.0,
                 carbs: _extractNutrientValue(foodInfo, 'carbs') ?? 0.0,
                 fats: _extractNutrientValue(foodInfo, 'fat') ?? 0.0,
-                mealType: mealType,
                 timestamp: DateTime.now(),
                 servingSize: AppConstants.defaultServingSize,
                 servingUnit: AppConstants.servingUnits[0],

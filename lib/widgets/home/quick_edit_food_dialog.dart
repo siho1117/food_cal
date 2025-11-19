@@ -52,30 +52,34 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Food card wrapped in RepaintBoundary for export (excludes buttons)
-          RepaintBoundary(
-            key: _cardKey,
-            child: FoodCardWidget(
-              foodItem: widget.foodItem,
-              isEditable: true,
-              imagePath: _controller.imagePath,
-              onImageTap: _showImageSourceDialog,
-              onExportTap: _exportFoodCard,
-              nameController: _controller.nameController,
-              caloriesController: _controller.caloriesController,
-              servingSizeController: _controller.servingSizeController,
-              proteinController: _controller.proteinController,
-              carbsController: _controller.carbsController,
-              fatController: _controller.fatController,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Food card wrapped in RepaintBoundary for export (excludes buttons)
+            RepaintBoundary(
+              key: _cardKey,
+              child: FoodCardWidget(
+                foodItem: widget.foodItem,
+                isEditable: true,
+                imagePath: _controller.imagePath,
+                onImageTap: _showImageSourceDialog,
+                onExportTap: _exportFoodCard,
+                nameController: _controller.nameController,
+                caloriesController: _controller.caloriesController,
+                servingSizeController: _controller.servingSizeController,
+                proteinController: _controller.proteinController,
+                carbsController: _controller.carbsController,
+                fatController: _controller.fatController,
+                costController: _controller.costController,
+              ),
             ),
-          ),
 
-          // Action Buttons (outside RepaintBoundary - excluded from export)
-          _buildActionButtons(),
-        ],
+            // Action Buttons (outside RepaintBoundary - excluded from export)
+            _buildActionButtons(),
+          ],
+        ),
       ),
     );
   }
@@ -140,9 +144,14 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
       )![1], // Tone 2
     );
 
+    // Check if this is a new (empty) food item
+    final isNewItem = widget.foodItem.name.isEmpty;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 24), // Spacing between food card and buttons
       child: Container(
+        // Match food card width (340px)
+        width: 340,
         // Card container matching food card style and width
         decoration: BoxDecoration(
           color: cardColor,
@@ -151,10 +160,10 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [
-            // Delete button (original white outline design)
+            // Delete/Cancel button (original white outline design)
             Expanded(
               child: OutlinedButton(
-                onPressed: _controller.isLoading ? null : _handleDelete,
+                onPressed: _controller.isLoading ? null : (isNewItem ? _handleCancel : _handleDelete),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   side: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 2),
@@ -163,9 +172,9 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(
+                child: Text(
+                  isNewItem ? 'Cancel' : 'Delete',
+                  style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
                     color: Colors.white,
@@ -270,6 +279,13 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
           setState(() {});
         }
       }
+    }
+  }
+
+  void _handleCancel() {
+    // Simply close the dialog without saving for new items
+    if (mounted) {
+      Navigator.of(context).pop();
     }
   }
 

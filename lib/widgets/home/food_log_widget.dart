@@ -52,18 +52,31 @@ class FoodLogWidget extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header - left aligned
-                Text(
-                  'Food Log',
-                  style: TextStyle(
-                    fontSize: AppWidgetTheme.fontSizeLG,
-                    color: textColor,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.3,
-                    shadows: AppWidgetTheme.textShadows,
-                  ),
+                // Header with title and add button
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Food Log',
+                      style: TextStyle(
+                        fontSize: AppWidgetTheme.fontSizeLG,
+                        color: textColor,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.3,
+                        shadows: AppWidgetTheme.textShadows,
+                      ),
+                    ),
+                    // Add button
+                    IconButton(
+                      onPressed: () => _showManualEntryDialog(context, homeProvider),
+                      icon: Icon(Icons.add, color: textColor),
+                      tooltip: 'Add Food Manually',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
                 ),
-                
+
                 const SizedBox(height: 20),
 
                 // Food items list or empty state
@@ -397,5 +410,23 @@ class FoodLogWidget extends StatelessWidget {
     }
 
     return false;
+  }
+
+  Future<void> _showManualEntryDialog(
+    BuildContext context,
+    HomeProvider homeProvider,
+  ) async {
+    // Create an empty food item for manual entry
+    final emptyFoodItem = FoodItem.empty();
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => QuickEditFoodDialog(
+        foodItem: emptyFoodItem,
+        onUpdated: () {
+          homeProvider.refreshData();
+        },
+      ),
+    );
   }
 }

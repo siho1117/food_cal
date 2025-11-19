@@ -9,15 +9,8 @@ class AppConstants {
   AppConstants._();
 
   // ═══════════════════════════════════════════════════════════════
-  // FOOD & MEAL CONSTANTS
+  // FOOD CONSTANTS
   // ═══════════════════════════════════════════════════════════════
-  
-  static const List<String> mealTypes = [
-    'breakfast',
-    'lunch', 
-    'dinner',
-    'snack',
-  ];
 
   static const List<String> servingUnits = [
     'serving',
@@ -37,13 +30,6 @@ class AppConstants {
     'pint',
     'quart',
   ];
-
-  static const Map<String, String> mealTypeEmojis = {
-    'breakfast': '🌅',
-    'lunch': '☀️',
-    'dinner': '🌙',
-    'snack': '🍎',
-  };
 
   static const double defaultServingSize = 1.0;
 
@@ -268,14 +254,6 @@ class AppConstants {
   static const Duration loadingDelay = Duration(milliseconds: 200);
 
   // ═══════════════════════════════════════════════════════════════
-  // MEAL TIME BOUNDARIES
-  // ═══════════════════════════════════════════════════════════════
-  
-  static const int mealTimeBoundaries = 11; // breakfast < 11am
-  static const int lunchBoundary = 15;      // lunch < 3pm  
-  static const int snackBoundary = 18;      // snack < 6pm
-
-  // ═══════════════════════════════════════════════════════════════
   // NUTRITIONAL DEFAULTS
   // ═══════════════════════════════════════════════════════════════
   
@@ -305,27 +283,6 @@ class AppConstants {
   // ═══════════════════════════════════════════════════════════════
   // HELPER METHODS
   // ═══════════════════════════════════════════════════════════════
-  
-  /// Helper method to get meal type display name
-  static String getMealTypeDisplayName(String mealType) {
-    switch (mealType.toLowerCase()) {
-      case 'breakfast':
-        return 'Breakfast';
-      case 'lunch':
-        return 'Lunch';
-      case 'dinner':
-        return 'Dinner';
-      case 'snack':
-        return 'Snack';
-      default:
-        return mealType.capitalize();
-    }
-  }
-
-  /// Helper method to get meal type emoji
-  static String getMealTypeEmoji(String mealType) {
-    return mealTypeEmojis[mealType.toLowerCase()] ?? '🍽️';
-  }
 
   /// Helper method to validate calorie value
   static bool isValidCalorieValue(double calories) {

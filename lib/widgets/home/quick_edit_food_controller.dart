@@ -41,7 +41,7 @@ class QuickEditFoodController {
     carbsController = TextEditingController(text: foodItem.carbs.round().toString());
     fatController = TextEditingController(text: foodItem.fats.round().toString());
     costController = TextEditingController(
-      text: foodItem.cost?.toStringAsFixed(AppConstants.maxDecimalPlaces) ?? ''
+      text: foodItem.cost?.toStringAsFixed(2) ?? ''
     );
 
     // Initialize image path
@@ -81,14 +81,64 @@ class QuickEditFoodController {
 
   /// Validate form inputs
   String? validateInputs() {
+    // Validate name
     final name = nameController.text.trim();
     if (name.isEmpty) {
-      return 'Please enter a food name';
+      return AppConstants.nameRequired;
+    }
+    if (name.length > AppConstants.maxFoodNameLength) {
+      return AppConstants.nameTooLong;
     }
 
+    // Validate serving size
     final servingSize = double.tryParse(servingSizeController.text);
     if (servingSize == null || servingSize <= 0) {
-      return 'Please enter a valid serving size';
+      return AppConstants.invalidServingSize;
+    }
+
+    // Validate calories
+    final calories = double.tryParse(caloriesController.text);
+    if (calories == null || calories < AppConstants.minCaloriesValue) {
+      return AppConstants.invalidCalories;
+    }
+    if (calories > AppConstants.maxCaloriesValue) {
+      return AppConstants.invalidCalories;
+    }
+
+    // Validate protein
+    final protein = double.tryParse(proteinController.text);
+    if (protein == null || protein < AppConstants.minNutrientValue) {
+      return AppConstants.invalidProtein;
+    }
+    if (protein > AppConstants.maxNutrientValue) {
+      return AppConstants.invalidProtein;
+    }
+
+    // Validate carbs
+    final carbs = double.tryParse(carbsController.text);
+    if (carbs == null || carbs < AppConstants.minNutrientValue) {
+      return AppConstants.invalidCarbs;
+    }
+    if (carbs > AppConstants.maxNutrientValue) {
+      return AppConstants.invalidCarbs;
+    }
+
+    // Validate fat
+    final fat = double.tryParse(fatController.text);
+    if (fat == null || fat < AppConstants.minNutrientValue) {
+      return AppConstants.invalidFat;
+    }
+    if (fat > AppConstants.maxNutrientValue) {
+      return AppConstants.invalidFat;
+    }
+
+    // Validate cost (optional, but if provided must be valid)
+    final costText = costController.text.trim();
+    if (costText.isNotEmpty) {
+      final cost = double.tryParse(costText);
+      if (cost == null || cost < 0) {
+        return AppConstants.invalidCost;
+      }
     }
 
     return null; // All valid
@@ -103,10 +153,10 @@ class QuickEditFoodController {
 
     final name = nameController.text.trim();
     final servingSize = double.parse(servingSizeController.text);
-    final calories = double.tryParse(caloriesController.text) ?? 0;
-    final protein = double.tryParse(proteinController.text) ?? 0;
-    final carbs = double.tryParse(carbsController.text) ?? 0;
-    final fat = double.tryParse(fatController.text) ?? 0;
+    final calories = double.parse(caloriesController.text);
+    final protein = double.parse(proteinController.text);
+    final carbs = double.parse(carbsController.text);
+    final fat = double.parse(fatController.text);
 
     final costText = costController.text.trim();
     final cost = costText.isNotEmpty ? double.tryParse(costText) : null;
@@ -114,7 +164,10 @@ class QuickEditFoodController {
     isLoading = true;
 
     try {
-      // Create updated food item
+      // Determine if this is a new item (empty name on original food item)
+      final isNewItem = foodItem.name.isEmpty;
+
+      // Create updated/new food item
       final updatedItem = foodItem.copyWith(
         name: name,
         servingSize: servingSize,
@@ -126,8 +179,10 @@ class QuickEditFoodController {
         imagePath: imagePath,
       );
 
-      // Save to repository
-      final success = await _foodRepository.storageService.updateFoodEntry(updatedItem);
+      // Save to repository - use saveFoodEntry for new items, updateFoodEntry for existing
+      final success = isNewItem
+          ? await _foodRepository.storageService.saveFoodEntry(updatedItem)
+          : await _foodRepository.storageService.updateFoodEntry(updatedItem);
 
       if (success) {
         onUpdated?.call();

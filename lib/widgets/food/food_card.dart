@@ -6,19 +6,21 @@ import '../../config/design_system/typography.dart';
 import '../../config/design_system/nutrition_colors.dart';
 import '../../config/design_system/theme_background.dart';
 import '../../config/design_system/color_utils.dart';
+import '../../config/design_system/dialog_theme.dart';
 import '../../data/models/food_item.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/food_image_service.dart';
 import '../loading/animations/pulse_widget.dart';
 import '../loading/animations/animated_text_widget.dart';
 import '../loading/animations/animated_ellipsis_widget.dart';
+import '../common/number_picker_dialog.dart';
 
 /// Reusable food card widget that displays food information
 /// Can be used for:
 /// - Edit dialog (with text inputs)
 /// - Loading screen (display only)
 /// - Export image (display only)
-class FoodCardWidget extends StatelessWidget {
+class FoodCardWidget extends StatefulWidget {
   final FoodItem foodItem;
   final bool isEditable;
   final bool isLoading;
@@ -31,6 +33,7 @@ class FoodCardWidget extends StatelessWidget {
   final TextEditingController? proteinController;
   final TextEditingController? carbsController;
   final TextEditingController? fatController;
+  final TextEditingController? costController;
 
   const FoodCardWidget({
     super.key,
@@ -46,8 +49,14 @@ class FoodCardWidget extends StatelessWidget {
     this.proteinController,
     this.carbsController,
     this.fatController,
+    this.costController,
   });
 
+  @override
+  State<FoodCardWidget> createState() => _FoodCardWidgetState();
+}
+
+class _FoodCardWidgetState extends State<FoodCardWidget> {
   @override
   Widget build(BuildContext context) {
     final cardColor = ColorUtils.getComplementaryColor(
@@ -99,14 +108,14 @@ class FoodCardWidget extends StatelessWidget {
           ),
 
           // Tappable arch window area for image picker (only if editable)
-          if (isEditable && onImageTap != null)
+          if (widget.isEditable && widget.onImageTap != null)
             Positioned(
               left: 5,
               top: 90,
               right: 5,
               height: 330,
               child: GestureDetector(
-                onTap: onImageTap,
+                onTap: widget.onImageTap,
                 behavior: HitTestBehavior.opaque,
                 child: Container(
                   color: Colors.transparent,
@@ -133,24 +142,16 @@ class FoodCardWidget extends StatelessWidget {
           Positioned(
             left: 28,
             top: 56,
-            child: Text(
-              '\$\$\$',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: Colors.white.withValues(alpha: 0.9),
-                letterSpacing: -0.5,
-              ),
-            ),
+            child: _buildCostIndicator(),
           ),
 
           // Export icon - right side (Row 2, aligned with $$$)
-          if (onExportTap != null)
+          if (widget.onExportTap != null)
             Positioned(
               right: 28,
               top: 56,
               child: GestureDetector(
-                onTap: onExportTap,
+                onTap: widget.onExportTap,
                 child: Icon(
                   Icons.ios_share,
                   size: 28,
@@ -196,9 +197,9 @@ class FoodCardWidget extends StatelessWidget {
 
   /// Build food image display
   Widget _buildFoodImage() {
-    if (imagePath != null && imagePath!.isNotEmpty) {
+    if (widget.imagePath != null && widget.imagePath!.isNotEmpty) {
       return FutureBuilder<File?>(
-        future: FoodImageService.getImageFile(imagePath),
+        future: FoodImageService.getImageFile(widget.imagePath),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return _buildImagePlaceholder();
@@ -216,7 +217,7 @@ class FoodCardWidget extends StatelessWidget {
             );
 
             // If loading mode, show image with black overlay and spinner
-            if (isLoading) {
+            if (widget.isLoading) {
               return Stack(
                 children: [
                   // Background image
@@ -253,7 +254,7 @@ class FoodCardWidget extends StatelessWidget {
   /// Build placeholder when no image is available
   Widget _buildImagePlaceholder() {
     // Show pulse animation when in loading mode (no image available)
-    if (isLoading) {
+    if (widget.isLoading) {
       return const PulseWidget(
         width: double.infinity,
         height: double.infinity,
@@ -301,7 +302,7 @@ class FoodCardWidget extends StatelessWidget {
   /// Build food name field (editable or display)
   Widget _buildFoodNameField() {
     // Show "Analyzing your food..." text with animation when loading
-    if (isLoading) {
+    if (widget.isLoading) {
       return const AnimatedTextWidget(
         text: 'Analyzing your food...',
         textStyle: TextStyle(
@@ -313,39 +314,40 @@ class FoodCardWidget extends StatelessWidget {
       );
     }
 
-    if (isEditable && nameController != null) {
-      return TextField(
-        controller: nameController,
-        style: const TextStyle(
-          fontSize: 20,
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.5,
-        ),
-        decoration: InputDecoration(
-          hintText: 'Food name',
-          hintStyle: TextStyle(
-            fontSize: 20,
-            color: Colors.white.withValues(alpha: 0.5),
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
+    if (widget.isEditable && widget.nameController != null) {
+      return GestureDetector(
+        onTap: () => _showEditFoodNameDialog(context),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.white.withValues(alpha: 0.3),
+                width: 2,
+              ),
+            ),
           ),
-          border: UnderlineInputBorder(
-            borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3), width: 2),
+          child: Text(
+            widget.nameController!.text.isEmpty
+                ? 'Food name'
+                : widget.nameController!.text,
+            style: TextStyle(
+              fontSize: 20,
+              color: widget.nameController!.text.isEmpty
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : Colors.white,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3), width: 2),
-          ),
-          focusedBorder: const UnderlineInputBorder(
-            borderSide: BorderSide(color: Colors.white, width: 2.5),
-          ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 12),
         ),
       );
     }
 
     return Text(
-      foodItem.name,
+      widget.foodItem.name,
       style: const TextStyle(
         fontSize: 20,
         color: Colors.white,
@@ -382,24 +384,29 @@ class FoodCardWidget extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.7),
                   ),
                   const SizedBox(width: 6),
-                  if (isEditable && caloriesController != null)
+                  if (widget.isEditable && widget.caloriesController != null)
                     Expanded(
-                      child: TextField(
-                        controller: caloriesController,
-                        keyboardType: TextInputType.number,
-                        style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                          isDense: true,
+                      child: GestureDetector(
+                        onTap: () => _showCaloriesPicker(context),
+                        child: AbsorbPointer(
+                          child: TextField(
+                            controller: widget.caloriesController,
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                              isDense: true,
+                            ),
+                          ),
                         ),
                       ),
                     )
-                  else if (isLoading)
+                  else if (widget.isLoading)
                     const AnimatedEllipsisWidget(
                       textStyle: TextStyle(
                         fontSize: 26,
@@ -409,7 +416,7 @@ class FoodCardWidget extends StatelessWidget {
                     )
                   else
                     Text(
-                      '${foodItem.calories.toInt()}',
+                      '${widget.foodItem.calories.toInt()}',
                       style: const TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
@@ -449,24 +456,29 @@ class FoodCardWidget extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  if (isEditable && servingSizeController != null)
+                  if (widget.isEditable && widget.servingSizeController != null)
                     Expanded(
-                      child: TextField(
-                        controller: servingSizeController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                          isDense: true,
+                      child: GestureDetector(
+                        onTap: () => _showServingSizePicker(context),
+                        child: AbsorbPointer(
+                          child: TextField(
+                            controller: widget.servingSizeController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            style: const TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                              isDense: true,
+                            ),
+                          ),
                         ),
                       ),
                     )
-                  else if (isLoading)
+                  else if (widget.isLoading)
                     const AnimatedEllipsisWidget(
                       textStyle: TextStyle(
                         fontSize: 26,
@@ -476,7 +488,7 @@ class FoodCardWidget extends StatelessWidget {
                     )
                   else
                     Text(
-                      '${foodItem.servingSize}',
+                      '${widget.foodItem.servingSize}',
                       style: const TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
@@ -500,8 +512,8 @@ class FoodCardWidget extends StatelessWidget {
         Expanded(
           child: _buildMacroPill(
             label: 'Protein',
-            value: foodItem.proteins,
-            controller: proteinController,
+            value: widget.foodItem.proteins,
+            controller: widget.proteinController,
             color: NutritionColors.proteinColor,
             icon: Icons.set_meal,
           ),
@@ -511,8 +523,8 @@ class FoodCardWidget extends StatelessWidget {
         Expanded(
           child: _buildMacroPill(
             label: 'Carbs',
-            value: foodItem.carbs,
-            controller: carbsController,
+            value: widget.foodItem.carbs,
+            controller: widget.carbsController,
             color: NutritionColors.carbsColor,
             icon: Icons.local_pizza,
           ),
@@ -522,8 +534,8 @@ class FoodCardWidget extends StatelessWidget {
         Expanded(
           child: _buildMacroPill(
             label: 'Fat',
-            value: foodItem.fats,
-            controller: fatController,
+            value: widget.foodItem.fats,
+            controller: widget.fatController,
             color: NutritionColors.fatColor,
             icon: Icons.grain_rounded,
           ),
@@ -561,24 +573,29 @@ class FoodCardWidget extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.7),
             ),
             const SizedBox(width: 6),
-            if (isEditable && controller != null)
+            if (widget.isEditable && controller != null)
               Expanded(
-                child: TextField(
-                  controller: controller,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    isDense: true,
+                child: GestureDetector(
+                  onTap: () => _showMacroPicker(context, label, controller),
+                  child: AbsorbPointer(
+                    child: TextField(
+                      controller: controller,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                        isDense: true,
+                      ),
+                    ),
                   ),
                 ),
               )
-            else if (isLoading)
+            else if (widget.isLoading)
               const AnimatedEllipsisWidget(
                 textStyle: TextStyle(
                   fontSize: 24,
@@ -599,6 +616,170 @@ class FoodCardWidget extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// Show calories picker dialog
+  Future<void> _showCaloriesPicker(BuildContext context) async {
+    final currentValue = int.tryParse(widget.caloriesController?.text ?? '0') ?? 0;
+    final result = await showNumberPickerDialog(
+      context: context,
+      title: 'Select Calories',
+      initialValue: currentValue,
+      minValue: 0,
+      maxValue: 9999,
+      step: 1,
+    );
+    if (result != null && widget.caloriesController != null) {
+      widget.caloriesController!.text = result.toString();
+    }
+  }
+
+  /// Show serving size picker dialog
+  Future<void> _showServingSizePicker(BuildContext context) async {
+    final currentValue = double.tryParse(widget.servingSizeController?.text ?? '1.0') ?? 1.0;
+    final result = await showDecimalPickerDialog(
+      context: context,
+      title: 'Select Serving Size',
+      initialValue: currentValue,
+      minValue: 0.1,
+      maxValue: 20.0,
+      decimalPlaces: 1,
+    );
+    if (result != null && widget.servingSizeController != null) {
+      widget.servingSizeController!.text = result.toString();
+    }
+  }
+
+  /// Show macro nutrient picker dialog
+  Future<void> _showMacroPicker(
+    BuildContext context,
+    String label,
+    TextEditingController? controller,
+  ) async {
+    if (controller == null) return;
+
+    final currentValue = int.tryParse(controller.text) ?? 0;
+    final result = await showNumberPickerDialog(
+      context: context,
+      title: 'Select $label (g)',
+      initialValue: currentValue,
+      minValue: 0,
+      maxValue: 999,
+      step: 1,
+    );
+    if (result != null) {
+      controller.text = result.toString();
+    }
+  }
+
+  /// Show cost picker dialog
+  Future<void> _showCostPicker(BuildContext context) async {
+    final currentValue = double.tryParse(widget.costController?.text ?? '0.0') ?? 0.0;
+    final result = await showCurrencyPickerDialog(
+      context: context,
+      title: 'Select Cost per Serving',
+      initialValue: currentValue,
+      maxDollars: 999,
+    );
+    if (result != null && widget.costController != null) {
+      setState(() {
+        widget.costController!.text = result.toStringAsFixed(2);
+      });
+    }
+  }
+
+  /// Build cost indicator (editable or display)
+  Widget _buildCostIndicator() {
+    // Helper function to format cost as dollar amount
+    String getCostDisplay(double? cost) {
+      if (cost == null || cost == 0) return '\$\$\$';
+      return '\$${cost.toStringAsFixed(2)}';
+    }
+
+    if (widget.isEditable && widget.costController != null) {
+      // Parse the current cost value
+      final currentCost = double.tryParse(widget.costController?.text ?? '0.0') ?? 0.0;
+
+      return GestureDetector(
+        onTap: () => _showCostPicker(context),
+        child: Text(
+          getCostDisplay(currentCost),
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: Colors.white.withValues(alpha: 0.9),
+            letterSpacing: -0.5,
+          ),
+        ),
+      );
+    }
+
+    // Display mode
+    return Text(
+      getCostDisplay(widget.foodItem.cost),
+      style: TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+        color: Colors.white.withValues(alpha: 0.9),
+        letterSpacing: -0.5,
+      ),
+    );
+  }
+
+  /// Show edit food name dialog
+  void _showEditFoodNameDialog(BuildContext context) {
+    if (widget.nameController == null) return;
+
+    final controller = TextEditingController(text: widget.nameController!.text);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppDialogTheme.backgroundColor,
+        shape: AppDialogTheme.shape,
+        contentPadding: AppDialogTheme.contentPadding,
+        actionsPadding: AppDialogTheme.actionsPadding,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 24.0),
+
+        title: const Text(
+          'Edit Food Name',
+          style: AppDialogTheme.titleStyle,
+        ),
+
+        content: SingleChildScrollView(
+          child: TextField(
+            controller: controller,
+            autofocus: true,
+            style: AppDialogTheme.inputTextStyle,
+            decoration: AppDialogTheme.inputDecoration(),
+          ),
+        ),
+
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            style: AppDialogTheme.cancelButtonStyle,
+            child: const Text('Cancel'),
+          ),
+
+          const SizedBox(width: AppDialogTheme.buttonGap),
+
+          FilledButton(
+            onPressed: () {
+              final newName = controller.text.trim();
+              if (newName.isNotEmpty) {
+                setState(() {
+                  widget.nameController!.text = newName;
+                });
+              }
+              Navigator.pop(dialogContext);
+            },
+            style: AppDialogTheme.primaryButtonStyle,
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    ).then((_) => controller.dispose());
   }
 }
 
