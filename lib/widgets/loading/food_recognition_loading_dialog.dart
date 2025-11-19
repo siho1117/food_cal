@@ -1,5 +1,10 @@
 // lib/widgets/common/food_recognition_loading_dialog.dart
+import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../main.dart'; // Import for navigatorKey
 import '../../data/models/food_item.dart';
 import '../food/food_card.dart';
@@ -92,6 +97,9 @@ bool _previewTimerCancelled = false;
 /// Global variable to store updated food item with cost
 FoodItem? _updatedFoodItem;
 
+/// Global flag to track if user has completed cost entry
+bool _costEntryCompleted = false;
+
 /// Shows preview of recognized food card for 8 seconds.
 ///
 /// This function displays the completed food card after AI recognition
@@ -125,9 +133,10 @@ Future<FoodItem> showFoodRecognitionPreview({
   required String imagePath,
 }) async {
   try {
-    // Reset timer cancellation flag and updated item
+    // Reset timer cancellation flag, updated item, and cost entry completion
     _previewTimerCancelled = false;
     _updatedFoodItem = foodItem;
+    _costEntryCompleted = false;
 
     // Get the overlay from the global navigator key
     final overlayState = navigatorKey.currentState?.overlay;
@@ -141,7 +150,10 @@ Future<FoodItem> showFoodRecognitionPreview({
     _previewOverlay?.remove();
     _previewOverlay = null;
 
-    // Create new overlay entry with completed food card (no export button)
+    // Create GlobalKey for export functionality
+    final cardKey = GlobalKey();
+
+    // Create new overlay entry with completed food card
     _previewOverlay = OverlayEntry(
       builder: (context) => Material(
         type: MaterialType.transparency,
@@ -158,14 +170,20 @@ Future<FoodItem> showFoodRecognitionPreview({
             ),
             // Card in center - taps on this don't dismiss
             Center(
-              child: FoodCardWidget(
-                foodItem: _updatedFoodItem!,
-                isLoading: false,
-                isEditable: false,
-                imagePath: imagePath,
-                isPreviewMode: true,
-                onCostPickerOpened: cancelPreviewTimer,
-                onCostUpdated: updatePreviewFoodItemCost,
+              child: RepaintBoundary(
+                key: cardKey,
+                child: FoodCardWidget(
+                  foodItem: _updatedFoodItem!,
+                  isLoading: false,
+                  isEditable: false,
+                  imagePath: imagePath,
+                  isPreviewMode: true,
+                  costEntryCompleted: _costEntryCompleted,
+                  onCostPickerOpened: cancelPreviewTimer,
+                  onCostUpdated: updatePreviewFoodItemCost,
+                  // Show export button only after cost entry is completed
+                  onExportTap: _costEntryCompleted ? () => _exportPreviewCard(cardKey, _updatedFoodItem!) : null,
+                ),
               ),
             ),
           ],
@@ -196,15 +214,17 @@ Future<FoodItem> showFoodRecognitionPreview({
 /// Updates the food item's cost during preview period.
 ///
 /// Called when user selects a cost in the cost picker overlay.
-/// This updates the internal state and forces a rebuild of the preview card.
+/// This updates the internal state, marks cost entry as completed,
+/// and forces a rebuild of the preview card to show export button.
 ///
 /// **Parameters:**
 /// - [cost] - The new cost value selected by user
 void updatePreviewFoodItemCost(double cost) {
   if (_updatedFoodItem != null) {
     _updatedFoodItem = _updatedFoodItem!.copyWith(cost: cost);
+    _costEntryCompleted = true; // Mark cost entry as completed
 
-    // Force rebuild of the overlay with updated cost
+    // Force rebuild of the overlay with updated cost and export button
     _previewOverlay?.markNeedsBuild();
   }
 }
@@ -216,6 +236,58 @@ void updatePreviewFoodItemCost(double cost) {
 /// The preview will remain open until the user manually dismisses it.
 void cancelPreviewTimer() {
   _previewTimerCancelled = true;
+}
+
+/// Exports the preview food card as an image and shares it.
+///
+/// This function captures the food card widget as a high-quality PNG image
+/// and uses the system share dialog to allow the user to save or share it.
+///
+/// **Parameters:**
+/// - [cardKey] - GlobalKey of the RepaintBoundary wrapping the card
+/// - [foodItem] - The food item being previewed
+///
+/// **Technical details:**
+/// - Uses RenderRepaintBoundary to capture widget as image
+/// - 3.0x pixel ratio for high quality (retina displays)
+/// - Saves to temporary directory before sharing
+/// - Automatically cleans up temp file after sharing
+Future<void> _exportPreviewCard(GlobalKey cardKey, FoodItem foodItem) async {
+  try {
+    // Find the RenderRepaintBoundary
+    final boundary = cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+
+    if (boundary == null) {
+      debugPrint('❌ [Export] Failed to find RepaintBoundary');
+      return;
+    }
+
+    // Capture the widget as an image with high quality
+    final image = await boundary.toImage(pixelRatio: 3.0);
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    final imageBytes = byteData?.buffer.asUint8List();
+
+    if (imageBytes == null) {
+      debugPrint('❌ [Export] Failed to capture image bytes');
+      return;
+    }
+
+    // Save to temporary directory
+    final tempDir = await getTemporaryDirectory();
+    final fileName = '${foodItem.name.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.png';
+    final file = File('${tempDir.path}/$fileName');
+    await file.writeAsBytes(imageBytes);
+
+    // Share the image
+    await Share.shareXFiles(
+      [XFile(file.path)],
+      text: '${foodItem.name} - Nutrition Info',
+    );
+
+    debugPrint('✅ [Export] Food card exported successfully');
+  } catch (e) {
+    debugPrint('❌ [Export] Failed to export food card: $e');
+  }
 }
 
 /// Removes the preview overlay from the screen.

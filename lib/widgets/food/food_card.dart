@@ -28,6 +28,7 @@ class FoodCardWidget extends StatefulWidget {
   final bool isEditable;
   final bool isLoading;
   final bool isPreviewMode;
+  final bool costEntryCompleted; // NEW: Track if user has finished adding cost
   final String? imagePath;
   final VoidCallback? onImageTap;
   final VoidCallback? onExportTap;
@@ -47,6 +48,7 @@ class FoodCardWidget extends StatefulWidget {
     this.isEditable = false,
     this.isLoading = false,
     this.isPreviewMode = false,
+    this.costEntryCompleted = false, // NEW: Default to false
     this.imagePath,
     this.onImageTap,
     this.onExportTap,
@@ -716,6 +718,11 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
       letterSpacing: -0.5,
     );
 
+    // Loading mode - hide cost indicator completely
+    if (widget.isLoading) {
+      return const SizedBox.shrink();
+    }
+
     // Editable mode (edit dialog)
     if (widget.isEditable && widget.costController != null) {
       final currentCost = double.tryParse(widget.costController?.text ?? '0.0') ?? 0.0;
@@ -729,8 +736,17 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
       );
     }
 
-    // Preview mode - animated and tappable
+    // Preview mode - check if cost entry is completed
     if (widget.isPreviewMode) {
+      // If cost entry completed, show static cost (no animation)
+      if (widget.costEntryCompleted) {
+        return Text(
+          getCostDisplay(widget.foodItem.cost),
+          style: textStyle,
+        );
+      }
+
+      // Otherwise, show animated cost indicator (tappable)
       return AnimatedCostIndicator(
         text: getCostDisplay(widget.foodItem.cost),
         textStyle: textStyle,
