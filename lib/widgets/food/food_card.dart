@@ -6,16 +6,16 @@ import '../../config/design_system/typography.dart';
 import '../../config/design_system/nutrition_colors.dart';
 import '../../config/design_system/theme_background.dart';
 import '../../config/design_system/color_utils.dart';
-import '../../config/design_system/dialog_theme.dart';
 import '../../data/models/food_item.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/food_image_service.dart';
-import '../common/cost_picker_overlay.dart'; // Import for cost picker overlay
-import '../common/number_picker_dialog.dart'; // Import for calories, serving size, and macro pickers
 import '../loading/animations/pulse_widget.dart';
 import '../loading/animations/animated_text_widget.dart';
 import '../loading/animations/animated_ellipsis_widget.dart';
 import '../loading/animations/animated_cost_indicator.dart';
+import 'painters/arch_card_painter.dart';
+import 'dialogs/edit_food_name_dialog.dart';
+import 'helpers/food_card_pickers.dart';
 
 /// Reusable food card widget that displays food information
 /// Can be used for:
@@ -630,13 +630,9 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
   /// Show calories picker dialog
   Future<void> _showCaloriesPicker(BuildContext context) async {
     final currentValue = int.tryParse(widget.caloriesController?.text ?? '0') ?? 0;
-    final result = await showNumberPickerDialog(
+    final result = await FoodCardPickers.showCaloriesPicker(
       context: context,
-      title: 'Select Calories',
-      initialValue: currentValue,
-      minValue: 0,
-      maxValue: 9999,
-      step: 1,
+      currentValue: currentValue,
     );
     if (result != null && widget.caloriesController != null) {
       widget.caloriesController!.text = result.toString();
@@ -646,13 +642,9 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
   /// Show serving size picker dialog
   Future<void> _showServingSizePicker(BuildContext context) async {
     final currentValue = double.tryParse(widget.servingSizeController?.text ?? '1.0') ?? 1.0;
-    final result = await showDecimalPickerDialog(
+    final result = await FoodCardPickers.showServingSizePicker(
       context: context,
-      title: 'Select Serving Size',
-      initialValue: currentValue,
-      minValue: 0.1,
-      maxValue: 20.0,
-      decimalPlaces: 1,
+      currentValue: currentValue,
     );
     if (result != null && widget.servingSizeController != null) {
       widget.servingSizeController!.text = result.toString();
@@ -668,13 +660,10 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
     if (controller == null) return;
 
     final currentValue = int.tryParse(controller.text) ?? 0;
-    final result = await showNumberPickerDialog(
+    final result = await FoodCardPickers.showMacroPicker(
       context: context,
-      title: 'Select $label (g)',
-      initialValue: currentValue,
-      minValue: 0,
-      maxValue: 999,
-      step: 1,
+      label: label,
+      currentValue: currentValue,
     );
     if (result != null) {
       controller.text = result.toString();
@@ -685,11 +674,8 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
   Future<void> _showCostPicker(BuildContext context) async {
     final currentValue = double.tryParse(widget.costController?.text ?? '0.0') ?? 0.0;
 
-    // Use the same overlay as preview mode, but with manual input enabled
-    final result = await showCostPickerOverlay(
-      initialValue: currentValue,
-      showManualInput: true, // Enable manual input for food log editing
-      maxDollars: 999,
+    final result = await FoodCardPickers.showCostPicker(
+      currentValue: currentValue,
     );
 
     if (result != null && widget.costController != null) {
@@ -702,33 +688,16 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
   /// Show cost picker dialog in preview mode
   /// Notifies parent to cancel the 8-second timer
   Future<void> _showCostPickerInPreview(BuildContext context) async {
-    debugPrint('🎯 _showCostPickerInPreview called');
-
-    // Notify parent that cost picker is opening (cancels timer)
-    widget.onCostPickerOpened?.call();
-    debugPrint('✅ Cost picker opened callback called');
-
     final currentValue = widget.foodItem.cost ?? 0.0;
-    debugPrint('💵 Current cost value: \$${currentValue.toStringAsFixed(2)}');
-    debugPrint('📱 About to show cost picker overlay...');
 
-    // Show cost picker using custom overlay (guaranteed to be on top)
-    // Include manual input for consistency with edit mode
-    final result = await showCostPickerOverlay(
-      initialValue: currentValue,
-      showManualInput: true,
-      maxDollars: 999,
+    final result = await FoodCardPickers.showCostPickerInPreview(
+      currentValue: currentValue,
+      onCostPickerOpened: widget.onCostPickerOpened,
     );
-
-    debugPrint('📥 Cost picker returned: ${result != null ? "\$${result.toStringAsFixed(2)}" : "null (cancelled)"}');
 
     // Update the food item cost through callback
     if (result != null) {
-      debugPrint('💰 User selected cost: \$${result.toStringAsFixed(2)}');
       widget.onCostUpdated?.call(result);
-      debugPrint('✅ Cost updated callback called');
-    } else {
-      debugPrint('ℹ️ User cancelled cost picker');
     }
   }
 
@@ -782,7 +751,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
 
     final result = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => _EditFoodNameDialog(
+      builder: (dialogContext) => EditFoodNameDialog(
         initialValue: widget.nameController!.text,
       ),
     );
@@ -792,126 +761,5 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
         widget.nameController!.text = result;
       });
     }
-  }
-}
-
-/// Stateful dialog for editing food name with proper controller lifecycle
-class _EditFoodNameDialog extends StatefulWidget {
-  final String initialValue;
-
-  const _EditFoodNameDialog({
-    required this.initialValue,
-  });
-
-  @override
-  State<_EditFoodNameDialog> createState() => _EditFoodNameDialogState();
-}
-
-class _EditFoodNameDialogState extends State<_EditFoodNameDialog> {
-  late TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: AppDialogTheme.backgroundColor,
-      shape: AppDialogTheme.shape,
-      contentPadding: AppDialogTheme.contentPadding,
-      actionsPadding: AppDialogTheme.actionsPadding,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 24.0),
-      title: const Text(
-        'Edit Food Name',
-        style: AppDialogTheme.titleStyle,
-      ),
-      content: SingleChildScrollView(
-        child: TextField(
-          controller: _controller,
-          autofocus: true,
-          style: AppDialogTheme.inputTextStyle,
-          decoration: AppDialogTheme.inputDecoration(),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, null),
-          style: AppDialogTheme.cancelButtonStyle,
-          child: const Text('Cancel'),
-        ),
-        const SizedBox(width: AppDialogTheme.buttonGap),
-        FilledButton(
-          onPressed: () {
-            final newName = _controller.text.trim();
-            Navigator.pop(context, newName);
-          },
-          style: AppDialogTheme.primaryButtonStyle,
-          child: const Text('Save'),
-        ),
-      ],
-    );
-  }
-}
-
-/// Custom painter for arch card cutout
-class ArchCardPainter extends CustomPainter {
-  final Color cardColor;
-
-  ArchCardPainter({required this.cardColor});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const double marginLeft = 25.0;
-    const double marginRight = 25.0;
-    const double marginTop = 90.0;
-    const double windowHeight = 320.0;
-    const double archRadius = 145.0;
-
-    final archWindowRect = RRect.fromRectAndCorners(
-      Rect.fromLTRB(
-        marginLeft,
-        marginTop,
-        size.width - marginRight,
-        marginTop + windowHeight,
-      ),
-      topLeft: Radius.circular(archRadius),
-      topRight: Radius.circular(archRadius),
-      bottomLeft: const Radius.circular(20),
-      bottomRight: const Radius.circular(20),
-    );
-
-    final cardRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      const Radius.circular(28),
-    );
-
-    final cardPath = Path()..addRRect(cardRect);
-    final windowPath = Path()..addRRect(archWindowRect);
-
-    final cardWithCutout = Path.combine(
-      PathOperation.difference,
-      cardPath,
-      windowPath,
-    );
-
-    final cardPaint = Paint()
-      ..color = cardColor
-      ..style = PaintingStyle.fill;
-
-    canvas.drawPath(cardWithCutout, cardPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant ArchCardPainter oldDelegate) {
-    return oldDelegate.cardColor != cardColor;
   }
 }
