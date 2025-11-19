@@ -10,12 +10,12 @@ import '../../config/design_system/dialog_theme.dart';
 import '../../data/models/food_item.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/food_image_service.dart';
-import '../loading/cost_picker_overlay.dart'; // Import for cost picker overlay
+import '../common/cost_picker_overlay.dart'; // Import for cost picker overlay
+import '../common/number_picker_dialog.dart'; // Import for calories, serving size, and macro pickers
 import '../loading/animations/pulse_widget.dart';
 import '../loading/animations/animated_text_widget.dart';
 import '../loading/animations/animated_ellipsis_widget.dart';
 import '../loading/animations/animated_cost_indicator.dart';
-import '../common/number_picker_dialog.dart';
 
 /// Reusable food card widget that displays food information
 /// Can be used for:

@@ -1,19 +1,59 @@
-// lib/widgets/loading/cost_picker_overlay.dart
+// lib/widgets/common/cost_picker_overlay.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:numberpicker/numberpicker.dart';
 import '../../main.dart';
 import '../../config/design_system/dialog_theme.dart';
 
-/// Global overlay entry for cost picker
+// ═══════════════════════════════════════════════════════════════════════════════
+// UNIVERSAL COST PICKER OVERLAY
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// This is the single source of truth for cost input across the entire app.
+// Used in both:
+//   1. Preview mode - After AI food recognition (8-second preview period)
+//   2. Edit mode - When editing existing food items in the log
+//
+// Why overlay instead of dialog?
+//   - Guaranteed z-index control (no z-fighting with other overlays)
+//   - Direct overlay insertion bypasses Flutter's dialog system
+//   - Consistent behavior across different UI contexts
+//
+// Features:
+//   - Dual-column NumberPicker for dollars and cents ($0.00 - $999.99)
+//   - Optional manual input field for amounts > $999
+//   - Tap outside to cancel
+//   - Returns Future<double?> for async/await pattern
+//
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Global overlay entry for cost picker (singleton pattern)
 OverlayEntry? _costPickerOverlay;
 
-/// Shows a cost picker overlay on top of everything
-/// Returns the selected cost or null if cancelled
+/// Shows a cost picker overlay on top of all UI elements.
 ///
-/// This is the universal cost picker used in both:
-/// - Preview mode (after food recognition)
-/// - Food log editing (when editing existing items)
+/// This function creates and displays a cost input dialog using Flutter's
+/// overlay system for guaranteed z-index control.
+///
+/// **Parameters:**
+/// - [initialValue] - The starting cost value to display (default: 0.0)
+/// - [showManualInput] - Whether to show manual text input field (default: true)
+/// - [maxDollars] - Maximum dollar value for number picker (default: 999)
+///
+/// **Returns:**
+/// - [Future<double?>] - The selected cost value, or null if cancelled
+///
+/// **Usage:**
+/// ```dart
+/// final cost = await showCostPickerOverlay(
+///   initialValue: 5.99,
+///   showManualInput: true,
+///   maxDollars: 999,
+/// );
+/// if (cost != null) {
+///   print('User selected: \$${cost.toStringAsFixed(2)}');
+/// }
+/// ```
 Future<double?> showCostPickerOverlay({
   required double initialValue,
   bool showManualInput = true,
@@ -21,7 +61,7 @@ Future<double?> showCostPickerOverlay({
 }) async {
   final overlayState = navigatorKey.currentState?.overlay;
   if (overlayState == null) {
-    debugPrint('❌ Overlay state is null');
+    debugPrint('❌ [CostPicker] Overlay state unavailable');
     return null;
   }
 
@@ -44,7 +84,6 @@ Future<double?> showCostPickerOverlay({
             showManualInput: showManualInput,
             maxDollars: maxDollars,
             onResult: (result) {
-              debugPrint('💰 Cost picker result: ${result != null ? "\$${result.toStringAsFixed(2)}" : "cancelled"}');
               completer.complete(result);
               _hideCostPickerOverlay();
             },
@@ -56,22 +95,33 @@ Future<double?> showCostPickerOverlay({
 
   // Insert overlay on top
   overlayState.insert(_costPickerOverlay!);
-  debugPrint('✅ Cost picker overlay inserted');
 
   // Wait for result
   return completer.future;
 }
 
-/// Hide cost picker overlay
+/// Removes the cost picker overlay from the screen.
+///
+/// This is called automatically when user selects a value or cancels,
+/// but can also be called manually if needed.
 void _hideCostPickerOverlay() {
-  if (_costPickerOverlay != null) {
-    _costPickerOverlay?.remove();
-    _costPickerOverlay = null;
-    debugPrint('✅ Cost picker overlay removed');
-  }
+  _costPickerOverlay?.remove();
+  _costPickerOverlay = null;
 }
 
-/// Cost picker overlay content widget
+/// Internal widget that renders the cost picker UI.
+///
+/// This is a private StatefulWidget that manages:
+/// - Dual NumberPicker columns (dollars and cents)
+/// - Optional manual text input field
+/// - Save/Cancel buttons
+/// - Value selection logic
+///
+/// **State management:**
+/// - [selectedDollars] - Current dollar value (0-999)
+/// - [selectedCents] - Current cents value (0-99)
+/// - [useManualInput] - Flag to determine which input method to use
+/// - [manualInputController] - TextEditingController for manual input field
 class _CostPickerOverlayContent extends StatefulWidget {
   final double initialValue;
   final bool showManualInput;

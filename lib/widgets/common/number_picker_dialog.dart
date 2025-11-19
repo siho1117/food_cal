@@ -175,6 +175,30 @@ class DecimalNumberPicker extends StatelessWidget {
   }
 }
 
-/// NOTE: Cost picker has been moved to lib/widgets/loading/cost_picker_overlay.dart
-/// Use showCostPickerOverlay() instead of showCurrencyPickerDialog()
-/// This provides consistent UI across both preview and edit modes
+// ═══════════════════════════════════════════════════════════════════════════════
+// MIGRATION NOTE: Cost Picker Functionality
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// The cost picker has been consolidated and moved to a unified implementation.
+//
+// OLD LOCATION (deprecated):
+//   - This file previously contained showCurrencyPickerDialog()
+//   - Removed: _CurrencyPickerDialog and CostPickerContent classes
+//
+// NEW LOCATION:
+//   - lib/widgets/common/cost_picker_overlay.dart
+//
+// USAGE:
+//   Instead of:
+//     showCurrencyPickerDialog(context: context, ...)
+//
+//   Use:
+//     showCostPickerOverlay(initialValue: value, ...)
+//
+// BENEFITS:
+//   - Consistent UI across both preview mode (after photo recognition) and edit mode
+//   - Guaranteed z-index control via custom overlay system
+//   - Single source of truth - no code duplication
+//   - Unified behavior with optional manual input for amounts > $999
+//
+// ═══════════════════════════════════════════════════════════════════════════════

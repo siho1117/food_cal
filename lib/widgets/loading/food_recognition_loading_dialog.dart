@@ -11,16 +11,28 @@ import '../food/food_card.dart';
 /// Global overlay entry to manage the loading display
 OverlayEntry? _loadingOverlay;
 
-/// Show skeleton card loading overlay with optional image path
+/// Shows skeleton card loading overlay during food recognition.
+///
+/// Displays an animated skeleton version of a food card while the API
+/// processes the image. This provides visual feedback to the user.
+///
+/// **Parameters:**
+/// - [context] - BuildContext (nullable, not currently used)
+/// - [imagePath] - Optional path to display captured image in skeleton card
+///
+/// **Usage:**
+/// ```dart
+/// showFoodRecognitionLoading(null, imagePath: '/path/to/image.jpg');
+/// // ... perform API call ...
+/// hideFoodRecognitionLoading();
+/// ```
 void showFoodRecognitionLoading(BuildContext? context, {String? imagePath}) {
   try {
-    debugPrint('🎯 showFoodRecognitionLoading called');
-
     // Get the overlay from the global navigator key
     final overlayState = navigatorKey.currentState?.overlay;
 
     if (overlayState == null) {
-      debugPrint('❌ Overlay state is null');
+      debugPrint('❌ [FoodRecognition] Overlay state unavailable');
       return;
     }
 
@@ -45,26 +57,24 @@ void showFoodRecognitionLoading(BuildContext? context, {String? imagePath}) {
 
     // Insert overlay using global overlay state
     overlayState.insert(_loadingOverlay!);
-    debugPrint('✅ Overlay inserted');
   } catch (e, stackTrace) {
-    debugPrint('❌ Error showing overlay: $e');
+    debugPrint('❌ [FoodRecognition] Error showing overlay: $e');
     debugPrint('Stack trace: $stackTrace');
   }
 }
 
-/// Hide loading overlay
+/// Removes the loading overlay from the screen.
+///
+/// Should be called after the API request completes (success or failure)
+/// to clean up the loading state.
 void hideFoodRecognitionLoading() {
   try {
-    debugPrint('🔚 hideFoodRecognitionLoading called');
     if (_loadingOverlay != null) {
       _loadingOverlay?.remove();
       _loadingOverlay = null;
-      debugPrint('✅ Overlay removed');
-    } else {
-      debugPrint('ℹ️ No overlay to remove');
     }
   } catch (e) {
-    debugPrint('❌ Error removing overlay: $e');
+    debugPrint('❌ [FoodRecognition] Error removing overlay: $e');
     _loadingOverlay = null;
   }
 }
@@ -82,16 +92,39 @@ bool _previewTimerCancelled = false;
 /// Global variable to store updated food item with cost
 FoodItem? _updatedFoodItem;
 
-/// Show preview of completed food card for 8 seconds
-/// Timer can be cancelled by calling cancelPreviewTimer()
-/// Returns the FoodItem (potentially updated with cost if user added it)
+/// Shows preview of recognized food card for 8 seconds.
+///
+/// This function displays the completed food card after AI recognition
+/// and gives the user 8 seconds to review it. During this time, the user can:
+/// - Add cost information (which cancels the auto-dismiss timer)
+/// - Tap outside to dismiss early
+/// - Let it auto-dismiss after 8 seconds
+///
+/// **Parameters:**
+/// - [foodItem] - The recognized food item to display
+/// - [imagePath] - Path to the captured food image
+///
+/// **Returns:**
+/// - [Future<FoodItem>] - The food item, potentially updated with cost if user added it
+///
+/// **Timer behavior:**
+/// - Auto-dismisses after 8 seconds if user doesn't interact
+/// - Timer is cancelled if user opens cost picker (via [cancelPreviewTimer])
+/// - User can manually dismiss by tapping outside the card
+///
+/// **Usage:**
+/// ```dart
+/// final updatedItem = await showFoodRecognitionPreview(
+///   foodItem: recognizedItem,
+///   imagePath: '/path/to/image.jpg',
+/// );
+/// // updatedItem may have cost added by user during preview
+/// ```
 Future<FoodItem> showFoodRecognitionPreview({
   required FoodItem foodItem,
   required String imagePath,
 }) async {
   try {
-    debugPrint('👁️ showFoodRecognitionPreview called');
-
     // Reset timer cancellation flag and updated item
     _previewTimerCancelled = false;
     _updatedFoodItem = foodItem;
@@ -100,7 +133,7 @@ Future<FoodItem> showFoodRecognitionPreview({
     final overlayState = navigatorKey.currentState?.overlay;
 
     if (overlayState == null) {
-      debugPrint('❌ Overlay state is null');
+      debugPrint('❌ [Preview] Overlay state unavailable');
       return foodItem;
     }
 
@@ -117,10 +150,7 @@ Future<FoodItem> showFoodRecognitionPreview({
             // Background tap area for dismissing
             Positioned.fill(
               child: GestureDetector(
-                onTap: () {
-                  debugPrint('👆 Tapped outside preview card - dismissing');
-                  hideFoodRecognitionPreview();
-                },
+                onTap: hideFoodRecognitionPreview,
                 child: Container(
                   color: Colors.black.withValues(alpha: 0.75),
                 ),
@@ -145,62 +175,63 @@ Future<FoodItem> showFoodRecognitionPreview({
 
     // Insert overlay
     overlayState.insert(_previewOverlay!);
-    debugPrint('✅ Preview overlay inserted');
 
     // Wait for 8 seconds or until timer is cancelled
     await Future.delayed(const Duration(seconds: 8));
 
     // Only auto-dismiss if timer wasn't cancelled
     if (!_previewTimerCancelled) {
-      debugPrint('⏰ 8-second timer completed - auto-dismissing');
       hideFoodRecognitionPreview();
-    } else {
-      debugPrint('⏸️ Timer was cancelled - preview stays open');
     }
 
     // Return the potentially updated food item
     return _updatedFoodItem ?? foodItem;
   } catch (e, stackTrace) {
-    debugPrint('❌ Error showing preview overlay: $e');
+    debugPrint('❌ [Preview] Error showing overlay: $e');
     debugPrint('Stack trace: $stackTrace');
     return foodItem;
   }
 }
 
-/// Update the food item's cost during preview
-/// Called when user selects a cost in the picker
+/// Updates the food item's cost during preview period.
+///
+/// Called when user selects a cost in the cost picker overlay.
+/// This updates the internal state and forces a rebuild of the preview card.
+///
+/// **Parameters:**
+/// - [cost] - The new cost value selected by user
 void updatePreviewFoodItemCost(double cost) {
   if (_updatedFoodItem != null) {
-    debugPrint('💰 Updating preview food item cost to: \$${cost.toStringAsFixed(2)}');
     _updatedFoodItem = _updatedFoodItem!.copyWith(cost: cost);
 
     // Force rebuild of the overlay with updated cost
-    if (_previewOverlay != null) {
-      _previewOverlay!.markNeedsBuild();
-    }
+    _previewOverlay?.markNeedsBuild();
   }
 }
 
-/// Cancel the 8-second auto-dismiss timer
-/// Called when user interacts with cost picker
+/// Cancels the 8-second auto-dismiss timer.
+///
+/// This is called automatically when the user opens the cost picker,
+/// preventing the preview from auto-dismissing while they're entering cost.
+/// The preview will remain open until the user manually dismisses it.
 void cancelPreviewTimer() {
-  debugPrint('🛑 Preview timer cancelled - preview will stay open');
   _previewTimerCancelled = true;
 }
 
-/// Hide preview overlay
+/// Removes the preview overlay from the screen.
+///
+/// Can be called:
+/// - Automatically after 8 seconds (if timer not cancelled)
+/// - Manually by user tapping outside the card
+/// - By other code that needs to dismiss the preview
 void hideFoodRecognitionPreview() {
   try {
-    debugPrint('🔚 hideFoodRecognitionPreview called');
     if (_previewOverlay != null) {
       _previewOverlay?.remove();
       _previewOverlay = null;
-      debugPrint('✅ Preview overlay removed');
-    } else {
-      debugPrint('ℹ️ No preview overlay to remove');
     }
   } catch (e) {
-    debugPrint('❌ Error removing preview overlay: $e');
+    debugPrint('❌ [Preview] Error removing overlay: $e');
     _previewOverlay = null;
   }
 }
