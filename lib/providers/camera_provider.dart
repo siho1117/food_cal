@@ -145,17 +145,27 @@ class CameraProvider {
 
       // ═══════════════════════════════════════════════════════════
       // STEP 6.5: Show Preview for 8 seconds (before saving)
+      // Preview may be updated with cost if user adds it
       // ═══════════════════════════════════════════════════════════
       final firstItem = itemsWithImages.first;
-      await showFoodRecognitionPreview(
+      final updatedItem = await showFoodRecognitionPreview(
         foodItem: firstItem,
         imagePath: foodCardImagePath ?? '',
       );
 
+      // Update the items list with the potentially updated item (with cost)
+      final finalItemsToSave = itemsWithImages.map((item) {
+        // Replace first item with updated one if cost was added
+        if (item.id == firstItem.id) {
+          return updatedItem;
+        }
+        return item;
+      }).toList();
+
       // ═══════════════════════════════════════════════════════════
       // STEP 7: Save to Database (fast operation, no loading dialog needed)
       // ═══════════════════════════════════════════════════════════
-      final saveSuccess = await _foodRepository.storageService.saveFoodEntries(itemsWithImages);
+      final saveSuccess = await _foodRepository.storageService.saveFoodEntries(finalItemsToSave);
 
       if (!saveSuccess) {
         if (context.mounted) {

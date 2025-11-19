@@ -10,9 +10,11 @@ import '../../config/design_system/dialog_theme.dart';
 import '../../data/models/food_item.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/food_image_service.dart';
+import '../loading/cost_picker_overlay.dart'; // Import for cost picker overlay
 import '../loading/animations/pulse_widget.dart';
 import '../loading/animations/animated_text_widget.dart';
 import '../loading/animations/animated_ellipsis_widget.dart';
+import '../loading/animations/animated_cost_indicator.dart';
 import '../common/number_picker_dialog.dart';
 
 /// Reusable food card widget that displays food information
@@ -20,13 +22,17 @@ import '../common/number_picker_dialog.dart';
 /// - Edit dialog (with text inputs)
 /// - Loading screen (display only)
 /// - Export image (display only)
+/// - Preview mode (with animated cost indicator)
 class FoodCardWidget extends StatefulWidget {
   final FoodItem foodItem;
   final bool isEditable;
   final bool isLoading;
+  final bool isPreviewMode;
   final String? imagePath;
   final VoidCallback? onImageTap;
   final VoidCallback? onExportTap;
+  final VoidCallback? onCostPickerOpened;
+  final Function(double)? onCostUpdated;
   final TextEditingController? nameController;
   final TextEditingController? caloriesController;
   final TextEditingController? servingSizeController;
@@ -40,9 +46,12 @@ class FoodCardWidget extends StatefulWidget {
     required this.foodItem,
     this.isEditable = false,
     this.isLoading = false,
+    this.isPreviewMode = false,
     this.imagePath,
     this.onImageTap,
     this.onExportTap,
+    this.onCostPickerOpened,
+    this.onCostUpdated,
     this.nameController,
     this.caloriesController,
     this.servingSizeController,
@@ -672,19 +681,54 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
     }
   }
 
-  /// Show cost picker dialog
+  /// Show cost picker overlay (for editable mode)
   Future<void> _showCostPicker(BuildContext context) async {
     final currentValue = double.tryParse(widget.costController?.text ?? '0.0') ?? 0.0;
-    final result = await showCurrencyPickerDialog(
-      context: context,
-      title: 'Select Cost per Serving',
+
+    // Use the same overlay as preview mode, but with manual input enabled
+    final result = await showCostPickerOverlay(
       initialValue: currentValue,
+      showManualInput: true, // Enable manual input for food log editing
       maxDollars: 999,
     );
+
     if (result != null && widget.costController != null) {
       setState(() {
         widget.costController!.text = result.toStringAsFixed(2);
       });
+    }
+  }
+
+  /// Show cost picker dialog in preview mode
+  /// Notifies parent to cancel the 8-second timer
+  Future<void> _showCostPickerInPreview(BuildContext context) async {
+    debugPrint('🎯 _showCostPickerInPreview called');
+
+    // Notify parent that cost picker is opening (cancels timer)
+    widget.onCostPickerOpened?.call();
+    debugPrint('✅ Cost picker opened callback called');
+
+    final currentValue = widget.foodItem.cost ?? 0.0;
+    debugPrint('💵 Current cost value: \$${currentValue.toStringAsFixed(2)}');
+    debugPrint('📱 About to show cost picker overlay...');
+
+    // Show cost picker using custom overlay (guaranteed to be on top)
+    // Include manual input for consistency with edit mode
+    final result = await showCostPickerOverlay(
+      initialValue: currentValue,
+      showManualInput: true,
+      maxDollars: 999,
+    );
+
+    debugPrint('📥 Cost picker returned: ${result != null ? "\$${result.toStringAsFixed(2)}" : "null (cancelled)"}');
+
+    // Update the food item cost through callback
+    if (result != null) {
+      debugPrint('💰 User selected cost: \$${result.toStringAsFixed(2)}');
+      widget.onCostUpdated?.call(result);
+      debugPrint('✅ Cost updated callback called');
+    } else {
+      debugPrint('ℹ️ User cancelled cost picker');
     }
   }
 
@@ -696,90 +740,125 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
       return '\$${cost.toStringAsFixed(2)}';
     }
 
+    final textStyle = TextStyle(
+      fontSize: 22,
+      fontWeight: FontWeight.w700,
+      color: Colors.white.withValues(alpha: 0.9),
+      letterSpacing: -0.5,
+    );
+
+    // Editable mode (edit dialog)
     if (widget.isEditable && widget.costController != null) {
-      // Parse the current cost value
       final currentCost = double.tryParse(widget.costController?.text ?? '0.0') ?? 0.0;
 
       return GestureDetector(
         onTap: () => _showCostPicker(context),
         child: Text(
           getCostDisplay(currentCost),
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: Colors.white.withValues(alpha: 0.9),
-            letterSpacing: -0.5,
-          ),
+          style: textStyle,
         ),
       );
     }
 
-    // Display mode
+    // Preview mode - animated and tappable
+    if (widget.isPreviewMode) {
+      return AnimatedCostIndicator(
+        text: getCostDisplay(widget.foodItem.cost),
+        textStyle: textStyle,
+        onTap: () => _showCostPickerInPreview(context),
+      );
+    }
+
+    // Display mode - static
     return Text(
       getCostDisplay(widget.foodItem.cost),
-      style: TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.w700,
-        color: Colors.white.withValues(alpha: 0.9),
-        letterSpacing: -0.5,
-      ),
+      style: textStyle,
     );
   }
 
   /// Show edit food name dialog
-  void _showEditFoodNameDialog(BuildContext context) {
+  Future<void> _showEditFoodNameDialog(BuildContext context) async {
     if (widget.nameController == null) return;
 
-    final controller = TextEditingController(text: widget.nameController!.text);
-
-    showDialog(
+    final result = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppDialogTheme.backgroundColor,
-        shape: AppDialogTheme.shape,
-        contentPadding: AppDialogTheme.contentPadding,
-        actionsPadding: AppDialogTheme.actionsPadding,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 24.0),
-
-        title: const Text(
-          'Edit Food Name',
-          style: AppDialogTheme.titleStyle,
-        ),
-
-        content: SingleChildScrollView(
-          child: TextField(
-            controller: controller,
-            autofocus: true,
-            style: AppDialogTheme.inputTextStyle,
-            decoration: AppDialogTheme.inputDecoration(),
-          ),
-        ),
-
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            style: AppDialogTheme.cancelButtonStyle,
-            child: const Text('Cancel'),
-          ),
-
-          const SizedBox(width: AppDialogTheme.buttonGap),
-
-          FilledButton(
-            onPressed: () {
-              final newName = controller.text.trim();
-              if (newName.isNotEmpty) {
-                setState(() {
-                  widget.nameController!.text = newName;
-                });
-              }
-              Navigator.pop(dialogContext);
-            },
-            style: AppDialogTheme.primaryButtonStyle,
-            child: const Text('Save'),
-          ),
-        ],
+      builder: (dialogContext) => _EditFoodNameDialog(
+        initialValue: widget.nameController!.text,
       ),
-    ).then((_) => controller.dispose());
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        widget.nameController!.text = result;
+      });
+    }
+  }
+}
+
+/// Stateful dialog for editing food name with proper controller lifecycle
+class _EditFoodNameDialog extends StatefulWidget {
+  final String initialValue;
+
+  const _EditFoodNameDialog({
+    required this.initialValue,
+  });
+
+  @override
+  State<_EditFoodNameDialog> createState() => _EditFoodNameDialogState();
+}
+
+class _EditFoodNameDialogState extends State<_EditFoodNameDialog> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppDialogTheme.backgroundColor,
+      shape: AppDialogTheme.shape,
+      contentPadding: AppDialogTheme.contentPadding,
+      actionsPadding: AppDialogTheme.actionsPadding,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 24.0),
+      title: const Text(
+        'Edit Food Name',
+        style: AppDialogTheme.titleStyle,
+      ),
+      content: SingleChildScrollView(
+        child: TextField(
+          controller: _controller,
+          autofocus: true,
+          style: AppDialogTheme.inputTextStyle,
+          decoration: AppDialogTheme.inputDecoration(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, null),
+          style: AppDialogTheme.cancelButtonStyle,
+          child: const Text('Cancel'),
+        ),
+        const SizedBox(width: AppDialogTheme.buttonGap),
+        FilledButton(
+          onPressed: () {
+            final newName = _controller.text.trim();
+            Navigator.pop(context, newName);
+          },
+          style: AppDialogTheme.primaryButtonStyle,
+          child: const Text('Save'),
+        ),
+      ],
+    );
   }
 }
 
