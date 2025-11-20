@@ -169,199 +169,209 @@ class _CostPickerOverlayContentState extends State<_CostPickerOverlayContent> {
 
   @override
   Widget build(BuildContext context) {
+    // Get keyboard height to adjust dialog position
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
     return GestureDetector(
       onTap: () {
         // Tapping outside cancels
         widget.onResult(null);
       },
-      child: Center(
-        child: GestureDetector(
-          onTap: () {
-            // Prevent taps on dialog from closing it
-          },
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
-            margin: const EdgeInsets.symmetric(horizontal: 40),
-            padding: AppDialogTheme.contentPadding,
-            decoration: BoxDecoration(
-              color: AppDialogTheme.backgroundColor,
-              borderRadius: AppDialogTheme.shape.borderRadius,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Title
-                Text(
-                  'Add Cost per Serving',
-                  style: AppDialogTheme.titleStyle,
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 150),
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: Center(
+          child: SingleChildScrollView(
+            child: GestureDetector(
+              onTap: () {
+                // Dismiss keyboard when tapping on dialog background
+                FocusScope.of(context).unfocus();
+              },
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 400),
+                margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+                padding: AppDialogTheme.contentPadding,
+                decoration: BoxDecoration(
+                  color: AppDialogTheme.backgroundColor,
+                  borderRadius: AppDialogTheme.shape.borderRadius,
                 ),
-                const SizedBox(height: 24),
-                // Dual-column picker
-                Row(
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Dollar picker
-                    Column(
+                    // Title
+                    Text(
+                      'Add Cost per Serving',
+                      style: AppDialogTheme.titleStyle,
+                    ),
+                    const SizedBox(height: 24),
+                    // Dual-column picker
+                    Row(
                       mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          '\$',
-                          style: AppDialogTheme.bodyStyle.copyWith(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        // Dollar picker
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '\$',
+                              style: AppDialogTheme.bodyStyle.copyWith(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            NumberPicker(
+                              value: selectedDollars > widget.maxDollars ? 0 : selectedDollars,
+                              minValue: 0,
+                              maxValue: widget.maxDollars,
+                              onChanged: (value) => setState(() {
+                                selectedDollars = value;
+                                useManualInput = false;
+                              }),
+                              textStyle: AppDialogTheme.bodyStyle.copyWith(
+                                fontSize: 20,
+                              ),
+                              selectedTextStyle: AppDialogTheme.titleStyle.copyWith(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(AppDialogTheme.borderRadiusSmall),
+                                border: Border.all(
+                                  color: AppDialogTheme.inputBorderColor,
+                                  width: AppDialogTheme.inputBorderWidth,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 8),
-                        NumberPicker(
-                          value: selectedDollars > widget.maxDollars ? 0 : selectedDollars,
-                          minValue: 0,
-                          maxValue: widget.maxDollars,
-                          onChanged: (value) => setState(() {
-                            selectedDollars = value;
-                            useManualInput = false;
-                          }),
-                          textStyle: AppDialogTheme.bodyStyle.copyWith(
-                            fontSize: 20,
-                          ),
-                          selectedTextStyle: AppDialogTheme.titleStyle.copyWith(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(AppDialogTheme.borderRadiusSmall),
-                            border: Border.all(
-                              color: AppDialogTheme.inputBorderColor,
-                              width: AppDialogTheme.inputBorderWidth,
+                        // Decimal point
+                        Padding(
+                          padding: const EdgeInsets.only(top: 32, left: 8, right: 8),
+                          child: Text(
+                            '.',
+                            style: AppDialogTheme.titleStyle.copyWith(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
+                        // Cents picker
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'cents',
+                              style: AppDialogTheme.bodyStyle.copyWith(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            NumberPicker(
+                              value: selectedCents,
+                              minValue: 0,
+                              maxValue: 99,
+                              onChanged: (value) => setState(() {
+                                selectedCents = value;
+                                useManualInput = false;
+                              }),
+                              textStyle: AppDialogTheme.bodyStyle.copyWith(
+                                fontSize: 20,
+                              ),
+                              selectedTextStyle: AppDialogTheme.titleStyle.copyWith(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(AppDialogTheme.borderRadiusSmall),
+                                border: Border.all(
+                                  color: AppDialogTheme.inputBorderColor,
+                                  width: AppDialogTheme.inputBorderWidth,
+                                ),
+                              ),
+                              textMapper: (numberText) {
+                                return int.parse(numberText).toString().padLeft(2, '0');
+                              },
+                            ),
+                          ],
+                        ),
                       ],
                     ),
-                    // Decimal point
-                    Padding(
-                      padding: const EdgeInsets.only(top: 32, left: 8, right: 8),
-                      child: Text(
-                        '.',
-                        style: AppDialogTheme.titleStyle.copyWith(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                        ),
+                    // Optional manual input section
+                    if (widget.showManualInput) ...[
+                      const SizedBox(height: 16),
+                      // Divider
+                      Container(
+                        height: 1,
+                        color: AppDialogTheme.inputBorderColor,
                       ),
-                    ),
-                    // Cents picker
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'cents',
-                          style: AppDialogTheme.bodyStyle.copyWith(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        NumberPicker(
-                          value: selectedCents,
-                          minValue: 0,
-                          maxValue: 99,
-                          onChanged: (value) => setState(() {
-                            selectedCents = value;
-                            useManualInput = false;
-                          }),
-                          textStyle: AppDialogTheme.bodyStyle.copyWith(
-                            fontSize: 20,
-                          ),
-                          selectedTextStyle: AppDialogTheme.titleStyle.copyWith(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(AppDialogTheme.borderRadiusSmall),
-                            border: Border.all(
-                              color: AppDialogTheme.inputBorderColor,
-                              width: AppDialogTheme.inputBorderWidth,
+                      const SizedBox(height: 16),
+                      // Manual input field
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Or enter amount over \$${widget.maxDollars}:',
+                            style: AppDialogTheme.bodyStyle.copyWith(
+                              fontSize: 14,
                             ),
                           ),
-                          textMapper: (numberText) {
-                            return int.parse(numberText).toString().padLeft(2, '0');
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                // Optional manual input section
-                if (widget.showManualInput) ...[
-                  const SizedBox(height: 16),
-                  // Divider
-                  Container(
-                    height: 1,
-                    color: AppDialogTheme.inputBorderColor,
-                  ),
-                  const SizedBox(height: 16),
-                  // Manual input field
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Or enter amount over \$${widget.maxDollars}:',
-                        style: AppDialogTheme.bodyStyle.copyWith(
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: manualInputController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        style: AppDialogTheme.inputTextStyle,
-                        decoration: AppDialogTheme.inputDecoration(
-                          hintText: 'e.g., 1234.56',
-                        ).copyWith(
-                          prefixText: '\$ ',
-                          prefixStyle: AppDialogTheme.inputTextStyle,
-                        ),
-                        onChanged: (value) {
-                          if (value.isNotEmpty) {
-                            setState(() => useManualInput = true);
-                          }
-                        },
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: manualInputController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            style: AppDialogTheme.inputTextStyle,
+                            decoration: AppDialogTheme.inputDecoration(
+                              hintText: 'e.g., 1234.56',
+                            ).copyWith(
+                              prefixText: '\$ ',
+                              prefixStyle: AppDialogTheme.inputTextStyle,
+                            ),
+                            onChanged: (value) {
+                              if (value.isNotEmpty) {
+                                setState(() => useManualInput = true);
+                              }
+                            },
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                ],
-                const SizedBox(height: 24),
-                // Action buttons matching existing design
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => widget.onResult(null),
-                      style: AppDialogTheme.cancelButtonStyle,
-                      child: const Text('Cancel'),
-                    ),
-                    const SizedBox(width: AppDialogTheme.buttonGap),
-                    FilledButton(
-                      onPressed: () {
-                        double? result;
+                    const SizedBox(height: 24),
+                    // Action buttons matching existing design
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => widget.onResult(null),
+                          style: AppDialogTheme.cancelButtonStyle,
+                          child: const Text('Cancel'),
+                        ),
+                        const SizedBox(width: AppDialogTheme.buttonGap),
+                        FilledButton(
+                          onPressed: () {
+                            double? result;
 
-                        if (useManualInput && manualInputController.text.isNotEmpty) {
-                          // Use manual input
-                          result = double.tryParse(manualInputController.text);
-                        } else {
-                          // Use picker values
-                          result = selectedDollars + (selectedCents / 100.0);
-                        }
+                            if (useManualInput && manualInputController.text.isNotEmpty) {
+                              // Use manual input
+                              result = double.tryParse(manualInputController.text);
+                            } else {
+                              // Use picker values
+                              result = selectedDollars + (selectedCents / 100.0);
+                            }
 
-                        widget.onResult(result);
-                      },
-                      style: AppDialogTheme.primaryButtonStyle,
-                      child: const Text('Save'),
+                            widget.onResult(result);
+                          },
+                          style: AppDialogTheme.primaryButtonStyle,
+                          child: const Text('Save'),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
