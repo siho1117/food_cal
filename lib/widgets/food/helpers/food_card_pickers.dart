@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import '../../common/number_picker_dialog.dart';
 import '../../common/cost_picker_overlay.dart';
+import '../../common/number_picker_overlay.dart';
+import '../../common/text_input_overlay.dart';
 
 /// Static helper class for food card picker dialogs.
 ///
@@ -164,6 +166,90 @@ class FoodCardPickers {
       initialValue: currentValue,
       showManualInput: true,
       maxDollars: 999,
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // PREVIEW MODE PICKERS (for editable preview after AI recognition)
+  // ═══════════════════════════════════════════════════════════════
+
+  /// Shows calories picker in preview mode.
+  ///
+  /// Uses overlay system for guaranteed z-index control above preview overlay.
+  ///
+  /// **Parameters:**
+  /// - [context] - BuildContext (not used, kept for API compatibility)
+  /// - [currentValue] - Current calories value
+  /// - [onPickerOpened] - Callback fired when picker opens (cancels preview timer)
+  ///
+  /// **Returns:**
+  /// - [Future<int?>] - Selected calories, or null if cancelled
+  static Future<int?> showCaloriesPickerInPreview({
+    required BuildContext context,
+    required int currentValue,
+    VoidCallback? onPickerOpened,
+  }) async {
+    onPickerOpened?.call();
+    return await showNumberPickerOverlay(
+      title: 'Select Calories',
+      initialValue: currentValue,
+      minValue: 0,
+      maxValue: 9999,
+      step: 1,
+    );
+  }
+
+  /// Shows serving size picker in preview mode.
+  ///
+  /// Uses overlay system for guaranteed z-index control above preview overlay.
+  ///
+  /// **Parameters:**
+  /// - [context] - BuildContext (not used, kept for API compatibility)
+  /// - [currentValue] - Current serving size value
+  /// - [onPickerOpened] - Callback fired when picker opens (cancels preview timer)
+  ///
+  /// **Returns:**
+  /// - [Future<double?>] - Selected serving size, or null if cancelled
+  static Future<double?> showServingSizePickerInPreview({
+    required BuildContext context,
+    required double currentValue,
+    VoidCallback? onPickerOpened,
+  }) async {
+    onPickerOpened?.call();
+    return await showDecimalPickerOverlay(
+      title: 'Select Serving Size',
+      initialValue: currentValue,
+      minValue: 0.1,
+      maxValue: 20.0,
+      decimalPlaces: 1,
+    );
+  }
+
+  /// Shows macro picker in preview mode.
+  ///
+  /// Uses overlay system for guaranteed z-index control above preview overlay.
+  ///
+  /// **Parameters:**
+  /// - [context] - BuildContext (not used, kept for API compatibility)
+  /// - [label] - Label for the macro (e.g., "Protein", "Carbs", "Fat")
+  /// - [currentValue] - Current macro value
+  /// - [onPickerOpened] - Callback fired when picker opens (cancels preview timer)
+  ///
+  /// **Returns:**
+  /// - [Future<int?>] - Selected macro value, or null if cancelled
+  static Future<int?> showMacroPickerInPreview({
+    required BuildContext context,
+    required String label,
+    required int currentValue,
+    VoidCallback? onPickerOpened,
+  }) async {
+    onPickerOpened?.call();
+    return await showNumberPickerOverlay(
+      title: 'Select $label (g)',
+      initialValue: currentValue,
+      minValue: 0,
+      maxValue: 999,
+      step: 1,
     );
   }
 }

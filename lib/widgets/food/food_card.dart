@@ -16,6 +16,7 @@ import '../loading/animations/animated_cost_indicator.dart';
 import 'painters/arch_card_painter.dart';
 import 'dialogs/edit_food_name_dialog.dart';
 import 'helpers/food_card_pickers.dart';
+import '../common/text_input_overlay.dart';
 
 /// Reusable food card widget that displays food information
 /// Can be used for:
@@ -34,6 +35,12 @@ class FoodCardWidget extends StatefulWidget {
   final VoidCallback? onExportTap;
   final VoidCallback? onCostPickerOpened;
   final Function(double)? onCostUpdated;
+  final Function(String)? onNameUpdated;
+  final Function(int)? onCaloriesUpdated;
+  final Function(double)? onServingSizeUpdated;
+  final Function(int)? onProteinUpdated;
+  final Function(int)? onCarbsUpdated;
+  final Function(int)? onFatUpdated;
   final TextEditingController? nameController;
   final TextEditingController? caloriesController;
   final TextEditingController? servingSizeController;
@@ -54,6 +61,12 @@ class FoodCardWidget extends StatefulWidget {
     this.onExportTap,
     this.onCostPickerOpened,
     this.onCostUpdated,
+    this.onNameUpdated,
+    this.onCaloriesUpdated,
+    this.onServingSizeUpdated,
+    this.onProteinUpdated,
+    this.onCarbsUpdated,
+    this.onFatUpdated,
     this.nameController,
     this.caloriesController,
     this.servingSizeController,
@@ -357,6 +370,22 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
       );
     }
 
+    // Preview mode - tappable to edit
+    if (widget.isPreviewMode && widget.onNameUpdated != null) {
+      return GestureDetector(
+        onTap: () => _showNamePickerInPreview(context),
+        child: Text(
+          widget.foodItem.name,
+          style: const TextStyle(
+            fontSize: 20,
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.5,
+          ),
+        ),
+      );
+    }
+
     return Text(
       widget.foodItem.name,
       style: const TextStyle(
@@ -423,6 +452,18 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
+                      ),
+                    )
+                  else if (widget.isPreviewMode && widget.onCaloriesUpdated != null)
+                    GestureDetector(
+                      onTap: () => _showCaloriesPickerInPreview(context),
+                      child: Text(
+                        '${widget.foodItem.calories.toInt()}',
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     )
                   else
@@ -497,6 +538,18 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
                         color: Colors.white,
                       ),
                     )
+                  else if (widget.isPreviewMode && widget.onServingSizeUpdated != null)
+                    GestureDetector(
+                      onTap: () => _showServingSizePickerInPreview(context),
+                      child: Text(
+                        '${widget.foodItem.servingSize}',
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
                   else
                     Text(
                       '${widget.foodItem.servingSize}',
@@ -527,6 +580,9 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
             controller: widget.proteinController,
             color: NutritionColors.proteinColor,
             icon: Icons.set_meal,
+            onPreviewTap: widget.isPreviewMode && widget.onProteinUpdated != null
+                ? () => _showProteinPickerInPreview(context)
+                : null,
           ),
         ),
         const SizedBox(width: 10),
@@ -538,6 +594,9 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
             controller: widget.carbsController,
             color: NutritionColors.carbsColor,
             icon: Icons.local_pizza,
+            onPreviewTap: widget.isPreviewMode && widget.onCarbsUpdated != null
+                ? () => _showCarbsPickerInPreview(context)
+                : null,
           ),
         ),
         const SizedBox(width: 10),
@@ -549,6 +608,9 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
             controller: widget.fatController,
             color: NutritionColors.fatColor,
             icon: Icons.grain_rounded,
+            onPreviewTap: widget.isPreviewMode && widget.onFatUpdated != null
+                ? () => _showFatPickerInPreview(context)
+                : null,
           ),
         ),
       ],
@@ -561,6 +623,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
     TextEditingController? controller,
     required Color color,
     required IconData icon,
+    VoidCallback? onPreviewTap,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -612,6 +675,18 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
+                ),
+              )
+            else if (onPreviewTap != null)
+              GestureDetector(
+                onTap: onPreviewTap,
+                child: Text(
+                  '${value.toInt()}',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               )
             else
@@ -700,6 +775,99 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
     // Update the food item cost through callback
     if (result != null) {
       widget.onCostUpdated?.call(result);
+    }
+  }
+
+  /// Show name picker in preview mode (cancels 8-second timer)
+  Future<void> _showNamePickerInPreview(BuildContext context) async {
+    widget.onCostPickerOpened?.call(); // Cancel timer
+
+    final result = await showTextInputOverlay(
+      title: 'Edit Food Name',
+      initialValue: widget.foodItem.name,
+      hintText: 'Food name',
+    );
+
+    if (result != null && result.isNotEmpty) {
+      widget.onNameUpdated?.call(result);
+    }
+  }
+
+  /// Show calories picker in preview mode (cancels 8-second timer)
+  Future<void> _showCaloriesPickerInPreview(BuildContext context) async {
+    final currentValue = widget.foodItem.calories.round();
+
+    final result = await FoodCardPickers.showCaloriesPickerInPreview(
+      context: context,
+      currentValue: currentValue,
+      onPickerOpened: widget.onCostPickerOpened,
+    );
+
+    if (result != null) {
+      widget.onCaloriesUpdated?.call(result);
+    }
+  }
+
+  /// Show serving size picker in preview mode (cancels 8-second timer)
+  Future<void> _showServingSizePickerInPreview(BuildContext context) async {
+    final currentValue = widget.foodItem.servingSize;
+
+    final result = await FoodCardPickers.showServingSizePickerInPreview(
+      context: context,
+      currentValue: currentValue,
+      onPickerOpened: widget.onCostPickerOpened,
+    );
+
+    if (result != null) {
+      widget.onServingSizeUpdated?.call(result);
+    }
+  }
+
+  /// Show protein picker in preview mode (cancels 8-second timer)
+  Future<void> _showProteinPickerInPreview(BuildContext context) async {
+    final currentValue = widget.foodItem.proteins.round();
+
+    final result = await FoodCardPickers.showMacroPickerInPreview(
+      context: context,
+      label: 'Protein',
+      currentValue: currentValue,
+      onPickerOpened: widget.onCostPickerOpened,
+    );
+
+    if (result != null) {
+      widget.onProteinUpdated?.call(result);
+    }
+  }
+
+  /// Show carbs picker in preview mode (cancels 8-second timer)
+  Future<void> _showCarbsPickerInPreview(BuildContext context) async {
+    final currentValue = widget.foodItem.carbs.round();
+
+    final result = await FoodCardPickers.showMacroPickerInPreview(
+      context: context,
+      label: 'Carbs',
+      currentValue: currentValue,
+      onPickerOpened: widget.onCostPickerOpened,
+    );
+
+    if (result != null) {
+      widget.onCarbsUpdated?.call(result);
+    }
+  }
+
+  /// Show fat picker in preview mode (cancels 8-second timer)
+  Future<void> _showFatPickerInPreview(BuildContext context) async {
+    final currentValue = widget.foodItem.fats.round();
+
+    final result = await FoodCardPickers.showMacroPickerInPreview(
+      context: context,
+      label: 'Fat',
+      currentValue: currentValue,
+      onPickerOpened: widget.onCostPickerOpened,
+    );
+
+    if (result != null) {
+      widget.onFatUpdated?.call(result);
     }
   }
 

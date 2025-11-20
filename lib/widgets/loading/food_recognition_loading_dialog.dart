@@ -100,6 +100,11 @@ FoodItem? _updatedFoodItem;
 /// Global flag to track if user has completed cost entry
 bool _costEntryCompleted = false;
 
+/// Global variable to store the original/base serving size for ratio calculations
+/// This is set when the preview overlay is first shown and used to calculate
+/// proportional nutrition values when serving size changes.
+double? _originalServingSize;
+
 /// Shows preview of recognized food card for 8 seconds.
 ///
 /// This function displays the completed food card after AI recognition
@@ -137,6 +142,9 @@ Future<FoodItem> showFoodRecognitionPreview({
     _previewTimerCancelled = false;
     _updatedFoodItem = foodItem;
     _costEntryCompleted = false;
+
+    // Store original serving size for proportional nutrition calculations
+    _originalServingSize = foodItem.servingSize;
 
     // Get the overlay from the global navigator key
     final overlayState = navigatorKey.currentState?.overlay;
@@ -181,6 +189,12 @@ Future<FoodItem> showFoodRecognitionPreview({
                   costEntryCompleted: _costEntryCompleted,
                   onCostPickerOpened: cancelPreviewTimer,
                   onCostUpdated: updatePreviewFoodItemCost,
+                  onNameUpdated: updatePreviewFoodItemName,
+                  onCaloriesUpdated: updatePreviewFoodItemCalories,
+                  onServingSizeUpdated: updatePreviewFoodItemServingSize,
+                  onProteinUpdated: updatePreviewFoodItemProtein,
+                  onCarbsUpdated: updatePreviewFoodItemCarbs,
+                  onFatUpdated: updatePreviewFoodItemFat,
                   // Show export button only after cost entry is completed
                   onExportTap: _costEntryCompleted ? () => _exportPreviewCard(cardKey, _updatedFoodItem!) : null,
                 ),
@@ -225,6 +239,98 @@ void updatePreviewFoodItemCost(double cost) {
     _costEntryCompleted = true; // Mark cost entry as completed
 
     // Force rebuild of the overlay with updated cost and export button
+    _previewOverlay?.markNeedsBuild();
+  }
+}
+
+/// Updates the food item's name during preview period.
+void updatePreviewFoodItemName(String name) {
+  if (_updatedFoodItem != null) {
+    _updatedFoodItem = _updatedFoodItem!.copyWith(name: name);
+    _previewOverlay?.markNeedsBuild();
+  }
+}
+
+/// Updates the food item's calories during preview period.
+void updatePreviewFoodItemCalories(int calories) {
+  if (_updatedFoodItem != null) {
+    _updatedFoodItem = _updatedFoodItem!.copyWith(calories: calories.toDouble());
+    _previewOverlay?.markNeedsBuild();
+  }
+}
+
+/// Updates the food item's serving size during preview period.
+///
+/// This function also automatically recalculates and updates calories and macros
+/// proportionally based on the ratio between the new and original serving sizes.
+///
+/// **Example:**
+/// - Original: 1.0 serving with 500 cal, 20g protein
+/// - User changes to 2.0 servings
+/// - Ratio = 2.0 / 1.0 = 2.0
+/// - New values: 1000 cal, 40g protein
+void updatePreviewFoodItemServingSize(double servingSize) {
+  if (_updatedFoodItem != null && _originalServingSize != null && _originalServingSize! > 0) {
+    // Calculate the ratio of new serving size to original
+    final ratio = servingSize / _originalServingSize!;
+
+    // Get the current base values (which may have been manually edited)
+    final currentCalories = _updatedFoodItem!.calories;
+    final currentProteins = _updatedFoodItem!.proteins;
+    final currentCarbs = _updatedFoodItem!.carbs;
+    final currentFats = _updatedFoodItem!.fats;
+
+    // Calculate new proportional values
+    // We need to work backwards: the current values are for the current serving size
+    // So we first get the "per original serving" values, then apply the new ratio
+    final currentServingSize = _updatedFoodItem!.servingSize;
+    final currentRatio = currentServingSize / _originalServingSize!;
+
+    // Base values (per original serving)
+    final baseCalories = currentRatio > 0 ? currentCalories / currentRatio : currentCalories;
+    final baseProteins = currentRatio > 0 ? currentProteins / currentRatio : currentProteins;
+    final baseCarbs = currentRatio > 0 ? currentCarbs / currentRatio : currentCarbs;
+    final baseFats = currentRatio > 0 ? currentFats / currentRatio : currentFats;
+
+    // Apply new ratio to base values
+    final newCalories = baseCalories * ratio;
+    final newProteins = baseProteins * ratio;
+    final newCarbs = baseCarbs * ratio;
+    final newFats = baseFats * ratio;
+
+    // Update all values together
+    _updatedFoodItem = _updatedFoodItem!.copyWith(
+      servingSize: servingSize,
+      calories: newCalories,
+      proteins: newProteins,
+      carbs: newCarbs,
+      fats: newFats,
+    );
+
+    _previewOverlay?.markNeedsBuild();
+  }
+}
+
+/// Updates the food item's proteins during preview period.
+void updatePreviewFoodItemProtein(int protein) {
+  if (_updatedFoodItem != null) {
+    _updatedFoodItem = _updatedFoodItem!.copyWith(proteins: protein.toDouble());
+    _previewOverlay?.markNeedsBuild();
+  }
+}
+
+/// Updates the food item's carbs during preview period.
+void updatePreviewFoodItemCarbs(int carbs) {
+  if (_updatedFoodItem != null) {
+    _updatedFoodItem = _updatedFoodItem!.copyWith(carbs: carbs.toDouble());
+    _previewOverlay?.markNeedsBuild();
+  }
+}
+
+/// Updates the food item's fats during preview period.
+void updatePreviewFoodItemFat(int fat) {
+  if (_updatedFoodItem != null) {
+    _updatedFoodItem = _updatedFoodItem!.copyWith(fats: fat.toDouble());
     _previewOverlay?.markNeedsBuild();
   }
 }

@@ -143,11 +143,11 @@ class FoodLogWidget extends StatelessWidget {
     Color textColor,
   ) {
     final nutrition = item.getNutritionForServing();
+    final itemCalories = nutrition['calories']!.round();
     final protein = nutrition['proteins']!.round();
     final carbs = nutrition['carbs']!.round();
     final fat = nutrition['fats']!.round();
-    final itemCalories = (item.calories * item.servingSize).round();
-    final itemCost = item.cost != null ? (item.cost! * item.servingSize) : 0.0;
+    final itemCost = item.getCostForServing() ?? 0.0;
 
     return Dismissible(
       key: Key(item.id),
