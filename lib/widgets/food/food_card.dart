@@ -35,12 +35,6 @@ class FoodCardWidget extends StatefulWidget {
   final VoidCallback? onCostPickerOpened;
   final VoidCallback? onCostPickerClosed;
   final Function(double)? onCostUpdated;
-  final Function(String)? onNameUpdated;
-  final Function(int)? onCaloriesUpdated;
-  final Function(double)? onServingSizeUpdated;
-  final Function(int)? onProteinUpdated;
-  final Function(int)? onCarbsUpdated;
-  final Function(int)? onFatUpdated;
   final TextEditingController? nameController;
   final TextEditingController? caloriesController;
   final TextEditingController? servingSizeController;
@@ -62,12 +56,6 @@ class FoodCardWidget extends StatefulWidget {
     this.onCostPickerOpened,
     this.onCostPickerClosed,
     this.onCostUpdated,
-    this.onNameUpdated,
-    this.onCaloriesUpdated,
-    this.onServingSizeUpdated,
-    this.onProteinUpdated,
-    this.onCarbsUpdated,
-    this.onFatUpdated,
     this.nameController,
     this.caloriesController,
     this.servingSizeController,

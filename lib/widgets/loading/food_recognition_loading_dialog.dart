@@ -90,7 +90,7 @@ OverlayEntry? _previewOverlay;
 /// Preview phase enum to track which timer period we're in
 enum _PreviewPhase {
   initial,   // 8-second initial preview (before cost entry)
-  postCost,  // 3-second final preview (after cost entry)
+  postCost,  // 1-second final preview (after cost entry)
 }
 
 /// Global variable to track current preview phase
@@ -116,10 +116,10 @@ Completer<FoodItem>? _previewCompleter;
 /// - Auto-dismisses after 8 seconds if user doesn't interact
 /// - Timer is cancelled if user opens cost picker
 ///
-/// **Phase 2 (Post-cost - 3 seconds):**
+/// **Phase 2 (Post-cost - 1 second):**
 /// - Triggered after user completes cost entry
 /// - All fields become read-only (including cost)
-/// - Auto-dismisses after 3 seconds
+/// - Auto-dismisses after 1 second
 /// - User can still tap outside to dismiss early
 ///
 /// **Parameters:**
@@ -248,11 +248,11 @@ void _onCostPickerOpened() {
 ///
 /// This handles the scenario where user opens cost picker but cancels:
 /// - If cost was updated: Phase 2 timer already started (handled by _onCostUpdated)
-/// - If cancelled: Start 3-second timer to auto-close preview
+/// - If cancelled: Start 1-second timer to auto-close preview
 void _onCostPickerClosed() {
   _costPickerIsOpen = false;
 
-  // If cost was NOT entered (user cancelled), start 3-second timer
+  // If cost was NOT entered (user cancelled), start 1-second timer
   // to auto-close the preview
   if (!_costEntryCompleted && _previewPhase == _PreviewPhase.initial) {
     _startPostCancelTimer();
@@ -276,8 +276,8 @@ void _startPostCancelTimer() async {
 /// This triggers Phase 2 of the preview:
 /// 1. Updates the food item with the selected cost
 /// 2. Marks cost entry as completed (makes cost field read-only)
-/// 3. Switches to Phase 2 (3-second final preview)
-/// 4. Starts 3-second auto-dismiss timer
+/// 3. Switches to Phase 2 (1-second final preview)
+/// 4. Starts 1-second auto-dismiss timer
 ///
 /// **Parameters:**
 /// - [cost] - The cost value selected by user
@@ -293,7 +293,7 @@ void _onCostUpdated(double cost) {
     // Force rebuild to make cost field read-only
     _previewOverlay?.markNeedsBuild();
 
-    // Start 3-second timer for Phase 2
+    // Start 1-second timer for Phase 2
     _startPostCostTimer();
   }
 }
