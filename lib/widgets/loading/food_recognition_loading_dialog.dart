@@ -1,10 +1,6 @@
 // lib/widgets/common/food_recognition_loading_dialog.dart
-import 'dart:io';
-import 'dart:ui' as ui;
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../main.dart'; // Import for navigatorKey
 import '../../data/models/food_item.dart';
 import '../food/food_card.dart';
@@ -91,60 +87,60 @@ void hideFoodRecognitionLoading() {
 /// Global overlay entry for preview
 OverlayEntry? _previewOverlay;
 
-/// Global timer cancellation flag
-bool _previewTimerCancelled = false;
+/// Preview phase enum to track which timer period we're in
+enum _PreviewPhase {
+  initial,   // 8-second initial preview (before cost entry)
+  postCost,  // 3-second final preview (after cost entry)
+}
+
+/// Global variable to track current preview phase
+_PreviewPhase _previewPhase = _PreviewPhase.initial;
 
 /// Global variable to store updated food item with cost
 FoodItem? _updatedFoodItem;
 
-/// Global flag to track if user has completed cost entry
+/// Global flag to track if user has completed cost entry (one-time only)
 bool _costEntryCompleted = false;
 
-/// Global variable to store the original/base serving size for ratio calculations
-/// This is set when the preview overlay is first shown and used to calculate
-/// proportional nutrition values when serving size changes.
-double? _originalServingSize;
+/// Global flag to track if cost picker is currently open
+bool _costPickerIsOpen = false;
 
-/// Shows preview of recognized food card for 8 seconds.
+/// Completer to signal when preview is actually dismissed
+/// This ensures the function only returns when preview closes
+Completer<FoodItem>? _previewCompleter;
+
+/// Shows preview of recognized food card with two-phase timer system.
 ///
-/// This function displays the completed food card after AI recognition
-/// and gives the user 8 seconds to review it. During this time, the user can:
-/// - Add cost information (which cancels the auto-dismiss timer)
-/// - Tap outside to dismiss early
-/// - Let it auto-dismiss after 8 seconds
+/// **Phase 1 (Initial - 8 seconds):**
+/// - User can only edit cost (one-time only)
+/// - Auto-dismisses after 8 seconds if user doesn't interact
+/// - Timer is cancelled if user opens cost picker
+///
+/// **Phase 2 (Post-cost - 3 seconds):**
+/// - Triggered after user completes cost entry
+/// - All fields become read-only (including cost)
+/// - Auto-dismisses after 3 seconds
+/// - User can still tap outside to dismiss early
 ///
 /// **Parameters:**
 /// - [foodItem] - The recognized food item to display
 /// - [imagePath] - Path to the captured food image
 ///
 /// **Returns:**
-/// - [Future<FoodItem>] - The food item, potentially updated with cost if user added it
-///
-/// **Timer behavior:**
-/// - Auto-dismisses after 8 seconds if user doesn't interact
-/// - Timer is cancelled if user opens cost picker (via [cancelPreviewTimer])
-/// - User can manually dismiss by tapping outside the card
-///
-/// **Usage:**
-/// ```dart
-/// final updatedItem = await showFoodRecognitionPreview(
-///   foodItem: recognizedItem,
-///   imagePath: '/path/to/image.jpg',
-/// );
-/// // updatedItem may have cost added by user during preview
-/// ```
+/// - [Future<FoodItem>] - The food item with cost if user added it
 Future<FoodItem> showFoodRecognitionPreview({
   required FoodItem foodItem,
   required String imagePath,
 }) async {
   try {
-    // Reset timer cancellation flag, updated item, and cost entry completion
-    _previewTimerCancelled = false;
+    // Reset state for new preview
+    _previewPhase = _PreviewPhase.initial;
     _updatedFoodItem = foodItem;
     _costEntryCompleted = false;
+    _costPickerIsOpen = false;
 
-    // Store original serving size for proportional nutrition calculations
-    _originalServingSize = foodItem.servingSize;
+    // Create a new Completer that will be completed when preview closes
+    _previewCompleter = Completer<FoodItem>();
 
     // Get the overlay from the global navigator key
     final overlayState = navigatorKey.currentState?.overlay;
@@ -157,9 +153,6 @@ Future<FoodItem> showFoodRecognitionPreview({
     // Remove any existing preview overlay first
     _previewOverlay?.remove();
     _previewOverlay = null;
-
-    // Create GlobalKey for export functionality
-    final cardKey = GlobalKey();
 
     // Create new overlay entry with completed food card
     _previewOverlay = OverlayEntry(
@@ -178,26 +171,17 @@ Future<FoodItem> showFoodRecognitionPreview({
             ),
             // Card in center - taps on this don't dismiss
             Center(
-              child: RepaintBoundary(
-                key: cardKey,
-                child: FoodCardWidget(
-                  foodItem: _updatedFoodItem!,
-                  isLoading: false,
-                  isEditable: false,
-                  imagePath: imagePath,
-                  isPreviewMode: true,
-                  costEntryCompleted: _costEntryCompleted,
-                  onCostPickerOpened: cancelPreviewTimer,
-                  onCostUpdated: updatePreviewFoodItemCost,
-                  onNameUpdated: updatePreviewFoodItemName,
-                  onCaloriesUpdated: updatePreviewFoodItemCalories,
-                  onServingSizeUpdated: updatePreviewFoodItemServingSize,
-                  onProteinUpdated: updatePreviewFoodItemProtein,
-                  onCarbsUpdated: updatePreviewFoodItemCarbs,
-                  onFatUpdated: updatePreviewFoodItemFat,
-                  // Show export button only after cost entry is completed
-                  onExportTap: _costEntryCompleted ? () => _exportPreviewCard(cardKey, _updatedFoodItem!) : null,
-                ),
+              child: FoodCardWidget(
+                foodItem: _updatedFoodItem!,
+                isLoading: false,
+                isEditable: false,
+                imagePath: imagePath,
+                isPreviewMode: true,
+                costEntryCompleted: _costEntryCompleted,
+                onCostPickerOpened: _onCostPickerOpened,
+                onCostPickerClosed: _onCostPickerClosed,
+                onCostUpdated: _onCostUpdated,
+                // Removed: All other edit callbacks (only cost is editable)
               ),
             ),
           ],
@@ -208,191 +192,122 @@ Future<FoodItem> showFoodRecognitionPreview({
     // Insert overlay
     overlayState.insert(_previewOverlay!);
 
-    // Wait for 8 seconds or until timer is cancelled
-    await Future.delayed(const Duration(seconds: 8));
+    // ═══════════════════════════════════════════════════════════
+    // PHASE 1: Initial 8-second timer with polling
+    // ═══════════════════════════════════════════════════════════
+    // Poll every 100ms to check if we should auto-dismiss
+    // This allows proper cancellation when cost picker opens
+    int elapsedMs = 0;
+    const int timerDurationMs = 8000;
+    const int pollIntervalMs = 100;
 
-    // Only auto-dismiss if timer wasn't cancelled
-    if (!_previewTimerCancelled) {
+    while (elapsedMs < timerDurationMs) {
+      await Future.delayed(const Duration(milliseconds: pollIntervalMs));
+      elapsedMs += pollIntervalMs;
+
+      // Stop polling if:
+      // 1. Cost picker is open (user is entering cost)
+      // 2. Phase changed (user completed cost entry and 3s timer started)
+      // 3. Preview was dismissed
+      if (_costPickerIsOpen || _previewPhase != _PreviewPhase.initial || _previewOverlay == null) {
+        break;
+      }
+    }
+
+    // Only auto-dismiss if:
+    // 1. Cost picker is NOT open (user is not entering cost), AND
+    // 2. We're still in initial phase (user didn't complete cost entry), AND
+    // 3. Preview is still visible
+    if (!_costPickerIsOpen && _previewPhase == _PreviewPhase.initial && _previewOverlay != null) {
       hideFoodRecognitionPreview();
     }
 
-    // Return the potentially updated food item
-    return _updatedFoodItem ?? foodItem;
+    // Wait for preview to ACTUALLY close before returning
+    // This ensures save happens only after preview is dismissed
+    return await _previewCompleter!.future;
   } catch (e, stackTrace) {
     debugPrint('❌ [Preview] Error showing overlay: $e');
     debugPrint('Stack trace: $stackTrace');
+    // Complete the completer if it exists to prevent hanging
+    if (_previewCompleter != null && !_previewCompleter!.isCompleted) {
+      _previewCompleter!.complete(foodItem);
+    }
     return foodItem;
   }
 }
 
-/// Updates the food item's cost during preview period.
+/// Called when user opens the cost picker.
 ///
-/// Called when user selects a cost in the cost picker overlay.
-/// This updates the internal state, marks cost entry as completed,
-/// and forces a rebuild of the preview card to show export button.
+/// Sets the flag to pause the initial 8-second timer while
+/// user is entering cost information.
+void _onCostPickerOpened() {
+  _costPickerIsOpen = true;
+}
+
+/// Called when cost picker is closed (either with OK or Cancel).
+///
+/// This handles the scenario where user opens cost picker but cancels:
+/// - If cost was updated: Phase 2 timer already started (handled by _onCostUpdated)
+/// - If cancelled: Start 3-second timer to auto-close preview
+void _onCostPickerClosed() {
+  _costPickerIsOpen = false;
+
+  // If cost was NOT entered (user cancelled), start 3-second timer
+  // to auto-close the preview
+  if (!_costEntryCompleted && _previewPhase == _PreviewPhase.initial) {
+    _startPostCancelTimer();
+  }
+}
+
+/// Starts a 1-second timer after cost picker is cancelled (no cost entered).
+///
+/// Auto-dismisses the preview after 1 second.
+void _startPostCancelTimer() async {
+  await Future.delayed(const Duration(seconds: 1));
+
+  // Auto-close if still in initial phase (user didn't try again)
+  if (_previewPhase == _PreviewPhase.initial && _previewOverlay != null) {
+    hideFoodRecognitionPreview();
+  }
+}
+
+/// Called when user completes cost entry.
+///
+/// This triggers Phase 2 of the preview:
+/// 1. Updates the food item with the selected cost
+/// 2. Marks cost entry as completed (makes cost field read-only)
+/// 3. Switches to Phase 2 (3-second final preview)
+/// 4. Starts 3-second auto-dismiss timer
 ///
 /// **Parameters:**
-/// - [cost] - The new cost value selected by user
-void updatePreviewFoodItemCost(double cost) {
+/// - [cost] - The cost value selected by user
+void _onCostUpdated(double cost) {
   if (_updatedFoodItem != null) {
+    // Update food item with cost
     _updatedFoodItem = _updatedFoodItem!.copyWith(cost: cost);
-    _costEntryCompleted = true; // Mark cost entry as completed
+    _costEntryCompleted = true; // Mark cost entry as completed (one-time only)
 
-    // Force rebuild of the overlay with updated cost and export button
+    // Switch to Phase 2
+    _previewPhase = _PreviewPhase.postCost;
+
+    // Force rebuild to make cost field read-only
     _previewOverlay?.markNeedsBuild();
+
+    // Start 3-second timer for Phase 2
+    _startPostCostTimer();
   }
 }
 
-/// Updates the food item's name during preview period.
-void updatePreviewFoodItemName(String name) {
-  if (_updatedFoodItem != null) {
-    _updatedFoodItem = _updatedFoodItem!.copyWith(name: name);
-    _previewOverlay?.markNeedsBuild();
-  }
-}
-
-/// Updates the food item's calories during preview period.
-void updatePreviewFoodItemCalories(int calories) {
-  if (_updatedFoodItem != null) {
-    _updatedFoodItem = _updatedFoodItem!.copyWith(calories: calories.toDouble());
-    _previewOverlay?.markNeedsBuild();
-  }
-}
-
-/// Updates the food item's serving size during preview period.
+/// Starts the 1-second timer after cost entry (Phase 2).
 ///
-/// This function also automatically recalculates and updates calories and macros
-/// proportionally based on the ratio between the new and original serving sizes.
-///
-/// **Example:**
-/// - Original: 1.0 serving with 500 cal, 20g protein
-/// - User changes to 2.0 servings
-/// - Ratio = 2.0 / 1.0 = 2.0
-/// - New values: 1000 cal, 40g protein
-void updatePreviewFoodItemServingSize(double servingSize) {
-  if (_updatedFoodItem != null && _originalServingSize != null && _originalServingSize! > 0) {
-    // Calculate the ratio of new serving size to original
-    final ratio = servingSize / _originalServingSize!;
+/// Auto-dismisses the preview after 1 second unless user
+/// manually dismisses by tapping outside.
+void _startPostCostTimer() async {
+  await Future.delayed(const Duration(seconds: 1));
 
-    // Get the current base values (which may have been manually edited)
-    final currentCalories = _updatedFoodItem!.calories;
-    final currentProteins = _updatedFoodItem!.proteins;
-    final currentCarbs = _updatedFoodItem!.carbs;
-    final currentFats = _updatedFoodItem!.fats;
-
-    // Calculate new proportional values
-    // We need to work backwards: the current values are for the current serving size
-    // So we first get the "per original serving" values, then apply the new ratio
-    final currentServingSize = _updatedFoodItem!.servingSize;
-    final currentRatio = currentServingSize / _originalServingSize!;
-
-    // Base values (per original serving)
-    final baseCalories = currentRatio > 0 ? currentCalories / currentRatio : currentCalories;
-    final baseProteins = currentRatio > 0 ? currentProteins / currentRatio : currentProteins;
-    final baseCarbs = currentRatio > 0 ? currentCarbs / currentRatio : currentCarbs;
-    final baseFats = currentRatio > 0 ? currentFats / currentRatio : currentFats;
-
-    // Apply new ratio to base values
-    final newCalories = baseCalories * ratio;
-    final newProteins = baseProteins * ratio;
-    final newCarbs = baseCarbs * ratio;
-    final newFats = baseFats * ratio;
-
-    // Update all values together
-    _updatedFoodItem = _updatedFoodItem!.copyWith(
-      servingSize: servingSize,
-      calories: newCalories,
-      proteins: newProteins,
-      carbs: newCarbs,
-      fats: newFats,
-    );
-
-    _previewOverlay?.markNeedsBuild();
-  }
-}
-
-/// Updates the food item's proteins during preview period.
-void updatePreviewFoodItemProtein(int protein) {
-  if (_updatedFoodItem != null) {
-    _updatedFoodItem = _updatedFoodItem!.copyWith(proteins: protein.toDouble());
-    _previewOverlay?.markNeedsBuild();
-  }
-}
-
-/// Updates the food item's carbs during preview period.
-void updatePreviewFoodItemCarbs(int carbs) {
-  if (_updatedFoodItem != null) {
-    _updatedFoodItem = _updatedFoodItem!.copyWith(carbs: carbs.toDouble());
-    _previewOverlay?.markNeedsBuild();
-  }
-}
-
-/// Updates the food item's fats during preview period.
-void updatePreviewFoodItemFat(int fat) {
-  if (_updatedFoodItem != null) {
-    _updatedFoodItem = _updatedFoodItem!.copyWith(fats: fat.toDouble());
-    _previewOverlay?.markNeedsBuild();
-  }
-}
-
-/// Cancels the 8-second auto-dismiss timer.
-///
-/// This is called automatically when the user opens the cost picker,
-/// preventing the preview from auto-dismissing while they're entering cost.
-/// The preview will remain open until the user manually dismisses it.
-void cancelPreviewTimer() {
-  _previewTimerCancelled = true;
-}
-
-/// Exports the preview food card as an image and shares it.
-///
-/// This function captures the food card widget as a high-quality PNG image
-/// and uses the system share dialog to allow the user to save or share it.
-///
-/// **Parameters:**
-/// - [cardKey] - GlobalKey of the RepaintBoundary wrapping the card
-/// - [foodItem] - The food item being previewed
-///
-/// **Technical details:**
-/// - Uses RenderRepaintBoundary to capture widget as image
-/// - 3.0x pixel ratio for high quality (retina displays)
-/// - Saves to temporary directory before sharing
-/// - Automatically cleans up temp file after sharing
-Future<void> _exportPreviewCard(GlobalKey cardKey, FoodItem foodItem) async {
-  try {
-    // Find the RenderRepaintBoundary
-    final boundary = cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-
-    if (boundary == null) {
-      debugPrint('❌ [Export] Failed to find RepaintBoundary');
-      return;
-    }
-
-    // Capture the widget as an image with high quality
-    final image = await boundary.toImage(pixelRatio: 3.0);
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    final imageBytes = byteData?.buffer.asUint8List();
-
-    if (imageBytes == null) {
-      debugPrint('❌ [Export] Failed to capture image bytes');
-      return;
-    }
-
-    // Save to temporary directory
-    final tempDir = await getTemporaryDirectory();
-    final fileName = '${foodItem.name.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.png';
-    final file = File('${tempDir.path}/$fileName');
-    await file.writeAsBytes(imageBytes);
-
-    // Share the image
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      text: '${foodItem.name} - Nutrition Info',
-    );
-
-    debugPrint('✅ [Export] Food card exported successfully');
-  } catch (e) {
-    debugPrint('❌ [Export] Failed to export food card: $e');
+  // Auto-close if we're still in post-cost phase
+  if (_previewPhase == _PreviewPhase.postCost) {
+    hideFoodRecognitionPreview();
   }
 }
 
@@ -402,14 +317,27 @@ Future<void> _exportPreviewCard(GlobalKey cardKey, FoodItem foodItem) async {
 /// - Automatically after 8 seconds (if timer not cancelled)
 /// - Manually by user tapping outside the card
 /// - By other code that needs to dismiss the preview
+///
+/// This function also completes the Completer to signal that
+/// the preview is closed and data can now be saved.
 void hideFoodRecognitionPreview() {
   try {
     if (_previewOverlay != null) {
       _previewOverlay?.remove();
       _previewOverlay = null;
     }
+
+    // Complete the Completer with the final food item
+    // This allows showFoodRecognitionPreview() to return
+    if (_previewCompleter != null && !_previewCompleter!.isCompleted) {
+      _previewCompleter!.complete(_updatedFoodItem);
+    }
   } catch (e) {
     debugPrint('❌ [Preview] Error removing overlay: $e');
     _previewOverlay = null;
+    // Still try to complete the Completer to prevent hanging
+    if (_previewCompleter != null && !_previewCompleter!.isCompleted) {
+      _previewCompleter!.complete(_updatedFoodItem);
+    }
   }
 }
