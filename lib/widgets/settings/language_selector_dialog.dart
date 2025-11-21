@@ -35,12 +35,12 @@ class LanguageSelectorDialog extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppLegacyColors.coralAccent.withOpacity(0.1),
+                    color: AppColors.textDark.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.language,
-                    color: AppLegacyColors.coralAccent,
+                    color: AppColors.textDark,
                     size: 24,
                   ),
                 ),
@@ -50,7 +50,7 @@ class LanguageSelectorDialog extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: AppLegacyColors.primaryBlue,
+                    color: AppColors.textDark,
                   ),
                 ),
                 const Spacer(),
@@ -97,10 +97,10 @@ class LanguageSelectorDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppLegacyColors.primaryBlue.withOpacity(0.05),
+                color: AppColors.textDark.withValues(alpha:0.05),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: AppLegacyColors.primaryBlue.withOpacity(0.1),
+                  color: AppColors.textDark.withValues(alpha:0.1),
                 ),
               ),
               child: Row(
@@ -108,7 +108,7 @@ class LanguageSelectorDialog extends StatelessWidget {
                   Icon(
                     Icons.info_outline,
                     size: 16,
-                    color: AppLegacyColors.primaryBlue.withOpacity(0.7),
+                    color: AppColors.textDark.withValues(alpha:0.7),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -167,15 +167,15 @@ class _LanguageTileState extends State<_LanguageTile> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: widget.isSelected
-                  ? AppLegacyColors.coralAccent.withOpacity(0.1)
+                  ? AppColors.textDark.withValues(alpha:0.1)
                   : _isHovered
-                      ? Colors.grey.withOpacity(0.05)
+                      ? Colors.grey.withValues(alpha:0.05)
                       : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: widget.isSelected
-                    ? AppLegacyColors.coralAccent
-                    : Colors.grey.withOpacity(0.2),
+                    ? AppColors.textDark
+                    : Colors.grey.withValues(alpha:0.2),
                 width: widget.isSelected ? 2 : 1,
               ),
             ),
@@ -198,7 +198,7 @@ class _LanguageTileState extends State<_LanguageTile> {
                           ? FontWeight.bold 
                           : FontWeight.normal,
                       color: widget.isSelected
-                          ? AppLegacyColors.primaryBlue
+                          ? AppColors.textDark
                           : Colors.grey[800],
                     ),
                   ),
@@ -209,7 +209,7 @@ class _LanguageTileState extends State<_LanguageTile> {
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: const BoxDecoration(
-                      color: AppLegacyColors.coralAccent,
+                      color: AppColors.textDark,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(

@@ -78,46 +78,6 @@ class AppWidgetDesign {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// LEGACY COLOR COMPATIBILITY (TEMPORARY)
-// ═══════════════════════════════════════════════════════════════
-// These colors are kept for backwards compatibility during migration.
-// They will be removed once all widgets are updated to use the new design system.
-
-/// Legacy colors from old theme.dart
-/// @deprecated Will be removed in future versions
-class AppLegacyColors {
-  AppLegacyColors._();
-  
-  /// Legacy beige background color
-  /// @deprecated Use AppColors.backgroundLight or ThemeBackground gradients
-  static const Color secondaryBeige = Color(0xFFF5EFE0);
-  
-  /// Legacy blue accent color
-  /// @deprecated Use AppColors.textDark for dark text/buttons
-  static const Color primaryBlue = Color(0xFF0D4033);
-  
-  /// Legacy coral accent color
-  /// @deprecated Use semantic colors from AppColors
-  static const Color coralAccent = Color(0xFFE27069);
-  
-  /// Legacy gold accent color  
-  /// @deprecated Use semantic colors from AppColors
-  static const Color goldAccent = Color(0xFFCF9340);
-  
-  /// Legacy dark text color (already available in AppColors)
-  /// @deprecated Use AppColors.textDark instead
-  static const Color textDark = AppColors.textDark;
-  
-  /// Legacy light text color
-  /// @deprecated Use AppColors.textLight instead
-  static const Color textLight = Colors.white;
-  
-  /// Legacy accent color
-  /// @deprecated Use semantic colors from AppColors
-  static const Color accentColor = Color(0xFF8B3A3A);
-}
-
-// ═══════════════════════════════════════════════════════════════
 // THEME CONFIGURATION (MINIMAL)
 // ═══════════════════════════════════════════════════════════════
 

@@ -62,7 +62,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppLegacyColors.secondaryBeige,
+      backgroundColor: AppColors.backgroundLight,
       body: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
@@ -79,11 +79,11 @@ class _SplashScreenState extends State<SplashScreen>
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        color: AppLegacyColors.primaryBlue,
+                        color: AppColors.textDark,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppLegacyColors.primaryBlue.withValues(alpha: 0.3),
+                            color: AppColors.textDark.withValues(alpha: 0.3),
                             blurRadius: 20,
                             spreadRadius: 5,
                             offset: const Offset(0, 10),
@@ -103,7 +103,7 @@ class _SplashScreenState extends State<SplashScreen>
                       style: TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.bold,
-                        color: AppLegacyColors.primaryBlue,
+                        color: AppColors.textDark,
                         letterSpacing: 3,
                       ),
                     ),

@@ -28,12 +28,12 @@ class FeedbackWidget extends StatelessWidget {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     // ✅ FIXED: Use withValues instead of withOpacity
-                    color: AppLegacyColors.coralAccent.withValues(alpha: 0.1),
+                    color: AppColors.textDark.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
                     Icons.feedback,
-                    color: AppLegacyColors.coralAccent,
+                    color: AppColors.textDark,
                     size: 24,
                   ),
                 ),
@@ -83,7 +83,7 @@ class FeedbackWidget extends StatelessWidget {
             children: [
               Icon(
                 Icons.feedback,
-                color: AppLegacyColors.coralAccent,
+                color: AppColors.textDark,
                 size: 24,
               ),
               SizedBox(width: 8),
@@ -108,7 +108,7 @@ class FeedbackWidget extends StatelessWidget {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppLegacyColors.coralAccent),
+                    borderSide: const BorderSide(color: AppColors.textDark),
                   ),
                 ),
                 maxLines: 5,
@@ -204,7 +204,7 @@ class FeedbackWidget extends StatelessWidget {
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppLegacyColors.coralAccent,
+                backgroundColor: AppColors.textDark,
               ),
               child: const Text('Send'),
             ),
