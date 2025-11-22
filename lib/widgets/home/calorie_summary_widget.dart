@@ -12,6 +12,45 @@ class _CalorieSummaryDesign {
   static const double progressBarGap = 4.0;
   static const int progressBarSegments = 10;
   static const Color progressColorOver = Color(0xFFFF6B6B); // Soft red
+  static const double mainCalorieFontSize = 84.0;
+}
+
+/// Utility class for calorie-related calculations and formatting
+/// Extracted for testability
+class CalorieSummaryUtils {
+  /// Formats a number with thousands separator or k-suffix
+  /// Examples: 1500 → "1,500", 10000 → "10.0k", 10500 → "10.5k"
+  static String formatNumber(int number) {
+    if (number >= 10000) {
+      final k = number / 1000;
+      if (k % 1 == 0) {
+        return '${k.toInt()}k';
+      }
+      return '${k.toStringAsFixed(1)}k';
+    }
+
+    final str = number.toString();
+    if (str.length <= 3) return str;
+
+    final buffer = StringBuffer();
+    for (int i = 0; i < str.length; i++) {
+      if (i > 0 && (str.length - i) % 3 == 0) {
+        buffer.write(',');
+      }
+      buffer.write(str[i]);
+    }
+    return buffer.toString();
+  }
+
+  /// Calculates remaining calories (can be negative if over budget)
+  static int calculateRemaining(int totalCalories, int calorieGoal) {
+    return calorieGoal - totalCalories;
+  }
+
+  /// Calculates progress as a value between 0.0 and 1.0
+  static double calculateProgress(int totalCalories, int calorieGoal) {
+    return (totalCalories / calorieGoal).clamp(0.0, 1.0);
+  }
 }
 
 class CalorieSummaryWidget extends StatefulWidget {
@@ -109,6 +148,20 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
     super.dispose();
   }
 
+  String _buildSemanticLabel(int totalCalories, int calorieGoal, int remaining, bool isOverBudget) {
+    final currentText = AppLocalizations.of(context)!.caloriesToday;
+    final remainingText = AppLocalizations.of(context)!.remainingCalories;
+
+    if (isOverBudget) {
+      final overAmount = remaining.abs();
+      return '$currentText: $totalCalories of $calorieGoal calories. Over budget by $overAmount calories.';
+    } else if (remaining == 0) {
+      return '$currentText: $totalCalories of $calorieGoal calories. Goal reached.';
+    } else {
+      return '$currentText: $totalCalories of $calorieGoal calories. $remaining $remainingText.';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // ✅ NEW: Now consuming both HomeProvider AND ThemeProvider
@@ -120,25 +173,28 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
 
         final totalCalories = homeProvider.totalCalories;
         final calorieGoal = homeProvider.calorieGoal;
-        
-        final remaining = calorieGoal - totalCalories;
+
+        final remaining = CalorieSummaryUtils.calculateRemaining(totalCalories, calorieGoal);
         final isOverBudget = remaining < 0;
-        
+
         _checkForRefresh(totalCalories, calorieGoal);
-        
-        final calorieProgress = (totalCalories / calorieGoal).clamp(0.0, 1.0);
+
+        final calorieProgress = CalorieSummaryUtils.calculateProgress(totalCalories, calorieGoal);
         
         return SlideTransition(
           position: _slideAnimation,
           child: FadeTransition(
             opacity: _fadeAnimation,
-            child: _buildTransparentCard(
-              themeProvider: themeProvider,
-              totalCalories: totalCalories,
-              calorieGoal: calorieGoal,
-              remaining: remaining,
-              isOverBudget: isOverBudget,
-              calorieProgress: calorieProgress,
+            child: Semantics(
+              label: _buildSemanticLabel(totalCalories, calorieGoal, remaining, isOverBudget),
+              child: _buildTransparentCard(
+                themeProvider: themeProvider,
+                totalCalories: totalCalories,
+                calorieGoal: calorieGoal,
+                remaining: remaining,
+                isOverBudget: isOverBudget,
+                calorieProgress: calorieProgress,
+              ),
             ),
           ),
         );
@@ -203,16 +259,33 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
         padding: AppWidgetTheme.cardPadding,
         child: Column(
           children: [
-            // Title
-            Text(
-              AppLocalizations.of(context)!.caloriesToday,
-              style: TextStyle(
-                fontSize: AppWidgetTheme.fontSizeLG,
-                color: textColor,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.3,
-                shadows: AppWidgetTheme.textShadows,
-              ),
+            // Title with flame icons on both sides
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.local_fire_department_rounded,
+                  size: AppWidgetTheme.fontSizeLG,
+                  color: textColor,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  AppLocalizations.of(context)!.caloriesToday,
+                  style: TextStyle(
+                    fontSize: AppWidgetTheme.fontSizeLG,
+                    color: textColor,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.3,
+                    shadows: AppWidgetTheme.textShadows,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.local_fire_department_rounded,
+                  size: AppWidgetTheme.fontSizeLG,
+                  color: textColor,
+                ),
+              ],
             ),
 
             SizedBox(height: AppWidgetTheme.spaceXL),
@@ -236,6 +309,16 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
   }
 
   Widget _buildMainDisplay(int totalCalories, int calorieGoal, Color textColor) {
+    // Cache the TextStyle to avoid recreating it on every animation frame
+    final numberStyle = TextStyle(
+      fontSize: _CalorieSummaryDesign.mainCalorieFontSize,
+      fontWeight: FontWeight.w600,
+      color: textColor,
+      height: 1.0,
+      letterSpacing: -2,
+      shadows: AppWidgetTheme.textShadows,
+    );
+
     return Center(
       child: Column(
         children: [
@@ -246,15 +329,8 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
               final animatedValue = (_countAnimation.value * totalCalories).round();
 
               return Text(
-                _formatNumber(animatedValue),
-                style: TextStyle(
-                  fontSize: 84,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
-                  height: 1.0,
-                  letterSpacing: -2,
-                  shadows: AppWidgetTheme.textShadows,
-                ),
+                CalorieSummaryUtils.formatNumber(animatedValue),
+                style: numberStyle,
               );
             },
           ),
@@ -263,7 +339,7 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
 
           // Goal line
           Text(
-            '/ ${_formatNumber(calorieGoal)} ${AppLocalizations.of(context)!.cal}',
+            '/ ${CalorieSummaryUtils.formatNumber(calorieGoal)} ${AppLocalizations.of(context)!.cal}',
             style: TextStyle(
               fontSize: AppWidgetTheme.fontSizeLG,
               fontWeight: FontWeight.w500,
@@ -286,6 +362,11 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
         ? _CalorieSummaryDesign.progressColorOver
         : textColor;
 
+    // Cache colors to avoid recreating them on every animation frame
+    final filledColor = progressColor.withValues(alpha: AppWidgetTheme.opacityHighest);
+    final unfilledColor = textColor.withValues(alpha: AppWidgetTheme.opacityMediumHigh);
+    final shadowColor = progressColor.withValues(alpha: 0.3);
+
     return AnimatedBuilder(
       animation: _progressAnimation,
       builder: (context, child) {
@@ -302,13 +383,11 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
                   right: index < segmentCount - 1 ? _CalorieSummaryDesign.progressBarGap : 0,
                 ),
                 decoration: BoxDecoration(
-                  color: isFilled
-                      ? progressColor.withValues(alpha: AppWidgetTheme.opacityHighest)
-                      : textColor.withValues(alpha: AppWidgetTheme.opacityMediumHigh),
+                  color: isFilled ? filledColor : unfilledColor,
                   borderRadius: BorderRadius.circular(3),
                   boxShadow: isFilled ? [
                     BoxShadow(
-                      color: progressColor.withValues(alpha: 0.3),
+                      color: shadowColor,
                       blurRadius: 6,
                       offset: const Offset(0, 0),
                     ),
@@ -324,19 +403,23 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
 
   Widget _buildRemainingInfo(int remaining, Color textColor) {
     String displayValue;
+    String labelText;
 
     if (remaining > 0) {
-      displayValue = _formatNumber(remaining);
+      displayValue = CalorieSummaryUtils.formatNumber(remaining);
+      labelText = AppLocalizations.of(context)!.remainingCalories;
     } else if (remaining < 0) {
       final overAmount = remaining.abs();
-      displayValue = '+${_formatNumber(overAmount)}';
+      displayValue = '+${CalorieSummaryUtils.formatNumber(overAmount)}';
+      labelText = AppLocalizations.of(context)!.caloriesOver;
     } else {
       displayValue = '0';
+      labelText = AppLocalizations.of(context)!.remainingCalories;
     }
 
     return Center(
       child: Text(
-        '${AppLocalizations.of(context)!.remainingCalories} $displayValue',
+        '$labelText $displayValue',
         style: TextStyle(
           fontSize: AppWidgetTheme.fontSizeML,
           fontWeight: FontWeight.w500,
@@ -345,27 +428,5 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
         ),
       ),
     );
-  }
-
-  String _formatNumber(int number) {
-    if (number >= 10000) {
-      final k = number / 1000;
-      if (k % 1 == 0) {
-        return '${k.toInt()}k';
-      }
-      return '${k.toStringAsFixed(1)}k';
-    }
-    
-    final str = number.toString();
-    if (str.length <= 3) return str;
-    
-    final buffer = StringBuffer();
-    for (int i = 0; i < str.length; i++) {
-      if (i > 0 && (str.length - i) % 3 == 0) {
-        buffer.write(' ');
-      }
-      buffer.write(str[i]);
-    }
-    return buffer.toString();
   }
 }

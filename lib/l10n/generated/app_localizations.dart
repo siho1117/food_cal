@@ -115,6 +115,12 @@ abstract class AppLocalizations {
   /// **'Remaining calories'**
   String get remainingCalories;
 
+  /// No description provided for @caloriesOver.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories over'**
+  String get caloriesOver;
+
   /// No description provided for @today.
   ///
   /// In en, this message translates to:

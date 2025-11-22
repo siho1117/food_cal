@@ -5,6 +5,7 @@
   "caloriesToday": "Calories Intake",
   "cal": "cal",
   "remainingCalories": "Remaining calories",
+  "caloriesOver": "Calories over",
   
   "@@ COMMENT": "WeekNavigationWidget - NEW",
   "today": "Today",

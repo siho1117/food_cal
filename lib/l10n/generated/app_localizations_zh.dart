@@ -18,6 +18,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get remainingCalories => 'Remaining calories';
 
   @override
+  String get caloriesOver => 'Calories over';
+
+  @override
   String get today => 'Today';
 
   @override
@@ -86,6 +89,9 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get remainingCalories => 'Remaining calories';
 
   @override
+  String get caloriesOver => 'Calories over';
+
+  @override
   String get today => 'Today';
 
   @override
@@ -152,6 +158,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get remainingCalories => 'Remaining calories';
+
+  @override
+  String get caloriesOver => 'Calories over';
 
   @override
   String get today => 'Today';

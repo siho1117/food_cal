@@ -18,6 +18,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get remainingCalories => 'Remaining calories';
 
   @override
+  String get caloriesOver => 'Calories over';
+
+  @override
   String get today => 'Today';
 
   @override
