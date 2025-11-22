@@ -1,4 +1,6 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'accent_colors.dart';
 
 /// Color manipulation utilities for creating color harmonies and contrasts
 ///
@@ -157,5 +159,55 @@ class ColorUtils {
   /// ```
   static Color blendColors(Color color1, Color color2, double ratio) {
     return Color.lerp(color1, color2, ratio.clamp(0.0, 1.0))!;
+  }
+
+  /// Find the nearest accent color from the palette
+  ///
+  /// Uses weighted RGB distance to find the closest match from
+  /// AccentColors.all palette. This accounts for human color perception.
+  ///
+  /// Usage:
+  /// ```dart
+  /// final complementary = ColorUtils.getComplementaryColor(backgroundColor);
+  /// final accentColor = ColorUtils.findNearestAccentColor(complementary);
+  /// ```
+  static Color findNearestAccentColor(Color color) {
+    Color nearestColor = AccentColors.all.first;
+    double minDistance = double.infinity;
+
+    for (final accentColor in AccentColors.all) {
+      final distance = _colorDistance(color, accentColor);
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestColor = accentColor;
+      }
+    }
+
+    return nearestColor;
+  }
+
+  /// Calculate weighted color distance (accounts for human perception)
+  /// Based on: https://www.compuphase.com/cmetric.htm
+  static double _colorDistance(Color c1, Color c2) {
+    final rmean = (c1.r + c2.r) / 2;
+    final r = c1.r - c2.r;
+    final g = c1.g - c2.g;
+    final b = c1.b - c2.b;
+
+    // Weighted Euclidean distance
+    return sqrt(
+      (2 + rmean / 256) * r * r +
+          4 * g * g +
+          (2 + (255 - rmean) / 256) * b * b,
+    );
+  }
+
+  /// Get color name for debugging
+  static String getAccentColorName(Color color) {
+    final index = AccentColors.all.indexOf(color);
+    if (index >= 0 && index < AccentColors.names.length) {
+      return AccentColors.names[index];
+    }
+    return 'Unknown';
   }
 }

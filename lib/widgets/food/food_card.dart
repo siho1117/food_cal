@@ -24,6 +24,16 @@ import 'helpers/food_card_pickers.dart';
 /// - Export image (display only)
 /// - Preview mode (with animated cost indicator)
 class FoodCardWidget extends StatefulWidget {
+  /// Get card color based on theme - calculates complementary and maps to nearest accent
+  /// Use this method to ensure consistent colors across food card and action buttons
+  static Color getCardColor(BuildContext context) {
+    final backgroundColor = ThemeBackground.getColors(
+      context.watch<ThemeProvider>().selectedGradient,
+    )![1]; // Tone 2
+    final complementary = ColorUtils.getComplementaryColor(backgroundColor);
+    return ColorUtils.findNearestAccentColor(complementary);
+  }
+
   final FoodItem foodItem;
   final bool isEditable;
   final bool isLoading;
@@ -72,11 +82,8 @@ class FoodCardWidget extends StatefulWidget {
 class _FoodCardWidgetState extends State<FoodCardWidget> {
   @override
   Widget build(BuildContext context) {
-    final cardColor = ColorUtils.getComplementaryColor(
-      ThemeBackground.getColors(
-        context.watch<ThemeProvider>().selectedGradient,
-      )![1], // Tone 2
-    );
+    // Get dynamic card color based on theme
+    final cardColor = FoodCardWidget.getCardColor(context);
 
     return Container(
       width: 340,
@@ -151,27 +158,27 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
             ),
           ),
 
-          // Cost indicator - left side (Row 2)
-          Positioned(
-            left: 28,
-            top: 56,
-            child: _buildCostIndicator(),
-          ),
-
-          // Export icon - right side (Row 2, aligned with $$$)
+          // Export icon - top right (Row 1, bottom-aligned with app name)
           if (widget.onExportTap != null)
             Positioned(
               right: 28,
-              top: 56,
+              top: 20, // Adjusted to align icon bottom with app name baseline
               child: GestureDetector(
                 onTap: widget.onExportTap,
                 child: Icon(
                   Icons.ios_share,
-                  size: 28,
+                  size: 22,
                   color: Colors.white.withValues(alpha: 0.9),
                 ),
               ),
             ),
+
+          // Cost indicator - right side (Row 2)
+          Positioned(
+            right: 28,
+            top: 54,
+            child: _buildCostIndicator(),
+          ),
 
           // All content on colored card
           Column(

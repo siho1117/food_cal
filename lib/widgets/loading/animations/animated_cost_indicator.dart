@@ -1,13 +1,13 @@
 // lib/widgets/loading/animations/animated_cost_indicator.dart
 import 'package:flutter/material.dart';
 
-/// Animated cost indicator widget with pulsing glow effect
+/// Animated cost indicator widget with natural drop bounce effect
 /// Used during food recognition preview to draw attention to cost input option
 ///
-/// **Animation**: Glowing shadow that pulses from subtle to prominent
-/// - Shadow blur: 4.0 → 16.0 → 4.0
-/// - Duration: 2.0 seconds (smooth, luxurious feel)
-/// - Effect: Premium, eye-catching without being distracting
+/// **Animation**: Natural drop bounce with decay
+/// - Translate Y: 0 → -6px → 0 → -3px → 0 → -1px → 0
+/// - Duration: 1.5 seconds
+/// - Effect: Like dropping a ball - bounces with decreasing height
 class AnimatedCostIndicator extends StatefulWidget {
   final String text;
   final TextStyle? textStyle;
@@ -27,30 +27,60 @@ class AnimatedCostIndicator extends StatefulWidget {
 class _AnimatedCostIndicatorState extends State<AnimatedCostIndicator>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _glowAnimation;
+  late Animation<double> _bounceAnimation;
 
   @override
   void initState() {
     super.initState();
 
-    // Create animation controller with 2.0 second duration (slower for luxury feel)
+    // Create animation controller with 1.5 second duration for natural bounce
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
 
-    // Create glow animation: 4.0 → 16.0 → 4.0
-    // This animates the shadow blur radius for the glowing effect
-    _glowAnimation = TweenSequence<double>([
+    // Create natural drop bounce: 0 → -6 → 0 → -3 → 0 → -1 → 0
+    _bounceAnimation = TweenSequence<double>([
+      // First bounce - rise up (largest)
       TweenSequenceItem(
-        tween: Tween<double>(begin: 4.0, end: 16.0)
-            .chain(CurveTween(curve: Curves.easeInOut)),
-        weight: 50,
+        tween: Tween<double>(begin: 0.0, end: -6.0)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 15,
       ),
+      // First drop
       TweenSequenceItem(
-        tween: Tween<double>(begin: 16.0, end: 4.0)
-            .chain(CurveTween(curve: Curves.easeInOut)),
-        weight: 50,
+        tween: Tween<double>(begin: -6.0, end: 0.0)
+            .chain(CurveTween(curve: Curves.easeIn)),
+        weight: 15,
+      ),
+      // Second bounce - rise up (medium)
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.0, end: -3.0)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 12,
+      ),
+      // Second drop
+      TweenSequenceItem(
+        tween: Tween<double>(begin: -3.0, end: 0.0)
+            .chain(CurveTween(curve: Curves.easeIn)),
+        weight: 12,
+      ),
+      // Third bounce - rise up (small)
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.0, end: -1.0)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 8,
+      ),
+      // Third drop - settle
+      TweenSequenceItem(
+        tween: Tween<double>(begin: -1.0, end: 0.0)
+            .chain(CurveTween(curve: Curves.easeIn)),
+        weight: 8,
+      ),
+      // Rest period before next cycle
+      TweenSequenceItem(
+        tween: ConstantTween<double>(0.0),
+        weight: 30,
       ),
     ]).animate(_controller);
 
@@ -69,31 +99,13 @@ class _AnimatedCostIndicatorState extends State<AnimatedCostIndicator>
     return GestureDetector(
       onTap: widget.onTap,
       child: AnimatedBuilder(
-        animation: _glowAnimation,
+        animation: _bounceAnimation,
         builder: (context, child) {
-          return Text(
-            widget.text,
-            style: widget.textStyle?.copyWith(
-              shadows: [
-                // Primary glow - golden/amber color for premium feel
-                Shadow(
-                  blurRadius: _glowAnimation.value,
-                  color: const Color(0xFFFFD700).withValues(alpha: 0.8), // Gold
-                  offset: const Offset(0, 0),
-                ),
-                // Secondary glow - white for extra brightness
-                Shadow(
-                  blurRadius: _glowAnimation.value * 0.6,
-                  color: Colors.white.withValues(alpha: 0.5),
-                  offset: const Offset(0, 0),
-                ),
-                // Tertiary glow - softer gold for depth
-                Shadow(
-                  blurRadius: _glowAnimation.value * 1.5,
-                  color: const Color(0xFFFFD700).withValues(alpha: 0.4),
-                  offset: const Offset(0, 0),
-                ),
-              ],
+          return Transform.translate(
+            offset: Offset(0, _bounceAnimation.value),
+            child: Text(
+              widget.text,
+              style: widget.textStyle,
             ),
           );
         },

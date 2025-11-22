@@ -1,12 +1,11 @@
-/// Temporary accent color palette extracted from reference image
-/// These colors are for discussion and planning purposes
-/// TODO: Integrate into the app's design system once usage is decided
-
 import 'package:flutter/material.dart';
 
-/// Vibrant accent colors from Memphis-style design reference
-class TempAccentColors {
-  TempAccentColors._();
+/// Accent color palette extracted from Memphis-style design reference
+///
+/// These colors are used by ColorUtils.findNearestAccentColor() to map
+/// dynamic complementary colors to the curated palette.
+class AccentColors {
+  AccentColors._();
 
   // Coral/Salmon - Top-left starburst, center-right blobs, bottom-right blob
   static const Color coral = Color(0xFFFF7B6B);
@@ -35,6 +34,9 @@ class TempAccentColors {
   // Hot Pink/Magenta - Right-side flower
   static const Color hotPink = Color(0xFFE84C8A);
 
+  // Terracotta - Maclyn food card design
+  static const Color terracotta = Color(0xFFC65D3B);
+
   /// All colors as a list for easy iteration
   static const List<Color> all = [
     coral,
@@ -46,6 +48,7 @@ class TempAccentColors {
     periwinkle,
     softPink,
     hotPink,
+    terracotta,
   ];
 
   /// Color names for reference
@@ -59,5 +62,6 @@ class TempAccentColors {
     'Periwinkle',
     'Soft Pink',
     'Hot Pink',
+    'Terracotta',
   ];
 }
