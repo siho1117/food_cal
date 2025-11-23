@@ -37,6 +37,9 @@ class AccentColors {
   // Terracotta - Maclyn food card design
   static const Color terracotta = Color(0xFFC65D3B);
 
+  // Vibrant Red - Alert/warning states (calorie over budget)
+  static const Color vibrantRed = Color(0xFFFF4757);
+
   /// All colors as a list for easy iteration
   static const List<Color> all = [
     coral,
@@ -49,6 +52,7 @@ class AccentColors {
     softPink,
     hotPink,
     terracotta,
+    vibrantRed,
   ];
 
   /// Color names for reference
@@ -63,5 +67,6 @@ class AccentColors {
     'Soft Pink',
     'Hot Pink',
     'Terracotta',
+    'Vibrant Red',
   ];
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../config/design_system/widget_theme.dart';
+import '../../config/design_system/accent_colors.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/theme_provider.dart';
 
@@ -11,8 +12,13 @@ class _CalorieSummaryDesign {
   static const double progressBarHeight = 6.0;
   static const double progressBarGap = 4.0;
   static const int progressBarSegments = 10;
-  static const Color progressColorOver = Color(0xFFFF6B6B); // Soft red
   static const double mainCalorieFontSize = 84.0;
+
+  // Warm gradient warning colors (from accent palette)
+  static const Color vibrantRed = AccentColors.vibrantRed; // #FF4757 - Over 100% alert
+  static const Color coral = AccentColors.coral;         // #FF7B6B - 95-100%
+  static const Color brightOrange = AccentColors.brightOrange; // #FF8C42 - 85-95%
+  static const Color goldenYellow = AccentColors.goldenYellow; // #F5A623 - 70-85%
 }
 
 /// Utility class for calorie-related calculations and formatting
@@ -265,14 +271,14 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
               children: [
                 Icon(
                   Icons.local_fire_department_rounded,
-                  size: AppWidgetTheme.fontSizeLG,
+                  size: 22,
                   color: textColor,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   AppLocalizations.of(context)!.caloriesToday,
                   style: TextStyle(
-                    fontSize: AppWidgetTheme.fontSizeLG,
+                    fontSize: 22,
                     color: textColor,
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.3,
@@ -282,7 +288,7 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
                 const SizedBox(width: 8),
                 Icon(
                   Icons.local_fire_department_rounded,
-                  size: AppWidgetTheme.fontSizeLG,
+                  size: 22,
                   color: textColor,
                 ),
               ],
@@ -357,12 +363,27 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
     const segmentCount = _CalorieSummaryDesign.progressBarSegments;
     final filledSegments = (progress * segmentCount).round();
 
-    // Soft red when over budget, use theme text color when normal
-    final progressColor = isOverBudget
-        ? _CalorieSummaryDesign.progressColorOver
-        : textColor;
+    // Determine color based on progress thresholds (warm gradient)
+    Color getProgressColor() {
+      if (isOverBudget) {
+        // Over 100% - Vibrant red alert
+        return _CalorieSummaryDesign.vibrantRed;
+      } else if (progress >= 0.95) {
+        // 95-100% - Coral (soft red warning)
+        return _CalorieSummaryDesign.coral;
+      } else if (progress >= 0.85) {
+        // 85-95% - Bright orange
+        return _CalorieSummaryDesign.brightOrange;
+      } else if (progress >= 0.70) {
+        // 70-85% - Golden yellow
+        return _CalorieSummaryDesign.goldenYellow;
+      } else {
+        // 0-70% - Normal (theme adaptive)
+        return textColor;
+      }
+    }
 
-    // Cache colors to avoid recreating them on every animation frame
+    final progressColor = getProgressColor();
     final filledColor = progressColor.withValues(alpha: AppWidgetTheme.opacityHighest);
     final unfilledColor = textColor.withValues(alpha: AppWidgetTheme.opacityMediumHigh);
     final shadowColor = progressColor.withValues(alpha: 0.3);
