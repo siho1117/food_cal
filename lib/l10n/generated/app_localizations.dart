@@ -121,6 +121,24 @@ abstract class AppLocalizations {
   /// **'Calories over'**
   String get caloriesOver;
 
+  /// No description provided for @protein.
+  ///
+  /// In en, this message translates to:
+  /// **'Protein'**
+  String get protein;
+
+  /// No description provided for @carbs.
+  ///
+  /// In en, this message translates to:
+  /// **'Carbs'**
+  String get carbs;
+
+  /// No description provided for @fat.
+  ///
+  /// In en, this message translates to:
+  /// **'Fat'**
+  String get fat;
+
   /// No description provided for @today.
   ///
   /// In en, this message translates to:

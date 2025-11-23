@@ -21,6 +21,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get caloriesOver => 'Calories over';
 
   @override
+  String get protein => 'Protein';
+
+  @override
+  String get carbs => 'Carbs';
+
+  @override
+  String get fat => 'Fat';
+
+  @override
   String get today => 'Today';
 
   @override
@@ -92,6 +101,15 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get caloriesOver => 'Calories over';
 
   @override
+  String get protein => 'Protein';
+
+  @override
+  String get carbs => 'Carbs';
+
+  @override
+  String get fat => 'Fat';
+
+  @override
   String get today => 'Today';
 
   @override
@@ -161,6 +179,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get caloriesOver => 'Calories over';
+
+  @override
+  String get protein => 'Protein';
+
+  @override
+  String get carbs => 'Carbs';
+
+  @override
+  String get fat => 'Fat';
 
   @override
   String get today => 'Today';

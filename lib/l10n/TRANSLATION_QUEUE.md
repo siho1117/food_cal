@@ -26,6 +26,28 @@
 
 ---
 
+### MacronutrientWidget
+
+#### `protein`
+- **English**: "Protein"
+- **Context**: Label for protein macronutrient card
+- **UI Example**: Displayed as "PROTEIN" (uppercase) at bottom of card
+- **Status**: 🔴 Needs translation to zh, zh_CN, zh_TW
+
+#### `carbs`
+- **English**: "Carbs"
+- **Context**: Label for carbohydrates macronutrient card
+- **UI Example**: Displayed as "CARBS" (uppercase) at bottom of card
+- **Status**: 🔴 Needs translation to zh, zh_CN, zh_TW
+
+#### `fat`
+- **English**: "Fat"
+- **Context**: Label for fat macronutrient card
+- **UI Example**: Displayed as "FAT" (uppercase) at bottom of card
+- **Status**: 🔴 Needs translation to zh, zh_CN, zh_TW
+
+---
+
 ## ✅ Already Translated
 
 ### CalorieSummaryWidget

@@ -2,7 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
+import '../../l10n/generated/app_localizations.dart';
 import '../../config/design_system/widget_theme.dart';
+import '../../config/design_system/accent_colors.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/theme_provider.dart';
 
@@ -74,6 +76,10 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
           AppWidgetTheme.cardBorderOpacity,
         );
 
+        final textColor = AppWidgetTheme.getTextColor(
+          themeProvider.selectedGradient,
+        );
+
         return AnimatedBuilder(
           animation: _animation,
           builder: (context, child) => Row(
@@ -81,40 +87,49 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
               // Protein Card
               Expanded(
                 child: _buildMacroCard(
-                  name: 'Protein',
+                  context: context,
+                  name: AppLocalizations.of(context)!.protein,
                   current: consumed['protein']!,
                   target: target['protein']!.toDouble(),
                   progress: progress['protein']!,
-                  color: const Color(0xFFEF4444), // Red
+                  color: AccentColors.coral,
                   borderColor: borderColor,
+                  textColor: textColor,
+                  icon: Icons.set_meal,
                 ),
               ),
-              
+
               const SizedBox(width: 10),
-              
+
               // Carbs Card
               Expanded(
                 child: _buildMacroCard(
-                  name: 'Carbs',
+                  context: context,
+                  name: AppLocalizations.of(context)!.carbs,
                   current: consumed['carbs']!,
                   target: target['carbs']!.toDouble(),
                   progress: progress['carbs']!,
-                  color: const Color(0xFFF97316), // Orange
+                  color: AccentColors.brightGreen,
                   borderColor: borderColor,
+                  textColor: textColor,
+                  icon: Icons.local_pizza,
                 ),
               ),
-              
+
               const SizedBox(width: 10),
-              
+
               // Fat Card
               Expanded(
                 child: _buildMacroCard(
-                  name: 'Fat',
+                  context: context,
+                  name: AppLocalizations.of(context)!.fat,
                   current: consumed['fat']!,
                   target: target['fat']!.toDouble(),
                   progress: progress['fat']!,
-                  color: const Color(0xFF3B82F6), // Blue
+                  color: AccentColors.goldenYellow,
                   borderColor: borderColor,
+                  textColor: textColor,
+                  icon: Icons.grain_rounded,
                 ),
               ),
             ],
@@ -125,12 +140,15 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
   }
 
   Widget _buildMacroCard({
+    required BuildContext context,
     required String name,
     required double current,
     required double target,
     required double progress,
     required Color color,
     required Color borderColor,
+    required Color textColor,
+    IconData? icon,
   }) {
     final animatedProgress = progress * _animation.value;
     final animatedCurrent = current * _animation.value;
@@ -146,14 +164,14 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
       opacity: _animation.value,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.3), // Transparent background
+          color: Colors.black.withValues(alpha: 0.1), // Subtle depth for readability
           borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
           border: Border.all(
             color: borderColor,
             width: AppWidgetTheme.cardBorderWidth,
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12), // Reduced from 16 to 12
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         child: Column(
           children: [
             // 1. Circular Progress with Percentage inside
@@ -168,59 +186,77 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                     painter: _CircularProgressPainter(
                       progress: animatedProgress,
                       color: color,
+                      backgroundColor: textColor.withValues(alpha: 0.3),
                     ),
                   ),
-                  
+
                   // Percentage in Center (can show beyond 100%)
                   Center(
                     child: Text(
                       '$displayPercentage%',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1A1A1A), // Black text
+                        color: textColor,
+                        shadows: AppWidgetTheme.textShadows,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            
-            const SizedBox(height: 8), // Reduced from 12 to 8
-            
-            // 2. Current Value (slightly smaller)
-            Text(
-              animatedCurrent.round().toString(),
-              style: const TextStyle(
-                fontSize: 24, // Reduced from 28 to 24
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1A1A), // Black text
-                height: 1.0,
-              ),
+
+            const SizedBox(height: 8),
+
+            // 2. Current Value with Icon
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (icon != null) ...[
+                  Icon(
+                    icon,
+                    size: 20,
+                    color: textColor,
+                  ),
+                  const SizedBox(width: 4),
+                ],
+                Text(
+                  animatedCurrent.round().toString(),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                    height: 1.0,
+                    shadows: AppWidgetTheme.textShadows,
+                  ),
+                ),
+              ],
             ),
-            
-            const SizedBox(height: 2), // Reduced from 4 to 2
-            
+
+            const SizedBox(height: 2),
+
             // 3. Target
             Text(
               '/ ${target.round()}g',
               style: TextStyle(
                 fontSize: 12,
-                color: const Color(0xFF1A1A1A).withValues(alpha: 0.6), // Black with 60% opacity
+                color: textColor.withValues(alpha: 0.6),
                 fontWeight: FontWeight.w500,
+                shadows: AppWidgetTheme.textShadows,
               ),
             ),
-            
-            const SizedBox(height: 8), // Reduced from 12 to 8
-            
+
+            const SizedBox(height: 8),
+
             // 4. Macro Name (Bottom)
             Text(
               name.toUpperCase(),
               style: TextStyle(
                 fontSize: 11,
-                color: const Color(0xFF1A1A1A).withValues(alpha: 0.7), // Black with 70% opacity
+                color: textColor.withValues(alpha: 0.7),
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
+                shadows: AppWidgetTheme.textShadows,
               ),
             ),
           ],
@@ -237,10 +273,12 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
 class _CircularProgressPainter extends CustomPainter {
   final double progress;
   final Color color;
+  final Color backgroundColor;
 
   _CircularProgressPainter({
     required this.progress,
     required this.color,
+    required this.backgroundColor,
   });
 
   @override
@@ -248,9 +286,9 @@ class _CircularProgressPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 3;
 
-    // Background circle (light gray)
+    // Background circle (theme-adaptive)
     final bgPaint = Paint()
-      ..color = const Color(0xFFE5E7EB)
+      ..color = backgroundColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 5
       ..strokeCap = StrokeCap.round;
@@ -277,6 +315,8 @@ class _CircularProgressPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_CircularProgressPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.color != color;
+    return oldDelegate.progress != progress ||
+           oldDelegate.color != color ||
+           oldDelegate.backgroundColor != backgroundColor;
   }
 }

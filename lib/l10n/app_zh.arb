@@ -6,6 +6,11 @@
   "cal": "cal",
   "remainingCalories": "Remaining calories",
   "caloriesOver": "Calories over",
+
+  "@@ COMMENT": "MacronutrientWidget - Currently Active",
+  "protein": "Protein",
+  "carbs": "Carbs",
+  "fat": "Fat",
   
   "@@ COMMENT": "WeekNavigationWidget - NEW",
   "today": "Today",
