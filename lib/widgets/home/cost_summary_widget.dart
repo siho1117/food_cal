@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/typography.dart';
 import '../../config/design_system/dialog_theme.dart';
+import '../../config/design_system/accent_colors.dart';
 import '../../config/constants/app_constants.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -78,37 +79,57 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
           themeProvider.selectedGradient,
         );
 
-        return GestureDetector(
-          onTap: () => _showBudgetEditDialog(context, homeProvider, dailyBudget),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-              border: Border.all(
-                color: borderColor,
-                width: AppWidgetTheme.cardBorderWidth,
+        // Calculate if over budget for visual feedback
+        final isOverBudget = dailyBudget > 0 && totalCost > dailyBudget;
+
+        return Semantics(
+          label: 'Food cost ${totalCost.toStringAsFixed(2)} of ${dailyBudget.toStringAsFixed(2)} budget. ${isOverBudget ? 'Over budget.' : ''} Tap to edit.',
+          button: true,
+          child: GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _showBudgetEditDialog(context, homeProvider, dailyBudget);
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+                border: Border.all(
+                  color: borderColor,
+                  width: AppWidgetTheme.cardBorderWidth,
+                ),
               ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Row(
-                children: [
-                  // Left: Cost display
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Title matching Food Log style
-                        Text(
-                          'Food Cost',
-                          style: TextStyle(
-                            fontSize: AppWidgetTheme.fontSizeLG,
-                            fontWeight: FontWeight.w700,
-                            color: textColor,
-                            shadows: AppWidgetTheme.textShadows,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Row(
+                  children: [
+                    // Left: Cost display
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Title with icon
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.account_balance_wallet_outlined,
+                                size: AppWidgetTheme.fontSizeLG,
+                                color: textColor,
+                                shadows: AppWidgetTheme.textShadows,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Daily Spend',
+                                style: TextStyle(
+                                  fontSize: AppWidgetTheme.fontSizeLG,
+                                  fontWeight: FontWeight.w700,
+                                  color: textColor,
+                                  shadows: AppWidgetTheme.textShadows,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
                         const SizedBox(height: 8),
                         // Animated cost amount with inline budget
                         Row(
@@ -152,6 +173,7 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
                         totalCost,
                         dailyBudget,
                         textColor,
+                        isOverBudget,
                       );
                     },
                   ),
@@ -159,27 +181,31 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
               ),
             ),
           ),
+        ),
         );
       },
     );
   }
 
-  Widget _buildCircularProgress(double totalCost, double dailyBudget, Color textColor) {
+  Widget _buildCircularProgress(double totalCost, double dailyBudget, Color textColor, bool isOverBudget) {
     // Calculate actual percentage (can go beyond 100%)
-    final actualPercentage = dailyBudget > 0 
-        ? (totalCost / dailyBudget) 
+    final actualPercentage = dailyBudget > 0
+        ? (totalCost / dailyBudget)
         : 0.0;
     final animatedPercentage = actualPercentage * _animation.value;
     final displayPercentage = (animatedPercentage * 100).round();
-    
+
     // For ring display, cap at 100%
     final ringProgress = animatedPercentage.clamp(0.0, 1.0);
-    
+
+    // Use vibrantRed for over-budget state
+    final progressColor = isOverBudget ? AccentColors.vibrantRed : textColor;
+
     return CustomPaint(
       size: const Size(64, 64),
       painter: _CircularProgressPainter(
         progress: ringProgress,
-        baseColor: textColor,
+        baseColor: progressColor,
       ),
       child: SizedBox(
         width: 64,
@@ -188,7 +214,7 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
           child: Text(
             '$displayPercentage%',
             style: AppTypography.labelMedium.copyWith(
-              color: textColor,
+              color: progressColor,
               fontWeight: FontWeight.bold,
               shadows: AppWidgetTheme.textShadows,
             ),
@@ -274,6 +300,7 @@ class _BudgetEditDialog extends StatefulWidget {
 class _BudgetEditDialogState extends State<_BudgetEditDialog> {
   late final TextEditingController _budgetController;
   bool _isLoading = false;
+  String? _errorText;
 
   @override
   void initState() {
@@ -296,12 +323,12 @@ class _BudgetEditDialogState extends State<_BudgetEditDialog> {
       shape: AppDialogTheme.shape,
       contentPadding: AppDialogTheme.contentPadding,
       actionsPadding: AppDialogTheme.actionsPadding,
-      
+
       title: const Text(
-        'Budget', // Minimal text
+        'Budget',
         style: AppDialogTheme.titleStyle,
       ),
-      
+
       content: TextField(
         controller: _budgetController,
         autofocus: true,
@@ -312,7 +339,15 @@ class _BudgetEditDialogState extends State<_BudgetEditDialog> {
         style: AppDialogTheme.inputTextStyle,
         decoration: AppDialogTheme.inputDecoration(
           hintText: '0.00',
+        ).copyWith(
+          errorText: _errorText,
         ),
+        onChanged: (_) {
+          // Clear error when user types
+          if (_errorText != null) {
+            setState(() => _errorText = null);
+          }
+        },
       ),
       
       actions: [
@@ -334,9 +369,9 @@ class _BudgetEditDialogState extends State<_BudgetEditDialog> {
   Future<void> _handleSave() async {
     final budgetText = _budgetController.text.trim();
     final budget = double.tryParse(budgetText);
-    
+
     if (budget == null || budget <= 0) {
-      _showError('Invalid amount');
+      setState(() => _errorText = 'Enter a valid amount');
       return;
     }
 
@@ -344,28 +379,18 @@ class _BudgetEditDialogState extends State<_BudgetEditDialog> {
 
     try {
       await widget.homeProvider.updateFoodBudget(budget);
-      
+
       if (mounted) {
         Navigator.of(context).pop();
       }
     } catch (e) {
       debugPrint('Error saving budget: $e');
-      _showError('Save failed');
-    } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _errorText = 'Save failed';
+          _isLoading = false;
+        });
       }
-    }
-  }
-
-  void _showError(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
     }
   }
 }

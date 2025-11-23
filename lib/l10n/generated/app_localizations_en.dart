@@ -30,6 +30,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fat => 'Fat';
 
   @override
+  String get dailySpend => 'Daily Spend';
+
+  @override
+  String get budget => 'Budget';
+
+  @override
   String get today => 'Today';
 
   @override

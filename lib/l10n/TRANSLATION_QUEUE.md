@@ -48,6 +48,22 @@
 
 ---
 
+### CostSummaryWidget
+
+#### `dailySpend`
+- **English**: "Daily Spend"
+- **Context**: Title for daily food cost tracking widget
+- **UI Example**: Displayed with wallet icon as "Daily Spend" header
+- **Status**: 🔴 Needs translation to zh, zh_CN, zh_TW
+
+#### `budget`
+- **English**: "Budget"
+- **Context**: Dialog title when editing daily food budget
+- **UI Example**: Simple dialog title "Budget"
+- **Status**: 🔴 Needs translation to zh, zh_CN, zh_TW
+
+---
+
 ## ✅ Already Translated
 
 ### CalorieSummaryWidget

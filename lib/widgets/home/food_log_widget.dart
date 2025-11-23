@@ -1,13 +1,13 @@
 // lib/widgets/home/food_log_widget.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
 import '../../config/design_system/widget_theme.dart';
-import '../../config/design_system/typography.dart';
+import '../../config/design_system/dialog_theme.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../data/models/food_item.dart';
-import '../../data/repositories/food_repository.dart';
 import '../../services/food_image_service.dart';
 import 'quick_edit_food_dialog.dart';
 
@@ -56,15 +56,27 @@ class FoodLogWidget extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Food Log',
-                      style: TextStyle(
-                        fontSize: AppWidgetTheme.fontSizeLG,
-                        color: textColor,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.3,
-                        shadows: AppWidgetTheme.textShadows,
-                      ),
+                    // Title with icon
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.restaurant_menu,
+                          size: AppWidgetTheme.fontSizeLG,
+                          color: textColor,
+                          shadows: AppWidgetTheme.textShadows,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Food Log',
+                          style: TextStyle(
+                            fontSize: AppWidgetTheme.fontSizeLG,
+                            color: textColor,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3,
+                            shadows: AppWidgetTheme.textShadows,
+                          ),
+                        ),
+                      ],
                     ),
                     // Add button
                     IconButton(
@@ -81,17 +93,19 @@ class FoodLogWidget extends StatelessWidget {
 
                 // Food items list or empty state
                 if (allFoodItems.isEmpty)
-                  _buildEmptyState(textColor)
+                  _buildEmptyState(context, textColor, homeProvider)
                 else
-                  Column(
-                    children: allFoodItems
-                        .map((item) => _buildFoodItem(
-                              context,
-                              item,
-                              homeProvider,
-                              textColor,
-                            ))
-                        .toList(),
+                  SlidableAutoCloseBehavior(
+                    child: Column(
+                      children: allFoodItems
+                          .map((item) => _buildFoodItem(
+                                context,
+                                item,
+                                homeProvider,
+                                textColor,
+                              ))
+                          .toList(),
+                    ),
                   ),
               ],
             ),
@@ -101,37 +115,72 @@ class FoodLogWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(Color textColor) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Column(
-        children: [
-          Icon(
-            Icons.restaurant_menu,
-            size: 48,
-            color: textColor.withValues(alpha: AppWidgetTheme.opacityMedium),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No food logged today',
-            style: TextStyle(
-              color: textColor.withValues(alpha: AppWidgetTheme.opacityVeryHigh),
-              fontSize: AppWidgetTheme.fontSizeML,
-              fontWeight: FontWeight.w500,
-              shadows: AppWidgetTheme.textShadows,
+  Widget _buildEmptyState(
+    BuildContext context,
+    Color textColor,
+    HomeProvider homeProvider,
+  ) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.restaurant_menu,
+              size: 48,
+              color: textColor.withValues(alpha: AppWidgetTheme.opacityMedium),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Take a photo of your food to get started!',
-            style: TextStyle(
-              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigh),
-              fontSize: AppWidgetTheme.fontSizeMS,
-              shadows: AppWidgetTheme.textShadows,
+            const SizedBox(height: 16),
+            Text(
+              'No food logged today',
+              style: TextStyle(
+                color: textColor.withValues(alpha: AppWidgetTheme.opacityVeryHigh),
+                fontSize: AppWidgetTheme.fontSizeML,
+                fontWeight: FontWeight.w500,
+                shadows: AppWidgetTheme.textShadows,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              'Take a photo or add manually',
+              style: TextStyle(
+                color: textColor.withValues(alpha: AppWidgetTheme.opacityHigh),
+                fontSize: AppWidgetTheme.fontSizeMS,
+                shadows: AppWidgetTheme.textShadows,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            // Add Food button
+            OutlinedButton.icon(
+              onPressed: () => _showManualEntryDialog(context, homeProvider),
+              icon: Icon(
+                Icons.add,
+                size: 18,
+                color: textColor.withValues(alpha: AppWidgetTheme.opacityVeryHigh),
+              ),
+              label: Text(
+                'Add Food',
+                style: TextStyle(
+                  color: textColor.withValues(alpha: AppWidgetTheme.opacityVeryHigh),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(
+                  color: textColor.withValues(alpha: AppWidgetTheme.opacityHigh),
+                  width: 1.5,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -149,136 +198,142 @@ class FoodLogWidget extends StatelessWidget {
     final fat = nutrition['fats']!.round();
     final itemCost = item.getCostForServing() ?? 0.0;
 
-    return Dismissible(
-      key: Key(item.id),
-      direction: DismissDirection.endToStart,
-      confirmDismiss: (direction) async {
-        return await _showDeleteConfirmation(context, item, homeProvider);
-      },
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: Colors.red[600],
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Icon(
-          Icons.delete_rounded,
-          color: Colors.white,
-          size: 28,
-        ),
-      ),
-      child: GestureDetector(
-        onTap: () => _showQuickEditDialog(context, item, homeProvider),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.transparent,
-              width: 2,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Slidable(
+        key: ValueKey(item.id),
+        endActionPane: ActionPane(
+          motion: const ScrollMotion(),
+          extentRatio: 0.25,
+          children: [
+            CustomSlidableAction(
+              onPressed: (_) {
+                _showDeleteConfirmation(context, item, homeProvider);
+              },
+              backgroundColor: AppDialogTheme.colorDestructive,
+              borderRadius: BorderRadius.circular(16),
+              autoClose: true,
+              padding: EdgeInsets.zero,
+              child: const Center(
+                child: Icon(
+                  Icons.delete_outline,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
             ),
-          ),
-          child: Column(
-            children: [
-              // Top section: Image + Title
-              Row(
-                children: [
-                  // Food image
-                  _buildFoodImage(item),
-                  
-                  const SizedBox(width: 12),
-                  
-                  // Title section
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.name,
-                          style: TextStyle(
-                            fontSize: AppWidgetTheme.fontSizeMD,
-                            fontWeight: FontWeight.w600,
-                            color: AppWidgetTheme.colorPrimaryDark,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${_formatTime(item.timestamp)}${itemCost > 0 ? ' • \$${itemCost.toStringAsFixed(2)}' : ''}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+          ],
+        ),
+        child: GestureDetector(
+          onTap: () => _showQuickEditDialog(context, item, homeProvider),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.transparent,
+                width: 2,
               ),
-              
-              const SizedBox(height: 12),
-              
-              // Divider
-              Container(
-                height: 1,
-                color: Colors.grey[300],
-              ),
-              
-              const SizedBox(height: 12),
-              
-              // Bottom section: Quantity + Macros | Calories
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Quantity + Macros
-                  Expanded(
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      children: [
-                        Text(
-                          '×${item.servingSize.toStringAsFixed(item.servingSize.truncateToDouble() == item.servingSize ? 0 : 1)}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[800],
-                            fontWeight: FontWeight.w600,
+            ),
+            child: Column(
+              children: [
+                // Top section: Image + Title
+                Row(
+                  children: [
+                    // Food image
+                    _buildFoodImage(item),
+
+                    const SizedBox(width: 12),
+
+                    // Title section
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name,
+                            style: TextStyle(
+                              fontSize: AppWidgetTheme.fontSizeMD,
+                              fontWeight: FontWeight.w600,
+                              color: AppWidgetTheme.colorPrimaryDark,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        Text(
-                          '•',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[400],
+                          const SizedBox(height: 4),
+                          Text(
+                            '${_formatTime(item.timestamp)}${itemCost > 0 ? ' • \$${itemCost.toStringAsFixed(2)}' : ''}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
                           ),
-                        ),
-                        Text(
-                          '${protein}P • ${carbs}C • ${fat}F',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  
-                  // Calories
-                  Text(
-                    '$itemCalories cal',
-                    style: TextStyle(
-                      fontSize: AppWidgetTheme.fontSizeLG,
-                      fontWeight: FontWeight.w700,
-                      color: AppWidgetTheme.colorPrimaryDark,
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                // Divider
+                Container(
+                  height: 1,
+                  color: Colors.grey[300],
+                ),
+
+                const SizedBox(height: 12),
+
+                // Bottom section: Quantity + Macros | Calories
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Quantity + Macros
+                    Expanded(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          Text(
+                            '×${item.servingSize.toStringAsFixed(item.servingSize.truncateToDouble() == item.servingSize ? 0 : 1)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[800],
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            '•',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                          Text(
+                            '${protein}P • ${carbs}C • ${fat}F',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+
+                    // Calories
+                    Text(
+                      '$itemCalories cal',
+                      style: TextStyle(
+                        fontSize: AppWidgetTheme.fontSizeLG,
+                        fontWeight: FontWeight.w700,
+                        color: AppWidgetTheme.colorPrimaryDark,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -359,57 +414,40 @@ class FoodLogWidget extends StatelessWidget {
     );
   }
 
-  Future<bool> _showDeleteConfirmation(
+  void _showDeleteConfirmation(
     BuildContext context,
     FoodItem item,
     HomeProvider homeProvider,
-  ) async {
-    final result = await showDialog<bool>(
+  ) {
+    showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
+        backgroundColor: AppDialogTheme.backgroundColor,
+        shape: AppDialogTheme.shape,
+        contentPadding: AppDialogTheme.contentPadding,
+        actionsPadding: AppDialogTheme.actionsPadding,
+        title: const Text(
           'Delete Food Item',
-          style: AppTypography.displaySmall.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppWidgetTheme.colorPrimaryDark,
-          ),
-        ),
-        content: Text(
-          'Remove "${item.name}" from your food log?',
-          style: AppTypography.bodyMedium,
+          style: AppDialogTheme.titleStyle,
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
+            onPressed: () => Navigator.pop(context),
+            style: AppDialogTheme.cancelButtonStyle,
+            child: const Text('Cancel'),
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red[600],
-            ),
+          const SizedBox(width: AppDialogTheme.buttonGap),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await homeProvider.deleteFoodEntry(item.id);
+            },
+            style: AppDialogTheme.destructiveButtonStyle,
             child: const Text('Delete'),
           ),
         ],
       ),
     );
-
-    if (result == true) {
-      try {
-        await FoodRepository().storageService.deleteFoodEntry(item.id, item.timestamp);
-        homeProvider.refreshData();
-        return true;
-      } catch (e) {
-        debugPrint('Error deleting food item: $e');
-        return false;
-      }
-    }
-
-    return false;
   }
 
   Future<void> _showManualEntryDialog(

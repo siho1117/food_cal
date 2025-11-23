@@ -11,6 +11,10 @@
   "protein": "Protein",
   "carbs": "Carbs",
   "fat": "Fat",
+
+  "@@ COMMENT": "CostSummaryWidget - Currently Active",
+  "dailySpend": "Daily Spend",
+  "budget": "Budget",
   
   "@@ COMMENT": "WeekNavigationWidget - NEW",
   "today": "Today",

@@ -139,6 +139,18 @@ abstract class AppLocalizations {
   /// **'Fat'**
   String get fat;
 
+  /// No description provided for @dailySpend.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Spend'**
+  String get dailySpend;
+
+  /// No description provided for @budget.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget'**
+  String get budget;
+
   /// No description provided for @today.
   ///
   /// In en, this message translates to:
