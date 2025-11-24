@@ -12,6 +12,7 @@ import '../widgets/loading/food_recognition_loading_dialog.dart';
 import '../main.dart'; // Import for navigatorKey
 import '../services/food_image_service.dart';
 import 'home_provider.dart';
+import 'navigation_provider.dart';
 
 /// **Camera Provider - UI Orchestration Layer**
 ///
@@ -192,7 +193,7 @@ class CameraProvider {
     }
   }
 
-  /// Refresh home page and show success message (no navigation needed)
+  /// Refresh home page, navigate to home, and show success message
   void _showSuccessAndRefreshHome(int itemCount) {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final globalContext = navigatorKey.currentContext;
@@ -208,6 +209,14 @@ class CameraProvider {
         await homeProvider.refreshData();
       } catch (e) {
         debugPrint('Error refreshing HomeProvider: $e');
+      }
+
+      // Navigate to Home page
+      try {
+        final navigationProvider = Provider.of<NavigationProvider>(globalContext, listen: false);
+        navigationProvider.navigateToHome();
+      } catch (e) {
+        debugPrint('Error navigating to Home: $e');
       }
 
       // Show success message

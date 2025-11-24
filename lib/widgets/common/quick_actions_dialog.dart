@@ -2,10 +2,19 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/typography.dart';
 import '../../config/design_system/accent_colors.dart';
 import '../../providers/camera_provider.dart';
+import '../../providers/exercise_provider.dart';
+import '../../providers/progress_data.dart';
+import '../../providers/home_provider.dart';
+import '../../providers/navigation_provider.dart';
+import '../../data/models/food_item.dart';
+import '../progress/exercise_entry_dialog.dart';
+import '../progress/weight_edit_dialog.dart';
+import '../home/quick_edit_food_dialog.dart';
 
 /// Modern Quick Actions bottom sheet dialog
 ///
@@ -60,7 +69,7 @@ class _QuickActionsDialogContent extends StatelessWidget {
           Container(
             width: 40,
             height: 4,
-            margin: EdgeInsets.only(
+            margin: const EdgeInsets.only(
               top: AppWidgetTheme.spaceMD,
               bottom: AppWidgetTheme.spaceLG,
             ),
@@ -72,7 +81,7 @@ class _QuickActionsDialogContent extends StatelessWidget {
 
           // Actions Grid - Option E Floating Tiles Layout
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppWidgetTheme.spaceLG),
+            padding: const EdgeInsets.symmetric(horizontal: AppWidgetTheme.spaceLG),
             child: Column(
               children: [
                 // Row 1: Gallery/Manual stacked + Camera (large)
@@ -93,7 +102,7 @@ class _QuickActionsDialogContent extends StatelessWidget {
                               onTap: () => _handleGalleryAction(context),
                             ),
                           ),
-                          SizedBox(height: AppWidgetTheme.spaceSM),
+                          const SizedBox(height: AppWidgetTheme.spaceSM),
                           _FloatingTileSmall(
                             action: _QuickAction(
                               icon: Icons.edit_note_rounded,
@@ -107,7 +116,7 @@ class _QuickActionsDialogContent extends StatelessWidget {
                       ),
                     ),
 
-                    SizedBox(width: AppWidgetTheme.spaceSM),
+                    const SizedBox(width: AppWidgetTheme.spaceSM),
 
                     // Right: Camera (PRIMARY - Large tile)
                     Expanded(
@@ -125,7 +134,7 @@ class _QuickActionsDialogContent extends StatelessWidget {
                   ],
                 ),
 
-                SizedBox(height: AppWidgetTheme.spaceSM),
+                const SizedBox(height: AppWidgetTheme.spaceSM),
 
                 // Row 2: Weight + Exercise (matching flex ratios above)
                 Row(
@@ -142,7 +151,7 @@ class _QuickActionsDialogContent extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(width: AppWidgetTheme.spaceSM),
+                    const SizedBox(width: AppWidgetTheme.spaceSM),
                     Expanded(
                       flex: 3,
                       child: _FloatingTileMedium(
@@ -169,20 +178,6 @@ class _QuickActionsDialogContent extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildActionRow(
-    BuildContext context, {
-    required _QuickAction leftAction,
-    required _QuickAction rightAction,
-  }) {
-    return Row(
-      children: [
-        Expanded(child: _QuickActionCard(action: leftAction)),
-        SizedBox(width: AppWidgetTheme.spaceMD),
-        Expanded(child: _QuickActionCard(action: rightAction)),
-      ],
     );
   }
 
@@ -217,33 +212,85 @@ class _QuickActionsDialogContent extends StatelessWidget {
 
   void _handleExerciseAction(BuildContext context) {
     Navigator.of(context).pop();
-    // TODO: Navigate to exercise log screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Exercise logging coming soon!'),
-        duration: Duration(seconds: 2),
+
+    // Show exercise entry dialog
+    final exerciseProvider = Provider.of<ExerciseProvider>(context, listen: false);
+    final navigationProvider = Provider.of<NavigationProvider>(context, listen: false);
+
+    showDialog(
+      context: context,
+      builder: (context) => ExerciseEntryDialog(
+        exerciseProvider: exerciseProvider,
+        onExerciseSaved: () {
+          // Navigate to Progress page after exercise is saved
+          navigationProvider.navigateToProgress();
+        },
       ),
     );
   }
 
   void _handleWeightAction(BuildContext context) {
     Navigator.of(context).pop();
-    // TODO: Show weight input dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Weight update coming soon!'),
-        duration: Duration(seconds: 2),
-      ),
+
+    // Show weight edit dialog
+    final progressData = Provider.of<ProgressData>(context, listen: false);
+    final navigationProvider = Provider.of<NavigationProvider>(context, listen: false);
+
+    showWeightEditDialog(
+      context: context,
+      initialWeight: progressData.currentWeight ?? 70.0,
+      isMetric: progressData.isMetric,
+      targetWeight: progressData.targetWeight,
+      onAddWeight: (weight, isMetric) async {
+        await progressData.addWeightEntry(weight, isMetric);
+        // Navigate to Progress page after weight is saved
+        navigationProvider.navigateToProgress();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Weight updated successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
+      onSaveTarget: (targetWeight) async {
+        await progressData.updateTargetWeight(targetWeight);
+        // Navigate to Progress page after target weight is saved
+        navigationProvider.navigateToProgress();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Target weight updated successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
     );
   }
 
   void _handleManualEntryAction(BuildContext context) {
     Navigator.of(context).pop();
-    // TODO: Navigate to manual food entry screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Manual food entry coming soon!'),
-        duration: Duration(seconds: 2),
+
+    // Show empty food card dialog for manual entry
+    final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+    final navigationProvider = Provider.of<NavigationProvider>(context, listen: false);
+    final emptyFoodItem = FoodItem.empty();
+
+    showDialog(
+      context: context,
+      builder: (context) => QuickEditFoodDialog(
+        foodItem: emptyFoodItem,
+        onUpdated: () {
+          homeProvider.refreshData();
+          // Navigate to Home page after food is saved
+          navigationProvider.navigateToHome();
+        },
       ),
     );
   }
@@ -264,90 +311,6 @@ class _QuickAction {
     required this.color,
     required this.onTap,
   });
-}
-
-/// Beautiful card for each quick action
-class _QuickActionCard extends StatelessWidget {
-  final _QuickAction action;
-
-  const _QuickActionCard({required this.action});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          action.onTap();
-        },
-        borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusLG),
-        child: Ink(
-          decoration: BoxDecoration(
-            color: action.color.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusLG),
-            border: Border.all(
-              color: action.color.withValues(alpha: 0.25),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: action.color.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Container(
-            padding: EdgeInsets.all(AppWidgetTheme.spaceMD),
-            height: 88,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Icon with solid background
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: action.color,
-                    borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusSM),
-                  ),
-                  child: Icon(
-                    action.icon,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-
-                // Text
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      action.label,
-                      style: AppTypography.bodySmall.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1A1A1A),
-                      ),
-                    ),
-                    Text(
-                      action.subtitle,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: Colors.grey.shade600,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 /// Large floating tile - primary action with prominent styling
@@ -386,7 +349,7 @@ class _FloatingTileLarge extends StatelessWidget {
             ],
           ),
           child: Container(
-            padding: EdgeInsets.all(AppWidgetTheme.spaceLG),
+            padding: const EdgeInsets.all(AppWidgetTheme.spaceLG),
             height: 140,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -465,7 +428,7 @@ class _FloatingTileSmall extends StatelessWidget {
             ],
           ),
           child: Container(
-            padding: EdgeInsets.all(AppWidgetTheme.spaceMD),
+            padding: const EdgeInsets.all(AppWidgetTheme.spaceMD),
             height: 66,
             child: Row(
               children: [
@@ -482,7 +445,7 @@ class _FloatingTileSmall extends StatelessWidget {
                     size: 20,
                   ),
                 ),
-                SizedBox(width: AppWidgetTheme.spaceSM),
+                const SizedBox(width: AppWidgetTheme.spaceSM),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -545,7 +508,7 @@ class _FloatingTileMedium extends StatelessWidget {
             ],
           ),
           child: Container(
-            padding: EdgeInsets.all(AppWidgetTheme.spaceMD),
+            padding: const EdgeInsets.all(AppWidgetTheme.spaceMD),
             height: 72,
             child: Row(
               children: [
@@ -562,7 +525,7 @@ class _FloatingTileMedium extends StatelessWidget {
                     size: 22,
                   ),
                 ),
-                SizedBox(width: AppWidgetTheme.spaceMD),
+                const SizedBox(width: AppWidgetTheme.spaceMD),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

@@ -23,6 +23,7 @@ import 'providers/progress_data.dart';
 import 'providers/settings_provider.dart';
 import 'providers/language_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/navigation_provider.dart';
 
 // Config
 import 'config/design_system/theme_design.dart';
@@ -78,6 +79,7 @@ class FoodTrackerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ExerciseProvider()..loadData()),
         ChangeNotifierProvider(create: (_) => ProgressData()..loadUserData()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()..loadUserData()),
+        ChangeNotifierProvider(create: (_) => NavigationProvider()),
       ],
       child: Consumer<LanguageProvider>(
         builder: (context, languageProvider, child) {
@@ -120,9 +122,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
-
-  final List<Widget> _screens = const [
+  static const List<Widget> _screens = [
     HomeScreen(),
     ProgressScreen(),
     SummaryScreen(),
@@ -137,38 +137,43 @@ class _MainScreenState extends State<MainScreen> {
     return navIndex;
   }
 
-  void _handleNavTap(int index) {
+  void _handleNavTap(BuildContext context, int index) {
     if (index == 2) {
       // Show Quick Actions dialog instead of navigating
       showQuickActionsDialog(context);
-      // Don't change _currentIndex - stay on current screen
+      // Don't change index - stay on current screen
     } else {
-      setState(() {
-        _currentIndex = index;
-      });
+      // Use NavigationProvider to change the index
+      Provider.of<NavigationProvider>(context, listen: false).navigateTo(index);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Show current screen, with bounds checking
-          _screens[_getScreenIndex(_currentIndex).clamp(0, _screens.length - 1)],
+    return Consumer<NavigationProvider>(
+      builder: (context, navProvider, child) {
+        final currentIndex = navProvider.currentIndex;
 
-          // Bottom navigation
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: CustomBottomNav(
-              currentIndex: _currentIndex,
-              onTap: _handleNavTap,
-            ),
+        return Scaffold(
+          body: Stack(
+            children: [
+              // Show current screen, with bounds checking
+              _screens[_getScreenIndex(currentIndex).clamp(0, _screens.length - 1)],
+
+              // Bottom navigation
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: CustomBottomNav(
+                  currentIndex: currentIndex,
+                  onTap: (index) => _handleNavTap(context, index),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
