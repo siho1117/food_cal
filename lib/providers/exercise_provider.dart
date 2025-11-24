@@ -45,8 +45,8 @@ class ExerciseProvider extends ChangeNotifier {
   int get dailyBurnGoal => _dailyBurnGoal;
 
   // Progress calculations
-  double get burnProgress => _dailyBurnGoal > 0 
-      ? (_totalCaloriesBurned / _dailyBurnGoal).clamp(0.0, 1.0)
+  double get burnProgress => _dailyBurnGoal > 0
+      ? _totalCaloriesBurned / _dailyBurnGoal
       : 0.0;
 
   int get caloriesRemaining => (_dailyBurnGoal - _totalCaloriesBurned).clamp(0, _dailyBurnGoal);

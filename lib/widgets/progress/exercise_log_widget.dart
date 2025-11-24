@@ -7,6 +7,7 @@ import '../../providers/theme_provider.dart';
 import '../../data/models/exercise_entry.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/dialog_theme.dart';
+import '../../config/design_system/accent_colors.dart';
 import 'exercise_entry_dialog.dart';
 
 // TODO: Add localization
@@ -154,32 +155,31 @@ class ExerciseLogWidget extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Exercise',
-                style: TextStyle(
-                  fontSize: AppWidgetTheme.fontSizeLG,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.2,
-                  color: textColor,
-                ),
-              ),
-              GestureDetector(
-                onTap: () => _showExerciseDialog(context, provider),
-                child: Container(
-                  width: AppWidgetTheme.iconContainerSmall,
-                  height: AppWidgetTheme.iconContainerSmall,
-                  decoration: BoxDecoration(
-                    color: AppWidgetTheme.getIconContainerColor(
-                      textColor,
-                      AppWidgetTheme.opacityMediumLight,
-                    ),
-                    borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXS),
-                  ),
-                  child: Icon(
-                    Icons.add,
+              Row(
+                children: [
+                  Icon(
+                    Icons.fitness_center,
                     size: AppWidgetTheme.iconSizeSmall,
                     color: textColor,
                   ),
+                  SizedBox(width: AppWidgetTheme.spaceMS),
+                  Text(
+                    'Exercise',
+                    style: TextStyle(
+                      fontSize: AppWidgetTheme.fontSizeLG,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.2,
+                      color: textColor,
+                    ),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: () => _showExerciseDialog(context, provider),
+                child: Icon(
+                  Icons.add,
+                  size: AppWidgetTheme.iconSizeMedium,
+                  color: textColor,
                 ),
               ),
             ],
@@ -376,14 +376,24 @@ class ExerciseLogWidget extends StatelessWidget {
           // Header - Fixed title
           Align(
             alignment: Alignment.centerLeft,
-            child: Text(
-              'Exercise',
-              style: TextStyle(
-                fontSize: AppWidgetTheme.fontSizeLG,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
-                color: textColor,
-              ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.fitness_center,
+                  size: AppWidgetTheme.iconSizeSmall,
+                  color: textColor,
+                ),
+                SizedBox(width: AppWidgetTheme.spaceMS),
+                Text(
+                  'Exercise',
+                  style: TextStyle(
+                    fontSize: AppWidgetTheme.fontSizeLG,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                    color: textColor,
+                  ),
+                ),
+              ],
             ),
           ),
           SizedBox(height: AppWidgetTheme.spaceXXXL),
@@ -738,6 +748,9 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
   }
 
   Widget _buildPercentageRing(Color textColor, int percentage, double progress) {
+    // Use brightGreen when progress is 100% or above
+    final ringColor = progress >= 1.0 ? AccentColors.brightGreen : textColor;
+
     return Column(
       children: [
         // Circular progress ring
@@ -768,7 +781,7 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
                   value: progress.clamp(0.0, 1.0),
                   strokeWidth: 4.5,
                   backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                  valueColor: AlwaysStoppedAnimation<Color>(ringColor),
                 ),
               ),
               // Percentage text
