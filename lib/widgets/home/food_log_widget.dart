@@ -48,7 +48,7 @@ class FoodLogWidget extends StatelessWidget {
             ),
           ),
           child: Padding(
-            padding: AppWidgetTheme.cardPadding,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -72,7 +72,6 @@ class FoodLogWidget extends StatelessWidget {
                             fontSize: AppWidgetTheme.fontSizeLG,
                             color: textColor,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: 0.3,
                             shadows: AppWidgetTheme.textShadows,
                           ),
                         ),
@@ -89,7 +88,7 @@ class FoodLogWidget extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
                 // Food items list or empty state
                 if (allFoodItems.isEmpty)
@@ -229,12 +228,8 @@ class FoodLogWidget extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.7),
+              color: Colors.black.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.transparent,
-                width: 2,
-              ),
             ),
             child: Column(
               children: [
@@ -253,10 +248,10 @@ class FoodLogWidget extends StatelessWidget {
                         children: [
                           Text(
                             item.name,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: AppWidgetTheme.fontSizeMD,
                               fontWeight: FontWeight.w600,
-                              color: AppWidgetTheme.colorPrimaryDark,
+                              color: Colors.white,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -266,7 +261,7 @@ class FoodLogWidget extends StatelessWidget {
                             '${_formatTime(item.timestamp)}${itemCost > 0 ? ' • \$${itemCost.toStringAsFixed(2)}' : ''}',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: Colors.white.withValues(alpha: 0.7),
                             ),
                           ),
                         ],
@@ -280,7 +275,7 @@ class FoodLogWidget extends StatelessWidget {
                 // Divider
                 Container(
                   height: 1,
-                  color: Colors.grey[300],
+                  color: Colors.white.withValues(alpha: 0.3),
                 ),
 
                 const SizedBox(height: 12),
@@ -299,7 +294,7 @@ class FoodLogWidget extends StatelessWidget {
                             '×${item.servingSize.toStringAsFixed(item.servingSize.truncateToDouble() == item.servingSize ? 0 : 1)}',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[800],
+                              color: Colors.white.withValues(alpha: 0.9),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -307,14 +302,14 @@ class FoodLogWidget extends StatelessWidget {
                             '•',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[400],
+                              color: Colors.white.withValues(alpha: 0.5),
                             ),
                           ),
                           Text(
                             '${protein}P • ${carbs}C • ${fat}F',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[700],
+                              color: Colors.white.withValues(alpha: 0.8),
                             ),
                           ),
                         ],
@@ -324,10 +319,10 @@ class FoodLogWidget extends StatelessWidget {
                     // Calories
                     Text(
                       '$itemCalories cal',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: AppWidgetTheme.fontSizeLG,
                         fontWeight: FontWeight.w700,
-                        color: AppWidgetTheme.colorPrimaryDark,
+                        color: Colors.white,
                       ),
                     ),
                   ],

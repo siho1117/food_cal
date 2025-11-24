@@ -51,8 +51,8 @@ class QuickEditFoodController {
   bool isLoading = false;
   String? imagePath;
 
-  // Original values for proportional calculation when serving size changes
-  late final double _originalServingSize;
+  // Original per-unit values for proportional calculation when serving size changes
+  // These are the base nutrition values per single serving unit
   late final double _originalCalories;
   late final double _originalProtein;
   late final double _originalCarbs;
@@ -63,7 +63,7 @@ class QuickEditFoodController {
     this.onUpdated,
   }) {
     // Store original per-unit values for proportional recalculation
-    _originalServingSize = foodItem.servingSize;
+    // These are the base values per single serving unit
     _originalCalories = foodItem.calories;
     _originalProtein = foodItem.proteins;
     _originalCarbs = foodItem.carbs;
@@ -146,17 +146,12 @@ class QuickEditFoodController {
     final newServingSize = double.tryParse(newServingSizeText);
     if (newServingSize == null || newServingSize <= 0) return;
 
-    // Avoid division by zero
-    if (_originalServingSize <= 0) return;
-
-    // Calculate the ratio of new serving size to original
-    final ratio = newServingSize / _originalServingSize;
-
-    // Apply ratio to original values to get new proportional values
-    final newCalories = (_originalCalories * ratio).round();
-    final newProtein = (_originalProtein * ratio).round();
-    final newCarbs = (_originalCarbs * ratio).round();
-    final newFat = (_originalFat * ratio).round();
+    // Calculate new total values by multiplying per-unit values by new serving size
+    // Since _originalCalories etc. are per-unit values, we simply multiply by the new serving size
+    final newCalories = (_originalCalories * newServingSize).round();
+    final newProtein = (_originalProtein * newServingSize).round();
+    final newCarbs = (_originalCarbs * newServingSize).round();
+    final newFat = (_originalFat * newServingSize).round();
 
     // Update controllers (temporarily remove listener to avoid infinite loop)
     servingSizeController.removeListener(_onServingSizeChanged);

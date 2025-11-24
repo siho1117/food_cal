@@ -1,8 +1,10 @@
 // lib/widgets/common/quick_actions_dialog.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/typography.dart';
-import '../../config/design_system/nutrition_colors.dart';
+import '../../config/design_system/accent_colors.dart';
 import '../../providers/camera_provider.dart';
 
 /// Modern Quick Actions bottom sheet dialog
@@ -21,6 +23,7 @@ void showQuickActionsDialog(BuildContext context) {
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
+    barrierColor: Colors.black.withValues(alpha: 0.35),
     isScrollControlled: true,
     isDismissible: true,
     enableDrag: true,
@@ -33,14 +36,24 @@ class _QuickActionsDialogContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(28),
-        ),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(28),
       ),
-      child: Column(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.0),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(28),
+            ),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.6),
+              width: 1,
+            ),
+          ),
+          child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Drag handle
@@ -52,84 +65,97 @@ class _QuickActionsDialogContent extends StatelessWidget {
               bottom: AppWidgetTheme.spaceLG,
             ),
             decoration: BoxDecoration(
-              color: Colors.grey.withValues(alpha: 0.3),
+              color: Colors.grey.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
 
-          // Title
+          // Actions Grid - Option E Floating Tiles Layout
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppWidgetTheme.spaceXXL),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Quick Actions',
-                  style: AppTypography.displaySmall.copyWith(
-                    color: const Color(0xFF1A1A1A),
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                // Close button
-                IconButton(
-                  icon: Icon(
-                    Icons.close_rounded,
-                    color: Colors.grey.shade400,
-                    size: 24,
-                  ),
-                  onPressed: () => Navigator.of(context).pop(),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-          ),
-
-          SizedBox(height: AppWidgetTheme.spaceXL),
-
-          // Actions Grid
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppWidgetTheme.spaceXXL),
+            padding: EdgeInsets.symmetric(horizontal: AppWidgetTheme.spaceLG),
             child: Column(
               children: [
-                // Row 1: Food Actions
-                _buildActionRow(
-                  context,
-                  leftAction: _QuickAction(
-                    icon: Icons.camera_alt_rounded,
-                    label: 'Take Photo',
-                    subtitle: 'Scan food',
-                    color: NutritionColors.caloriesColor,
-                    onTap: () => _handleCameraAction(context),
-                  ),
-                  rightAction: _QuickAction(
-                    icon: Icons.photo_library_rounded,
-                    label: 'Gallery',
-                    subtitle: 'Choose photo',
-                    color: NutritionColors.caloriesColor.withValues(alpha: 0.8),
-                    onTap: () => _handleGalleryAction(context),
-                  ),
+                // Row 1: Gallery/Manual stacked + Camera (large)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Left: Stacked Gallery + Manual
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        children: [
+                          _FloatingTileSmall(
+                            action: _QuickAction(
+                              icon: Icons.photo_library_rounded,
+                              label: 'Gallery',
+                              subtitle: 'Pick food photo',
+                              color: AccentColors.brightOrange,
+                              onTap: () => _handleGalleryAction(context),
+                            ),
+                          ),
+                          SizedBox(height: AppWidgetTheme.spaceSM),
+                          _FloatingTileSmall(
+                            action: _QuickAction(
+                              icon: Icons.edit_note_rounded,
+                              label: 'Type',
+                              subtitle: 'Log manually',
+                              color: AccentColors.electricBlue,
+                              onTap: () => _handleManualEntryAction(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(width: AppWidgetTheme.spaceSM),
+
+                    // Right: Camera (PRIMARY - Large tile)
+                    Expanded(
+                      flex: 3,
+                      child: _FloatingTileLarge(
+                        action: _QuickAction(
+                          icon: Icons.camera_alt_rounded,
+                          label: 'Take Photo',
+                          subtitle: 'Scan food with camera',
+                          color: AccentColors.coral,
+                          onTap: () => _handleCameraAction(context),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
 
-                SizedBox(height: AppWidgetTheme.spaceLG),
+                SizedBox(height: AppWidgetTheme.spaceSM),
 
-                // Row 2: Exercise & Weight
-                _buildActionRow(
-                  context,
-                  leftAction: _QuickAction(
-                    icon: Icons.fitness_center_rounded,
-                    label: 'Exercise',
-                    subtitle: 'Log activity',
-                    color: NutritionColors.exerciseColor,
-                    onTap: () => _handleExerciseAction(context),
-                  ),
-                  rightAction: _QuickAction(
-                    icon: Icons.monitor_weight_rounded,
-                    label: 'Weight',
-                    subtitle: 'Update weight',
-                    color: NutritionColors.budgetColor,
-                    onTap: () => _handleWeightAction(context),
-                  ),
+                // Row 2: Weight + Exercise (matching flex ratios above)
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: _FloatingTileMedium(
+                        action: _QuickAction(
+                          icon: Icons.monitor_weight_rounded,
+                          label: 'Weight',
+                          subtitle: 'Update',
+                          color: AccentColors.brightGreen,
+                          onTap: () => _handleWeightAction(context),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: AppWidgetTheme.spaceSM),
+                    Expanded(
+                      flex: 3,
+                      child: _FloatingTileMedium(
+                        action: _QuickAction(
+                          icon: Icons.fitness_center_rounded,
+                          label: 'Exercise',
+                          subtitle: 'Log activity',
+                          color: AccentColors.periwinkle,
+                          onTap: () => _handleExerciseAction(context),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -140,6 +166,8 @@ class _QuickActionsDialogContent extends StatelessWidget {
             height: MediaQuery.of(context).padding.bottom + AppWidgetTheme.spaceXXL,
           ),
         ],
+          ),
+        ),
       ),
     );
   }
@@ -208,6 +236,17 @@ class _QuickActionsDialogContent extends StatelessWidget {
       ),
     );
   }
+
+  void _handleManualEntryAction(BuildContext context) {
+    Navigator.of(context).pop();
+    // TODO: Navigate to manual food entry screen
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Manual food entry coming soon!'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
 }
 
 /// Data model for quick action
@@ -238,43 +277,133 @@ class _QuickActionCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: action.onTap,
+        onTap: () {
+          HapticFeedback.lightImpact();
+          action.onTap();
+        },
         borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusLG),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: action.color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusLG),
+            border: Border.all(
+              color: action.color.withValues(alpha: 0.25),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: action.color.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Container(
+            padding: EdgeInsets.all(AppWidgetTheme.spaceMD),
+            height: 88,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Icon with solid background
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: action.color,
+                    borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusSM),
+                  ),
+                  child: Icon(
+                    action.icon,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+
+                // Text
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      action.label,
+                      style: AppTypography.bodySmall.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    Text(
+                      action.subtitle,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Large floating tile - primary action with prominent styling
+class _FloatingTileLarge extends StatelessWidget {
+  final _QuickAction action;
+
+  const _FloatingTileLarge({required this.action});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          action.onTap();
+        },
+        borderRadius: BorderRadius.circular(20),
         child: Ink(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                action.color.withValues(alpha: 0.12),
-                action.color.withValues(alpha: 0.06),
+                action.color,
+                action.color.withValues(alpha: 0.85),
               ],
             ),
-            borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusLG),
-            border: Border.all(
-              color: action.color.withValues(alpha: 0.2),
-              width: 1.5,
-            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: action.color.withValues(alpha: 0.35),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Container(
             padding: EdgeInsets.all(AppWidgetTheme.spaceLG),
-            height: 120,
+            height: 140,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // Icon
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
-                    color: action.color.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
+                    color: Colors.white.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     action.icon,
-                    color: action.color,
-                    size: 24,
+                    color: Colors.white,
+                    size: 28,
                   ),
                 ),
 
@@ -286,18 +415,176 @@ class _QuickActionCard extends StatelessWidget {
                       action.label,
                       style: AppTypography.bodyLarge.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1A1A1A),
+                        color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: AppWidgetTheme.spaceXXS),
                     Text(
                       action.subtitle,
                       style: AppTypography.bodySmall.copyWith(
-                        color: Colors.grey.shade600,
+                        color: Colors.white.withValues(alpha: 0.85),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Small floating tile - compact secondary action
+class _FloatingTileSmall extends StatelessWidget {
+  final _QuickAction action;
+
+  const _FloatingTileSmall({required this.action});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          action.onTap();
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: action.color,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: action.color.withValues(alpha: 0.25),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Container(
+            padding: EdgeInsets.all(AppWidgetTheme.spaceMD),
+            height: 66,
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    action.icon,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                SizedBox(width: AppWidgetTheme.spaceSM),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        action.label,
+                        style: AppTypography.bodySmall.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        action.subtitle,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontWeight: FontWeight.w500,
+                          fontSize: 9,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Medium floating tile - secondary action
+class _FloatingTileMedium extends StatelessWidget {
+  final _QuickAction action;
+
+  const _FloatingTileMedium({required this.action});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          action.onTap();
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: action.color,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: action.color.withValues(alpha: 0.25),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Container(
+            padding: EdgeInsets.all(AppWidgetTheme.spaceMD),
+            height: 72,
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    action.icon,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+                SizedBox(width: AppWidgetTheme.spaceMD),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        action.label,
+                        style: AppTypography.bodySmall.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        action.subtitle,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontWeight: FontWeight.w500,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

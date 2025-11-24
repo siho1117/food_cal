@@ -130,15 +130,22 @@ class FoodStorageService {
   Future<bool> deleteFoodEntry(String id, DateTime timestamp) async {
     try {
       final entries = await getFoodEntries(timestamp);
-      
+
       // Remove the entry with matching ID
       final originalLength = entries.length;
       entries.removeWhere((entry) => entry.id == id);
-      
+
       if (entries.length < originalLength) {
-        return await _saveFoodEntries(entries);
+        // Entry was found and removed
+        if (entries.isEmpty) {
+          // If no entries left, clear the storage for this date
+          final dateKey = _getDateKey(timestamp);
+          return await _storage.setObjectList('${AppConstants.foodEntriesKey}_$dateKey', []);
+        } else {
+          return await _saveFoodEntries(entries);
+        }
       }
-      
+
       return false; // Entry not found
     } catch (e) {
       debugPrint('Error deleting food entry: $e');
