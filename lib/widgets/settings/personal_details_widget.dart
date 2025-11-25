@@ -81,6 +81,20 @@ class PersonalDetailsWidget extends StatelessWidget {
                 context,
                 settingsProvider,
                 textColor,
+                icon: Icons.flag,
+                title: 'Starting Weight',
+                value: settingsProvider.formattedStartingWeight,
+                onTap: () => _showStartingWeightDialog(context, settingsProvider),
+              ),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: borderColor.withValues(alpha: AppWidgetTheme.opacityMediumLight),
+              ),
+              _buildDetailItem(
+                context,
+                settingsProvider,
+                textColor,
                 icon: Icons.person,
                 title: 'Gender',
                 value: settingsProvider.userProfile?.gender ?? 'Not set',
@@ -207,6 +221,15 @@ class PersonalDetailsWidget extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => _WeightScrollDialog(
+        settingsProvider: settingsProvider,
+      ),
+    );
+  }
+
+  void _showStartingWeightDialog(BuildContext context, SettingsProvider settingsProvider) {
+    showDialog(
+      context: context,
+      builder: (context) => _StartingWeightScrollDialog(
         settingsProvider: settingsProvider,
       ),
     );
@@ -499,6 +522,307 @@ class _WeightScrollDialogState extends State<_WeightScrollDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          _buildWeightPicker(unit),
+        ],
+      ),
+      actions: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: AppDialogTheme.cancelButtonStyle,
+              child: const Text('Cancel'),
+            ),
+            const SizedBox(width: AppDialogTheme.buttonGap),
+            FilledButton(
+              onPressed: _handleSave,
+              style: AppDialogTheme.primaryButtonStyle,
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUnitToggle() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildUnitButton('kg', _isMetric),
+          _buildUnitButton('lbs', !_isMetric),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUnitButton(String label, bool isSelected) {
+    return GestureDetector(
+      onTap: () {
+        if ((label == 'kg' && !_isMetric) || (label == 'lbs' && _isMetric)) {
+          _toggleUnit();
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppDialogTheme.colorPrimaryDark : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : AppDialogTheme.colorTextSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeightPicker(String unit) {
+    return Container(
+      height: 180,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Whole number picker
+          Expanded(
+            child: CupertinoPicker(
+              scrollController: _weightWholeController,
+              itemExtent: 40,
+              onSelectedItemChanged: (index) {
+                setState(() {});
+              },
+              children: List.generate(
+                _maxDisplayWeight - _minDisplayWeight + 1,
+                (index) => Center(
+                  child: Text(
+                    '${_minDisplayWeight + index}',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Decimal point
+          const Text(
+            '.',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1F2937),
+            ),
+          ),
+          // Decimal picker
+          Expanded(
+            child: CupertinoPicker(
+              scrollController: _weightDecimalController,
+              itemExtent: 40,
+              onSelectedItemChanged: (index) {
+                setState(() {});
+              },
+              children: List.generate(
+                10,
+                (index) => Center(
+                  child: Text(
+                    '$index',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Unit label
+          Padding(
+            padding: const EdgeInsets.only(left: 8, right: 16),
+            child: Text(
+              unit,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF6B7280),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Starting Weight Scroll Picker Dialog
+// ═══════════════════════════════════════════════════════════════
+
+class _StartingWeightScrollDialog extends StatefulWidget {
+  final SettingsProvider settingsProvider;
+
+  const _StartingWeightScrollDialog({
+    required this.settingsProvider,
+  });
+
+  @override
+  State<_StartingWeightScrollDialog> createState() => _StartingWeightScrollDialogState();
+}
+
+class _StartingWeightScrollDialogState extends State<_StartingWeightScrollDialog> {
+  late FixedExtentScrollController _weightWholeController;
+  late FixedExtentScrollController _weightDecimalController;
+  late bool _isMetric;
+
+  static const int minWeight = 30;
+  static const int maxWeight = 300;
+
+  @override
+  void initState() {
+    super.initState();
+    _isMetric = widget.settingsProvider.isMetric;
+    // Use existing starting weight, or fall back to current weight, or default
+    final initialWeight = widget.settingsProvider.userProfile?.startingWeight
+        ?? widget.settingsProvider.currentWeight
+        ?? 70.0;
+    _initializeControllers(initialWeight);
+  }
+
+  void _initializeControllers(double weight) {
+    final displayWeight = _isMetric
+        ? weight
+        : weight * 2.20462;
+
+    final wholeWeight = displayWeight.floor();
+    final decimalWeight = ((displayWeight - wholeWeight) * 10).round();
+
+    final minDisplayWeight = _isMetric
+        ? minWeight
+        : (minWeight * 2.20462).round();
+    final maxDisplayWeight = _isMetric
+        ? maxWeight
+        : (maxWeight * 2.20462).round();
+
+    _weightWholeController = FixedExtentScrollController(
+      initialItem: (wholeWeight - minDisplayWeight).clamp(0, maxDisplayWeight - minDisplayWeight),
+    );
+    _weightDecimalController = FixedExtentScrollController(
+      initialItem: decimalWeight.clamp(0, 9),
+    );
+  }
+
+  void _toggleUnit() {
+    setState(() {
+      // Get current weight in kg
+      final currentWeightKg = _currentWeight;
+
+      // Toggle the unit
+      _isMetric = !_isMetric;
+
+      // Dispose old controllers
+      _weightWholeController.dispose();
+      _weightDecimalController.dispose();
+
+      // Reinitialize with the same weight value
+      _initializeControllers(currentWeightKg);
+    });
+  }
+
+  @override
+  void dispose() {
+    _weightWholeController.dispose();
+    _weightDecimalController.dispose();
+    super.dispose();
+  }
+
+  int get _minDisplayWeight => _isMetric
+      ? minWeight
+      : (minWeight * 2.20462).round();
+  int get _maxDisplayWeight => _isMetric
+      ? maxWeight
+      : (maxWeight * 2.20462).round();
+
+  double get _currentWeight {
+    final whole = _minDisplayWeight + _weightWholeController.selectedItem;
+    final decimal = _weightDecimalController.selectedItem / 10.0;
+    final displayWeight = whole + decimal;
+
+    return _isMetric
+        ? displayWeight
+        : displayWeight / 2.20462;
+  }
+
+  void _handleSave() async {
+    try {
+      await widget.settingsProvider.updateStartingWeight(_currentWeight);
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Starting weight updated'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final unit = _isMetric ? 'kg' : 'lbs';
+
+    return AlertDialog(
+      backgroundColor: AppDialogTheme.backgroundColor,
+      shape: AppDialogTheme.shape,
+      contentPadding: AppDialogTheme.contentPadding,
+      actionsPadding: AppDialogTheme.actionsPadding,
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'Starting Weight',
+            style: AppDialogTheme.titleStyle,
+          ),
+          _buildUnitToggle(),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Set your weight when you started your journey',
+            style: TextStyle(
+              fontSize: 13,
+              color: AppDialogTheme.colorTextSecondary,
+            ),
+          ),
+          const SizedBox(height: 16),
           _buildWeightPicker(unit),
         ],
       ),

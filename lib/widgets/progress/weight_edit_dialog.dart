@@ -1,4 +1,5 @@
 // lib/widgets/progress/weight_edit_dialog.dart
+import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -171,83 +172,86 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
   Widget build(BuildContext context) {
     final unit = widget.isMetric ? 'kg' : 'lbs';
 
-    return AlertDialog(
-      backgroundColor: AppDialogTheme.backgroundColor,
-      shape: AppDialogTheme.shape,
-      contentPadding: AppDialogTheme.contentPadding,
-      actionsPadding: AppDialogTheme.actionsPadding,
-      title: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Title text with more breathing room
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Edit Weight',
-                      style: AppDialogTheme.titleStyle,
-                    ),
-                    // Add date subtitle if entry exists
-                    if (widget.entry != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        DateFormat('dd/MM/yy').format(widget.entry!.timestamp),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppDialogTheme.colorTextSecondary,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16), // Add horizontal spacing before tab switcher
-              // Tab switcher
-              _buildTabSwitcher(),
-            ],
-          ),
-          const SizedBox(height: 16), // Add spacing below title row
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Weight Picker Section
-          _buildSectionLabel(_isWeightMode ? 'Current Weight' : 'Target Weight'),
-          const SizedBox(height: 16), // Increased from 12 to 16
-          _buildWeightPicker(unit),
-          const SizedBox(height: 8), // Add bottom spacing
-        ],
-      ),
-      actions: [
-        // Cancel and Save buttons on the same row
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+      child: AlertDialog(
+        backgroundColor: AppDialogTheme.backgroundColor,
+        shape: AppDialogTheme.shape,
+        contentPadding: AppDialogTheme.contentPadding,
+        actionsPadding: AppDialogTheme.actionsPadding,
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cancel button
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: AppDialogTheme.cancelButtonStyle,
-              child: const Text('Cancel'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Title text with more breathing room
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Edit Weight',
+                        style: AppDialogTheme.titleStyle,
+                      ),
+                      // Add date subtitle if entry exists
+                      if (widget.entry != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat('dd/MM/yy').format(widget.entry!.timestamp),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppDialogTheme.colorTextSecondary,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16), // Add horizontal spacing before tab switcher
+                // Tab switcher
+                _buildTabSwitcher(),
+              ],
             ),
-            const SizedBox(width: AppDialogTheme.buttonGap),
-
-            // Save button
-            FilledButton(
-              onPressed: _handleSave,
-              style: AppDialogTheme.primaryButtonStyle,
-              child: const Text('Save'),
-            ),
+            const SizedBox(height: 16), // Add spacing below title row
           ],
         ),
-      ],
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Weight Picker Section
+            _buildSectionLabel(_isWeightMode ? 'Current Weight' : 'Target Weight'),
+            const SizedBox(height: 16), // Increased from 12 to 16
+            _buildWeightPicker(unit),
+            const SizedBox(height: 8), // Add bottom spacing
+          ],
+        ),
+        actions: [
+          // Cancel and Save buttons on the same row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              // Cancel button
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: AppDialogTheme.cancelButtonStyle,
+                child: const Text('Cancel'),
+              ),
+              const SizedBox(width: AppDialogTheme.buttonGap),
+
+              // Save button
+              FilledButton(
+                onPressed: _handleSave,
+                style: AppDialogTheme.primaryButtonStyle,
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

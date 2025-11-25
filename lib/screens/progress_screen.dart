@@ -97,14 +97,11 @@ class _ProgressScreenState extends State<ProgressScreen> {
                         
                         const SizedBox(height: 20),
 
-                        // Weight Widget (full width, square aspect ratio)
-                        AspectRatio(
-                          aspectRatio: 1.0,
-                          child: CombinedWeightWidget(
-                            currentWeight: progressData.currentWeight,
-                            isMetric: progressData.isMetric,
-                            onWeightEntered: progressData.addWeightEntry,
-                          ),
+                        // Weight Widget (full width)
+                        CombinedWeightWidget(
+                          currentWeight: progressData.currentWeight,
+                          isMetric: progressData.isMetric,
+                          onWeightEntered: progressData.addWeightEntry,
                         ),
 
                         const SizedBox(height: 20),

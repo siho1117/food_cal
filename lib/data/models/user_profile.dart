@@ -12,6 +12,7 @@ class UserProfile {
   final double? activityLevel; // 1.2 (sedentary) - 1.9 (very active)
   final DateTime? birthDate; // New field for date of birth
   final double? monthlyWeightGoal; // New field for monthly weight change goal in kg
+  final double? startingWeight; // Starting weight for progress tracking in kg
 
   UserProfile({
     required this.id,
@@ -24,6 +25,7 @@ class UserProfile {
     this.activityLevel,
     this.birthDate,
     this.monthlyWeightGoal,
+    this.startingWeight,
   });
 
   // Copy constructor for updating user profile
@@ -38,6 +40,7 @@ class UserProfile {
     double? activityLevel,
     DateTime? birthDate,
     double? monthlyWeightGoal,
+    double? startingWeight,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -50,6 +53,7 @@ class UserProfile {
       activityLevel: activityLevel ?? this.activityLevel,
       birthDate: birthDate ?? this.birthDate,
       monthlyWeightGoal: monthlyWeightGoal ?? this.monthlyWeightGoal,
+      startingWeight: startingWeight ?? this.startingWeight,
     );
   }
 
@@ -81,6 +85,7 @@ class UserProfile {
       'activityLevel': activityLevel,
       'birthDate': birthDate?.millisecondsSinceEpoch,
       'monthlyWeightGoal': monthlyWeightGoal,
+      'startingWeight': startingWeight,
     };
   }
 
@@ -111,6 +116,7 @@ class UserProfile {
           ? DateTime.fromMillisecondsSinceEpoch(map['birthDate'])
           : null,
       monthlyWeightGoal: map['monthlyWeightGoal'],
+      startingWeight: map['startingWeight'],
     );
 
     return profile;
@@ -127,6 +133,7 @@ class UserProfile {
     debugPrint("Gender: ${gender ?? 'Not set'}");
     debugPrint("Is Metric: $isMetric");
     debugPrint("Goal Weight: ${goalWeight != null ? '$goalWeight kg' : 'Not set'}");
+    debugPrint("Starting Weight: ${startingWeight != null ? '$startingWeight kg' : 'Not set'}");
     debugPrint("Monthly Weight Goal: ${monthlyWeightGoal != null ? '$monthlyWeightGoal kg' : 'Not set'}");
     debugPrint("Activity Level: ${activityLevel ?? 'Not set'}");
     debugPrint("Birth Date: ${birthDate != null ? birthDate.toString() : 'Not set'}");

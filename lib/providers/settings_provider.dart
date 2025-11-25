@@ -44,6 +44,10 @@ class SettingsProvider extends ChangeNotifier {
       ? FormatHelpers.formatMonthlyWeightGoal(_userProfile!.monthlyWeightGoal)
       : 'Not set';
 
+  String get formattedStartingWeight => _userProfile?.startingWeight != null
+      ? FormatHelpers.formatWeight(_userProfile!.startingWeight)
+      : 'Not set';
+
   String get activityLevelText => HealthMetrics.getActivityLevelText(
     _userProfile?.activityLevel,
   );
@@ -195,6 +199,16 @@ class SettingsProvider extends ChangeNotifier {
       final updatedProfile = _userProfile!.copyWith(
         monthlyWeightGoal: monthlyGoal,
       );
+      await _updateProfile(updatedProfile);
+    }
+  }
+
+  /// Update starting weight for progress tracking
+  Future<void> updateStartingWeight(double weight) async {
+    await _createUserProfileIfNeeded();
+
+    if (_userProfile != null) {
+      final updatedProfile = _userProfile!.copyWith(startingWeight: weight);
       await _updateProfile(updatedProfile);
     }
   }

@@ -150,8 +150,9 @@ class ProgressData extends ChangeNotifier {
         }
 
         // Calculate progress tracking metrics
-        // Get starting weight from history
-        final startingWeight = HealthMetrics.getStartingWeight(weightHistory);
+        // Use starting weight from UserProfile, or fall back to oldest weight entry
+        final startingWeight = userProfile.startingWeight
+            ?? HealthMetrics.getStartingWeight(weightHistory);
 
         // Calculate starting BMI
         final startingBMI = startingWeight != null

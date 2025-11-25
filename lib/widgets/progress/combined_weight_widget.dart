@@ -1,13 +1,12 @@
 // lib/widgets/progress/combined_weight_widget.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:math' as math;
-import '../../config/design_system/theme_design.dart';
+import '../../config/design_system/widget_theme.dart';
 import '../../providers/progress_data.dart';
 import '../../providers/theme_provider.dart';
 import 'weight_edit_dialog.dart';
 
-class CombinedWeightWidget extends StatefulWidget {
+class CombinedWeightWidget extends StatelessWidget {
   final double? currentWeight;
   final bool isMetric;
   final Function(double, bool) onWeightEntered;
@@ -19,267 +18,79 @@ class CombinedWeightWidget extends StatefulWidget {
     required this.onWeightEntered,
   });
 
-  @override
-  State<CombinedWeightWidget> createState() => _CombinedWeightWidgetState();
-}
-
-class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
-    with TickerProviderStateMixin {
-  late AnimationController _progressController;
-  late AnimationController _fadeController;
-  late Animation<double> _progressAnimation;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    
-    _progressController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
-    
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    
-    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _progressController,
-        curve: Curves.easeOutCubic,
-      ),
-    );
-    
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _fadeController,
-        curve: Curves.easeOut,
-      ),
-    );
-    
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _fadeController.forward();
-        Future.delayed(const Duration(milliseconds: 200), () {
-          if (mounted) {
-            _progressController.forward();
-          }
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _progressController.dispose();
-    _fadeController.dispose();
-    super.dispose();
-  }
-
-  double _calculateProgress(double? current, double? target) {
-    if (current == null || target == null || target <= 0) return 0.0;
-    
-    final difference = (current - target).abs();
-    final maxWeight = math.max(current, target);
-    final progress = (1 - difference / maxWeight) * 100;
-    
-    return progress.clamp(0.0, 100.0);
-  }
-
   String _formatWeight(double? weight) {
-    if (weight == null) {
-      return widget.isMetric ? '-- kg' : '-- lbs';
-    }
-    
-    final displayWeight = widget.isMetric ? weight : weight * 2.20462;
-    final unit = widget.isMetric ? 'kg' : 'lbs';
-    
-    return '${displayWeight.toStringAsFixed(1)} $unit';
+    if (weight == null) return '--';
+    final displayWeight = isMetric ? weight : weight * 2.20462;
+    return displayWeight.toStringAsFixed(1);
   }
 
-  String _getRemainingText(double? current, double? target, double progressPercentage) {
-    if (current == null || target == null) return 'Set target';
-    
-    final difference = (current - target).abs();
-    final unit = widget.isMetric ? 'kg' : 'lbs';
-    final displayDifference = widget.isMetric ? difference : difference * 2.20462;
-    
-    if (progressPercentage >= 99.5) {
-      return 'Goal reached!';
-    } else if (difference <= 0.1) {
-      return 'At target!';
-    } else {
-      return '${displayDifference.toStringAsFixed(1)} $unit left';
-    }
+  String _getUnit() => isMetric ? 'kg' : 'lbs';
+
+  double _calculateProgress(double? start, double? current, double? target) {
+    if (start == null || current == null || target == null) return 0.0;
+    if ((start - target).abs() < 0.01) return 1.0;
+
+    final progress = (start - current) / (start - target);
+    return progress.clamp(0.0, 1.0);
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer2<ProgressData, ThemeProvider>(
       builder: (context, progressData, themeProvider, child) {
-        final currentWeight = widget.currentWeight;
-        // ✅ UPDATED: Read target weight from ProgressData provider
+        final startingWeight = progressData.startingWeight;
         final targetWeight = progressData.targetWeight;
-        final progressPercentage = _calculateProgress(currentWeight, targetWeight);
-        final remainingText = _getRemainingText(currentWeight, targetWeight, progressPercentage);
-        
-        // Get theme-adaptive colors
-        final borderColor = AppColors.getBorderColorForTheme(
+        final progress = _calculateProgress(startingWeight, currentWeight, targetWeight);
+
+        final borderColor = AppWidgetTheme.getBorderColor(
           themeProvider.selectedGradient,
-          AppEffects.borderOpacity,
+          AppWidgetTheme.cardBorderOpacity,
         );
-        final textColor = AppColors.getTextColorForTheme(
+        final textColor = AppWidgetTheme.getTextColor(
           themeProvider.selectedGradient,
         );
-        
-        return FadeTransition(
-          opacity: _fadeAnimation,
-          child: GestureDetector(
-            onTap: _showWeightDialog,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: borderColor,
-                  width: 4,
-                ),
+
+        return GestureDetector(
+          onTap: () => _showWeightDialog(context, progressData),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+              border: Border.all(
+                color: borderColor,
+                width: AppWidgetTheme.cardBorderWidth,
               ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title with edit button
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Weight',
-                          style: TextStyle(
-                            fontSize: 17,
-                            color: textColor,
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.2,
-                            shadows: AppEffects.textShadows,
-                          ),
-                        ),
-                        // Edit button
-                        GestureDetector(
-                          onTap: _showWeightDialog,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: textColor.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.edit_outlined,
-                              size: 16,
-                              color: textColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 18),
-                    
-                    // Weight Display
-                    Center(
-                      child: Column(
-                        children: [
-                          Text(
-                            currentWeight?.toStringAsFixed(1) ?? '--',
-                            style: TextStyle(
-                              fontSize: 52,
-                              fontWeight: FontWeight.w600,
-                              color: textColor,
-                              height: 1.0,
-                              shadows: AppEffects.textShadows,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          if (targetWeight != null)
-                            Text(
-                              '/ ${_formatWeight(targetWeight)}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: textColor.withValues(alpha: 0.7),
-                                shadows: AppEffects.textShadows,
-                              ),
-                            )
-                          else
-                            Text(
-                              widget.isMetric ? 'kg' : 'lbs',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: textColor.withValues(alpha: 0.7),
-                                shadows: AppEffects.textShadows,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // Progress Bar
-                    AnimatedBuilder(
-                      animation: _progressAnimation,
-                      builder: (context, child) {
-                        return Container(
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: textColor.withValues(alpha: 0.25),
-                            borderRadius: BorderRadius.circular(2.5),
-                          ),
-                          child: FractionallySizedBox(
-                            alignment: Alignment.centerLeft,
-                            widthFactor: (_progressAnimation.value * progressPercentage / 100).clamp(0.0, 1.0),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: textColor.withValues(alpha: 0.9),
-                                borderRadius: BorderRadius.circular(2.5),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    
-                    const SizedBox(height: 12),
-                    
-                    // Progress Info
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${progressPercentage.toInt()}%',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: textColor.withValues(alpha: 0.8),
-                            fontWeight: FontWeight.w500,
-                            shadows: AppEffects.textShadows,
-                          ),
-                        ),
-                        Text(
-                          remainingText,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: textColor.withValues(alpha: 0.8),
-                            fontWeight: FontWeight.w500,
-                            shadows: AppEffects.textShadows,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+            ),
+            padding: AppWidgetTheme.cardPadding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                _buildHeader(context, progressData, textColor),
+
+                SizedBox(height: AppWidgetTheme.spaceLG),
+
+                // Visual Journey Timeline
+                _buildJourneyTimeline(
+                  context,
+                  startingWeight,
+                  currentWeight,
+                  targetWeight,
+                  progress,
+                  textColor,
                 ),
-              ),
+
+                SizedBox(height: AppWidgetTheme.spaceLG),
+
+                // Progress Stats Card
+                _buildProgressStats(
+                  startingWeight,
+                  currentWeight,
+                  targetWeight,
+                  progress,
+                  textColor,
+                ),
+              ],
             ),
           ),
         );
@@ -287,17 +98,261 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
     );
   }
 
-  void _showWeightDialog() {
-    final progressData = Provider.of<ProgressData>(context, listen: false);
+  Widget _buildHeader(BuildContext context, ProgressData progressData, Color textColor) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.monitor_weight_outlined,
+              size: AppWidgetTheme.iconSizeSmall,
+              color: textColor,
+            ),
+            SizedBox(width: AppWidgetTheme.spaceMS),
+            Text(
+              'Weight',
+              style: TextStyle(
+                fontSize: AppWidgetTheme.fontSizeLG,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+                color: textColor,
+                shadows: AppWidgetTheme.textShadows,
+              ),
+            ),
+          ],
+        ),
+        GestureDetector(
+          onTap: () => _showWeightDialog(context, progressData),
+          child: Container(
+            padding: EdgeInsets.all(AppWidgetTheme.spaceXS),
+            decoration: BoxDecoration(
+              color: textColor.withValues(alpha: AppWidgetTheme.opacityLight),
+              borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXS),
+            ),
+            child: Icon(
+              Icons.edit_outlined,
+              size: AppWidgetTheme.iconSizeSmall,
+              color: textColor,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
+  Widget _buildJourneyTimeline(
+    BuildContext context,
+    double? start,
+    double? current,
+    double? target,
+    double progress,
+    Color textColor,
+  ) {
+    return Column(
+      children: [
+        // Labels row - all on same level
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Start',
+              style: TextStyle(
+                fontSize: AppWidgetTheme.fontSizeXS,
+                fontWeight: FontWeight.w500,
+                color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+              ),
+            ),
+            Text(
+              'Current',
+              style: TextStyle(
+                fontSize: AppWidgetTheme.fontSizeXS,
+                fontWeight: FontWeight.w500,
+                color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+              ),
+            ),
+            Text(
+              'Goal',
+              style: TextStyle(
+                fontSize: AppWidgetTheme.fontSizeXS,
+                fontWeight: FontWeight.w500,
+                color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+              ),
+            ),
+          ],
+        ),
+
+        SizedBox(height: AppWidgetTheme.spaceXS),
+
+        // Numbers row - aligned to current weight center
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Start weight
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _formatWeight(start),
+                  style: TextStyle(
+                    fontSize: AppWidgetTheme.fontSizeML,
+                    fontWeight: FontWeight.w600,
+                    color: textColor.withValues(alpha: AppWidgetTheme.opacityHighest),
+                  ),
+                ),
+              ],
+            ),
+            // Current weight (prominent)
+            Text(
+              _formatWeight(current),
+              style: TextStyle(
+                fontSize: AppWidgetTheme.fontSizeXXL,
+                fontWeight: FontWeight.w700,
+                color: textColor,
+              ),
+            ),
+            // Goal weight
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  _formatWeight(target),
+                  style: TextStyle(
+                    fontSize: AppWidgetTheme.fontSizeML,
+                    fontWeight: FontWeight.w600,
+                    color: textColor.withValues(alpha: AppWidgetTheme.opacityHighest),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+
+        SizedBox(height: AppWidgetTheme.spaceMD),
+
+        // Progress bar with markers
+        _buildProgressBar(context, progress, textColor),
+      ],
+    );
+  }
+
+  Widget _buildProgressBar(BuildContext context, double progress, Color textColor) {
+    return Container(
+      height: 12,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(6),
+        gradient: LinearGradient(
+          colors: [
+            textColor,
+            textColor.withValues(alpha: AppWidgetTheme.opacityMedium),
+          ],
+          stops: [progress, progress],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProgressStats(
+    double? start,
+    double? current,
+    double? target,
+    double progress,
+    Color textColor,
+  ) {
+    // Calculate stats
+    double? lost;
+    double? remaining;
+
+    if (start != null && current != null) {
+      lost = (start - current).abs();
+    }
+    if (current != null && target != null) {
+      remaining = (current - target).abs();
+    }
+
+    final progressPercent = (progress * 100).round();
+
+    return Container(
+      padding: EdgeInsets.all(AppWidgetTheme.spaceMD),
+      decoration: BoxDecoration(
+        color: textColor.withValues(alpha: AppWidgetTheme.opacityLight),
+        borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusSM),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          // Progress percentage
+          _buildStatItem(
+            label: 'Progress',
+            value: '$progressPercent%',
+            textColor: textColor,
+          ),
+          // Divider
+          Container(
+            width: 1,
+            height: 36,
+            color: textColor.withValues(alpha: AppWidgetTheme.opacityMediumHigh),
+          ),
+          // Lost/Gained
+          _buildStatItem(
+            label: start != null && current != null && start > current ? 'Lost' : 'Gained',
+            value: lost != null ? '${_formatWeight(lost)} ${_getUnit()}' : '--',
+            textColor: textColor,
+          ),
+          // Divider
+          Container(
+            width: 1,
+            height: 36,
+            color: textColor.withValues(alpha: AppWidgetTheme.opacityMediumHigh),
+          ),
+          // Remaining
+          _buildStatItem(
+            label: 'To Go',
+            value: remaining != null ? '${_formatWeight(remaining)} ${_getUnit()}' : '--',
+            textColor: textColor,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required String label,
+    required String value,
+    required Color textColor,
+  }) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: AppWidgetTheme.fontSizeMD,
+            fontWeight: FontWeight.w700,
+            color: textColor,
+          ),
+        ),
+        SizedBox(height: AppWidgetTheme.spaceXXS),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: AppWidgetTheme.fontSizeXS,
+            fontWeight: FontWeight.w500,
+            color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showWeightDialog(BuildContext context, ProgressData progressData) {
     showWeightEditDialog(
       context: context,
-      initialWeight: widget.currentWeight ?? 70.0,
-      isMetric: widget.isMetric,
+      initialWeight: currentWeight ?? 70.0,
+      isMetric: isMetric,
       targetWeight: progressData.targetWeight,
       onAddWeight: (weight, isMetric) async {
-        // Add new weight entry
-        widget.onWeightEntered(weight, isMetric);
+        onWeightEntered(weight, isMetric);
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -311,7 +366,6 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget>
         }
       },
       onSaveTarget: (targetWeight) async {
-        // Save target weight
         await progressData.updateTargetWeight(targetWeight);
 
         if (context.mounted) {
