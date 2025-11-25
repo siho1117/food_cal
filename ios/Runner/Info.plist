@@ -2,28 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Photo Library permissions for export functionality -->
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>FOOD LLM needs access to your photo library to save nutrition summaries and select food photos.</string>
-	
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>FOOD LLM saves nutrition summaries and analysis results to your photo library.</string>
-	
-	<!-- Camera permissions -->
-	<key>NSCameraUsageDescription</key>
-	<string>FOOD LLM needs camera access to take photos of food for AI-powered nutrition analysis.</string>
-	
-	<!-- Local Network Usage - Required for iOS 14+ (fixes Xcode warning) -->
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>FOOD LLM may access local network for development and debugging purposes.</string>
-	
-	<!-- Bonjour Services - Required for iOS 14+ (fixes Xcode warning) -->
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_dartobservatory._tcp</string>
-	</array>
-	
-	<!-- App configuration -->
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -48,6 +26,18 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_dartobservatory._tcp</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>FOOD LLM needs camera access to take photos of food for AI-powered nutrition analysis.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>FOOD LLM may access local network for development and debugging purposes.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>FOOD LLM saves nutrition summaries and analysis results to your photo library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>FOOD LLM needs access to your photo library to save nutrition summaries and select food photos.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -58,13 +48,11 @@
 	<array>
 		<string>armv7</string>
 	</array>
-	<!-- ✅ FIXED: Portrait orientation only to match main.dart -->
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
-	<!-- ✅ FIXED: Portrait orientation only for iPad too -->
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

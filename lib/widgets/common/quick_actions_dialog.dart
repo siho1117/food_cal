@@ -9,6 +9,7 @@ import '../../config/design_system/accent_colors.dart';
 import '../../providers/camera_provider.dart';
 import '../../providers/exercise_provider.dart';
 import '../../providers/progress_data.dart';
+import '../../providers/settings_provider.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/navigation_provider.dart';
 import '../../data/models/food_item.dart';
@@ -234,6 +235,7 @@ class _QuickActionsDialogContent extends StatelessWidget {
 
     // Show weight edit dialog
     final progressData = Provider.of<ProgressData>(context, listen: false);
+    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
     final navigationProvider = Provider.of<NavigationProvider>(context, listen: false);
 
     showWeightEditDialog(
@@ -241,6 +243,7 @@ class _QuickActionsDialogContent extends StatelessWidget {
       initialWeight: progressData.currentWeight ?? 70.0,
       isMetric: progressData.isMetric,
       targetWeight: progressData.targetWeight,
+      startingWeight: progressData.startingWeight,
       onAddWeight: (weight, isMetric) async {
         await progressData.addWeightEntry(weight, isMetric);
         // Navigate to Progress page after weight is saved
@@ -264,6 +267,25 @@ class _QuickActionsDialogContent extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Target weight updated successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
+      onSaveStartingWeight: (startingWeight) async {
+        await settingsProvider.updateStartingWeight(startingWeight);
+
+        // Reload progress data to refresh the UI with new starting weight
+        await progressData.refreshData();
+
+        // Navigate to Progress page after starting weight is saved
+        navigationProvider.navigateToProgress();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Starting weight updated successfully'),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,

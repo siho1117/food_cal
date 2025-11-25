@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../providers/progress_data.dart';
+import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import 'weight_edit_dialog.dart';
 
@@ -346,11 +347,14 @@ class CombinedWeightWidget extends StatelessWidget {
   }
 
   void _showWeightDialog(BuildContext context, ProgressData progressData) {
+    final settingsProvider = context.read<SettingsProvider>();
+
     showWeightEditDialog(
       context: context,
       initialWeight: currentWeight ?? 70.0,
       isMetric: isMetric,
       targetWeight: progressData.targetWeight,
+      startingWeight: progressData.startingWeight,
       onAddWeight: (weight, isMetric) async {
         onWeightEntered(weight, isMetric);
 
@@ -372,6 +376,23 @@ class CombinedWeightWidget extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Target weight updated successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
+      onSaveStartingWeight: (startingWeight) async {
+        await settingsProvider.updateStartingWeight(startingWeight);
+
+        // Reload progress data to refresh the UI with new starting weight
+        await progressData.refreshData();
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Starting weight updated successfully'),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,

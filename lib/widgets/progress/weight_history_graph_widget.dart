@@ -7,6 +7,7 @@ import '../../config/design_system/widget_theme.dart';
 import '../../data/models/weight_data.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/progress_data.dart';
+import '../../providers/settings_provider.dart';
 import 'weight_edit_dialog.dart';
 
 enum TimeRange { sevenDays, twentyEightDays, threeMonths, sixMonths, oneYear }
@@ -528,11 +529,14 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
   }
 
   void _showEditDialog(BuildContext context, WeightData entry, ProgressData progressData) {
+    final settingsProvider = context.read<SettingsProvider>();
+
     showWeightEditDialog(
       context: context,
       entry: entry,
       isMetric: widget.isMetric,
       targetWeight: progressData.targetWeight,
+      startingWeight: progressData.startingWeight,
       onSave: (entryId, weight, timestamp, note) async {
         await progressData.updateWeightEntry(entryId, weight, timestamp, note);
 
@@ -561,15 +565,35 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
           );
         }
       },
+      onSaveStartingWeight: (startingWeight) async {
+        await settingsProvider.updateStartingWeight(startingWeight);
+
+        // Reload progress data to refresh the UI with new starting weight
+        await progressData.refreshData();
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Starting weight updated successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
     );
   }
 
   void _showAddDialog(BuildContext context, DateTime timestamp, double carriedWeight, ProgressData progressData) {
+    final settingsProvider = context.read<SettingsProvider>();
+
     showWeightEditDialog(
       context: context,
       initialWeight: carriedWeight,
       isMetric: widget.isMetric,
       targetWeight: progressData.targetWeight,
+      startingWeight: progressData.startingWeight,
       onAddWeight: (weight, isMetric) async {
         // Add new entry with the specific timestamp
         await progressData.addWeightEntryWithTimestamp(weight, timestamp, isMetric);
@@ -592,6 +616,23 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Target weight updated successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
+      onSaveStartingWeight: (startingWeight) async {
+        await settingsProvider.updateStartingWeight(startingWeight);
+
+        // Reload progress data to refresh the UI with new starting weight
+        await progressData.refreshData();
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Starting weight updated successfully'),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,

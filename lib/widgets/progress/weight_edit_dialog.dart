@@ -8,18 +8,21 @@ import '../../data/models/weight_data.dart';
 
 /// Shows a dialog to edit a weight entry with scrolling wheel pickers
 ///
-/// Can be used in two modes:
+/// Can be used in multiple modes:
 /// 1. Edit mode: Pass [entry] to edit an existing weight entry
 /// 2. Add mode: Pass [initialWeight] to add a new weight entry
+/// 3. Start/Current/Target tabs for managing all weight values
 Future<void> showWeightEditDialog({
   required BuildContext context,
   WeightData? entry,
   double? initialWeight,
   required bool isMetric,
   required double? targetWeight,
+  double? startingWeight,
   Function(String entryId, double weight, DateTime timestamp, String? note)? onSave,
   Function(double weight, bool isMetric)? onAddWeight,
   required Function(double targetWeight) onSaveTarget,
+  Function(double startingWeight)? onSaveStartingWeight,
 }) async {
   // Validate: must have either entry (edit mode) or initialWeight (add mode)
   assert(
@@ -34,9 +37,11 @@ Future<void> showWeightEditDialog({
       initialWeight: initialWeight,
       isMetric: isMetric,
       targetWeight: targetWeight,
+      startingWeight: startingWeight,
       onSave: onSave,
       onAddWeight: onAddWeight,
       onSaveTarget: onSaveTarget,
+      onSaveStartingWeight: onSaveStartingWeight,
     ),
   );
 }
@@ -46,84 +51,198 @@ class _WeightEditDialog extends StatefulWidget {
   final double? initialWeight; // For add mode
   final bool isMetric;
   final double? targetWeight;
+  final double? startingWeight;
   final Function(String entryId, double weight, DateTime timestamp, String? note)? onSave;
   final Function(double weight, bool isMetric)? onAddWeight;
   final Function(double targetWeight) onSaveTarget;
+  final Function(double startingWeight)? onSaveStartingWeight;
 
   const _WeightEditDialog({
     this.entry,
     this.initialWeight,
     required this.isMetric,
     required this.targetWeight,
+    this.startingWeight,
     this.onSave,
     this.onAddWeight,
     required this.onSaveTarget,
+    this.onSaveStartingWeight,
   });
 
   @override
   State<_WeightEditDialog> createState() => _WeightEditDialogState();
 }
 
+enum WeightMode { start, current, target }
+
+/// Represents the state of a single weight mode (start/current/target)
+class _WeightModeState {
+  final double initialValue; // Original value from database
+  double currentValue; // Current picker value
+  bool isDirty; // Has user actually scrolled the picker?
+
+  _WeightModeState({
+    required this.initialValue,
+  })  : currentValue = initialValue,
+        isDirty = false;
+
+  /// Mark this mode as modified by user interaction
+  void markDirty() {
+    isDirty = true;
+  }
+
+  /// Update the current picker value
+  void updateValue(double value) {
+    currentValue = value;
+  }
+}
+
 class _WeightEditDialogState extends State<_WeightEditDialog> {
   late FixedExtentScrollController _weightWholeController;
   late FixedExtentScrollController _weightDecimalController;
 
-  // Tab state: true = Weight mode, false = Target mode
-  bool _isWeightMode = true;
+  // Current active tab
+  WeightMode _currentMode = WeightMode.current;
 
-  // Weight range configuration
-  static const int minWeight = 30; // kg or converted to lbs
-  static const int maxWeight = 300; // kg or converted to lbs
+  // Clean state management: one state object per mode
+  late _WeightModeState _startState;
+  late _WeightModeState _currentState;
+  late _WeightModeState _targetState;
+
+  // Weight range configuration (in kg)
+  static const int minWeight = 30;
+  static const int maxWeight = 300;
+
+  // Unit conversion constants
+  static const double kgToLbs = 2.20462;
+  static const double lbsToKg = 0.453592;
+  static const int decimalPlaces = 1; // One decimal place (0.1 kg or 0.1 lbs)
 
   @override
   void initState() {
     super.initState();
 
-    // Initialize controllers with appropriate weight
-    final initialWeightValue = widget.entry?.weight ?? widget.initialWeight ?? 70.0;
-    _initializeControllers(initialWeightValue);
+    // Initialize each mode state with its database value
+    final fallbackWeight = widget.entry?.weight ?? widget.initialWeight ?? 70.0;
+
+    _startState = _WeightModeState(
+      initialValue: widget.startingWeight ?? fallbackWeight,
+    );
+
+    _currentState = _WeightModeState(
+      initialValue: widget.entry?.weight ?? widget.initialWeight ?? 70.0,
+    );
+
+    _targetState = _WeightModeState(
+      initialValue: widget.targetWeight ?? fallbackWeight,
+    );
+
+    // Initialize controllers with current mode's initial value
+    _initializeControllers(_getCurrentModeState().currentValue);
   }
 
-  void _initializeControllers(double weight) {
-    // Convert weight to display unit
-    final displayWeight = widget.isMetric
-        ? weight
-        : weight * 2.20462;
+  /// Get the state object for the current mode
+  _WeightModeState _getCurrentModeState() {
+    switch (_currentMode) {
+      case WeightMode.start:
+        return _startState;
+      case WeightMode.current:
+        return _currentState;
+      case WeightMode.target:
+        return _targetState;
+    }
+  }
 
-    // Initialize weight controllers
+  /// Convert weight from kg to display unit (kg or lbs based on isMetric)
+  double _toDisplayWeight(double weightInKg) {
+    return widget.isMetric ? weightInKg : weightInKg * kgToLbs;
+  }
+
+  /// Convert weight from display unit to kg
+  double _toKg(double displayWeight) {
+    return widget.isMetric ? displayWeight : displayWeight * lbsToKg;
+  }
+
+  /// Get minimum weight in current display unit
+  int get _minDisplayWeight => widget.isMetric ? minWeight : (minWeight * kgToLbs).round();
+
+  /// Get maximum weight in current display unit
+  int get _maxDisplayWeight => widget.isMetric ? maxWeight : (maxWeight * kgToLbs).round();
+
+  void _initializeControllers(double weightInKg) {
+    final displayWeight = _toDisplayWeight(weightInKg);
+
+    // Split into whole and decimal parts
     final wholeWeight = displayWeight.floor();
     final decimalWeight = ((displayWeight - wholeWeight) * 10).round();
 
-    final minDisplayWeight = widget.isMetric ? minWeight : (minWeight * 2.20462).round();
-    final maxDisplayWeight = widget.isMetric ? maxWeight : (maxWeight * 2.20462).round();
-
     _weightWholeController = FixedExtentScrollController(
-      initialItem: (wholeWeight - minDisplayWeight).clamp(0, maxDisplayWeight - minDisplayWeight),
+      initialItem: (wholeWeight - _minDisplayWeight).clamp(0, _maxDisplayWeight - _minDisplayWeight),
     );
     _weightDecimalController = FixedExtentScrollController(
       initialItem: decimalWeight.clamp(0, 9),
     );
   }
 
-  void _switchMode() {
+  void _switchMode(WeightMode newMode) {
+    if (_currentMode == newMode) return;
+
+    // Save current picker value to current mode's state
+    final currentModeState = _getCurrentModeState();
+    currentModeState.updateValue(_getPickerWeight());
+
+    // Switch to new mode
     setState(() {
-      _isWeightMode = !_isWeightMode;
-
-      // Dispose old controllers
-      _weightWholeController.dispose();
-      _weightDecimalController.dispose();
-
-      // Reinitialize with appropriate weight
-      if (_isWeightMode) {
-        // Switch to Weight mode - use entry weight or initial weight
-        final initialWeightValue = widget.entry?.weight ?? widget.initialWeight ?? 70.0;
-        _initializeControllers(initialWeightValue);
-      } else {
-        // Switch to Target mode - use target weight or fall back to current weight
-        final fallbackWeight = widget.entry?.weight ?? widget.initialWeight ?? 70.0;
-        _initializeControllers(widget.targetWeight ?? fallbackWeight);
-      }
+      _currentMode = newMode;
     });
+
+    // Get the new mode's state
+    final newModeState = _getCurrentModeState();
+
+    // Animate picker to new mode's current value
+    _animatePickerToWeight(newModeState.currentValue);
+  }
+
+  /// Get the current weight from the picker controllers (returns weight in kg)
+  double _getPickerWeight() {
+    final whole = _minDisplayWeight + _weightWholeController.selectedItem;
+    final decimal = _weightDecimalController.selectedItem / 10.0;
+    final displayWeight = whole + decimal;
+
+    // Convert display weight back to kg
+    return _toKg(displayWeight);
+  }
+
+  /// Animate picker to a specific weight value (expects weight in kg)
+  void _animatePickerToWeight(double weightInKg) {
+    final displayWeight = _toDisplayWeight(weightInKg);
+
+    // Calculate new indices
+    final wholeWeight = displayWeight.floor();
+    final decimalWeight = ((displayWeight - wholeWeight) * 10).round();
+
+    final newWholeIndex = (wholeWeight - _minDisplayWeight).clamp(0, _maxDisplayWeight - _minDisplayWeight);
+    final newDecimalIndex = decimalWeight.clamp(0, 9);
+
+    // Animate to new positions
+    _weightWholeController.animateToItem(
+      newWholeIndex,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+    _weightDecimalController.animateToItem(
+      newDecimalIndex,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  /// Called when user scrolls the picker - marks current mode as modified
+  void _onPickerChanged() {
+    final currentModeState = _getCurrentModeState();
+    currentModeState.markDirty();
+    currentModeState.updateValue(_getPickerWeight());
+    setState(() {}); // Update UI
   }
 
   @override
@@ -133,39 +252,52 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
     super.dispose();
   }
 
-  int get _minDisplayWeight => widget.isMetric ? minWeight : (minWeight * 2.20462).round();
-  int get _maxDisplayWeight => widget.isMetric ? maxWeight : (maxWeight * 2.20462).round();
+  Future<void> _handleSave() async {
+    try {
+      // Update current mode's state one final time
+      final currentModeState = _getCurrentModeState();
+      currentModeState.updateValue(_getPickerWeight());
 
-  double get _currentWeight {
-    final whole = _minDisplayWeight + _weightWholeController.selectedItem;
-    final decimal = _weightDecimalController.selectedItem / 10.0;
-    final displayWeight = whole + decimal;
-
-    // Convert back to kg if using imperial
-    return widget.isMetric ? displayWeight : displayWeight / 2.20462;
-  }
-
-  void _handleSave() {
-    if (_isWeightMode) {
-      // Editing an existing entry
-      if (widget.entry != null && widget.onSave != null) {
-        widget.onSave!(
-          widget.entry!.id,
-          _currentWeight,
-          widget.entry!.timestamp,
-          widget.entry!.note,
-        );
+      // Save only modes that were actually modified (isDirty = true)
+      if (_startState.isDirty && widget.onSaveStartingWeight != null) {
+        await widget.onSaveStartingWeight!(_startState.currentValue);
       }
-      // Adding a new weight entry
-      else if (widget.onAddWeight != null) {
-        widget.onAddWeight!(_currentWeight, widget.isMetric);
+
+      if (_currentState.isDirty) {
+        // Editing an existing entry
+        if (widget.entry != null && widget.onSave != null) {
+          await widget.onSave!(
+            widget.entry!.id,
+            _currentState.currentValue,
+            widget.entry!.timestamp,
+            widget.entry!.note,
+          );
+        }
+        // Adding a new weight entry
+        else if (widget.onAddWeight != null) {
+          await widget.onAddWeight!(_currentState.currentValue, widget.isMetric);
+        }
       }
-    } else {
-      // Save target weight
-      widget.onSaveTarget(_currentWeight);
+
+      if (_targetState.isDirty) {
+        await widget.onSaveTarget(_targetState.currentValue);
+      }
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (e) {
+      // If save fails, show error to user and keep dialog open
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
-
-    Navigator.of(context).pop();
   }
 
   @override
@@ -223,7 +355,7 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Weight Picker Section
-            _buildSectionLabel(_isWeightMode ? 'Current Weight' : 'Target Weight'),
+            _buildSectionLabel(_getLabelForMode()),
             const SizedBox(height: 16), // Increased from 12 to 16
             _buildWeightPicker(unit),
             const SizedBox(height: 8), // Add bottom spacing
@@ -255,6 +387,17 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
     );
   }
 
+  String _getLabelForMode() {
+    switch (_currentMode) {
+      case WeightMode.start:
+        return 'Starting Weight';
+      case WeightMode.current:
+        return 'Current Weight';
+      case WeightMode.target:
+        return 'Target Weight';
+    }
+  }
+
   Widget _buildSectionLabel(String text) {
     return Text(
       text,
@@ -276,18 +419,19 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildTabButton(
+            label: 'Start',
+            isSelected: _currentMode == WeightMode.start,
+            onTap: () => _switchMode(WeightMode.start),
+          ),
+          _buildTabButton(
             label: 'Current',
-            isSelected: _isWeightMode,
-            onTap: () {
-              if (!_isWeightMode) _switchMode();
-            },
+            isSelected: _currentMode == WeightMode.current,
+            onTap: () => _switchMode(WeightMode.current),
           ),
           _buildTabButton(
             label: 'Target',
-            isSelected: !_isWeightMode,
-            onTap: () {
-              if (_isWeightMode) _switchMode();
-            },
+            isSelected: _currentMode == WeightMode.target,
+            onTap: () => _switchMode(WeightMode.target),
           ),
         ],
       ),
@@ -336,7 +480,7 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
               scrollController: _weightWholeController,
               itemExtent: 40,
               onSelectedItemChanged: (index) {
-                setState(() {}); // Update to show current value
+                _onPickerChanged();
               },
               children: List.generate(
                 _maxDisplayWeight - _minDisplayWeight + 1,
@@ -370,7 +514,7 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
               scrollController: _weightDecimalController,
               itemExtent: 40,
               onSelectedItemChanged: (index) {
-                setState(() {}); // Update to show current value
+                _onPickerChanged();
               },
               children: List.generate(
                 10,
