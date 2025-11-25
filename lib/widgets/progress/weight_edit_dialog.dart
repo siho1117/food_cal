@@ -116,7 +116,6 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
   // Unit conversion constants
   static const double kgToLbs = 2.20462;
   static const double lbsToKg = 0.453592;
-  static const int decimalPlaces = 1; // One decimal place (0.1 kg or 0.1 lbs)
 
   @override
   void initState() {
