@@ -48,15 +48,20 @@ class HealthMetrics {
   /// Calculate body fat percentage using the Deurenberg formula
   /// Body Fat % = 1.2 × BMI + 0.23 × age - 10.8 × sex - 5.4
   /// Where sex is 1 for males and 0 for females
+  ///
+  /// IMPORTANT: This is an estimation with ±4-5% margin of error for Male/Female.
+  /// For non-binary genders, uses midpoint (±7-10% margin of error).
+  /// Requires BMI, age, and gender - returns null if any are missing.
+  /// For more accurate results, consider methods using body measurements.
   static double? calculateBodyFat({
     required double? bmi,
     required int? age,
     required String? gender,
   }) {
-    if (bmi == null) return null;
-
-    // Default age if not available - using 30 as a reasonable middle value
-    final int calculationAge = age ?? 30;
+    // Require all parameters
+    if (bmi == null || age == null || gender == null) {
+      return null;
+    }
 
     // Gender factor for the formula
     double genderFactor;
@@ -65,13 +70,14 @@ class HealthMetrics {
     } else if (gender == 'Female') {
       genderFactor = 0.0;
     } else {
-      // If gender not specified, use an average (0.5)
+      // For non-binary genders (Other, Prefer not to say, etc.)
+      // use midpoint between male and female formulas
       genderFactor = 0.5;
     }
 
     // Calculate using the formula
     double result =
-        (1.2 * bmi) + (0.23 * calculationAge) - (10.8 * genderFactor) - 5.4;
+        (1.2 * bmi) + (0.23 * age) - (10.8 * genderFactor) - 5.4;
 
     // Ensure result is in a reasonable range
     return result.clamp(3.0, 60.0);
@@ -109,6 +115,12 @@ class HealthMetrics {
   // ============================================================================
 
   /// Calculate BMR (Basal Metabolic Rate) using Mifflin-St Jeor Equation
+  ///
+  /// BMR represents calories burned at rest per day.
+  ///
+  /// Male formula: (10 × weight) + (6.25 × height) - (5 × age) + 5
+  /// Female formula: (10 × weight) + (6.25 × height) - (5 × age) - 161
+  /// Non-binary: Average of male and female formulas
   static double? calculateBMR({
     required double? weight, // in kg
     required double? height, // in cm
@@ -126,7 +138,8 @@ class HealthMetrics {
       return (10 * weight) + (6.25 * height) - (5 * age) - 161;
     }
 
-    // If gender is not specified, use an average of male and female values
+    // For non-binary genders (Other, Prefer not to say, etc.)
+    // use average of male and female formulas
     final maleBMR = (10 * weight) + (6.25 * height) - (5 * age) + 5;
     final femaleBMR = (10 * weight) + (6.25 * height) - (5 * age) - 161;
     return (maleBMR + femaleBMR) / 2;

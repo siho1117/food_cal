@@ -1,9 +1,9 @@
 // lib/widgets/progress/health_metrics_widget.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:math' as math;
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/dialog_theme.dart';
+import '../../config/design_system/accent_colors.dart';
 import '../../providers/theme_provider.dart';
 import '../../data/models/user_profile.dart';
 
@@ -73,37 +73,23 @@ class HealthMetricsWidget extends StatelessWidget {
               // Header
               Row(
                 children: [
-                  Text(
-                    '🎯',
-                    style: TextStyle(fontSize: 24),
+                  Icon(
+                    Icons.monitor_heart_outlined,
+                    size: AppWidgetTheme.iconSizeSmall,
+                    color: textColor,
                   ),
-                  SizedBox(width: AppWidgetTheme.spaceMD),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Health Metrics',
-                          style: TextStyle(
-                            fontSize: AppWidgetTheme.fontSizeLG,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.2,
-                            color: textColor,
-                            shadows: AppWidgetTheme.textShadows,
-                          ),
-                        ),
-                        Text(
-                          'Body composition & energy',
-                          style: TextStyle(
-                            fontSize: AppWidgetTheme.fontSizeXS,
-                            fontWeight: FontWeight.w500,
-                            color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
-                            shadows: AppWidgetTheme.textShadows,
-                          ),
-                        ),
-                      ],
+                  SizedBox(width: AppWidgetTheme.spaceMS),
+                  Text(
+                    'Health Metrics',
+                    style: TextStyle(
+                      fontSize: AppWidgetTheme.fontSizeLG,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.2,
+                      color: textColor,
+                      shadows: AppWidgetTheme.textShadows,
                     ),
                   ),
+                  Spacer(),
                   IconButton(
                     icon: Icon(
                       Icons.info_outline,
@@ -113,38 +99,57 @@ class HealthMetricsWidget extends StatelessWidget {
                     onPressed: () {
                       _showInfoDialog(context);
                     },
+                    padding: EdgeInsets.all(AppWidgetTheme.spaceXS),
+                    constraints: BoxConstraints(),
                   ),
                 ],
               ),
 
               SizedBox(height: AppWidgetTheme.spaceLG),
 
-              // BMI and Body Fat cards in row
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildBMICard(textColor),
-                  ),
-                  SizedBox(width: AppWidgetTheme.spaceML),
-                  Expanded(
-                    child: _buildBodyFatCard(textColor),
-                  ),
+              // BMI Timeline
+              _buildTimelineMetric(
+                context,
+                label: 'BMI',
+                currentValue: bmi?.toStringAsFixed(1) ?? '--',
+                targetValue: targetBMI?.toStringAsFixed(1) ?? '--',
+                progress: bmiProgress ?? 0.0,
+                zones: [
+                  _ScaleZone('Underweight', 0, 18.5, AccentColors.electricBlue),
+                  _ScaleZone('Normal', 18.5, 25, AccentColors.brightGreen),
+                  _ScaleZone('Overweight', 25, 30, AccentColors.goldenYellow),
+                  _ScaleZone('Obese', 30, 40, AccentColors.vibrantRed),
                 ],
+                currentPosition: bmi,
+                targetPosition: targetBMI,
+                maxValue: 40.0,
+                textColor: textColor,
               ),
 
-              SizedBox(height: AppWidgetTheme.spaceML),
+              SizedBox(height: AppWidgetTheme.spaceLG),
 
-              // BMR and TDEE cards in row
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildBMRCard(textColor),
-                  ),
-                  SizedBox(width: AppWidgetTheme.spaceML),
-                  Expanded(
-                    child: _buildTDEECard(textColor),
-                  ),
-                ],
+              // Body Fat Timeline
+              _buildTimelineMetric(
+                context,
+                label: 'Body Fat Estimate %',
+                currentValue: bodyFat != null ? '${bodyFat!.toStringAsFixed(1)}%' : '--',
+                targetValue: targetBodyFat != null ? '${targetBodyFat!.toStringAsFixed(1)}%' : '--',
+                progress: bodyFatProgress ?? 0.0,
+                zones: _getBodyFatZones(userProfile?.gender),
+                currentPosition: bodyFat,
+                targetPosition: targetBodyFat,
+                maxValue: _getBodyFatMaxValue(userProfile?.gender),
+                textColor: textColor,
+              ),
+
+              SizedBox(height: AppWidgetTheme.spaceLG),
+
+              // Metabolism Timeline
+              _buildMetabolismTimeline(
+                bmr: bmr,
+                tdee: tdee,
+                activityLevel: userProfile?.activityLevel,
+                textColor: textColor,
               ),
             ],
           ),
@@ -153,411 +158,455 @@ class HealthMetricsWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildBMICard(Color textColor) {
-    final currentBMI = bmi;
-    final targetBMIValue = targetBMI;
-    final progressPercentage = bmiProgress;
-
-    return Container(
-      padding: EdgeInsets.all(AppWidgetTheme.spaceMD),
-      decoration: BoxDecoration(
-        color: AppWidgetTheme.getBackgroundColor(
-          textColor,
-          AppWidgetTheme.opacityLight,
-        ),
-        borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
-      ),
-      child: Column(
-        children: [
-          // Progress Ring
-          SizedBox(
-            height: 80,
-            width: 80,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CustomPaint(
-                  size: Size(80, 80),
-                  painter: _ProgressRingPainter(
-                    progress: progressPercentage ?? 0.0,
-                    backgroundColor: textColor.withValues(alpha: 0.1),
-                    progressColor: Color(0xFF4CAF50),
-                  ),
-                ),
-                Text(
-                  progressPercentage != null
-                      ? '${(progressPercentage * 100).round()}%'
-                      : '--',
-                  style: TextStyle(
-                    fontSize: AppWidgetTheme.fontSizeML,
-                    fontWeight: FontWeight.w700,
-                    color: textColor,
-                    shadows: AppWidgetTheme.textShadows,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          SizedBox(height: AppWidgetTheme.spaceSM),
-
-          // Current → Target
-          RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: TextStyle(
-                fontSize: AppWidgetTheme.fontSizeSM,
-                color: textColor,
-                shadows: AppWidgetTheme.textShadows,
-              ),
-              children: [
-                TextSpan(
-                  text: currentBMI?.toStringAsFixed(1) ?? '--',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                TextSpan(
-                  text: ' → ',
-                  style: TextStyle(
-                    color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
-                  ),
-                ),
-                TextSpan(
-                  text: targetBMIValue?.toStringAsFixed(1) ?? '--',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          SizedBox(height: AppWidgetTheme.spaceSM),
-
-          // Horizontal scale
-          _buildHorizontalScale(
-            currentValue: currentBMI,
-            targetValue: targetBMIValue,
-            maxValue: 40.0,
-            zones: [
-              _ScaleZone('Underweight', 0, 18.5, Color(0xFF64B5F6)),
-              _ScaleZone('Normal', 18.5, 25, Color(0xFF4CAF50)),
-              _ScaleZone('Overweight', 25, 30, Color(0xFFFFA726)),
-              _ScaleZone('Obese', 30, 40, Color(0xFFEF5350)),
-            ],
-            textColor: textColor,
-          ),
-
-          SizedBox(height: AppWidgetTheme.spaceXS),
-
-          Text(
-            'BMI',
-            style: TextStyle(
-              fontSize: AppWidgetTheme.fontSizeXS,
-              fontWeight: FontWeight.w600,
-              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
-              shadows: AppWidgetTheme.textShadows,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBodyFatCard(Color textColor) {
-    final currentBodyFat = bodyFat;
-    final targetBodyFatValue = targetBodyFat;
-    final progressPercentage = bodyFatProgress;
-
-    // Gender-specific zones
-    final zones = userProfile?.gender == 'Male'
-        ? [
-            _ScaleZone('Athletic', 0, 14, Color(0xFF4CAF50)),
-            _ScaleZone('Fitness', 14, 18, Color(0xFF8BC34A)),
-            _ScaleZone('Average', 18, 25, Color(0xFFFFA726)),
-            _ScaleZone('Obese', 25, 40, Color(0xFFEF5350)),
-          ]
-        : [
-            _ScaleZone('Athletic', 0, 21, Color(0xFF4CAF50)),
-            _ScaleZone('Fitness', 21, 25, Color(0xFF8BC34A)),
-            _ScaleZone('Average', 25, 32, Color(0xFFFFA726)),
-            _ScaleZone('Obese', 32, 45, Color(0xFFEF5350)),
-          ];
-
-    return Container(
-      padding: EdgeInsets.all(AppWidgetTheme.spaceMD),
-      decoration: BoxDecoration(
-        color: AppWidgetTheme.getBackgroundColor(
-          textColor,
-          AppWidgetTheme.opacityLight,
-        ),
-        borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
-      ),
-      child: Column(
-        children: [
-          // Progress Ring
-          SizedBox(
-            height: 80,
-            width: 80,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CustomPaint(
-                  size: Size(80, 80),
-                  painter: _ProgressRingPainter(
-                    progress: progressPercentage ?? 0.0,
-                    backgroundColor: textColor.withValues(alpha: 0.1),
-                    progressColor: Color(0xFF2196F3),
-                  ),
-                ),
-                Text(
-                  progressPercentage != null
-                      ? '${(progressPercentage * 100).round()}%'
-                      : '--',
-                  style: TextStyle(
-                    fontSize: AppWidgetTheme.fontSizeML,
-                    fontWeight: FontWeight.w700,
-                    color: textColor,
-                    shadows: AppWidgetTheme.textShadows,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          SizedBox(height: AppWidgetTheme.spaceSM),
-
-          // Current → Target
-          RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: TextStyle(
-                fontSize: AppWidgetTheme.fontSizeSM,
-                color: textColor,
-                shadows: AppWidgetTheme.textShadows,
-              ),
-              children: [
-                TextSpan(
-                  text: currentBodyFat != null ? '${currentBodyFat.toStringAsFixed(1)}%' : '--',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                TextSpan(
-                  text: ' → ',
-                  style: TextStyle(
-                    color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
-                  ),
-                ),
-                TextSpan(
-                  text: targetBodyFatValue != null ? '${targetBodyFatValue.toStringAsFixed(1)}%' : '--',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          SizedBox(height: AppWidgetTheme.spaceSM),
-
-          // Horizontal scale
-          _buildHorizontalScale(
-            currentValue: currentBodyFat,
-            targetValue: targetBodyFatValue,
-            maxValue: zones.last.end,
-            zones: zones,
-            textColor: textColor,
-          ),
-
-          SizedBox(height: AppWidgetTheme.spaceXS),
-
-          Text(
-            'Body Fat %',
-            style: TextStyle(
-              fontSize: AppWidgetTheme.fontSizeXS,
-              fontWeight: FontWeight.w600,
-              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
-              shadows: AppWidgetTheme.textShadows,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBMRCard(Color textColor) {
-    return Container(
-      padding: EdgeInsets.all(AppWidgetTheme.spaceMD),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFFB74D),
-            Color(0xFFFF9800),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
-      ),
-      child: Column(
-        children: [
-          Text(
-            'BMR',
-            style: TextStyle(
-              fontSize: AppWidgetTheme.fontSizeXS,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-              color: Colors.white.withValues(alpha: 0.9),
-              shadows: AppWidgetTheme.textShadows,
-            ),
-          ),
-          SizedBox(height: AppWidgetTheme.spaceXXS),
-          Text(
-            bmr?.round().toString() ?? '--',
-            style: TextStyle(
-              fontSize: AppWidgetTheme.fontSizeXXL,
-              fontWeight: FontWeight.w700,
-              height: 1.0,
-              color: Colors.white,
-              shadows: AppWidgetTheme.textShadows,
-            ),
-          ),
-          SizedBox(height: AppWidgetTheme.spaceXXS),
-          Text(
-            'kcal/day',
-            style: TextStyle(
-              fontSize: AppWidgetTheme.fontSizeXS,
-              fontWeight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.8),
-              shadows: AppWidgetTheme.textShadows,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTDEECard(Color textColor) {
-    return Container(
-      padding: EdgeInsets.all(AppWidgetTheme.spaceMD),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFEF5350),
-            Color(0xFFE53935),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
-      ),
-      child: Column(
-        children: [
-          Text(
-            'TDEE',
-            style: TextStyle(
-              fontSize: AppWidgetTheme.fontSizeXS,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-              color: Colors.white.withValues(alpha: 0.9),
-              shadows: AppWidgetTheme.textShadows,
-            ),
-          ),
-          SizedBox(height: AppWidgetTheme.spaceXXS),
-          Text(
-            tdee?.round().toString() ?? '--',
-            style: TextStyle(
-              fontSize: AppWidgetTheme.fontSizeXXL,
-              fontWeight: FontWeight.w700,
-              height: 1.0,
-              color: Colors.white,
-              shadows: AppWidgetTheme.textShadows,
-            ),
-          ),
-          SizedBox(height: AppWidgetTheme.spaceXXS),
-          Text(
-            'kcal/day',
-            style: TextStyle(
-              fontSize: AppWidgetTheme.fontSizeXS,
-              fontWeight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.8),
-              shadows: AppWidgetTheme.textShadows,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHorizontalScale({
-    required double? currentValue,
-    required double? targetValue,
-    required double maxValue,
+  /// Compact metric with horizontal gradient bar
+  Widget _buildTimelineMetric(
+    BuildContext context, {
+    required String label,
+    required String currentValue,
+    required String targetValue,
+    required double progress,
     required List<_ScaleZone> zones,
+    required double? currentPosition,
+    required double? targetPosition,
+    required double maxValue,
     required Color textColor,
   }) {
-    return Column(
-      children: [
-        // Scale bar with zones
-        Container(
-          height: 24,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Row(
-              children: zones.map((zone) {
-                final width = (zone.end - zone.start) / maxValue;
-                return Expanded(
-                  flex: (width * 100).round(),
-                  child: Container(
-                    color: zone.color.withValues(alpha: 0.6),
-                  ),
-                );
-              }).toList(),
+    // Find current category
+    String currentCategory = zones.first.label;
+    Color categoryColor = zones.first.color;
+    for (final zone in zones) {
+      if (currentPosition != null &&
+          currentPosition >= zone.start &&
+          currentPosition < zone.end) {
+        currentCategory = zone.label;
+        categoryColor = zone.color;
+        break;
+      }
+    }
+
+    return Container(
+      padding: EdgeInsets.all(AppWidgetTheme.spaceMD),
+      decoration: BoxDecoration(
+        color: AppWidgetTheme.getBackgroundColor(
+          textColor,
+          AppWidgetTheme.opacityLight,
+        ),
+        borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusSM),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Row 1: Title/Label only
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: AppWidgetTheme.fontSizeSM,
+              fontWeight: FontWeight.w600,
+              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
             ),
           ),
-        ),
 
-        // Indicators
-        SizedBox(
-          height: 16,
-          child: Stack(
+          SizedBox(height: AppWidgetTheme.spaceXS),
+
+          // Row 2: Current value, target value, and badge
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Current value indicator (dark arrow from top)
-              if (currentValue != null && currentValue <= maxValue)
-                Positioned(
-                  left: (currentValue / maxValue * 100).clamp(0, 100),
-                  top: 0,
-                  child: FractionalTranslation(
-                    translation: Offset(-0.5, 0),
-                    child: Icon(
-                      Icons.arrow_drop_down,
-                      color: textColor,
-                      size: 16,
+              // Current and target values
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      currentValue,
+                      style: TextStyle(
+                        fontSize: AppWidgetTheme.fontSizeXL,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                        height: 1.0,
+                      ),
                     ),
+                    SizedBox(width: AppWidgetTheme.spaceXS),
+                    Text(
+                      '→',
+                      style: TextStyle(
+                        fontSize: AppWidgetTheme.fontSizeMD,
+                        fontWeight: FontWeight.w500,
+                        color: textColor.withValues(alpha: AppWidgetTheme.opacityHigh),
+                      ),
+                    ),
+                    SizedBox(width: AppWidgetTheme.spaceXS),
+                    Text(
+                      targetValue,
+                      style: TextStyle(
+                        fontSize: AppWidgetTheme.fontSizeML,
+                        fontWeight: FontWeight.w600,
+                        color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                        height: 1.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Status badge
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppWidgetTheme.spaceSM,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: categoryColor,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Text(
+                  currentCategory,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
                   ),
                 ),
-
-              // Target value indicator (gray arrow from bottom)
-              if (targetValue != null && targetValue <= maxValue)
-                Positioned(
-                  left: (targetValue / maxValue * 100).clamp(0, 100),
-                  bottom: 0,
-                  child: FractionalTranslation(
-                    translation: Offset(-0.5, 0),
-                    child: Icon(
-                      Icons.arrow_drop_up,
-                      color: textColor.withValues(alpha: 0.4),
-                      size: 16,
-                    ),
-                  ),
-                ),
+              ),
             ],
           ),
+
+          SizedBox(height: AppWidgetTheme.spaceSM),
+
+          // Horizontal gradient bar with indicator
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final barWidth = constraints.maxWidth;
+              final indicatorPosition = currentPosition != null
+                  ? (currentPosition / maxValue).clamp(0.0, 1.0) * barWidth
+                  : 0.0;
+
+              return SizedBox(
+                height: 4,
+                child: Stack(
+                  children: [
+                    // Gradient bar
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(2),
+                          gradient: LinearGradient(
+                            colors: [
+                              ...zones.map((zone) => zone.color),
+                              zones.last.color, // Repeat last color to fill to end
+                            ],
+                            stops: [
+                              ...zones.map((zone) => zone.start / maxValue),
+                              1.0, // Ensure gradient fills to the end
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Current position indicator
+                    if (currentPosition != null)
+                      Positioned(
+                        left: indicatorPosition - 1.5,
+                        top: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 3,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.5),
+                                blurRadius: 3,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+
+          SizedBox(height: AppWidgetTheme.spaceXS),
+
+          // Zone legend
+          Wrap(
+            spacing: AppWidgetTheme.spaceSM,
+            runSpacing: 4,
+            children: zones.map((zone) {
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: zone.color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    zone.label,
+                    style: TextStyle(
+                      fontSize: AppWidgetTheme.fontSizeXS,
+                      fontWeight: FontWeight.w500,
+                      color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Metabolism timeline matching BMI card design pattern
+  Widget _buildMetabolismTimeline({
+    required double? bmr,
+    required double? tdee,
+    required double? activityLevel,
+    required Color textColor,
+  }) {
+    // Get activity level label and color
+    String activityLabel = 'Not Set';
+    Color activityColor = AccentColors.electricBlue;
+
+    if (activityLevel != null) {
+      if (activityLevel <= 1.2) {
+        activityLabel = 'Idle';
+        activityColor = AccentColors.electricBlue;
+      } else if (activityLevel <= 1.375) {
+        activityLabel = 'Light';
+        activityColor = AccentColors.brightGreen;
+      } else if (activityLevel <= 1.55) {
+        activityLabel = 'Moderate';
+        activityColor = AccentColors.goldenYellow;
+      } else if (activityLevel <= 1.725) {
+        activityLabel = 'Active';
+        activityColor = AccentColors.coral;
+      } else {
+        activityLabel = 'Intense';
+        activityColor = AccentColors.vibrantRed;
+      }
+    }
+
+    // Activity zones for the timeline
+    final zones = [
+      _ScaleZone('Idle', 1.2, 1.375, AccentColors.electricBlue),
+      _ScaleZone('Light', 1.375, 1.55, AccentColors.brightGreen),
+      _ScaleZone('Moderate', 1.55, 1.725, AccentColors.goldenYellow),
+      _ScaleZone('Active', 1.725, 1.9, AccentColors.coral),
+      _ScaleZone('Intense', 1.9, 2.0, AccentColors.vibrantRed),
+    ];
+
+    return Container(
+      padding: EdgeInsets.all(AppWidgetTheme.spaceMD),
+      decoration: BoxDecoration(
+        color: AppWidgetTheme.getBackgroundColor(
+          textColor,
+          AppWidgetTheme.opacityLight,
         ),
-      ],
+        borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusSM),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Row 1: Title/Label only
+          Text(
+            'Metabolism',
+            style: TextStyle(
+              fontSize: AppWidgetTheme.fontSizeSM,
+              fontWeight: FontWeight.w600,
+              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+            ),
+          ),
+
+          SizedBox(height: AppWidgetTheme.spaceXS),
+
+          // Row 2: BMR, TDEE values, and activity badge
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // TDEE and BMR values
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    // TDEE
+                    Text(
+                      tdee != null ? '${tdee.round()}' : '--',
+                      style: TextStyle(
+                        fontSize: AppWidgetTheme.fontSizeXL,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                        height: 1.0,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'TDEE',
+                      style: TextStyle(
+                        fontSize: AppWidgetTheme.fontSizeXS,
+                        fontWeight: FontWeight.w600,
+                        color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                      ),
+                    ),
+                    SizedBox(width: AppWidgetTheme.spaceXS),
+                    Text(
+                      '→',
+                      style: TextStyle(
+                        fontSize: AppWidgetTheme.fontSizeMD,
+                        fontWeight: FontWeight.w500,
+                        color: textColor.withValues(alpha: AppWidgetTheme.opacityHigh),
+                      ),
+                    ),
+                    SizedBox(width: AppWidgetTheme.spaceXS),
+                    // BMR
+                    Text(
+                      bmr != null ? '${bmr.round()}' : '--',
+                      style: TextStyle(
+                        fontSize: AppWidgetTheme.fontSizeML,
+                        fontWeight: FontWeight.w600,
+                        color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                        height: 1.0,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'BMR',
+                      style: TextStyle(
+                        fontSize: AppWidgetTheme.fontSizeXS,
+                        fontWeight: FontWeight.w600,
+                        color: textColor.withValues(alpha: AppWidgetTheme.opacityHigh),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Activity badge
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppWidgetTheme.spaceSM,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: activityColor,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Text(
+                  activityLabel,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: AppWidgetTheme.spaceSM),
+
+          // Horizontal gradient bar with indicator
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final barWidth = constraints.maxWidth;
+              const maxValue = 2.0;
+              final indicatorPosition = activityLevel != null
+                  ? ((activityLevel - 1.2) / (maxValue - 1.2)).clamp(0.0, 1.0) * barWidth
+                  : 0.0;
+
+              return SizedBox(
+                height: 4,
+                child: Stack(
+                  children: [
+                    // Gradient bar
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(2),
+                          gradient: LinearGradient(
+                            colors: [
+                              ...zones.map((zone) => zone.color),
+                              zones.last.color,
+                            ],
+                            stops: [
+                              ...zones.map((zone) => (zone.start - 1.2) / (maxValue - 1.2)),
+                              1.0,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Current position indicator
+                    if (activityLevel != null)
+                      Positioned(
+                        left: indicatorPosition - 1.5,
+                        top: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 3,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.5),
+                                blurRadius: 3,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+
+          SizedBox(height: AppWidgetTheme.spaceXS),
+
+          // Zone legend
+          Wrap(
+            spacing: AppWidgetTheme.spaceSM,
+            runSpacing: 4,
+            children: zones.map((zone) {
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: zone.color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    zone.label,
+                    style: TextStyle(
+                      fontSize: AppWidgetTheme.fontSizeXS,
+                      fontWeight: FontWeight.w500,
+                      color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -602,8 +651,40 @@ class HealthMetricsWidget extends StatelessWidget {
               ),
               SizedBox(height: AppDialogTheme.spaceXS),
               Text(
-                'Estimated body fat percentage based on BMI, age, and gender. Lower percentages indicate more lean muscle mass.',
+                'Estimated body fat percentage based on BMI, age, and gender using the Deurenberg formula. Lower percentages indicate more lean muscle mass.',
                 style: AppDialogTheme.bodyStyle,
+              ),
+              const SizedBox(height: AppDialogTheme.spaceXS),
+              Container(
+                padding: const EdgeInsets.all(AppDialogTheme.spaceSM),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.orange.shade300,
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: Colors.orange.shade700,
+                    ),
+                    const SizedBox(width: AppDialogTheme.spaceXS),
+                    Expanded(
+                      child: Text(
+                        'This is an estimate with ±4-5% margin of error (Male/Female) or ±7-10% (non-binary). For medical purposes, consult a healthcare professional.',
+                        style: AppDialogTheme.bodyStyle.copyWith(
+                          fontSize: 12,
+                          color: Colors.orange.shade900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               SizedBox(height: AppDialogTheme.spaceMD),
 
@@ -649,6 +730,44 @@ class HealthMetricsWidget extends StatelessWidget {
       ),
     );
   }
+
+  /// Get body fat zones based on gender
+  static List<_ScaleZone> _getBodyFatZones(String? gender) {
+    if (gender == 'Male') {
+      return [
+        _ScaleZone('Athletic', 0, 14, AccentColors.brightGreen),
+        _ScaleZone('Fitness', 14, 18, AccentColors.goldenYellow),
+        _ScaleZone('Average', 18, 25, AccentColors.brightOrange),
+        _ScaleZone('High', 25, 40, AccentColors.vibrantRed),
+      ];
+    } else if (gender == 'Female') {
+      return [
+        _ScaleZone('Athletic', 0, 21, AccentColors.brightGreen),
+        _ScaleZone('Fitness', 21, 25, AccentColors.goldenYellow),
+        _ScaleZone('Average', 25, 32, AccentColors.brightOrange),
+        _ScaleZone('High', 32, 45, AccentColors.vibrantRed),
+      ];
+    } else {
+      // Gender-neutral zones (midpoint between male and female)
+      return [
+        _ScaleZone('Athletic', 0, 18, AccentColors.brightGreen),
+        _ScaleZone('Fitness', 18, 22, AccentColors.goldenYellow),
+        _ScaleZone('Average', 22, 28, AccentColors.brightOrange),
+        _ScaleZone('High', 28, 42, AccentColors.vibrantRed),
+      ];
+    }
+  }
+
+  /// Get max value for body fat scale based on gender
+  static double _getBodyFatMaxValue(String? gender) {
+    if (gender == 'Male') {
+      return 40.0;
+    } else if (gender == 'Female') {
+      return 45.0;
+    } else {
+      return 42.0; // Midpoint for gender-neutral
+    }
+  }
 }
 
 class _ScaleZone {
@@ -660,55 +779,5 @@ class _ScaleZone {
   _ScaleZone(this.label, this.start, this.end, this.color);
 }
 
-class _ProgressRingPainter extends CustomPainter {
-  final double progress;
-  final Color backgroundColor;
-  final Color progressColor;
 
-  _ProgressRingPainter({
-    required this.progress,
-    required this.backgroundColor,
-    required this.progressColor,
-  });
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) / 2 - 4;
-    final strokeWidth = 6.0;
-
-    // Background circle
-    final backgroundPaint = Paint()
-      ..color = backgroundColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawCircle(center, radius, backgroundPaint);
-
-    // Progress arc
-    final progressPaint = Paint()
-      ..color = progressColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    final startAngle = -math.pi / 2; // Start at top
-    final sweepAngle = 2 * math.pi * progress;
-
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      startAngle,
-      sweepAngle,
-      false,
-      progressPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_ProgressRingPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.backgroundColor != backgroundColor ||
-        oldDelegate.progressColor != progressColor;
-  }
-}

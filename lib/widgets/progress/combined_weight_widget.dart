@@ -7,7 +7,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import 'weight_edit_dialog.dart';
 
-class CombinedWeightWidget extends StatelessWidget {
+class CombinedWeightWidget extends StatefulWidget {
   final double? currentWeight;
   final bool isMetric;
   final Function(double, bool) onWeightEntered;
@@ -19,13 +19,32 @@ class CombinedWeightWidget extends StatelessWidget {
     required this.onWeightEntered,
   });
 
+  @override
+  State<CombinedWeightWidget> createState() => _CombinedWeightWidgetState();
+}
+
+class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
+  double? _previousWeight;
+  double? _previousStart;
+  double? _previousTarget;
+  double _previousProgress = 0.0;
+
+  @override
+  void didUpdateWidget(CombinedWeightWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Track previous weight for animation
+    if (oldWidget.currentWeight != widget.currentWeight) {
+      _previousWeight = oldWidget.currentWeight;
+    }
+  }
+
   String _formatWeight(double? weight) {
     if (weight == null) return '--';
-    final displayWeight = isMetric ? weight : weight * 2.20462;
+    final displayWeight = widget.isMetric ? weight : weight * 2.20462;
     return displayWeight.toStringAsFixed(1);
   }
 
-  String _getUnit() => isMetric ? 'kg' : 'lbs';
+  String _getUnit() => widget.isMetric ? 'kg' : 'lbs';
 
   double _calculateProgress(double? start, double? current, double? target) {
     if (start == null || current == null || target == null) return 0.0;
@@ -41,7 +60,7 @@ class CombinedWeightWidget extends StatelessWidget {
       builder: (context, progressData, themeProvider, child) {
         final startingWeight = progressData.startingWeight;
         final targetWeight = progressData.targetWeight;
-        final progress = _calculateProgress(startingWeight, currentWeight, targetWeight);
+        final progress = _calculateProgress(startingWeight, widget.currentWeight, targetWeight);
 
         final borderColor = AppWidgetTheme.getBorderColor(
           themeProvider.selectedGradient,
@@ -50,6 +69,15 @@ class CombinedWeightWidget extends StatelessWidget {
         final textColor = AppWidgetTheme.getTextColor(
           themeProvider.selectedGradient,
         );
+
+        // Track previous values for animations
+        final prevStart = _previousStart ?? startingWeight;
+        final prevTarget = _previousTarget ?? targetWeight;
+        final prevProgress = _previousProgress;
+
+        _previousStart = startingWeight;
+        _previousTarget = targetWeight;
+        _previousProgress = progress;
 
         return GestureDetector(
           onTap: () => _showWeightDialog(context, progressData),
@@ -71,14 +99,18 @@ class CombinedWeightWidget extends StatelessWidget {
 
                 SizedBox(height: AppWidgetTheme.spaceLG),
 
-                // Visual Journey Timeline
+                // Visual Journey Timeline with animations
                 _buildJourneyTimeline(
                   context,
                   startingWeight,
-                  currentWeight,
+                  widget.currentWeight,
                   targetWeight,
                   progress,
                   textColor,
+                  prevStart,
+                  _previousWeight,
+                  prevTarget,
+                  prevProgress,
                 ),
 
                 SizedBox(height: AppWidgetTheme.spaceLG),
@@ -86,7 +118,7 @@ class CombinedWeightWidget extends StatelessWidget {
                 // Progress Stats Card
                 _buildProgressStats(
                   startingWeight,
-                  currentWeight,
+                  widget.currentWeight,
                   targetWeight,
                   progress,
                   textColor,
@@ -149,6 +181,10 @@ class CombinedWeightWidget extends StatelessWidget {
     double? target,
     double progress,
     Color textColor,
+    double? prevStart,
+    double? prevCurrent,
+    double? prevTarget,
+    double prevProgress,
   ) {
     return Column(
       children: [
@@ -185,17 +221,19 @@ class CombinedWeightWidget extends StatelessWidget {
 
         SizedBox(height: AppWidgetTheme.spaceXS),
 
-        // Numbers row - aligned to current weight center
+        // Numbers row with animated counter
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Start weight
+            // Start weight with animation
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _formatWeight(start),
+                _AnimatedNumber(
+                  value: start,
+                  prevValue: prevStart,
+                  isMetric: widget.isMetric,
                   style: TextStyle(
                     fontSize: AppWidgetTheme.fontSizeML,
                     fontWeight: FontWeight.w600,
@@ -204,21 +242,25 @@ class CombinedWeightWidget extends StatelessWidget {
                 ),
               ],
             ),
-            // Current weight (prominent)
-            Text(
-              _formatWeight(current),
+            // Current weight (prominent) with animation
+            _AnimatedNumber(
+              value: current,
+              prevValue: prevCurrent,
+              isMetric: widget.isMetric,
               style: TextStyle(
                 fontSize: AppWidgetTheme.fontSizeXXL,
                 fontWeight: FontWeight.w700,
                 color: textColor,
               ),
             ),
-            // Goal weight
+            // Goal weight with animation
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  _formatWeight(target),
+                _AnimatedNumber(
+                  value: target,
+                  prevValue: prevTarget,
+                  isMetric: widget.isMetric,
                   style: TextStyle(
                     fontSize: AppWidgetTheme.fontSizeML,
                     fontWeight: FontWeight.w600,
@@ -232,25 +274,13 @@ class CombinedWeightWidget extends StatelessWidget {
 
         SizedBox(height: AppWidgetTheme.spaceMD),
 
-        // Progress bar with markers
-        _buildProgressBar(context, progress, textColor),
-      ],
-    );
-  }
-
-  Widget _buildProgressBar(BuildContext context, double progress, Color textColor) {
-    return Container(
-      height: 12,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6),
-        gradient: LinearGradient(
-          colors: [
-            textColor,
-            textColor.withValues(alpha: AppWidgetTheme.opacityMedium),
-          ],
-          stops: [progress, progress],
+        // Progress bar with animation
+        _AnimatedProgressBar(
+          progress: progress,
+          prevProgress: prevProgress,
+          textColor: textColor,
         ),
-      ),
+      ],
     );
   }
 
@@ -351,12 +381,12 @@ class CombinedWeightWidget extends StatelessWidget {
 
     showWeightEditDialog(
       context: context,
-      initialWeight: currentWeight ?? 70.0,
-      isMetric: isMetric,
+      initialWeight: widget.currentWeight ?? 70.0,
+      isMetric: widget.isMetric,
       targetWeight: progressData.targetWeight,
       startingWeight: progressData.startingWeight,
       onAddWeight: (weight, isMetric) async {
-        onWeightEntered(weight, isMetric);
+        widget.onWeightEntered(weight, isMetric);
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -399,6 +429,94 @@ class CombinedWeightWidget extends StatelessWidget {
             ),
           );
         }
+      },
+    );
+  }
+}
+
+/// Animated number widget that smoothly counts up/down when value changes
+class _AnimatedNumber extends StatelessWidget {
+  final double? value;
+  final double? prevValue;
+  final bool isMetric;
+  final TextStyle style;
+
+  const _AnimatedNumber({
+    required this.value,
+    required this.prevValue,
+    required this.isMetric,
+    required this.style,
+  });
+
+  String _formatWeight(double? weight) {
+    if (weight == null) return '--';
+    final displayWeight = isMetric ? weight : weight * 2.20462;
+    return displayWeight.toStringAsFixed(1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // If no previous value or same value, show static text
+    if (prevValue == null || value == prevValue) {
+      return Text(
+        _formatWeight(value),
+        style: style,
+      );
+    }
+
+    // Animate from previous to new value
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOutCubic,
+      tween: Tween<double>(
+        begin: prevValue,
+        end: value ?? prevValue,
+      ),
+      builder: (context, animatedValue, child) {
+        return Text(
+          _formatWeight(animatedValue),
+          style: style,
+        );
+      },
+    );
+  }
+}
+
+/// Animated progress bar that smoothly fills/empties when progress changes
+class _AnimatedProgressBar extends StatelessWidget {
+  final double progress;
+  final double prevProgress;
+  final Color textColor;
+
+  const _AnimatedProgressBar({
+    required this.progress,
+    required this.prevProgress,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeInOut,
+      tween: Tween<double>(
+        begin: prevProgress,
+        end: progress,
+      ),
+      builder: (context, animatedProgress, child) {
+        return Container(
+          height: 12,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            gradient: LinearGradient(
+              colors: [
+                textColor,
+                textColor.withValues(alpha: AppWidgetTheme.opacityMedium),
+              ],
+              stops: [animatedProgress, animatedProgress],
+            ),
+          ),
+        );
       },
     );
   }
