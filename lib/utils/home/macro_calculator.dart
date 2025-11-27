@@ -43,9 +43,10 @@ class MacroCalculator {
 
     try {
       // Get personalized macro ratios
+      // TODO: Review how monthly weight goal should impact macro calculations after TDEE cleanup
       final macrosRatio = calculateRatios(
         monthlyWeightGoal: userProfile.monthlyWeightGoal,
-        activityLevel: userProfile.activityLevel,
+        activityLevel: 1.2, // Hardcoded baseline multiplier (BMR × 1.2)
         gender: userProfile.gender,
         age: userProfile.age,
         currentWeight: currentWeight,
@@ -75,24 +76,27 @@ class MacroCalculator {
   }
 
   /// Calculate personalized macronutrient ratios (percentages)
-  /// 
+  ///
   /// Returns a map with:
   /// - protein_percentage: int (e.g., 30)
   /// - carbs_percentage: int (e.g., 45)
   /// - fat_percentage: int (e.g., 25)
   /// - protein_per_kg: double (e.g., 1.8)
   /// - recommended_protein_grams: int (e.g., 126)
-  /// 
+  ///
   /// Adjusts ratios based on:
   /// - Weight goal (loss = higher protein, gain = higher carbs)
-  /// - Activity level (active = more carbs, sedentary = less carbs)
+  /// - Activity level (currently hardcoded to 1.2 baseline)
   /// - Age (older = more protein for muscle preservation)
-  /// 
+  ///
+  /// Note: activityLevel parameter is kept for API compatibility but
+  /// should always be 1.2 (baseline multiplier).
+  ///
   /// Example:
   /// ```dart
   /// final ratios = MacroCalculator.calculateRatios(
   ///   monthlyWeightGoal: -2.0, // Losing 2kg/month
-  ///   activityLevel: 1.55,
+  ///   activityLevel: 1.2,
   ///   gender: 'Male',
   ///   age: 30,
   ///   currentWeight: 80.0,

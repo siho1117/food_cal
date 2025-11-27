@@ -102,7 +102,6 @@ class ExerciseProvider extends ChangeNotifier {
           age: _userProfile?.age,
           gender: _userProfile?.gender,
         ),
-        activityLevel: _userProfile?.activityLevel,
         age: _userProfile?.age,
         gender: _userProfile?.gender,
         currentWeight: _currentWeight,

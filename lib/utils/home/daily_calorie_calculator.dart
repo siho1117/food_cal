@@ -2,34 +2,39 @@
 import '../../data/models/user_profile.dart';
 import '../progress/health_metrics.dart';
 
-/// Calculator for daily calorie goals based on TDEE and weight goals
+/// Calculator for daily calorie goals based on BMR baseline and weight goals
 ///
 /// Handles:
-/// - BMR and TDEE calculations via HealthMetrics utility
+/// - BMR calculation via HealthMetrics utility
+/// - Baseline using BMR × 1.2 (sedentary multiplier)
 /// - Monthly weight goal adjustments
 /// - Safety caps (minimum 90% of BMR for weight loss)
 /// - Fallback defaults when user data is incomplete
+///
+/// Note: Users should log exercise separately to avoid double-counting.
 class DailyCalorieCalculator {
   // Private constructor to prevent instantiation
   DailyCalorieCalculator._();
 
   /// Calculate daily calorie goal based on user profile and current weight
-  /// 
+  ///
   /// Process:
-  /// 1. Calculate BMR using Formula.calculateBMR()
-  /// 2. Calculate TDEE (BMR * activity level)
+  /// 1. Calculate BMR using HealthMetrics.calculateBMR()
+  /// 2. Calculate baseline calories (BMR × 1.2 sedentary multiplier)
   /// 3. Adjust for monthly weight goal (deficit/surplus)
   /// 4. Apply safety cap (90% of BMR minimum for weight loss)
-  /// 
+  ///
   /// Returns 2000 as default if data is insufficient.
-  /// 
+  ///
+  /// Note: Exercise should be logged separately to avoid double-counting.
+  ///
   /// Example:
   /// ```dart
   /// final goal = DailyCalorieCalculator.calculateDailyGoal(
   ///   userProfile: userProfile,
   ///   currentWeight: 75.0,
   /// );
-  /// // Returns: 1850 (TDEE minus deficit with safety cap applied)
+  /// // Returns: 1850 (baseline minus deficit with safety cap applied)
   /// ```
   static int calculateDailyGoal({
     required UserProfile? userProfile,
@@ -54,12 +59,13 @@ class DailyCalorieCalculator {
         return 2000;
       }
 
-      // Calculate TDEE based on activity level
-      final activityLevel = userProfile.activityLevel ?? 1.4; // Default to lightly active
-      final tdee = bmr * activityLevel;
+      // Calculate baseline calories using sedentary multiplier (BMR × 1.2)
+      // Users should log exercise separately to avoid double-counting
+      const baselineMultiplier = 1.2;
+      final baselineCalories = bmr * baselineMultiplier;
 
-      // Start with maintenance calories (TDEE)
-      int calorieGoal = tdee.round();
+      // Start with maintenance calories (baseline)
+      int calorieGoal = baselineCalories.round();
 
       // Adjust for monthly weight goal if set
       if (userProfile.monthlyWeightGoal != null) {
@@ -68,8 +74,8 @@ class DailyCalorieCalculator {
         final dailyWeightChangeKg = userProfile.monthlyWeightGoal! / 30;
         final calorieAdjustment = dailyWeightChangeKg * 7700;
 
-        // Apply adjustment to TDEE
-        calorieGoal = (tdee + calorieAdjustment).round();
+        // Apply adjustment to baseline
+        calorieGoal = (baselineCalories + calorieAdjustment).round();
 
         // SAFETY CHECK: For weight loss, ensure minimum safe calories
         // Never go below 90% of BMR to maintain health and metabolism
@@ -90,11 +96,14 @@ class DailyCalorieCalculator {
   }
 
   /// Calculate the expected weekly weight change based on calorie goal
-  /// 
+  ///
   /// Useful for UI to show expected progress.
-  /// 
+  ///
   /// Returns weight change in kg per week (positive = gain, negative = loss).
-  /// 
+  ///
+  /// Note: This calculation uses baseline (BMR × 1.2), not TDEE.
+  /// Exercise calories should be logged separately.
+  ///
   /// Example:
   /// ```dart
   /// final weeklyChange = DailyCalorieCalculator.calculateExpectedWeeklyChange(
@@ -114,7 +123,7 @@ class DailyCalorieCalculator {
     }
 
     try {
-      // Calculate BMR and TDEE
+      // Calculate BMR and baseline
       final bmr = HealthMetrics.calculateBMR(
         weight: currentWeight,
         height: userProfile.height,
@@ -124,11 +133,11 @@ class DailyCalorieCalculator {
 
       if (bmr == null) return null;
 
-      final activityLevel = userProfile.activityLevel ?? 1.4;
-      final tdee = bmr * activityLevel;
+      const baselineMultiplier = 1.2;
+      final baselineCalories = bmr * baselineMultiplier;
 
       // Calculate weekly deficit/surplus
-      final dailyDifference = calorieGoal - tdee;
+      final dailyDifference = calorieGoal - baselineCalories;
       final weeklyDifference = dailyDifference * 7;
 
       // Convert to kg (7700 calories per kg of body fat)
@@ -175,12 +184,12 @@ class DailyCalorieCalculator {
 
       if (bmr == null) return false;
 
-      final activityLevel = userProfile.activityLevel ?? 1.4;
-      final tdee = bmr * activityLevel;
+      const baselineMultiplier = 1.2;
+      final baselineCalories = bmr * baselineMultiplier;
 
       final dailyWeightChangeKg = userProfile.monthlyWeightGoal! / 30;
       final calorieAdjustment = dailyWeightChangeKg * 7700;
-      final theoreticalGoal = (tdee + calorieAdjustment).round();
+      final theoreticalGoal = (baselineCalories + calorieAdjustment).round();
 
       // Check if it would go below the safety threshold
       final minimumSafeCalories = (bmr * 0.9).round();

@@ -100,20 +100,6 @@ class PersonalDetailsWidget extends StatelessWidget {
                 value: settingsProvider.userProfile?.gender ?? 'Not set',
                 onTap: () => _showGenderDialog(context, settingsProvider),
               ),
-              Divider(
-                height: 1,
-                thickness: 1,
-                color: borderColor.withValues(alpha: AppWidgetTheme.opacityMediumLight),
-              ),
-              _buildDetailItem(
-                context,
-                settingsProvider,
-                textColor,
-                icon: Icons.fitness_center,
-                title: 'Activity Level',
-                value: settingsProvider.activityLevelText,
-                onTap: () => _showActivityLevelDialog(context, settingsProvider),
-              ),
             ],
           ),
         );
@@ -299,78 +285,6 @@ class PersonalDetailsWidget extends StatelessWidget {
     );
   }
 
-  void _showActivityLevelDialog(BuildContext context, SettingsProvider settingsProvider) {
-    final activityLevels = {
-      1.2: 'Sedentary (little/no exercise)',
-      1.375: 'Lightly active (light exercise 1-3 days/week)',
-      1.55: 'Moderately active (moderate exercise 3-5 days/week)',
-      1.725: 'Very active (hard exercise 6-7 days/week)',
-      1.9: 'Super active (very hard exercise, physical job)',
-    };
-
-    final currentLevel = settingsProvider.userProfile?.activityLevel;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: AppDialogTheme.shape,
-        backgroundColor: AppDialogTheme.backgroundColor,
-        contentPadding: AppDialogTheme.contentPadding,
-        actionsPadding: AppDialogTheme.actionsPadding,
-        title: Text(
-          'Activity Level',
-          style: AppDialogTheme.titleStyle,
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: activityLevels.entries.map((entry) {
-              final isSelected = entry.key == currentLevel;
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  entry.value,
-                  style: AppDialogTheme.bodyStyle.copyWith(
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected
-                        ? AppDialogTheme.colorPrimaryDark
-                        : AppDialogTheme.colorTextSecondary,
-                  ),
-                ),
-                trailing: isSelected
-                    ? Icon(Icons.check, color: AppDialogTheme.colorPrimaryDark)
-                    : null,
-                onTap: () async {
-                  try {
-                    await settingsProvider.updateActivityLevel(entry.key);
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Activity level updated'), behavior: SnackBarBehavior.floating),
-                      );
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-                      );
-                    }
-                  }
-                },
-              );
-            }).toList(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            style: AppDialogTheme.cancelButtonStyle,
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ═══════════════════════════════════════════════════════════════

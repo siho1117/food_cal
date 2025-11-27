@@ -30,10 +30,8 @@ class MetabolismSection extends StatelessWidget {
       gender: profile?.gender,
     );
 
-    final tdee = HealthMetrics.calculateTDEE(
-      bmr: bmr,
-      activityLevel: profile?.activityLevel,
-    );
+    // Calculate baseline (BMR × 1.2) instead of TDEE
+    final baseline = bmr != null ? bmr * 1.2 : null;
 
     return BaseSectionWidget(
       icon: Icons.local_fire_department,
@@ -62,10 +60,10 @@ class MetabolismSection extends StatelessWidget {
             SizedBox(height: AppWidgetTheme.spaceSM),
           ],
 
-          if (tdee != null) ...[
+          if (baseline != null) ...[
             InfoRow(
-              label: 'TDEE (Total Daily Energy)',
-              value: '${tdee.round()} cal/day',
+              label: 'Baseline (BMR × 1.2)',
+              value: '${baseline.round()} cal/day',
             ),
             Consumer<ThemeProvider>(
               builder: (context, themeProvider, _) {
@@ -74,15 +72,7 @@ class MetabolismSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '  • Activity Level: ${HealthMetrics.getActivityLevelText(profile?.activityLevel)} (${profile?.activityLevel?.toStringAsFixed(1)}x)',
-                      style: AppTypography.bodySmall.copyWith(
-                        fontSize: AppWidgetTheme.fontSizeSM,
-                        color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                    Text(
-                      '  • Total daily energy expenditure',
+                      '  • Sedentary baseline (exercise logged separately)',
                       style: AppTypography.bodySmall.copyWith(
                         fontSize: AppWidgetTheme.fontSizeSM,
                         color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -100,12 +90,12 @@ class MetabolismSection extends StatelessWidget {
             label: 'Calorie Goal (Current)',
             value: '$calorieGoal cal/day',
           ),
-          if (tdee != null) ...[
+          if (baseline != null) ...[
             Consumer<ThemeProvider>(
               builder: (context, themeProvider, _) {
                 final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
                 return Text(
-                  '  • Target Type: ${calorieGoal < tdee.round() ? "Weight Loss" : "Weight Gain"} (${((1 - calorieGoal / tdee.round()) * 100).abs().round()}% ${calorieGoal < tdee.round() ? "deficit" : "surplus"})',
+                  '  • Target Type: ${calorieGoal < baseline.round() ? "Weight Loss" : "Weight Gain"} (${((1 - calorieGoal / baseline.round()) * 100).abs().round()}% ${calorieGoal < baseline.round() ? "deficit" : "surplus"})',
                   style: AppTypography.bodySmall.copyWith(
                     fontSize: AppWidgetTheme.fontSizeSM,
                     color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),

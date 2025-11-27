@@ -212,7 +212,7 @@ class HealthMetrics {
       gender: profile.gender,
     );
 
-    if (bmr == null || profile.activityLevel == null) {
+    if (bmr == null) {
       return {
         'maintenance': 0,
         'lose_slow': 0,
@@ -224,9 +224,9 @@ class HealthMetrics {
       };
     }
 
-    // Calculate TDEE
-    final tdee = bmr * profile.activityLevel!;
-    final maintenance = tdee.round();
+    // Calculate baseline (BMR × 1.2) instead of TDEE
+    final baseline = bmr * 1.2;
+    final maintenance = baseline.round();
 
     // Calculate calorie targets for different goals
     return {
@@ -359,10 +359,12 @@ class HealthMetrics {
   // ============================================================================
 
   /// Calculate recommended daily exercise calorie burn based on weight goals
+  ///
+  /// Note: Uses baseline (BMR × 1.2) instead of TDEE to avoid double-counting
+  /// exercise since users log exercise separately.
   static Map<String, dynamic> calculateRecommendedExerciseBurn({
     required double? monthlyWeightGoal, // kg/month, negative for loss
     required double? bmr,
-    required double? activityLevel,
     required int? age,
     required String? gender,
     required double? currentWeight,
@@ -370,7 +372,6 @@ class HealthMetrics {
     // Default return if we don't have sufficient data
     if (monthlyWeightGoal == null ||
         bmr == null ||
-        activityLevel == null ||
         age == null ||
         currentWeight == null) {
       return {
@@ -384,8 +385,9 @@ class HealthMetrics {
       };
     }
 
-    // Calculate TDEE (Total Daily Energy Expenditure)
-    final tdee = bmr * activityLevel;
+    // Calculate baseline (BMR × 1.2 sedentary multiplier)
+    const baselineMultiplier = 1.2;
+    final baseline = bmr * baselineMultiplier;
 
     // Calculate daily calorie deficit/surplus needed based on monthly goal
     // 1 kg of body fat = approximately 7700 calories
@@ -407,7 +409,7 @@ class HealthMetrics {
 
       // Check if calorie intake has been safety adjusted (capped at 90% of BMR)
       // Calculate what the theoretical calorie target would have been without safety adjustment
-      final theoreticalTargetCalories = (tdee + dailyCalorieChange).round();
+      final theoreticalTargetCalories = (baseline + dailyCalorieChange).round();
       final minimumSafeCalories = (bmr * 0.9).round();
 
       if (theoreticalTargetCalories < minimumSafeCalories) {
@@ -521,10 +523,6 @@ class HealthMetrics {
 
     if (profile.gender == null) {
       missingData.add("Gender");
-    }
-
-    if (profile.activityLevel == null) {
-      missingData.add("Activity Level");
     }
 
     return missingData;

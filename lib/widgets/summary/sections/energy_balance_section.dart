@@ -8,24 +8,27 @@ import 'base_section_widget.dart';
 
 /// Net Energy Balance Section
 /// Uses ReportColors for professional white background style
+///
+/// Note: Uses baseline (BMR × 1.2) instead of TDEE.
+/// Exercise is counted separately to avoid double-counting.
 class EnergyBalanceSection extends StatelessWidget {
   final int consumed;
   final int burned;
-  final double? tdee;
+  final double? baseline; // BMR × 1.2 (renamed from tdee)
   final UserProfile? profile;
 
   const EnergyBalanceSection({
     super.key,
     required this.consumed,
     required this.burned,
-    required this.tdee,
+    required this.baseline,
     required this.profile,
   });
 
   @override
   Widget build(BuildContext context) {
     final netCalories = consumed - burned;
-    final netDeficit = tdee != null ? (tdee!.round() - netCalories) : 0;
+    final netDeficit = baseline != null ? (baseline!.round() - netCalories) : 0;
 
     return BaseSectionWidget(
       icon: Icons.balance,
@@ -33,6 +36,7 @@ class EnergyBalanceSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Breakdown section
           InfoRow(label: 'Calories Consumed', value: '$consumed cal'),
           InfoRow(label: 'Exercise Burned', value: '-$burned cal'),
           const Divider(height: AppWidgetTheme.spaceXL, color: ReportColors.divider),
@@ -44,8 +48,8 @@ class EnergyBalanceSection extends StatelessWidget {
 
           const SizedBox(height: AppWidgetTheme.spaceMD),
 
-          if (tdee != null) ...[
-            InfoRow(label: 'TDEE (Maintenance)', value: '${tdee!.round()} cal'),
+          if (baseline != null) ...[
+            InfoRow(label: 'Baseline (BMR × 1.2)', value: '${baseline!.round()} cal'),
             InfoRow(
               label: 'Net Deficit',
               value: netDeficit > 0 ? '-$netDeficit cal' : '+${netDeficit.abs()} cal',

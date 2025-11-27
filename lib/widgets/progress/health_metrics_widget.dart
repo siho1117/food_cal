@@ -147,8 +147,7 @@ class HealthMetricsWidget extends StatelessWidget {
               // Metabolism Timeline
               _buildMetabolismTimeline(
                 bmr: bmr,
-                tdee: tdee,
-                activityLevel: userProfile?.activityLevel,
+                baseline: tdee, // tdee is now actually baseline (BMR × 1.2)
                 textColor: textColor,
               ),
             ],
@@ -367,45 +366,12 @@ class HealthMetricsWidget extends StatelessWidget {
     );
   }
 
-  /// Metabolism timeline matching BMI card design pattern
+  /// Metabolism timeline showing BMR and baseline
   Widget _buildMetabolismTimeline({
     required double? bmr,
-    required double? tdee,
-    required double? activityLevel,
+    required double? baseline,
     required Color textColor,
   }) {
-    // Get activity level label and color
-    String activityLabel = 'Not Set';
-    Color activityColor = AccentColors.electricBlue;
-
-    if (activityLevel != null) {
-      if (activityLevel <= 1.2) {
-        activityLabel = 'Idle';
-        activityColor = AccentColors.electricBlue;
-      } else if (activityLevel <= 1.375) {
-        activityLabel = 'Light';
-        activityColor = AccentColors.brightGreen;
-      } else if (activityLevel <= 1.55) {
-        activityLabel = 'Moderate';
-        activityColor = AccentColors.goldenYellow;
-      } else if (activityLevel <= 1.725) {
-        activityLabel = 'Active';
-        activityColor = AccentColors.coral;
-      } else {
-        activityLabel = 'Intense';
-        activityColor = AccentColors.vibrantRed;
-      }
-    }
-
-    // Activity zones for the timeline
-    final zones = [
-      _ScaleZone('Idle', 1.2, 1.375, AccentColors.electricBlue),
-      _ScaleZone('Light', 1.375, 1.55, AccentColors.brightGreen),
-      _ScaleZone('Moderate', 1.55, 1.725, AccentColors.goldenYellow),
-      _ScaleZone('Active', 1.725, 1.9, AccentColors.coral),
-      _ScaleZone('Intense', 1.9, 2.0, AccentColors.vibrantRed),
-    ];
-
     return Container(
       padding: EdgeInsets.all(AppWidgetTheme.spaceMD),
       decoration: BoxDecoration(
@@ -441,9 +407,9 @@ class HealthMetricsWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    // TDEE
+                    // Baseline
                     Text(
-                      tdee != null ? '${tdee.round()}' : '--',
+                      baseline != null ? '${baseline.round()}' : '--',
                       style: TextStyle(
                         fontSize: AppWidgetTheme.fontSizeXL,
                         fontWeight: FontWeight.w700,
@@ -453,7 +419,7 @@ class HealthMetricsWidget extends StatelessWidget {
                     ),
                     SizedBox(width: 4),
                     Text(
-                      'TDEE',
+                      'Baseline',
                       style: TextStyle(
                         fontSize: AppWidgetTheme.fontSizeXS,
                         fontWeight: FontWeight.w600,
@@ -492,18 +458,18 @@ class HealthMetricsWidget extends StatelessWidget {
                   ],
                 ),
               ),
-              // Activity badge
+              // Baseline badge (BMR × 1.2)
               Container(
                 padding: EdgeInsets.symmetric(
                   horizontal: AppWidgetTheme.spaceSM,
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: activityColor,
+                  color: AccentColors.electricBlue,
                   borderRadius: BorderRadius.circular(100),
                 ),
                 child: Text(
-                  activityLabel,
+                  'BMR × 1.2',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -516,94 +482,16 @@ class HealthMetricsWidget extends StatelessWidget {
 
           SizedBox(height: AppWidgetTheme.spaceSM),
 
-          // Horizontal gradient bar with indicator
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final barWidth = constraints.maxWidth;
-              const maxValue = 2.0;
-              final indicatorPosition = activityLevel != null
-                  ? ((activityLevel - 1.2) / (maxValue - 1.2)).clamp(0.0, 1.0) * barWidth
-                  : 0.0;
-
-              return SizedBox(
-                height: 4,
-                child: Stack(
-                  children: [
-                    // Gradient bar
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(2),
-                          gradient: LinearGradient(
-                            colors: [
-                              ...zones.map((zone) => zone.color),
-                              zones.last.color,
-                            ],
-                            stops: [
-                              ...zones.map((zone) => (zone.start - 1.2) / (maxValue - 1.2)),
-                              1.0,
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Current position indicator
-                    if (activityLevel != null)
-                      Positioned(
-                        left: indicatorPosition - 1.5,
-                        top: 0,
-                        bottom: 0,
-                        child: Container(
-                          width: 3,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(1.5),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.5),
-                                blurRadius: 3,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            },
-          ),
-
-          SizedBox(height: AppWidgetTheme.spaceXS),
-
-          // Zone legend
-          Wrap(
-            spacing: AppWidgetTheme.spaceSM,
-            runSpacing: 4,
-            children: zones.map((zone) {
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: zone.color,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    zone.label,
-                    style: TextStyle(
-                      fontSize: AppWidgetTheme.fontSizeXS,
-                      fontWeight: FontWeight.w500,
-                      color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
-                    ),
-                  ),
-                ],
-              );
-            }).toList(),
+          // Explanation text
+          Text(
+            'Baseline = BMR × 1.2 (sedentary multiplier)\nExercise should be logged separately',
+            style: TextStyle(
+              fontSize: AppWidgetTheme.fontSizeXS,
+              fontWeight: FontWeight.w500,
+              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigh),
+              fontStyle: FontStyle.italic,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

@@ -5,10 +5,10 @@ import '../../providers/settings_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../config/design_system/widget_theme.dart';
-import '../../config/design_system/dialog_theme.dart';
 import '../../config/design_system/typography.dart';
 import 'language_selector_dialog.dart';
 import 'theme_selector_dialog.dart';
+import 'monthly_goal_dialog.dart';
 
 class PreferencesWidget extends StatelessWidget {
   const PreferencesWidget({super.key});
@@ -215,93 +215,10 @@ class PreferencesWidget extends StatelessWidget {
   }
 
   void _showWeightGoalDialog(BuildContext context, SettingsProvider settingsProvider) {
-    final TextEditingController controller = TextEditingController();
-
-    // Pre-fill with current goal if it exists
-    if (settingsProvider.userProfile?.monthlyWeightGoal != null) {
-      final currentGoal = settingsProvider.userProfile!.monthlyWeightGoal!;
-      controller.text = currentGoal.abs().toStringAsFixed(1);
-    }
-
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppDialogTheme.backgroundColor,
-        shape: AppDialogTheme.shape,
-        contentPadding: AppDialogTheme.contentPadding,
-        actionsPadding: AppDialogTheme.actionsPadding,
-        title: const Text(
-          'Monthly Weight Goal',
-          style: AppDialogTheme.titleStyle,
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'How much weight do you want to lose per month?',
-              style: AppDialogTheme.bodyStyle,
-            ),
-            const SizedBox(height: AppDialogTheme.elementSpacing),
-            TextField(
-              controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              style: AppDialogTheme.inputTextStyle,
-              decoration: AppDialogTheme.inputDecoration(
-                hintText: '0.5',
-              ).copyWith(
-                labelText: settingsProvider.isMetric ? 'Goal (kg)' : 'Goal (lbs)',
-                suffixText: settingsProvider.isMetric ? 'kg' : 'lbs',
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Recommended: 0.5-1 ${settingsProvider.isMetric ? 'kg' : 'lbs'} per month',
-              style: AppDialogTheme.bodyStyle.copyWith(
-                fontSize: 12,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                style: AppDialogTheme.cancelButtonStyle,
-                child: const Text('Cancel'),
-              ),
-              const SizedBox(width: AppDialogTheme.buttonGap),
-              FilledButton(
-                onPressed: () async {
-                  final input = double.tryParse(controller.text);
-                  if (input != null && input > 0) {
-                    // Store as negative (weight loss)
-                    final goalInKg = settingsProvider.isMetric
-                        ? -input
-                        : -input * 0.453592; // Convert lbs to kg
-
-                    await settingsProvider.updateMonthlyWeightGoal(goalInKg);
-
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Monthly weight goal updated'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
-                  }
-                },
-                style: AppDialogTheme.primaryButtonStyle,
-                child: const Text('Save'),
-              ),
-            ],
-          ),
-        ],
+      builder: (context) => MonthlyGoalDialog(
+        settingsProvider: settingsProvider,
       ),
     );
   }

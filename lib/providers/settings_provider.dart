@@ -5,7 +5,6 @@ import '../data/repositories/user_repository.dart';
 import '../data/models/user_profile.dart';
 import '../data/models/weight_data.dart';
 import '../utils/shared/format_helpers.dart';
-import '../utils/progress/health_metrics.dart';
 
 class SettingsProvider extends ChangeNotifier {
   // Direct instantiation - UserRepository is effectively a singleton
@@ -47,10 +46,6 @@ class SettingsProvider extends ChangeNotifier {
   String get formattedStartingWeight => _userProfile?.startingWeight != null
       ? FormatHelpers.formatWeight(_userProfile!.startingWeight)
       : 'Not set';
-
-  String get activityLevelText => HealthMetrics.getActivityLevelText(
-    _userProfile?.activityLevel,
-  );
 
   String get calculatedAge {
     if (_userProfile?.birthDate == null) return 'Not set';
@@ -181,16 +176,6 @@ class SettingsProvider extends ChangeNotifier {
     }
   }
 
-  /// Update activity level
-  Future<void> updateActivityLevel(double level) async {
-    await _createUserProfileIfNeeded();
-
-    if (_userProfile != null) {
-      final updatedProfile = _userProfile!.copyWith(activityLevel: level);
-      await _updateProfile(updatedProfile);
-    }
-  }
-
   /// Update monthly weight goal
   Future<void> updateMonthlyWeightGoal(double monthlyGoal) async {
     await _createUserProfileIfNeeded();
@@ -272,15 +257,14 @@ class SettingsProvider extends ChangeNotifier {
     if (_userProfile == null) return 0.0;
     
     int completedFields = 0;
-    int totalFields = 6; // height, weight, age, gender, activity level, monthly goal
-    
+    int totalFields = 5; // height, weight, age, gender, monthly goal
+
     if (_userProfile!.height != null) completedFields++;
     if (_currentWeight != null) completedFields++;
     if (_userProfile!.age != null || _userProfile!.birthDate != null) completedFields++;
     if (_userProfile!.gender != null) completedFields++;
-    if (_userProfile!.activityLevel != null) completedFields++;
     if (_userProfile!.monthlyWeightGoal != null) completedFields++;
-    
+
     return completedFields / totalFields;
   }
 
@@ -292,16 +276,15 @@ class SettingsProvider extends ChangeNotifier {
     if (_userProfile == null) {
       return ['All profile information'];
     }
-    
+
     List<String> missing = [];
-    
+
     if (_userProfile!.height == null) missing.add('Height');
     if (_currentWeight == null) missing.add('Current Weight');
     if (_userProfile!.age == null && _userProfile!.birthDate == null) missing.add('Date of Birth');
     if (_userProfile!.gender == null) missing.add('Gender');
-    if (_userProfile!.activityLevel == null) missing.add('Activity Level');
     if (_userProfile!.monthlyWeightGoal == null) missing.add('Monthly Weight Goal');
-    
+
     return missing;
   }
 }

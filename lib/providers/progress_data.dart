@@ -139,8 +139,9 @@ class ProgressData extends ChangeNotifier {
           gender: userProfile.gender,
         );
 
-        if (bmr != null && userProfile.activityLevel != null) {
-          tdee = bmr * userProfile.activityLevel!;
+        if (bmr != null) {
+          // Calculate baseline (BMR × 1.2) instead of TDEE
+          tdee = bmr * 1.2;
 
           // Calculate different calorie goals
           calorieGoals = HealthMetrics.calculateDailyCalorieNeeds(

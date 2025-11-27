@@ -9,7 +9,6 @@ class UserProfile {
   final bool isMetric; // User's preferred unit system
   final String? gender;
   final double? goalWeight; // Stored in kg
-  final double? activityLevel; // 1.2 (sedentary) - 1.9 (very active)
   final DateTime? birthDate; // New field for date of birth
   final double? monthlyWeightGoal; // New field for monthly weight change goal in kg
   final double? startingWeight; // Starting weight for progress tracking in kg
@@ -22,7 +21,6 @@ class UserProfile {
     this.isMetric = true,
     this.gender,
     this.goalWeight,
-    this.activityLevel,
     this.birthDate,
     this.monthlyWeightGoal,
     this.startingWeight,
@@ -37,7 +35,6 @@ class UserProfile {
     bool? isMetric,
     String? gender,
     double? goalWeight,
-    double? activityLevel,
     DateTime? birthDate,
     double? monthlyWeightGoal,
     double? startingWeight,
@@ -50,7 +47,6 @@ class UserProfile {
       isMetric: isMetric ?? this.isMetric,
       gender: gender ?? this.gender,
       goalWeight: goalWeight ?? this.goalWeight,
-      activityLevel: activityLevel ?? this.activityLevel,
       birthDate: birthDate ?? this.birthDate,
       monthlyWeightGoal: monthlyWeightGoal ?? this.monthlyWeightGoal,
       startingWeight: startingWeight ?? this.startingWeight,
@@ -82,7 +78,6 @@ class UserProfile {
       'isMetric': isMetric,
       'gender': gender,
       'goalWeight': goalWeight,
-      'activityLevel': activityLevel,
       'birthDate': birthDate?.millisecondsSinceEpoch,
       'monthlyWeightGoal': monthlyWeightGoal,
       'startingWeight': startingWeight,
@@ -111,13 +106,13 @@ class UserProfile {
       isMetric: map['isMetric'] ?? true,
       gender: map['gender'],
       goalWeight: map['goalWeight'],
-      activityLevel: map['activityLevel'],
       birthDate: map['birthDate'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['birthDate'])
           : null,
       monthlyWeightGoal: map['monthlyWeightGoal'],
       startingWeight: map['startingWeight'],
     );
+    // Silent migration: ignore legacy activityLevel field if present
 
     return profile;
   }
@@ -135,7 +130,6 @@ class UserProfile {
     debugPrint("Goal Weight: ${goalWeight != null ? '$goalWeight kg' : 'Not set'}");
     debugPrint("Starting Weight: ${startingWeight != null ? '$startingWeight kg' : 'Not set'}");
     debugPrint("Monthly Weight Goal: ${monthlyWeightGoal != null ? '$monthlyWeightGoal kg' : 'Not set'}");
-    debugPrint("Activity Level: ${activityLevel ?? 'Not set'}");
     debugPrint("Birth Date: ${birthDate != null ? birthDate.toString() : 'Not set'}");
     debugPrint("Complete Map: ${toMap()}");
     debugPrint("===================================\n");
