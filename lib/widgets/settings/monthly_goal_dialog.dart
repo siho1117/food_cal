@@ -8,11 +8,14 @@ import '../../providers/settings_provider.dart';
 
 /// Monthly Weight Goal Picker Dialog
 ///
-/// A clean iOS-style dialog for selecting monthly weight loss goals.
+/// A clean iOS-style dialog for selecting monthly weight loss or gain goals.
 /// Features:
+/// - Loss/Gain mode toggle
 /// - CupertinoPicker wheel with 0.1 kg increments (0.1-9.9 kg)
 /// - kg/lbs unit toggle
-/// - Color-coded zone indicators (Safe/Moderate/Aggressive/Custom)
+/// - Color-coded zone indicators with mode-specific labels
+///   - Loss: Safe/Moderate/Aggressive/Custom
+///   - Gain: Gradual/Moderate/Athletic/Custom
 /// - Tappable zones to quickly jump to recommended values
 /// - Unit label overlay on picker
 class MonthlyGoalDialog extends StatefulWidget {
@@ -30,30 +33,41 @@ class MonthlyGoalDialog extends StatefulWidget {
 class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
   late FixedExtentScrollController _scrollController;
   late bool _isMetric;
+  late bool _isLossMode; // true = weight loss, false = weight gain
 
   // Constants
   static const double _kgToLbsRatio = 2.20462;
   static const double _minGoalKg = 0.1;
   static const double _maxGoalKg = 9.9;
   static const double _increment = 0.1;
-  static const double _safeZoneMax = 0.5;
-  static const double _moderateZoneMax = 1.0;
-  static const double _aggressiveZoneMax = 2.0;
   static const double _defaultGoalKg = 0.8;
 
-  // Zone target values (in kg) for quick selection
-  static const double _safeTarget = 0.3;
-  static const double _moderateTarget = 0.8;
-  static const double _aggressiveTarget = 1.5;
-  static const double _customTarget = 3.0;
+  // Zone configuration for Loss mode
+  static const double _lossSafeMax = 0.5;
+  static const double _lossModerateMax = 1.0;
+  static const double _lossAggressiveMax = 2.0;
+  static const double _lossSafeTarget = 0.3;
+  static const double _lossModerateTarget = 0.8;
+  static const double _lossAggressiveTarget = 1.5;
+  static const double _lossCustomTarget = 3.0;
+
+  // Zone configuration for Gain mode
+  static const double _gainGradualMax = 0.4;
+  static const double _gainModerateMax = 0.8;
+  static const double _gainAthleticMax = 1.5;
+  static const double _gainGradualTarget = 0.2;
+  static const double _gainModerateTarget = 0.6;
+  static const double _gainAthleticTarget = 1.0;
+  static const double _gainCustomTarget = 2.5;
 
   @override
   void initState() {
     super.initState();
     _isMetric = widget.settingsProvider.isMetric;
 
-    // Get current goal (stored as negative in DB for weight loss)
+    // Get current goal and determine mode (negative = loss, positive = gain)
     final currentGoalFromDb = widget.settingsProvider.userProfile?.monthlyWeightGoal;
+    _isLossMode = currentGoalFromDb == null || currentGoalFromDb < 0;
     final initialGoalKg = currentGoalFromDb?.abs() ?? _defaultGoalKg;
 
     _initializeController(initialGoalKg);
@@ -86,6 +100,12 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
     });
   }
 
+  void _toggleMode() {
+    setState(() {
+      _isLossMode = !_isLossMode;
+    });
+  }
+
   // ============ Getters ============
 
   /// Current selected goal in kg (always stored in kg)
@@ -97,13 +117,20 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
     return _toKg(displayGoal);
   }
 
-  /// Current zone based on goal value
+  /// Current zone based on goal value and mode
   String get _currentZone {
     final goal = _currentGoalInKg;
-    if (goal <= _safeZoneMax) return 'Safe';
-    if (goal <= _moderateZoneMax) return 'Moderate';
-    if (goal <= _aggressiveZoneMax) return 'Aggressive';
-    return 'Custom';
+    if (_isLossMode) {
+      if (goal <= _lossSafeMax) return 'Safe';
+      if (goal <= _lossModerateMax) return 'Moderate';
+      if (goal <= _lossAggressiveMax) return 'Aggressive';
+      return 'Custom';
+    } else {
+      if (goal <= _gainGradualMax) return 'Gradual';
+      if (goal <= _gainModerateMax) return 'Moderate';
+      if (goal <= _gainAthleticMax) return 'Athletic';
+      return 'Custom';
+    }
   }
 
   String get _unit => _isMetric ? 'kg' : 'lbs';
@@ -149,8 +176,8 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
 
   Future<void> _handleSave() async {
     try {
-      // Store as negative value (weight loss convention)
-      final goalToSave = -_currentGoalInKg;
+      // Store as negative for loss, positive for gain
+      final goalToSave = _isLossMode ? -_currentGoalInKg : _currentGoalInKg;
       await widget.settingsProvider.updateMonthlyWeightGoal(goalToSave);
 
       if (mounted) {
@@ -195,9 +222,13 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: _buildUnitToggle(),
+            // Row with mode toggle (left) and unit toggle (right)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildModeToggle(),
+                _buildUnitToggle(),
+              ],
             ),
             const SizedBox(height: 16),
             _buildWeightPicker(),
@@ -227,6 +258,22 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
     );
   }
 
+  Widget _buildModeToggle() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildModeButton('Lose', _isLossMode),
+          _buildModeButton('Gain', !_isLossMode),
+        ],
+      ),
+    );
+  }
+
   Widget _buildUnitToggle() {
     return Container(
       decoration: BoxDecoration(
@@ -243,10 +290,35 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
     );
   }
 
+  Widget _buildModeButton(String label, bool isSelected) {
+    return GestureDetector(
+      onTap: () {
+        if (!isSelected) {
+          _toggleMode();
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppDialogTheme.colorPrimaryDark : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : AppDialogTheme.colorTextSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildUnitButton(String label, bool isSelected) {
     return GestureDetector(
       onTap: () {
-        if ((label == 'kg' && !_isMetric) || (label == 'lbs' && _isMetric)) {
+        if (!isSelected) {
           _toggleUnit();
         }
       },
@@ -321,41 +393,81 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
   Widget _buildZoneIndicators() {
     final currentZone = _currentZone;
 
-    return Column(
-      children: [
-        _buildZoneRow(
-          'Safe',
-          AccentColors.brightGreen,
-          _formatRange(_minGoalKg, _safeZoneMax),
-          currentZone == 'Safe',
-          _safeTarget,
-        ),
-        const SizedBox(height: 8),
-        _buildZoneRow(
-          'Moderate',
-          AccentColors.goldenYellow,
-          _formatRange(_safeZoneMax + 0.1, _moderateZoneMax),
-          currentZone == 'Moderate',
-          _moderateTarget,
-        ),
-        const SizedBox(height: 8),
-        _buildZoneRow(
-          'Aggressive',
-          AccentColors.brightOrange,
-          _formatRange(_moderateZoneMax + 0.1, _aggressiveZoneMax),
-          currentZone == 'Aggressive',
-          _aggressiveTarget,
-        ),
-        const SizedBox(height: 8),
-        _buildZoneRow(
-          'Custom',
-          AccentColors.vibrantRed,
-          _formatRange(_aggressiveZoneMax + 0.1, _maxGoalKg),
-          currentZone == 'Custom',
-          _customTarget,
-        ),
-      ],
-    );
+    if (_isLossMode) {
+      // Loss mode zones
+      return Column(
+        children: [
+          _buildZoneRow(
+            'Safe',
+            AccentColors.brightGreen,
+            _formatRange(_minGoalKg, _lossSafeMax),
+            currentZone == 'Safe',
+            _lossSafeTarget,
+          ),
+          const SizedBox(height: 8),
+          _buildZoneRow(
+            'Moderate',
+            AccentColors.goldenYellow,
+            _formatRange(_lossSafeMax + 0.1, _lossModerateMax),
+            currentZone == 'Moderate',
+            _lossModerateTarget,
+          ),
+          const SizedBox(height: 8),
+          _buildZoneRow(
+            'Aggressive',
+            AccentColors.brightOrange,
+            _formatRange(_lossModerateMax + 0.1, _lossAggressiveMax),
+            currentZone == 'Aggressive',
+            _lossAggressiveTarget,
+          ),
+          const SizedBox(height: 8),
+          _buildZoneRow(
+            'Custom',
+            AccentColors.vibrantRed,
+            _formatRange(_lossAggressiveMax + 0.1, _maxGoalKg),
+            currentZone == 'Custom',
+            _lossCustomTarget,
+          ),
+        ],
+      );
+    } else {
+      // Gain mode zones
+      return Column(
+        children: [
+          _buildZoneRow(
+            'Gradual',
+            AccentColors.brightGreen,
+            _formatRange(_minGoalKg, _gainGradualMax),
+            currentZone == 'Gradual',
+            _gainGradualTarget,
+          ),
+          const SizedBox(height: 8),
+          _buildZoneRow(
+            'Moderate',
+            AccentColors.goldenYellow,
+            _formatRange(_gainGradualMax + 0.1, _gainModerateMax),
+            currentZone == 'Moderate',
+            _gainModerateTarget,
+          ),
+          const SizedBox(height: 8),
+          _buildZoneRow(
+            'Athletic',
+            AccentColors.brightOrange,
+            _formatRange(_gainModerateMax + 0.1, _gainAthleticMax),
+            currentZone == 'Athletic',
+            _gainAthleticTarget,
+          ),
+          const SizedBox(height: 8),
+          _buildZoneRow(
+            'Custom',
+            AccentColors.vibrantRed,
+            _formatRange(_gainAthleticMax + 0.1, _maxGoalKg),
+            currentZone == 'Custom',
+            _gainCustomTarget,
+          ),
+        ],
+      );
+    }
   }
 
   Widget _buildZoneRow(
