@@ -1,4 +1,5 @@
 // lib/widgets/settings/monthly_goal_dialog.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../config/design_system/dialog_theme.dart';
@@ -177,46 +178,52 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: AppDialogTheme.backgroundColor,
-      shape: AppDialogTheme.shape,
-      contentPadding: AppDialogTheme.contentPadding,
-      actionsPadding: AppDialogTheme.actionsPadding,
-      title: const Text(
-        'Monthly Weight Goal',
-        style: AppDialogTheme.titleStyle,
+    return BackdropFilter(
+      filter: ImageFilter.blur(
+        sigmaX: AppDialogTheme.backdropBlurSigmaX,
+        sigmaY: AppDialogTheme.backdropBlurSigmaY,
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: _buildUnitToggle(),
-          ),
-          const SizedBox(height: 16),
-          _buildWeightPicker(),
-          const SizedBox(height: 20),
-          _buildZoneIndicators(),
-        ],
-      ),
-      actions: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+      child: AlertDialog(
+        backgroundColor: AppDialogTheme.backgroundColor,
+        shape: AppDialogTheme.shape,
+        contentPadding: AppDialogTheme.contentPadding,
+        actionsPadding: AppDialogTheme.actionsPadding,
+        title: const Text(
+          'Monthly Weight Goal',
+          style: AppDialogTheme.titleStyle,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              style: AppDialogTheme.cancelButtonStyle,
-              child: const Text('Cancel'),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: _buildUnitToggle(),
             ),
-            const SizedBox(width: AppDialogTheme.buttonGap),
-            FilledButton(
-              onPressed: _handleSave,
-              style: AppDialogTheme.primaryButtonStyle,
-              child: const Text('Save'),
-            ),
+            const SizedBox(height: 16),
+            _buildWeightPicker(),
+            const SizedBox(height: 20),
+            _buildZoneIndicators(),
           ],
         ),
-      ],
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: AppDialogTheme.cancelButtonStyle,
+                child: const Text('Cancel'),
+              ),
+              const SizedBox(width: AppDialogTheme.buttonGap),
+              FilledButton(
+                onPressed: _handleSave,
+                style: AppDialogTheme.primaryButtonStyle,
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

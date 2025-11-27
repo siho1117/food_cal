@@ -285,4 +285,32 @@ class AppDialogTheme {
 
   /// Spacing between elements (e.g., between title and content)
   static const double elementSpacing = spaceMD;
+
+  // ═══════════════════════════════════════════════════════════════
+  // BACKDROP BLUR EFFECT
+  // ═══════════════════════════════════════════════════════════════
+
+  /// Horizontal blur intensity (sigma X)
+  /// Used with BackdropFilter to blur the background behind dialogs
+  ///
+  /// Recommended value: 5.0 (subtle blur)
+  ///
+  /// Usage example:
+  /// ```dart
+  /// return BackdropFilter(
+  ///   filter: ImageFilter.blur(
+  ///     sigmaX: AppDialogTheme.backdropBlurSigmaX,
+  ///     sigmaY: AppDialogTheme.backdropBlurSigmaY,
+  ///   ),
+  ///   child: AlertDialog(
+  ///     backgroundColor: AppDialogTheme.backgroundColor,
+  ///     // ... rest of dialog
+  ///   ),
+  /// );
+  /// ```
+  static const double backdropBlurSigmaX = 5.0;
+
+  /// Vertical blur intensity (sigma Y)
+  /// Used with BackdropFilter to blur the background behind dialogs
+  static const double backdropBlurSigmaY = 5.0;
 }
