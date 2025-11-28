@@ -28,7 +28,7 @@ class ProgressData extends ChangeNotifier {
   
   // Energy metrics
   double? _bmrValue;
-  double? _tdeeValue;
+  double? _baselineValue;
   Map<String, int> _calorieGoals = {};
 
   // Progress tracking metrics
@@ -55,7 +55,7 @@ class ProgressData extends ChangeNotifier {
   double? get bodyFatValue => _bodyFatValue;
   String get bodyFatClassification => _bodyFatClassification;
   double? get bmrValue => _bmrValue;
-  double? get tdeeValue => _tdeeValue;
+  double? get baselineValue => _baselineValue;
   Map<String, int> get calorieGoals => _calorieGoals;
   List<WeightData> get weightHistory => _weightHistory;
 
@@ -103,7 +103,7 @@ class ProgressData extends ChangeNotifier {
       
       // Energy metrics
       double? bmr;
-      double? tdee;
+      double? baseline;
       Map<String, int> calorieGoals = {};
       
       if (userProfile != null && currentWeight != null && userProfile.height != null) {
@@ -131,7 +131,7 @@ class ProgressData extends ChangeNotifier {
           }
         }
 
-        // Calculate BMR and TDEE
+        // Calculate BMR and baseline
         bmr = HealthMetrics.calculateBMR(
           weight: currentWeight,
           height: userProfile.height,
@@ -140,8 +140,8 @@ class ProgressData extends ChangeNotifier {
         );
 
         if (bmr != null) {
-          // Calculate baseline (BMR × 1.2) instead of TDEE
-          tdee = bmr * 1.2;
+          // Calculate baseline (BMR without activity multiplier)
+          baseline = bmr;
 
           // Calculate different calorie goals
           calorieGoals = HealthMetrics.calculateDailyCalorieNeeds(
@@ -215,7 +215,7 @@ class ProgressData extends ChangeNotifier {
       _bodyFatValue = bodyFatValue;
       _bodyFatClassification = bodyFatClassification;
       _bmrValue = bmr;
-      _tdeeValue = tdee;
+      _baselineValue = baseline;
       _calorieGoals = calorieGoals;
       
       _isLoading = false;

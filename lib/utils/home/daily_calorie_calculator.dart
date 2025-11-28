@@ -6,9 +6,9 @@ import '../progress/health_metrics.dart';
 ///
 /// Handles:
 /// - BMR calculation via HealthMetrics utility
-/// - Baseline using BMR × 1.2 (sedentary multiplier)
+/// - Baseline using BMR (without activity multiplier)
 /// - Monthly weight goal adjustments
-/// - Safety caps (minimum 90% of BMR for weight loss)
+/// - Safety caps (minimum 75% of BMR for weight loss)
 /// - Fallback defaults when user data is incomplete
 ///
 /// Note: Users should log exercise separately to avoid double-counting.
@@ -20,9 +20,9 @@ class DailyCalorieCalculator {
   ///
   /// Process:
   /// 1. Calculate BMR using HealthMetrics.calculateBMR()
-  /// 2. Calculate baseline calories (BMR × 1.2 sedentary multiplier)
+  /// 2. Use BMR as baseline calories (without activity multiplier)
   /// 3. Adjust for monthly weight goal (deficit/surplus)
-  /// 4. Apply safety cap (90% of BMR minimum for weight loss)
+  /// 4. Apply safety cap (75% of BMR minimum for weight loss)
   ///
   /// Returns 2000 as default if data is insufficient.
   ///
@@ -34,7 +34,7 @@ class DailyCalorieCalculator {
   ///   userProfile: userProfile,
   ///   currentWeight: 75.0,
   /// );
-  /// // Returns: 1850 (baseline minus deficit with safety cap applied)
+  /// // Returns: 1400 (BMR baseline minus deficit with safety cap applied)
   /// ```
   static int calculateDailyGoal({
     required UserProfile? userProfile,
@@ -59,10 +59,9 @@ class DailyCalorieCalculator {
         return 2000;
       }
 
-      // Calculate baseline calories using sedentary multiplier (BMR × 1.2)
+      // Calculate baseline calories (BMR without activity multiplier)
       // Users should log exercise separately to avoid double-counting
-      const baselineMultiplier = 1.2;
-      final baselineCalories = bmr * baselineMultiplier;
+      final baselineCalories = bmr;
 
       // Start with maintenance calories (baseline)
       int calorieGoal = baselineCalories.round();
@@ -78,9 +77,9 @@ class DailyCalorieCalculator {
         calorieGoal = (baselineCalories + calorieAdjustment).round();
 
         // SAFETY CHECK: For weight loss, ensure minimum safe calories
-        // Never go below 90% of BMR to maintain health and metabolism
+        // Never go below 75% of BMR to maintain health and metabolism
         if (userProfile.monthlyWeightGoal! < 0) {
-          final minimumSafeCalories = (bmr * 0.9).round();
+          final minimumSafeCalories = (bmr * 0.75).round();
           if (calorieGoal < minimumSafeCalories) {
             calorieGoal = minimumSafeCalories;
           }
@@ -101,7 +100,7 @@ class DailyCalorieCalculator {
   ///
   /// Returns weight change in kg per week (positive = gain, negative = loss).
   ///
-  /// Note: This calculation uses baseline (BMR × 1.2), not TDEE.
+  /// Note: This calculation uses BMR as baseline, not TDEE.
   /// Exercise calories should be logged separately.
   ///
   /// Example:
@@ -133,8 +132,7 @@ class DailyCalorieCalculator {
 
       if (bmr == null) return null;
 
-      const baselineMultiplier = 1.2;
-      final baselineCalories = bmr * baselineMultiplier;
+      final baselineCalories = bmr;
 
       // Calculate weekly deficit/surplus
       final dailyDifference = calorieGoal - baselineCalories;
@@ -147,7 +145,7 @@ class DailyCalorieCalculator {
     }
   }
 
-  /// Check if the calorie goal was safety-adjusted (capped at 90% BMR)
+  /// Check if the calorie goal was safety-adjusted (capped at 75% BMR)
   /// 
   /// Useful for UI to show a warning message when aggressive weight loss
   /// goals are being automatically adjusted for safety.
@@ -184,15 +182,14 @@ class DailyCalorieCalculator {
 
       if (bmr == null) return false;
 
-      const baselineMultiplier = 1.2;
-      final baselineCalories = bmr * baselineMultiplier;
+      final baselineCalories = bmr;
 
       final dailyWeightChangeKg = userProfile.monthlyWeightGoal! / 30;
       final calorieAdjustment = dailyWeightChangeKg * 7700;
       final theoreticalGoal = (baselineCalories + calorieAdjustment).round();
 
       // Check if it would go below the safety threshold
-      final minimumSafeCalories = (bmr * 0.9).round();
+      final minimumSafeCalories = (bmr * 0.75).round();
       return theoreticalGoal < minimumSafeCalories;
     } catch (e) {
       return false;

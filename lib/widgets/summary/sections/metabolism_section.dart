@@ -31,8 +31,8 @@ class MetabolismSection extends StatelessWidget {
       gender: profile?.gender,
     );
 
-    // Calculate baseline (BMR × 1.2) instead of TDEE
-    final baseline = bmr != null ? bmr * 1.2 : null;
+    // Calculate baseline (BMR without activity multiplier)
+    final baseline = bmr;
 
     return BaseSectionWidget(
       icon: Icons.local_fire_department,
@@ -63,7 +63,7 @@ class MetabolismSection extends StatelessWidget {
 
           if (baseline != null) ...[
             InfoRow(
-              label: 'Baseline (BMR × 1.2)',
+              label: 'Baseline (BMR)',
               value: '${baseline.round()} cal/day',
             ),
             Consumer<ThemeProvider>(
@@ -73,7 +73,7 @@ class MetabolismSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '  • Sedentary baseline (exercise logged separately)',
+                      '  • Basal metabolic rate (exercise logged separately)',
                       style: AppTypography.bodySmall.copyWith(
                         fontSize: AppWidgetTheme.fontSizeSM,
                         color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),

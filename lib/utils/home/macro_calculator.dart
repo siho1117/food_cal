@@ -43,10 +43,10 @@ class MacroCalculator {
 
     try {
       // Get personalized macro ratios based on monthly weight goal and user profile
-      // Uses baseline multiplier (BMR × 1.2) consistently with daily calorie calculator
+      // Uses BMR baseline (1.0) consistently with daily calorie calculator
       final macrosRatio = calculateRatios(
         monthlyWeightGoal: userProfile.monthlyWeightGoal,
-        activityLevel: 1.2, // Hardcoded baseline multiplier (BMR × 1.2)
+        activityLevel: 1.0, // BMR baseline (no activity multiplier)
         gender: userProfile.gender,
         age: userProfile.age,
         currentWeight: currentWeight,
@@ -86,17 +86,16 @@ class MacroCalculator {
   ///
   /// Adjusts ratios based on:
   /// - Weight goal (loss = higher protein, gain = higher carbs)
-  /// - Activity level (currently hardcoded to 1.2 baseline)
   /// - Age (older = more protein for muscle preservation)
   ///
-  /// Note: activityLevel parameter is kept for API compatibility but
-  /// should always be 1.2 (baseline multiplier).
+  /// Note: activityLevel parameter is kept for API compatibility but is no longer
+  /// used in calculations. Exercise should be logged separately to avoid double-counting.
   ///
   /// Example:
   /// ```dart
   /// final ratios = MacroCalculator.calculateRatios(
   ///   monthlyWeightGoal: -2.0, // Losing 2kg/month
-  ///   activityLevel: 1.2,
+  ///   activityLevel: 1.0,      // BMR baseline
   ///   gender: 'Male',
   ///   age: 30,
   ///   currentWeight: 80.0,
@@ -141,18 +140,7 @@ class MacroCalculator {
       fatPercentage -= 5;
     }
 
-    // 2. Adjust based on activity level
-    if (activityLevel < 1.4) {
-      // Sedentary - lower carbs
-      carbsPercentage -= 5;
-      fatPercentage += 5;
-    } else if (activityLevel > 1.7) {
-      // Very active - higher carbs for energy
-      carbsPercentage += 5;
-      fatPercentage -= 5;
-    }
-
-    // 3. Adjust based on age
+    // 2. Adjust based on age
     bool isOlder = age > 50;
     if (isOlder) {
       // Older adults need more protein for muscle preservation
@@ -160,29 +148,24 @@ class MacroCalculator {
       carbsPercentage -= 5;
     }
 
-    // 4. Make final adjustments to ensure percentages sum to 100%
+    // 3. Make final adjustments to ensure percentages sum to 100%
     int total = proteinPercentage + carbsPercentage + fatPercentage;
     if (total != 100) {
       // Adjust carbs to make total 100%
       carbsPercentage += (100 - total);
     }
 
-    // 5. Calculate protein based on body weight (between 1.6-2.2g per kg)
+    // 4. Calculate protein based on body weight (between 1.6-2.0g per kg)
     double proteinPerKg;
     if (monthlyWeightGoal < -0.1) {
-      // Higher protein for weight loss (2.0-2.2g/kg)
+      // Higher protein for weight loss (2.0g/kg)
       proteinPerKg = 2.0;
     } else if (monthlyWeightGoal > 0.1) {
-      // Moderate protein for weight gain (1.6-1.8g/kg)
+      // Moderate protein for weight gain (1.6g/kg)
       proteinPerKg = 1.6;
     } else {
       // Balanced protein for maintenance (1.8g/kg)
       proteinPerKg = 1.8;
-    }
-
-    // Adjust protein per kg based on activity level
-    if (activityLevel > 1.7) {
-      proteinPerKg += 0.2; // More active = more protein
     }
 
     // Calculate daily protein in grams
@@ -198,37 +181,31 @@ class MacroCalculator {
   }
 
   /// Get a description of the macro split strategy being used
-  /// 
+  ///
   /// Useful for UI to explain why certain ratios are recommended.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final description = MacroCalculator.getStrategyDescription(
   ///   monthlyWeightGoal: -2.0,
-  ///   activityLevel: 1.55,
+  ///   activityLevel: 1.0,  // Ignored, kept for compatibility
   /// );
-  /// // Returns: "Higher protein for weight loss, moderate carbs for active lifestyle"
+  /// // Returns: "Higher protein for weight loss"
   /// ```
   static String getStrategyDescription({
     required double? monthlyWeightGoal,
-    required double? activityLevel,
+    required double? activityLevel,  // Kept for API compatibility, not used
   }) {
-    if (monthlyWeightGoal == null || activityLevel == null) {
+    if (monthlyWeightGoal == null) {
       return 'Balanced macro distribution';
     }
 
-    final goalPart = monthlyWeightGoal < -0.1
-        ? 'Higher protein for weight loss'
-        : monthlyWeightGoal > 0.1
-            ? 'Higher carbs for weight gain'
-            : 'Balanced macros for maintenance';
-
-    final activityPart = activityLevel < 1.4
-        ? 'lower carbs for sedentary lifestyle'
-        : activityLevel > 1.7
-            ? 'higher carbs for active lifestyle'
-            : 'moderate carbs';
-
-    return '$goalPart, $activityPart';
+    if (monthlyWeightGoal < -0.1) {
+      return 'Higher protein for weight loss';
+    } else if (monthlyWeightGoal > 0.1) {
+      return 'Higher carbs for weight gain';
+    } else {
+      return 'Balanced macros for maintenance';
+    }
   }
 }

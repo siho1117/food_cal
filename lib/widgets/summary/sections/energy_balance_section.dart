@@ -9,12 +9,12 @@ import 'base_section_widget.dart';
 /// Net Energy Balance Section
 /// Uses ReportColors for professional white background style
 ///
-/// Note: Uses baseline (BMR × 1.2) instead of TDEE.
+/// Note: Uses BMR as baseline (without activity multiplier).
 /// Exercise is counted separately to avoid double-counting.
 class EnergyBalanceSection extends StatelessWidget {
   final int consumed;
   final int burned;
-  final double? baseline; // BMR × 1.2 (renamed from tdee)
+  final double? baseline; // BMR baseline
   final UserProfile? profile;
 
   const EnergyBalanceSection({
@@ -49,7 +49,7 @@ class EnergyBalanceSection extends StatelessWidget {
           const SizedBox(height: AppWidgetTheme.spaceMD),
 
           if (baseline != null) ...[
-            InfoRow(label: 'Baseline (BMR × 1.2)', value: '${baseline!.round()} cal'),
+            InfoRow(label: 'Baseline (BMR)', value: '${baseline!.round()} cal'),
             InfoRow(
               label: 'Net Deficit',
               value: netDeficit > 0 ? '-$netDeficit cal' : '+${netDeficit.abs()} cal',

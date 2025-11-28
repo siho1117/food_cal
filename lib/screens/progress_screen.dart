@@ -114,7 +114,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
                         const SizedBox(height: 20),
 
-                        // Health Metrics (BMI, Body Fat, BMR, TDEE combined)
+                        // Health Metrics (BMI, Body Fat, and BMR baseline)
                         HealthMetricsWidget(
                           currentWeight: progressData.currentWeight,
                           targetWeight: progressData.targetWeight,
@@ -124,7 +124,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                           bodyFat: progressData.bodyFatValue,
                           bodyFatCategory: progressData.bodyFatClassification,
                           bmr: progressData.bmrValue,
-                          tdee: progressData.tdeeValue,
+                          baseline: progressData.baselineValue,
                           targetBMI: progressData.targetBMI,
                           bmiProgress: progressData.bmiProgress,
                           targetBodyFat: progressData.targetBodyFat,

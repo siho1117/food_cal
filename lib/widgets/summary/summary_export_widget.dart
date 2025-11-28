@@ -32,7 +32,7 @@ class SummaryExportWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer3<HomeProvider, ExerciseProvider, ProgressData>(
       builder: (context, homeProvider, exerciseProvider, progressData, child) {
-        // Calculate baseline (BMR × 1.2) for energy balance section
+        // Calculate BMR baseline for energy balance section
         final profile = homeProvider.userProfile;
         final currentWeight = progressData.currentWeight;
         final bmr = HealthMetrics.calculateBMR(
@@ -41,8 +41,8 @@ class SummaryExportWidget extends StatelessWidget {
           age: profile?.age,
           gender: profile?.gender,
         );
-        // Use baseline multiplier (1.2) instead of activity level
-        final baseline = bmr != null ? bmr * 1.2 : null;
+        // Use BMR as baseline (no activity multiplier)
+        final baseline = bmr;
 
         return Container(
           color: ReportColors.background,

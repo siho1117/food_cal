@@ -6,7 +6,7 @@ import '../../data/models/weight_data.dart';
 ///
 /// Contains calculations for:
 /// - Body composition (BMI, body fat percentage)
-/// - Energy expenditure (BMR, TDEE)
+/// - Energy expenditure (BMR baseline)
 /// - Weight progress tracking
 /// - Calorie goals and recommendations
 ///
@@ -145,47 +145,9 @@ class HealthMetrics {
     return (maleBMR + femaleBMR) / 2;
   }
 
-  /// Calculate TDEE (Total Daily Energy Expenditure) based on BMR and activity level
-  static double? calculateTDEE({
-    required double? bmr,
-    required double? activityLevel,
-  }) {
-    if (bmr == null || activityLevel == null) {
-      return null;
-    }
-
-    return bmr * activityLevel;
-  }
-
-  /// Get activity level description based on the multiplier
-  static String getActivityLevelText(double? activityLevel) {
-    if (activityLevel == null) {
-      return 'Not set';
-    }
-
-    if (activityLevel < 1.3) return 'Sedentary';
-    if (activityLevel < 1.45) return 'Light Activity';
-    if (activityLevel < 1.65) return 'Moderate Activity';
-    if (activityLevel < 1.8) return 'Active';
-    return 'Very Active';
-  }
-
   // ============================================================================
   // CALORIE GOALS & TARGETS
   // ============================================================================
-
-  /// Calculate calorie targets for weight loss, maintenance, and gain
-  static Map<String, int> getCalorieTargets(double? tdee) {
-    if (tdee == null) {
-      return {'lose': 0, 'maintain': 0, 'gain': 0};
-    }
-
-    final int maintain = tdee.round();
-    final int lose = (maintain * 0.8).round(); // 20% deficit for weight loss
-    final int gain = (maintain * 1.15).round(); // 15% surplus for weight gain
-
-    return {'lose': lose, 'maintain': maintain, 'gain': gain};
-  }
 
   /// Calculate average daily calorie needs based on goals
   static Map<String, int> calculateDailyCalorieNeeds({
@@ -224,8 +186,8 @@ class HealthMetrics {
       };
     }
 
-    // Calculate baseline (BMR × 1.2) instead of TDEE
-    final baseline = bmr * 1.2;
+    // Calculate baseline (BMR without activity multiplier)
+    final baseline = bmr;
     final maintenance = baseline.round();
 
     // Calculate calorie targets for different goals

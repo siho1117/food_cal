@@ -7,7 +7,7 @@ import '../../config/design_system/accent_colors.dart';
 import '../../providers/theme_provider.dart';
 import '../../data/models/user_profile.dart';
 
-/// Combined health metrics display widget showing BMI, Body Fat, BMR, and TDEE
+/// Combined health metrics display widget showing BMI, Body Fat, and BMR baseline
 ///
 /// This widget is purely for display - all calculations are handled by
 /// HealthMetrics utility class and passed in via props.
@@ -20,7 +20,7 @@ class HealthMetricsWidget extends StatelessWidget {
   final double? bodyFat;
   final String? bodyFatCategory;
   final double? bmr;
-  final double? tdee;
+  final double? baseline;
 
   // Progress tracking values (calculated in provider)
   final double? targetBMI;
@@ -38,7 +38,7 @@ class HealthMetricsWidget extends StatelessWidget {
     required this.bodyFat,
     required this.bodyFatCategory,
     required this.bmr,
-    required this.tdee,
+    required this.baseline,
     this.targetBMI,
     this.bmiProgress,
     this.targetBodyFat,
@@ -147,7 +147,7 @@ class HealthMetricsWidget extends StatelessWidget {
               // Metabolism Timeline
               _buildMetabolismTimeline(
                 bmr: bmr,
-                baseline: tdee, // tdee is now actually baseline (BMR × 1.2)
+                baseline: baseline, // BMR baseline
                 textColor: textColor,
               ),
             ],
@@ -396,12 +396,12 @@ class HealthMetricsWidget extends StatelessWidget {
 
           SizedBox(height: AppWidgetTheme.spaceXS),
 
-          // Row 2: BMR, TDEE values, and activity badge
+          // Row 2: BMR and Baseline values
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // TDEE and BMR values
+              // Baseline and BMR values
               Expanded(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -458,7 +458,7 @@ class HealthMetricsWidget extends StatelessWidget {
                   ],
                 ),
               ),
-              // Baseline badge (BMR × 1.2)
+              // Baseline badge (BMR)
               Container(
                 padding: EdgeInsets.symmetric(
                   horizontal: AppWidgetTheme.spaceSM,
@@ -469,7 +469,7 @@ class HealthMetricsWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(100),
                 ),
                 child: Text(
-                  'BMR × 1.2',
+                  'BMR',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -484,7 +484,7 @@ class HealthMetricsWidget extends StatelessWidget {
 
           // Explanation text
           Text(
-            'Baseline = BMR × 1.2 (sedentary multiplier)\nExercise should be logged separately',
+            'Baseline = BMR (basal metabolic rate)\nExercise should be logged separately',
             style: TextStyle(
               fontSize: AppWidgetTheme.fontSizeXS,
               fontWeight: FontWeight.w500,
@@ -591,9 +591,9 @@ class HealthMetricsWidget extends StatelessWidget {
               ),
               SizedBox(height: AppDialogTheme.spaceMD),
 
-              // TDEE Section
+              // Baseline Section
               Text(
-                'TDEE (Total Daily Energy Expenditure)',
+                'Baseline (BMR)',
                 style: AppDialogTheme.bodyStyle.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppDialogTheme.colorPrimaryDark,
@@ -601,7 +601,7 @@ class HealthMetricsWidget extends StatelessWidget {
               ),
               SizedBox(height: AppDialogTheme.spaceXS),
               Text(
-                'Total calories burned including activity. This is your BMR multiplied by your activity level.',
+                'Your basal metabolic rate - calories needed at complete rest. Exercise is logged separately to avoid double-counting.',
                 style: AppDialogTheme.bodyStyle,
               ),
             ],

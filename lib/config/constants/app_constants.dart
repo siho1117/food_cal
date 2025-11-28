@@ -112,7 +112,6 @@ class AppConstants {
   static const String isMetricKey = 'is_metric';
   static const String dailyBudgetKey = 'daily_budget';
   static const String targetWeightKey = 'target_weight';
-  static const String activityLevelKey = 'activity_level';
 
   // ═══════════════════════════════════════════════════════════════
   // COMMON BUTTON LABELS
@@ -183,17 +182,6 @@ class AppConstants {
   static const String saveSuccess = 'Saved successfully!';
   static const String updateSuccess = 'Updated successfully!';
 
-  // ═══════════════════════════════════════════════════════════════
-  // ACTIVITY LEVELS (for calorie calculations)
-  // ═══════════════════════════════════════════════════════════════
-  
-  static const Map<String, double> activityMultipliers = {
-    'sedentary': 1.2,        // Little or no exercise
-    'light': 1.375,          // Light exercise 1-3 days/week
-    'moderate': 1.55,        // Moderate exercise 3-5 days/week
-    'active': 1.725,         // Hard exercise 6-7 days/week
-    'very_active': 1.9,      // Very hard exercise, physical job
-  };
 
   // ═══════════════════════════════════════════════════════════════
   // GENDER & GOAL OPTIONS
@@ -305,12 +293,6 @@ class AppConstants {
       default:
         return true;
     }
-  }
-
-  /// Helper method to get activity level multiplier
-  static double getActivityMultiplier(String activityLevel) {
-    return activityMultipliers[activityLevel.toLowerCase()] ?? 
-           activityMultipliers['sedentary']!;
   }
 
   /// Helper method to format serving unit display
