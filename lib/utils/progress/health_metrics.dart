@@ -360,8 +360,17 @@ class HealthMetrics {
 
   /// Calculate recommended daily exercise calorie burn based on weight goals
   ///
-  /// Note: Uses baseline (BMR × 1.2) instead of TDEE to avoid double-counting
-  /// exercise since users log exercise separately.
+  /// Exercise recommendations scale with monthly weight goal:
+  /// - Calculated based on the deficit/surplus required
+  /// - Minimum 300 cal/day for weight loss (WHO guidelines)
+  /// - 200 cal/day for weight gain (preserve surplus)
+  /// - 300 cal/day for maintenance
+  ///
+  /// Formula for weight loss:
+  /// dailyBurn = max(300, (|monthlyGoal| / 30) × 7700)
+  ///
+  /// This ensures exercise scales with goal intensity while maintaining
+  /// a healthy baseline aligned with WHO recommendations.
   static Map<String, dynamic> calculateRecommendedExerciseBurn({
     required double? monthlyWeightGoal, // kg/month, negative for loss
     required double? bmr,
@@ -385,56 +394,29 @@ class HealthMetrics {
       };
     }
 
-    // Calculate baseline (BMR × 1.2 sedentary multiplier)
-    const baselineMultiplier = 1.2;
-    final baseline = bmr * baselineMultiplier;
-
-    // Calculate daily calorie deficit/surplus needed based on monthly goal
-    // 1 kg of body fat = approximately 7700 calories
-    final monthlyCalorieChange = monthlyWeightGoal * 7700;
-    final dailyCalorieChange = monthlyCalorieChange / 30;
-
-    // Target intake already accounts for the goal, so calculate additional exercise
+    // Determine exercise recommendation based on goal type
     int dailyBurn;
     String recommendationType;
-    bool safetyAdjusted = false;
 
     if (monthlyWeightGoal < -0.1) {
       // Weight loss goal
-      // For weight loss, we want to recommend exercise to boost the deficit
-      // We recommend that about 20-30% of the deficit comes from exercise
-      // The rest should come from dietary changes
-      dailyBurn = (dailyCalorieChange.abs() * 0.25).round();
+      // Calculate based on deficit: (monthlyGoal / 30 days) × 7700 cal/kg
+      // This represents the daily calorie deficit needed
+      final dailyDeficit = (monthlyWeightGoal.abs() / 30) * 7700;
+
+      // Use the calculated deficit as exercise target, with 300 cal minimum
+      // Minimum ensures alignment with WHO exercise guidelines
+      dailyBurn = dailyDeficit.round().clamp(300, 9999);
       recommendationType = 'loss';
-
-      // Check if calorie intake has been safety adjusted (capped at 90% of BMR)
-      // Calculate what the theoretical calorie target would have been without safety adjustment
-      final theoreticalTargetCalories = (baseline + dailyCalorieChange).round();
-      final minimumSafeCalories = (bmr * 0.9).round();
-
-      if (theoreticalTargetCalories < minimumSafeCalories) {
-        // Safety adjustment was applied to calorie intake
-        safetyAdjusted = true;
-
-        // Calculate how many calories were added due to safety adjustment
-        final calorieAdjustment =
-            minimumSafeCalories - theoreticalTargetCalories;
-
-        // Add this adjustment to the daily burn to maintain the same deficit
-        // Plus an additional 20% to encourage good exercise habits
-        final additionalBurn = (calorieAdjustment * 1.2).round();
-        dailyBurn += additionalBurn;
-      }
     } else if (monthlyWeightGoal > 0.1) {
       // Weight gain goal
-      // For weight gain, we still recommend exercise for health
-      // but at a lower level to not counteract the calorie surplus
-      dailyBurn = (200).round(); // Base exercise for fitness
+      // Lower target to preserve calorie surplus for muscle gain
+      dailyBurn = 200;
       recommendationType = 'gain';
     } else {
       // Maintenance goal
-      // Recommend a moderate amount of exercise for general fitness
-      dailyBurn = (300).round();
+      // Standard healthy baseline
+      dailyBurn = 300;
       recommendationType = 'maintain';
     }
 
@@ -489,7 +471,7 @@ class HealthMetrics {
       'moderate_minutes': moderateMinutes,
       'intense_minutes': intenseMinutes,
       'recommendation_type': recommendationType,
-      'safety_adjusted': safetyAdjusted,
+      'safety_adjusted': false, // No longer used - kept for API compatibility
     };
   }
 

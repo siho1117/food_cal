@@ -39,23 +39,25 @@ class FormatHelpers {
 
   /// Format monthly weight goal to a display string
   ///
-  /// Calculates monthly goal from weekly goal (kg/week → kg/month).
-  /// Returns formatted string like "+2.0 kg/month" or "-2.0 kg/month"
+  /// Displays monthly goal with sign and mode label (Loss/Gain).
+  /// Returns formatted string like "1.5 kg/month (Loss)" or "0.8 kg/month (Gain)"
   /// or "N/A" if null.
   ///
   /// Example:
   /// ```dart
-  /// final formatted = FormatHelpers.formatMonthlyWeightGoal(0.5);
-  /// // Returns: "+2.0 kg/month" (0.5 kg/week × 4 weeks)
+  /// final formatted = FormatHelpers.formatMonthlyWeightGoal(-1.5);
+  /// // Returns: "1.5 kg/month (Loss)"
   ///
-  /// final formatted2 = FormatHelpers.formatMonthlyWeightGoal(-0.5);
-  /// // Returns: "-2.0 kg/month"
+  /// final formatted2 = FormatHelpers.formatMonthlyWeightGoal(0.8);
+  /// // Returns: "0.8 kg/month (Gain)"
   /// ```
-  static String formatMonthlyWeightGoal(double? weeklyGoal) {
-    if (weeklyGoal == null) return 'N/A';
-    final monthlyGoal = weeklyGoal * 4;
-    final sign = monthlyGoal >= 0 ? '+' : '';
-    return '$sign${monthlyGoal.toStringAsFixed(1)} kg/month';
+  static String formatMonthlyWeightGoal(double? monthlyGoal) {
+    if (monthlyGoal == null) return 'Not set';
+
+    final absValue = monthlyGoal.abs();
+    final label = monthlyGoal < 0 ? 'Loss' : 'Gain';
+
+    return '${absValue.toStringAsFixed(1)} kg/month ($label)';
   }
 
   /// Format BMI value to a display string

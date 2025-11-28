@@ -42,8 +42,8 @@ class MacroCalculator {
     }
 
     try {
-      // Get personalized macro ratios
-      // TODO: Review how monthly weight goal should impact macro calculations after TDEE cleanup
+      // Get personalized macro ratios based on monthly weight goal and user profile
+      // Uses baseline multiplier (BMR × 1.2) consistently with daily calorie calculator
       final macrosRatio = calculateRatios(
         monthlyWeightGoal: userProfile.monthlyWeightGoal,
         activityLevel: 1.2, // Hardcoded baseline multiplier (BMR × 1.2)

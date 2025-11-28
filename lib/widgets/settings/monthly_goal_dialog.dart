@@ -2,9 +2,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../config/design_system/accent_colors.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/exercise_provider.dart';
+import '../../providers/home_provider.dart';
 
 /// Monthly Weight Goal Picker Dialog
 ///
@@ -34,6 +37,7 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
   late FixedExtentScrollController _scrollController;
   late bool _isMetric;
   late bool _isLossMode; // true = weight loss, false = weight gain
+  late double _initialGoalKg; // Track initial value for zone calculation
 
   // Constants
   static const double _kgToLbsRatio = 2.20462;
@@ -68,9 +72,9 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
     // Get current goal and determine mode (negative = loss, positive = gain)
     final currentGoalFromDb = widget.settingsProvider.userProfile?.monthlyWeightGoal;
     _isLossMode = currentGoalFromDb == null || currentGoalFromDb < 0;
-    final initialGoalKg = currentGoalFromDb?.abs() ?? _defaultGoalKg;
+    _initialGoalKg = currentGoalFromDb?.abs() ?? _defaultGoalKg;
 
-    _initializeController(initialGoalKg);
+    _initializeController(_initialGoalKg);
   }
 
   @override
@@ -95,6 +99,7 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
     setState(() {
       final currentGoalKg = _currentGoalInKg;
       _isMetric = !_isMetric;
+      _initialGoalKg = currentGoalKg; // Update initial value to current selection
       _scrollController.dispose();
       _initializeController(currentGoalKg);
     });
@@ -110,7 +115,7 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
 
   /// Current selected goal in kg (always stored in kg)
   double get _currentGoalInKg {
-    if (!_scrollController.hasClients) return _defaultGoalKg;
+    if (!_scrollController.hasClients) return _initialGoalKg;
 
     final minDisplay = _toDisplayUnit(_minGoalKg);
     final displayGoal = minDisplay + (_scrollController.selectedItem * _increment);
@@ -182,12 +187,20 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Monthly weight goal updated'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+
+        // Refresh providers that depend on monthly weight goal
+        // This ensures all pages show updated values immediately
+        try {
+          Provider.of<ExerciseProvider>(context, listen: false).refreshData();
+        } catch (_) {
+          // ExerciseProvider might not be available in all contexts
+        }
+
+        try {
+          Provider.of<HomeProvider>(context, listen: false).refreshData();
+        } catch (_) {
+          // HomeProvider might not be available in all contexts
+        }
       }
     } catch (e) {
       if (mounted) {

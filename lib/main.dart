@@ -129,6 +129,47 @@ class _MainScreenState extends State<MainScreen> {
     SettingsScreen(),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    // Listen to navigation changes and refresh data accordingly
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final navigationProvider = Provider.of<NavigationProvider>(context, listen: false);
+      navigationProvider.addListener(_onNavigationChanged);
+    });
+  }
+
+  @override
+  void dispose() {
+    final navigationProvider = Provider.of<NavigationProvider>(context, listen: false);
+    navigationProvider.removeListener(_onNavigationChanged);
+    super.dispose();
+  }
+
+  /// Called whenever navigation index changes
+  /// Refreshes data for the newly visible page
+  void _onNavigationChanged() {
+    final navigationProvider = Provider.of<NavigationProvider>(context, listen: false);
+    final currentIndex = navigationProvider.currentIndex;
+
+    // Refresh data for the current page to ensure it shows latest values
+    switch (currentIndex) {
+      case 0: // Home
+        Provider.of<HomeProvider>(context, listen: false).refreshData();
+        break;
+      case 1: // Progress
+        Provider.of<ExerciseProvider>(context, listen: false).refreshData();
+        Provider.of<ProgressData>(context, listen: false).refreshData();
+        break;
+      case 3: // Summary (index 3, not 2 because camera is 2)
+        // Summary page refreshes automatically via Consumer widgets
+        break;
+      case 4: // Settings
+        Provider.of<SettingsProvider>(context, listen: false).refreshData();
+        break;
+    }
+  }
+
   // Map bottom nav index to screen index (handling camera special case)
   int _getScreenIndex(int navIndex) {
     // Nav items: Home(0), Progress(1), Camera(2), Summary(3), Settings(4)

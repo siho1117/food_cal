@@ -6,6 +6,7 @@ import '../../../config/design_system/typography.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../data/models/user_profile.dart';
 import '../../../utils/progress/health_metrics.dart';
+import '../../../utils/shared/format_helpers.dart';
 import 'base_section_widget.dart';
 
 /// Metabolism & Energy Expenditure Section
@@ -110,7 +111,7 @@ class MetabolismSection extends StatelessWidget {
               builder: (context, themeProvider, _) {
                 final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
                 return Text(
-                  '  • Monthly Goal: ${profile!.monthlyWeightGoal! > 0 ? "+" : ""}${profile!.monthlyWeightGoal!.toStringAsFixed(1)} kg (${(profile!.monthlyWeightGoal! * 2.20462).toStringAsFixed(1)} lbs)',
+                  '  • Monthly Goal: ${FormatHelpers.formatMonthlyWeightGoal(profile!.monthlyWeightGoal)}',
                   style: AppTypography.bodySmall.copyWith(
                     fontSize: AppWidgetTheme.fontSizeSM,
                     color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
