@@ -751,6 +751,16 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
     // Use brightGreen when progress is 100% or above
     final ringColor = progress >= 1.0 ? AccentColors.brightGreen : textColor;
 
+    // Format display: use multiplier (e.g., "1.2×") for values >100%
+    String displayText;
+    if (progress > 1.0) {
+      // Above 100%: show as multiplier (e.g., 1.2×, 2.0×)
+      displayText = '${progress.toStringAsFixed(1)}×';
+    } else {
+      // 0-100%: show as percentage (e.g., 85%)
+      displayText = '$percentage%';
+    }
+
     return Column(
       children: [
         // Circular progress ring
@@ -784,9 +794,9 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
                   valueColor: AlwaysStoppedAnimation<Color>(ringColor),
                 ),
               ),
-              // Percentage text
+              // Percentage text (or multiplier if >100%)
               Text(
-                '$percentage%',
+                displayText,
                 style: TextStyle(
                   fontSize: AppWidgetTheme.fontSizeML,
                   fontWeight: FontWeight.w700,

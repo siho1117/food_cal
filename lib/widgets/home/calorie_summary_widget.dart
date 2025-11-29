@@ -14,11 +14,8 @@ class _CalorieSummaryDesign {
   static const int progressBarSegments = 10;
   static const double mainCalorieFontSize = 84.0;
 
-  // Warm gradient warning colors (from accent palette)
-  static const Color vibrantRed = AccentColors.vibrantRed; // #FF4757 - Over 100% alert
-  static const Color coral = AccentColors.coral;         // #FF7B6B - 95-100%
-  static const Color brightOrange = AccentColors.brightOrange; // #FF8C42 - 85-95%
-  static const Color goldenYellow = AccentColors.goldenYellow; // #F5A623 - 70-85%
+  // Single red with opacity gradient (simplified system)
+  static const Color warningRed = AccentColors.vibrantRed; // #FF4757 - Base red color for all warning levels
 }
 
 /// Utility class for calorie-related calculations and formatting
@@ -179,24 +176,31 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
 
         final totalCalories = homeProvider.totalCalories;
         final calorieGoal = homeProvider.calorieGoal;
+        final effectiveGoal = homeProvider.effectiveCalorieGoal;
+        final bonusCalories = homeProvider.exerciseBonusCalories;
+        final bonusEnabled = homeProvider.exerciseBonusEnabled;
 
-        final remaining = CalorieSummaryUtils.calculateRemaining(totalCalories, calorieGoal);
+        final remaining = CalorieSummaryUtils.calculateRemaining(totalCalories, effectiveGoal);
         final isOverBudget = remaining < 0;
 
-        _checkForRefresh(totalCalories, calorieGoal);
+        _checkForRefresh(totalCalories, effectiveGoal);
 
-        final calorieProgress = CalorieSummaryUtils.calculateProgress(totalCalories, calorieGoal);
-        
+        final calorieProgress = CalorieSummaryUtils.calculateProgress(totalCalories, effectiveGoal);
+
         return SlideTransition(
           position: _slideAnimation,
           child: FadeTransition(
             opacity: _fadeAnimation,
             child: Semantics(
-              label: _buildSemanticLabel(totalCalories, calorieGoal, remaining, isOverBudget),
+              label: _buildSemanticLabel(totalCalories, effectiveGoal, remaining, isOverBudget),
               child: _buildTransparentCard(
                 themeProvider: themeProvider,
+                homeProvider: homeProvider,
                 totalCalories: totalCalories,
                 calorieGoal: calorieGoal,
+                effectiveGoal: effectiveGoal,
+                bonusCalories: bonusCalories,
+                bonusEnabled: bonusEnabled,
                 remaining: remaining,
                 isOverBudget: isOverBudget,
                 calorieProgress: calorieProgress,
@@ -238,8 +242,12 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
 
   Widget _buildTransparentCard({
     required ThemeProvider themeProvider,
+    required HomeProvider homeProvider,
     required int totalCalories,
     required int calorieGoal,
+    required int effectiveGoal,
+    required int bonusCalories,
+    required bool bonusEnabled,
     required int remaining,
     required bool isOverBudget,
     required double calorieProgress,
@@ -265,39 +273,46 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
         padding: AppWidgetTheme.cardPadding,
         child: Column(
           children: [
-            // Title with flame icons on both sides
+            // Title with toggle button
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(
-                  Icons.local_fire_department_rounded,
-                  size: 22,
-                  color: textColor,
+                // Left: Title with flame icon
+                Row(
+                  children: [
+                    Icon(
+                      Icons.local_fire_department_rounded,
+                      size: 22,
+                      color: textColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      AppLocalizations.of(context)!.caloriesToday,
+                      style: TextStyle(
+                        fontSize: 22,
+                        color: textColor,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.3,
+                        shadows: AppWidgetTheme.textShadows,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  AppLocalizations.of(context)!.caloriesToday,
-                  style: TextStyle(
-                    fontSize: 22,
-                    color: textColor,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.3,
-                    shadows: AppWidgetTheme.textShadows,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.local_fire_department_rounded,
-                  size: 22,
-                  color: textColor,
-                ),
+                // Right: Exercise bonus toggle
+                _buildExerciseBonusToggle(homeProvider, textColor),
               ],
             ),
 
             SizedBox(height: AppWidgetTheme.spaceXL),
 
             // Main calorie number
-            _buildMainDisplay(totalCalories, calorieGoal, textColor),
+            _buildMainDisplay(
+              totalCalories,
+              calorieGoal,
+              bonusCalories,
+              bonusEnabled,
+              textColor,
+            ),
 
             SizedBox(height: AppWidgetTheme.spaceXXL),
 
@@ -314,7 +329,13 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
     );
   }
 
-  Widget _buildMainDisplay(int totalCalories, int calorieGoal, Color textColor) {
+  Widget _buildMainDisplay(
+    int totalCalories,
+    int calorieGoal,
+    int bonusCalories,
+    bool bonusEnabled,
+    Color textColor,
+  ) {
     // Cache the TextStyle to avoid recreating it on every animation frame
     final numberStyle = TextStyle(
       fontSize: _CalorieSummaryDesign.mainCalorieFontSize,
@@ -343,18 +364,103 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
 
           SizedBox(height: AppWidgetTheme.spaceSM),
 
-          // Goal line
+          // Goal line with bonus
+          _buildGoalLine(calorieGoal, bonusCalories, bonusEnabled, textColor),
+        ],
+      ),
+    );
+  }
+
+  /// Build the goal line with optional bonus display
+  Widget _buildGoalLine(
+    int calorieGoal,
+    int bonusCalories,
+    bool bonusEnabled,
+    Color textColor,
+  ) {
+    final baseStyle = TextStyle(
+      fontSize: AppWidgetTheme.fontSizeLG,
+      fontWeight: FontWeight.w500,
+      color: textColor,
+      letterSpacing: 0.3,
+      shadows: AppWidgetTheme.textShadows,
+    );
+
+    // If bonus is enabled and there's a bonus, show it
+    final showBonus = bonusEnabled && bonusCalories > 0;
+
+    if (showBonus) {
+      // Format: / 2,000 + 200 🏋️ cal (using fitness_center icon)
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
           Text(
-            '/ ${CalorieSummaryUtils.formatNumber(calorieGoal)} ${AppLocalizations.of(context)!.cal}',
-            style: TextStyle(
-              fontSize: AppWidgetTheme.fontSizeLG,
-              fontWeight: FontWeight.w500,
-              color: textColor,
-              letterSpacing: 0.3,
-              shadows: AppWidgetTheme.textShadows,
+            '/ ${CalorieSummaryUtils.formatNumber(calorieGoal)} ',
+            style: baseStyle,
+          ),
+          Text(
+            '+ ${CalorieSummaryUtils.formatNumber(bonusCalories)} ',
+            style: baseStyle.copyWith(
+              fontWeight: FontWeight.w600,
             ),
           ),
+          Icon(
+            Icons.fitness_center,
+            size: 16,
+            color: textColor,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            AppLocalizations.of(context)!.cal,
+            style: baseStyle,
+          ),
         ],
+      );
+    } else {
+      // Standard format: / 2,000 cal
+      return Text(
+        '/ ${CalorieSummaryUtils.formatNumber(calorieGoal)} ${AppLocalizations.of(context)!.cal}',
+        style: baseStyle,
+      );
+    }
+  }
+
+  /// Build the exercise bonus toggle button
+  Widget _buildExerciseBonusToggle(HomeProvider homeProvider, Color textColor) {
+    final isEnabled = homeProvider.exerciseBonusEnabled;
+
+    return Semantics(
+      button: true,
+      label: 'Exercise calorie bonus toggle',
+      value: isEnabled ? 'On' : 'Off',
+      hint: 'Double tap to toggle exercise calorie bonus',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () async {
+            await homeProvider.toggleExerciseBonus();
+          },
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isEnabled
+                  ? textColor.withValues(alpha: 0.12)
+                  : Colors.transparent,
+            ),
+            child: Center(
+              child: Icon(
+                Icons.fitness_center,
+                size: 18,
+                color: textColor.withValues(
+                  alpha: isEnabled ? 1.0 : 0.35,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -363,30 +469,17 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
     const segmentCount = _CalorieSummaryDesign.progressBarSegments;
     final filledSegments = (progress * segmentCount).round();
 
-    // Determine color based on progress thresholds (warm gradient)
-    Color getProgressColor() {
-      if (isOverBudget) {
-        // Over 100% - Vibrant red alert
-        return _CalorieSummaryDesign.vibrantRed;
-      } else if (progress >= 0.95) {
-        // 95-100% - Coral (soft red warning)
-        return _CalorieSummaryDesign.coral;
-      } else if (progress >= 0.85) {
-        // 85-95% - Bright orange
-        return _CalorieSummaryDesign.brightOrange;
-      } else if (progress >= 0.70) {
-        // 70-85% - Golden yellow
-        return _CalorieSummaryDesign.goldenYellow;
-      } else {
-        // 0-70% - Normal (theme adaptive)
-        return textColor;
-      }
-    }
+    // Simple binary: red at 100%+, theme color below
+    final isOverBudgetColor = progress >= 1.0;
+    final filledColor = isOverBudgetColor
+        ? _CalorieSummaryDesign.warningRed
+        : textColor;
 
-    final progressColor = getProgressColor();
-    final filledColor = progressColor.withValues(alpha: AppWidgetTheme.opacityHighest);
-    final unfilledColor = textColor.withValues(alpha: AppWidgetTheme.opacityMediumHigh);
-    final shadowColor = progressColor.withValues(alpha: 0.3);
+    // Unfilled segments: white with transparency
+    final unfilledColor = Colors.white.withValues(alpha: 0.25);
+
+    // Shadow color
+    final shadowColor = filledColor.withValues(alpha: 0.3);
 
     return AnimatedBuilder(
       animation: _progressAnimation,

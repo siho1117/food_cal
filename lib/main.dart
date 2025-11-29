@@ -75,8 +75,20 @@ class FoodTrackerApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()..loadGradient()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()..loadLanguage()),
-        ChangeNotifierProvider(create: (_) => HomeProvider()..loadData()),
         ChangeNotifierProvider(create: (_) => ExerciseProvider()..loadData()),
+        ChangeNotifierProxyProvider<ExerciseProvider, HomeProvider>(
+          create: (context) {
+            final homeProvider = HomeProvider();
+            final exerciseProvider = context.read<ExerciseProvider>();
+            homeProvider.setExerciseProvider(exerciseProvider);
+            homeProvider.loadData();
+            return homeProvider;
+          },
+          update: (context, exerciseProvider, homeProvider) {
+            homeProvider?.setExerciseProvider(exerciseProvider);
+            return homeProvider ?? HomeProvider();
+          },
+        ),
         ChangeNotifierProvider(create: (_) => ProgressData()..loadUserData()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()..loadUserData()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),

@@ -4,19 +4,26 @@ import 'package:flutter/foundation.dart';
 import '../data/repositories/food_repository.dart';
 import '../data/repositories/user_repository.dart';
 import '../data/services/budget_service.dart';
+import '../data/services/exercise_bonus_service.dart';
 import '../data/models/food_item.dart';
 import '../data/models/user_profile.dart';
 import '../utils/home/macro_calculator.dart';
 import '../utils/home/daily_calorie_calculator.dart';
 import '../utils/home/cost_calculator.dart';
+import '../utils/home/exercise_bonus_calculator.dart';
 import '../utils/progress/progress_calculator.dart';
 import '../utils/shared/date_helper.dart';
+import './exercise_provider.dart';
 
 class HomeProvider extends ChangeNotifier {
   // Direct instantiation - both repositories use singleton services internally
   final FoodRepository _foodRepository = FoodRepository();
   final UserRepository _userRepository = UserRepository();
   final BudgetService _budgetService = BudgetService();
+  final ExerciseBonusService _exerciseBonusService = ExerciseBonusService();
+
+  // Exercise provider reference (injected)
+  ExerciseProvider? _exerciseProvider;
 
   // Loading state
   bool _isLoading = true;
@@ -47,20 +54,31 @@ class HomeProvider extends ChangeNotifier {
   int _totalCalories = 0;
   int get totalCalories => _totalCalories;
 
+  // Exercise bonus tracking
+  bool _exerciseBonusEnabled = false;
+  bool get exerciseBonusEnabled => _exerciseBonusEnabled;
+
+  int _exerciseBonusCalories = 0;
+  int get exerciseBonusCalories => _exerciseBonusCalories;
+
+  /// Get the effective calorie goal (base goal + bonus if enabled)
+  int get effectiveCalorieGoal => _calorieGoal +
+    (_exerciseBonusEnabled ? _exerciseBonusCalories : 0);
+
   int get caloriesRemaining => ProgressCalculator.calculateRemaining(
     consumed: _totalCalories.toDouble(),
-    target: _calorieGoal.toDouble(),
+    target: effectiveCalorieGoal.toDouble(),
   ).round();
 
   bool get isOverBudget => ProgressCalculator.isOverTarget(
     consumed: _totalCalories.toDouble(),
-    target: _calorieGoal.toDouble(),
+    target: effectiveCalorieGoal.toDouble(),
   );
 
   // Progress tracking
   double get calorieProgress => ProgressCalculator.calculateProgress(
     consumed: _totalCalories.toDouble(),
-    target: _calorieGoal.toDouble(),
+    target: effectiveCalorieGoal.toDouble(),
   );
 
   double get expectedDailyPercentage => ProgressCalculator.calculateExpectedDailyProgress(
@@ -109,9 +127,10 @@ class HomeProvider extends ChangeNotifier {
   );
 
   // Macro targets - NOW USING PERSONALIZED CALCULATIONS ✅
+  // Uses effectiveCalorieGoal to scale macros when exercise bonus is enabled
   Map<String, int> get targetMacros {
     return MacroCalculator.calculateTargets(
-      calorieGoal: _calorieGoal,
+      calorieGoal: effectiveCalorieGoal,  // Use effective goal (includes exercise bonus)
       userProfile: _userProfile,
       currentWeight: _currentWeight,
     );
@@ -160,11 +179,17 @@ class HomeProvider extends ChangeNotifier {
       // Load cost summaries (weekly & monthly) - ✅ FIXED BUG
       await _loadCostSummaries();
 
+      // Load exercise bonus state
+      await _loadExerciseBonusState();
+
       // Calculate calorie goal
       _calculateCalorieGoal();
 
       // Calculate totals
       _calculateTotals();
+
+      // Calculate exercise bonus (if enabled and provider is set)
+      await _calculateExerciseBonus();
 
       _isLoading = false;
       _errorMessage = null;
@@ -356,4 +381,75 @@ class HomeProvider extends ChangeNotifier {
 
   /// Get formatted date string for display
   String get formattedSelectedDate => DateHelper.formatRelativeDate(_selectedDate);
+
+  /// Set the exercise provider reference
+  ///
+  /// This allows HomeProvider to access exercise data for bonus calculations.
+  /// Should be called during app initialization.
+  void setExerciseProvider(ExerciseProvider provider) {
+    _exerciseProvider = provider;
+  }
+
+  /// Toggle exercise bonus feature on/off
+  ///
+  /// Saves the preference and recalculates the effective calorie goal.
+  Future<void> toggleExerciseBonus() async {
+    try {
+      // Toggle the state
+      final newState = await _exerciseBonusService.toggle();
+      _exerciseBonusEnabled = newState;
+
+      // Recalculate bonus if enabled
+      if (_exerciseBonusEnabled) {
+        await _calculateExerciseBonus();
+      } else {
+        _exerciseBonusCalories = 0;
+      }
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error toggling exercise bonus: $e');
+      rethrow;
+    }
+  }
+
+  /// Calculate exercise bonus calories
+  ///
+  /// Uses exercise data from ExerciseProvider to calculate bonus.
+  Future<void> _calculateExerciseBonus() async {
+    // If feature is disabled, no bonus
+    if (!_exerciseBonusEnabled) {
+      _exerciseBonusCalories = 0;
+      return;
+    }
+
+    // If no exercise provider set, no bonus
+    if (_exerciseProvider == null) {
+      _exerciseBonusCalories = 0;
+      return;
+    }
+
+    try {
+      final totalBurned = _exerciseProvider!.totalCaloriesBurned;
+      final burnGoal = _exerciseProvider!.dailyBurnGoal;
+
+      _exerciseBonusCalories = ExerciseBonusCalculator.calculateBonus(
+        totalBurned: totalBurned,
+        burnGoal: burnGoal,
+      );
+    } catch (e) {
+      debugPrint('Error calculating exercise bonus: $e');
+      _exerciseBonusCalories = 0;
+    }
+  }
+
+  /// Load exercise bonus enabled state from preferences
+  Future<void> _loadExerciseBonusState() async {
+    try {
+      _exerciseBonusEnabled = await _exerciseBonusService.isEnabled();
+    } catch (e) {
+      debugPrint('Error loading exercise bonus state: $e');
+      _exerciseBonusEnabled = false;
+    }
+  }
 }
