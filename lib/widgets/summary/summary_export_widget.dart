@@ -8,7 +8,6 @@ import '../../providers/progress_data.dart';
 import '../../utils/progress/health_metrics.dart';
 import 'summary_controls_widget.dart';
 import 'sections/report_header_section.dart';
-import 'sections/client_info_section.dart';
 import 'sections/body_metrics_section.dart';
 import 'sections/metabolism_section.dart';
 import 'sections/nutrition_section.dart';
@@ -45,17 +44,17 @@ class SummaryExportWidget extends StatelessWidget {
         final baseline = bmr;
 
         return Container(
-          color: ReportColors.background,
+          // Transparent to show gradient background
+          color: Colors.transparent,
           padding: const EdgeInsets.symmetric(vertical: AppWidgetTheme.spaceXL),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Report Header & Info
-              ReportHeaderSection(period: period),
-              const SizedBox(height: AppWidgetTheme.spaceXL),
-
-              // Client Information
-              ClientInfoSection(profile: homeProvider.userProfile),
+              // Report Header (includes client info)
+              ReportHeaderSection(
+                period: period,
+                profile: homeProvider.userProfile,
+              ),
               const SizedBox(height: AppWidgetTheme.spaceXL),
 
               // Body Measurements & Composition

@@ -1,10 +1,8 @@
 // lib/widgets/summary/sections/nutrition_section.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
 import '../../../config/design_system/nutrition_colors.dart';
-import '../../../providers/theme_provider.dart';
 import '../../../utils/shared/summary_data_calculator.dart';
 import 'base_section_widget.dart';
 
@@ -51,18 +49,13 @@ class NutritionSection extends StatelessWidget {
           SizedBox(height: AppWidgetTheme.spaceMD),
 
           // Macronutrient Breakdown Header
-          Consumer<ThemeProvider>(
-            builder: (context, themeProvider, _) {
-              final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
-              return Text(
-                'Macronutrient Breakdown:',
-                style: AppTypography.labelLarge.copyWith(
-                  fontSize: AppWidgetTheme.fontSizeMS,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
-                ),
-              );
-            },
+          Text(
+            'Macronutrient Breakdown:',
+            style: AppTypography.labelLarge.copyWith(
+              fontSize: AppWidgetTheme.fontSizeMS,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
 
           SizedBox(height: AppWidgetTheme.spaceMD),
@@ -123,46 +116,40 @@ class NutritionSection extends StatelessWidget {
     final percentage = target > 0 ? (consumed / target * 100).round() : 0;
     final progress = target > 0 ? (consumed / target).clamp(0.0, 1.0) : 0.0;
 
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, _) {
-        final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  label,
-                  style: AppTypography.bodyMedium.copyWith(
-                    fontSize: AppWidgetTheme.fontSizeSM,
-                    color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
-                  ),
-                ),
-                Text(
-                  '${consumed.round()}g / ${target.round()}g ($percentage%)',
-                  style: AppTypography.bodyMedium.copyWith(
-                    fontSize: AppWidgetTheme.fontSizeSM,
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+            Text(
+              label,
+              style: AppTypography.bodyMedium.copyWith(
+                fontSize: AppWidgetTheme.fontSizeSM,
+                color: Colors.white,
+              ),
             ),
-            const SizedBox(height: 4),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: Colors.grey[200],
-                valueColor: AlwaysStoppedAnimation<Color>(color),
-                minHeight: 8.0,
+            Text(
+              '${consumed.round()}g / ${target.round()}g ($percentage%)',
+              style: AppTypography.bodyMedium.copyWith(
+                fontSize: AppWidgetTheme.fontSizeSM,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
-        );
-      },
+        ),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: progress,
+            backgroundColor: Colors.white.withValues(alpha: 0.2),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+            minHeight: 8.0,
+          ),
+        ),
+      ],
     );
   }
 }

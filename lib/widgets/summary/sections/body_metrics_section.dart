@@ -26,8 +26,6 @@ class BodyMetricsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) {
-        final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
-
         final goalWeight = profile?.goalWeight;
         final startingWeight = HealthMetrics.getStartingWeight(weightHistory);
 
@@ -54,6 +52,11 @@ class BodyMetricsSection extends StatelessWidget {
           age: profile?.age,
           gender: profile?.gender,
         );
+        final startingBodyFat = HealthMetrics.calculateBodyFat(
+          bmi: startingBMI,
+          age: profile?.age,
+          gender: profile?.gender,
+        );
 
         return BaseSectionWidget(
           icon: Icons.straighten,
@@ -61,128 +64,218 @@ class BodyMetricsSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Measurements
-              Text(
-                'Body Measurements:',
-                style: AppTypography.displaySmall.copyWith(
-                  fontSize: AppWidgetTheme.fontSizeSM,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
-                ),
-              ),
-              SizedBox(height: AppWidgetTheme.spaceSM),
-
-              InfoRow(label: 'Height', value: profile?.formattedHeight() ?? 'Not set'),
+              // Height (Simple row) - Moved above table
               InfoRow(
-                label: 'Current Weight',
-                value: currentWeight != null
-                    ? '${currentWeight!.toStringAsFixed(1)} kg (${(currentWeight! * 2.20462).toStringAsFixed(1)} lbs)'
-                    : 'Not set',
+                label: 'Height',
+                value: profile?.formattedHeight() ?? 'Not set',
               ),
-              InfoRow(
-                label: 'Goal Weight',
-                value: goalWeight != null
-                    ? '${goalWeight.toStringAsFixed(1)} kg (${(goalWeight * 2.20462).toStringAsFixed(1)} lbs)'
-                    : 'Not set',
-              ),
-              if (startingWeight != null)
-                InfoRow(
-                  label: 'Starting Weight',
-                  value: '${startingWeight.toStringAsFixed(1)} kg (${(startingWeight * 2.20462).toStringAsFixed(1)} lbs)',
-                ),
 
-              if (currentWeight != null && startingWeight != null) ...[
-                SizedBox(height: AppWidgetTheme.spaceMD),
-                Text(
-                  'Weight Progress:',
-                  style: AppTypography.displaySmall.copyWith(
-                    fontSize: AppWidgetTheme.fontSizeSM,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                  ),
+              const SizedBox(height: AppWidgetTheme.spaceMD),
+
+              // OPTION 3: Compact Grid
+
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXS),
                 ),
-                SizedBox(height: AppWidgetTheme.spaceSM),
-                InfoRow(
-                  label: 'Change (Total)',
-                  value: '${(currentWeight! - startingWeight!).toStringAsFixed(1)} kg (${((currentWeight! - startingWeight!) * 2.20462).toStringAsFixed(1)} lbs)',
-                  valueColor: currentWeight! < startingWeight! ? Colors.green : Colors.orange,
-                ),
-                if (goalWeight != null) ...[
-                  InfoRow(
-                    label: 'Remaining to Goal',
-                    value: '${(currentWeight! - goalWeight!).abs().toStringAsFixed(1)} kg (${((currentWeight! - goalWeight!).abs() * 2.20462).toStringAsFixed(1)} lbs)',
-                  ),
-                  ProgressRow(
-                    label: 'Progress to Goal',
-                    progress: HealthMetrics.calculateGoalProgress(
-                      currentWeight: currentWeight,
-                      targetWeight: goalWeight,
+                padding: const EdgeInsets.all(AppWidgetTheme.spaceSM),
+                child: Column(
+                  children: [
+                    // Header Row
+                    _buildGridHeaderRow(),
+                    const SizedBox(height: AppWidgetTheme.spaceSM),
+
+                    // Weight Row
+                    _buildGridDataRow(
+                      'Weight',
+                      startingWeight != null ? '${startingWeight.toStringAsFixed(1)}kg' : 'N/A',
+                      currentWeight != null ? '${currentWeight!.toStringAsFixed(1)}kg' : 'N/A',
+                      goalWeight != null ? '${goalWeight.toStringAsFixed(1)}kg' : 'N/A',
+                      (startingWeight != null && currentWeight != null)
+                          ? '${(currentWeight! - startingWeight).toStringAsFixed(1)}kg'
+                          : 'N/A',
                     ),
-                  ),
-                ],
-              ],
 
-              SizedBox(height: AppWidgetTheme.spaceMD),
-              Text(
-                'Body Composition:',
-                style: AppTypography.displaySmall.copyWith(
-                  fontSize: AppWidgetTheme.fontSizeSM,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
+                    const SizedBox(height: AppWidgetTheme.spaceXS),
+
+                    // BMI Row
+                    _buildGridDataRow(
+                      'BMI',
+                      startingBMI != null ? startingBMI.toStringAsFixed(1) : 'N/A',
+                      currentBMI != null ? currentBMI.toStringAsFixed(1) : 'N/A',
+                      goalBMI != null ? goalBMI.toStringAsFixed(1) : 'N/A',
+                      currentBMI != null ? HealthMetrics.getBMIClassification(currentBMI) : 'N/A',
+                    ),
+
+                    if (currentBodyFat != null) ...[
+                      const SizedBox(height: AppWidgetTheme.spaceXS),
+
+                      // Body Fat % Row
+                      _buildGridDataRow(
+                        'Body Fat',
+                        startingBodyFat != null ? '${startingBodyFat.toStringAsFixed(1)}%' : 'N/A',
+                        '${currentBodyFat.toStringAsFixed(1)}%',
+                        targetBodyFat != null ? '${targetBodyFat.toStringAsFixed(1)}%' : 'N/A',
+                        (startingBodyFat != null && currentBodyFat != null)
+                            ? '${(currentBodyFat - startingBodyFat).toStringAsFixed(1)}%'
+                            : 'N/A',
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              SizedBox(height: AppWidgetTheme.spaceSM),
-
-              if (currentBMI != null) ...[
-                InfoRow(
-                  label: 'BMI (Current)',
-                  value: '${currentBMI.toStringAsFixed(1)} (${HealthMetrics.getBMIClassification(currentBMI)})',
-                ),
-                if (goalBMI != null)
-                  InfoRow(
-                    label: 'BMI (Goal)',
-                    value: '${goalBMI.toStringAsFixed(1)} (${HealthMetrics.getBMIClassification(goalBMI)})',
-                  ),
-                if (startingBMI != null)
-                  InfoRow(
-                    label: 'BMI (Starting)',
-                    value: '${startingBMI.toStringAsFixed(1)} (${HealthMetrics.getBMIClassification(startingBMI)})',
-                  ),
-              ],
-
-              if (currentBodyFat != null) ...[
-                SizedBox(height: AppWidgetTheme.spaceSM),
-                InfoRow(
-                  label: 'Body Fat % (Est.)',
-                  value: '${currentBodyFat.toStringAsFixed(1)}% (${HealthMetrics.getBodyFatClassification(currentBodyFat, profile?.gender)})',
-                ),
-                if (targetBodyFat != null) ...[
-                  InfoRow(
-                    label: 'Target Body Fat %',
-                    value: '${targetBodyFat.toStringAsFixed(1)}% (${HealthMetrics.getBodyFatClassification(targetBodyFat, profile?.gender)})',
-                  ),
-                  InfoRow(
-                    label: 'Body Fat to Lose',
-                    value: '${(currentBodyFat - targetBodyFat).toStringAsFixed(1)}%',
-                  ),
-                ],
-              ],
-
-              if (currentWeight != null && currentBodyFat != null) ...[
-                SizedBox(height: AppWidgetTheme.spaceSM),
-                InfoRow(
-                  label: 'Lean Body Mass',
-                  value: '${(currentWeight! * (1 - currentBodyFat! / 100)).toStringAsFixed(1)} kg (${(currentWeight! * (1 - currentBodyFat! / 100) * 2.20462).toStringAsFixed(1)} lbs)',
-                ),
-                InfoRow(
-                  label: 'Fat Mass',
-                  value: '${(currentWeight! * currentBodyFat! / 100).toStringAsFixed(1)} kg (${(currentWeight! * currentBodyFat! / 100 * 2.20462).toStringAsFixed(1)} lbs)',
-                ),
-              ],
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildGridHeaderRow() {
+    return Row(
+      children: [
+        // Metric column
+        Expanded(
+          flex: 2,
+          child: Text(
+            'Metric',
+            style: AppTypography.bodySmall.copyWith(
+              fontSize: AppWidgetTheme.fontSizeXS,
+              color: Colors.white.withValues(alpha: 0.5),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        // Starting column
+        Expanded(
+          flex: 2,
+          child: Text(
+            'Starting',
+            style: AppTypography.bodySmall.copyWith(
+              fontSize: AppWidgetTheme.fontSizeXS,
+              color: Colors.white.withValues(alpha: 0.5),
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        // Current column
+        Expanded(
+          flex: 2,
+          child: Text(
+            'Current',
+            style: AppTypography.bodySmall.copyWith(
+              fontSize: AppWidgetTheme.fontSizeXS,
+              color: Colors.white.withValues(alpha: 0.5),
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        // Goal column
+        Expanded(
+          flex: 2,
+          child: Text(
+            'Goal',
+            style: AppTypography.bodySmall.copyWith(
+              fontSize: AppWidgetTheme.fontSizeXS,
+              color: Colors.white.withValues(alpha: 0.5),
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        // Progress/Status column
+        Expanded(
+          flex: 2,
+          child: Text(
+            'Progress',
+            style: AppTypography.bodySmall.copyWith(
+              fontSize: AppWidgetTheme.fontSizeXS,
+              color: Colors.white.withValues(alpha: 0.5),
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGridDataRow(
+    String metric,
+    String starting,
+    String current,
+    String goal,
+    String progress,
+  ) {
+    return Row(
+      children: [
+        // Metric column
+        Expanded(
+          flex: 2,
+          child: Text(
+            metric,
+            style: AppTypography.bodyMedium.copyWith(
+              fontSize: AppWidgetTheme.fontSizeSM,
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        // Starting column
+        Expanded(
+          flex: 2,
+          child: Text(
+            starting,
+            style: AppTypography.bodySmall.copyWith(
+              fontSize: AppWidgetTheme.fontSizeSM,
+              color: Colors.white.withValues(alpha: 0.8),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        // Current column
+        Expanded(
+          flex: 2,
+          child: Text(
+            current,
+            style: AppTypography.bodyMedium.copyWith(
+              fontSize: AppWidgetTheme.fontSizeSM,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        // Goal column
+        Expanded(
+          flex: 2,
+          child: Text(
+            goal,
+            style: AppTypography.bodySmall.copyWith(
+              fontSize: AppWidgetTheme.fontSizeSM,
+              color: Colors.white.withValues(alpha: 0.8),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        // Progress/Status column (highlighted)
+        Expanded(
+          flex: 2,
+          child: Text(
+            progress,
+            style: AppTypography.bodySmall.copyWith(
+              fontSize: AppWidgetTheme.fontSizeXS,
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontStyle: FontStyle.italic,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
     );
   }
 }

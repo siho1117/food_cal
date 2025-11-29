@@ -1,12 +1,11 @@
 // lib/widgets/summary/sections/base_section_widget.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
-import '../../../providers/theme_provider.dart';
 
 /// Base widget for all summary report sections
-/// Uses professional white background with ReportColors for maximum readability
+/// Glassmorphism design with frosted glass effect on gradient background
+/// 75% white opacity with black text for optimal readability
 class BaseSectionWidget extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -21,62 +20,57 @@ class BaseSectionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get theme color for icon accent (keeps visual interest)
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, _) {
-        final iconAccentColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
-
-        return Container(
-          width: double.infinity,
-          margin: EdgeInsets.symmetric(horizontal: AppWidgetTheme.spaceXL),
-          padding: EdgeInsets.all(AppWidgetTheme.cardPadding.top),
-          decoration: BoxDecoration(
-            color: ReportColors.background,
-            border: Border.all(
-              color: ReportColors.border,
-              width: 1.5,
-            ),
-            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: AppWidgetTheme.spaceXL),
+      padding: EdgeInsets.all(AppWidgetTheme.cardPadding.top),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+        border: Border.all(
+          color: Colors.black.withValues(alpha: 0.10),
+          width: 2.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header
+          Row(
             children: [
-              // Section Header
-              Row(
-                children: [
-                  Icon(
-                    icon,
-                    size: AppWidgetTheme.iconSizeMedium,
-                    color: iconAccentColor, // Keep theme color for visual interest
-                  ),
-                  SizedBox(width: AppWidgetTheme.spaceSM),
-                  Text(
-                    title,
-                    style: AppTypography.displaySmall.copyWith(
-                      fontSize: AppWidgetTheme.fontSizeML,
-                      fontWeight: FontWeight.bold,
-                      color: ReportColors.textPrimary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
+              Icon(
+                icon,
+                size: AppWidgetTheme.iconSizeMedium,
+                color: Colors.white,
               ),
-              Divider(
-                height: AppWidgetTheme.spaceXL,
-                color: ReportColors.divider,
+              const SizedBox(width: AppWidgetTheme.spaceSM),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTypography.displaySmall.copyWith(
+                    fontSize: AppWidgetTheme.fontSizeML,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                  ),
+                ),
               ),
-              // Section Content
-              child,
             ],
           ),
-        );
-      },
+          Divider(
+            height: AppWidgetTheme.spaceXL,
+            color: Colors.white.withValues(alpha: 0.2),
+          ),
+          // Section Content
+          child,
+        ],
+      ),
     );
   }
 }
 
 /// Helper widget for info rows (label: value pairs)
-/// Uses ReportColors for professional white background style
+/// Black text on white glass background for readability
 class InfoRow extends StatelessWidget {
   final String label;
   final String value;
@@ -100,15 +94,18 @@ class InfoRow extends StatelessWidget {
             label,
             style: AppTypography.bodyMedium.copyWith(
               fontSize: AppWidgetTheme.fontSizeSM,
-              color: ReportColors.textSecondary,
+              color: Colors.white,
             ),
           ),
-          Text(
-            value,
-            style: AppTypography.bodyMedium.copyWith(
-              fontSize: AppWidgetTheme.fontSizeSM,
-              fontWeight: FontWeight.w600,
-              color: valueColor ?? ReportColors.textPrimary,
+          Flexible(
+            child: Text(
+              value,
+              style: AppTypography.bodyMedium.copyWith(
+                fontSize: AppWidgetTheme.fontSizeSM,
+                fontWeight: FontWeight.w600,
+                color: valueColor ?? Colors.white,
+              ),
+              textAlign: TextAlign.right,
             ),
           ),
         ],
@@ -118,64 +115,61 @@ class InfoRow extends StatelessWidget {
 }
 
 /// Helper widget for progress rows with bars
-/// Uses ReportColors with theme accent for progress bar
+/// Black text with colored progress bars on white glass background
 class ProgressRow extends StatelessWidget {
   final String label;
   final double progress;
+  final Color? progressColor;
 
   const ProgressRow({
     super.key,
     required this.label,
     required this.progress,
+    this.progressColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, _) {
-        // Keep theme color for progress bar fill (visual interest)
-        final progressColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
-        final percentage = (progress * 100).round();
+    final percentage = (progress * 100).round();
+    final barColor = progressColor ?? Colors.blue;
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: AppWidgetTheme.spaceSM),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppWidgetTheme.spaceSM),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    label,
-                    style: AppTypography.bodyMedium.copyWith(
-                      fontSize: AppWidgetTheme.fontSizeSM,
-                      color: ReportColors.textSecondary,
-                    ),
-                  ),
-                  Text(
-                    '$percentage%',
-                    style: AppTypography.bodyMedium.copyWith(
-                      fontSize: AppWidgetTheme.fontSizeSM,
-                      fontWeight: FontWeight.w600,
-                      color: ReportColors.textPrimary,
-                    ),
-                  ),
-                ],
+              Text(
+                label,
+                style: AppTypography.bodyMedium.copyWith(
+                  fontSize: AppWidgetTheme.fontSizeSM,
+                  color: Colors.white,
+                ),
               ),
-              const SizedBox(height: AppWidgetTheme.spaceXXS),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXS),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  backgroundColor: ReportColors.divider,
-                  valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-                  minHeight: 8.0,
+              Text(
+                '$percentage%',
+                style: AppTypography.bodyMedium.copyWith(
+                  fontSize: AppWidgetTheme.fontSizeSM,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
                 ),
               ),
             ],
           ),
-        );
-      },
+          const SizedBox(height: AppWidgetTheme.spaceXXS),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXS),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              valueColor: AlwaysStoppedAnimation<Color>(barColor),
+              minHeight: 8.0,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
