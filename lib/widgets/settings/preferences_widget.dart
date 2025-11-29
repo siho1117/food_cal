@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/home_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../config/design_system/widget_theme.dart';
@@ -201,17 +202,25 @@ class PreferencesWidget extends StatelessWidget {
     );
   }
 
-  void _toggleUnits(BuildContext context, SettingsProvider settingsProvider) {
+  void _toggleUnits(BuildContext context, SettingsProvider settingsProvider) async {
     final newValue = !settingsProvider.isMetric;
-    settingsProvider.updateUnitPreference(newValue);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Units changed to ${newValue ? 'Metric' : 'Imperial'}'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    await settingsProvider.updateUnitPreference(newValue);
+
+    // IMPORTANT: Refresh HomeProvider to pick up the updated profile
+    if (context.mounted) {
+      final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+      await homeProvider.refreshData();
+    }
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Units changed to ${newValue ? 'Metric' : 'Imperial'}'),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   void _showWeightGoalDialog(BuildContext context, SettingsProvider settingsProvider) {

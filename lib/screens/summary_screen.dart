@@ -85,6 +85,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
                               gradient: ThemeBackground.getGradient(themeProvider.selectedGradient),
                             ),
                             child: SummaryExportWidget(
+                              key: ValueKey('${homeProvider.userProfile?.isMetric}_$_currentPeriod'),
                               period: _currentPeriod,
                             ),
                           ),
