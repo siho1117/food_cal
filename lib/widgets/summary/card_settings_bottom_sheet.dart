@@ -200,6 +200,19 @@ class _CardSettingsBottomSheetState extends State<CardSettingsBottomSheet> {
             ),
           ),
 
+          // Card icon
+          Padding(
+            padding: const EdgeInsets.only(
+              left: AppWidgetTheme.spaceXS,
+              right: AppWidgetTheme.spaceSM,
+            ),
+            child: Icon(
+              config.type.icon,
+              color: Colors.white,
+              size: AppWidgetTheme.iconSizeMedium,
+            ),
+          ),
+
           // Card info and toggle
           Expanded(
             child: SwitchListTile(

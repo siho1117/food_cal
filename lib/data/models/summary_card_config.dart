@@ -1,4 +1,5 @@
 // lib/data/models/summary_card_config.dart
+import 'package:flutter/material.dart';
 
 /// Enum representing all available summary cards
 enum SummaryCardType {
@@ -14,6 +15,24 @@ enum SummaryCardType {
   final bool isRequired; // Required cards can't be hidden
 
   const SummaryCardType(this.id, this.displayName, this.isRequired);
+
+  /// Get the icon for this card type
+  IconData get icon {
+    switch (this) {
+      case SummaryCardType.bodyMetrics:
+        return Icons.straighten;
+      case SummaryCardType.nutrition:
+        return Icons.restaurant;
+      case SummaryCardType.budget:
+        return Icons.attach_money;
+      case SummaryCardType.exercise:
+        return Icons.fitness_center;
+      case SummaryCardType.progress:
+        return Icons.emoji_events;
+      case SummaryCardType.mealLog:
+        return Icons.restaurant_menu;
+    }
+  }
 
   static SummaryCardType fromId(String id) {
     return SummaryCardType.values.firstWhere(
