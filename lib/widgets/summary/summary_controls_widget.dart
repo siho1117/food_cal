@@ -12,6 +12,7 @@ class SummaryControlsWidget extends StatelessWidget {
   final Function(SummaryPeriod) onPeriodChanged;
   final VoidCallback onExport;
   final bool isExporting;
+  final VoidCallback? onSettingsTap;
 
   const SummaryControlsWidget({
     super.key,
@@ -19,6 +20,7 @@ class SummaryControlsWidget extends StatelessWidget {
     required this.onPeriodChanged,
     required this.onExport,
     this.isExporting = false,
+    this.onSettingsTap,
   });
 
   @override
@@ -50,6 +52,12 @@ class SummaryControlsWidget extends StatelessWidget {
               ),
 
               SizedBox(width: AppWidgetTheme.spaceLG),
+
+              // Settings Gear Icon (if callback provided)
+              if (onSettingsTap != null) ...[
+                _buildSettingsButton(textColor),
+                SizedBox(width: AppWidgetTheme.spaceSM),
+              ],
 
               // Export Button (Icon Only)
               _buildExportIconButton(textColor),
@@ -120,6 +128,38 @@ class SummaryControlsWidget extends StatelessWidget {
             ),
           );
         }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildSettingsButton(Color textColor) {
+    final bgColor = textColor == AppWidgetTheme.colorPrimaryDark
+        ? AppWidgetTheme.colorPrimaryDark
+        : Colors.white;
+    final iconColor = textColor == AppWidgetTheme.colorPrimaryDark
+        ? Colors.white
+        : AppWidgetTheme.colorPrimaryDark;
+
+    return Container(
+      width: AppWidgetTheme.iconContainerLarge,
+      height: AppWidgetTheme.iconContainerLarge,
+      decoration: BoxDecoration(
+        color: bgColor,
+        shape: BoxShape.circle,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppWidgetTheme.iconContainerLarge / 2),
+          onTap: onSettingsTap,
+          child: Center(
+            child: Icon(
+              Icons.settings,
+              size: AppWidgetTheme.iconSizeLarge,
+              color: iconColor,
+            ),
+          ),
+        ),
       ),
     );
   }

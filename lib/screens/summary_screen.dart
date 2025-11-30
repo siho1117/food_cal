@@ -12,8 +12,11 @@ import '../providers/home_provider.dart';
 import '../providers/exercise_provider.dart';
 import '../providers/theme_provider.dart';
 import '../services/food_image_service.dart';
+import '../services/summary_card_settings_service.dart';
+import '../data/models/summary_card_config.dart';
 import '../widgets/summary/summary_controls_widget.dart';
 import '../widgets/summary/summary_export_widget.dart';
+import '../widgets/summary/card_settings_bottom_sheet.dart';
 import '../widgets/common/custom_app_bar.dart';
 
 class SummaryScreen extends StatefulWidget {
@@ -26,7 +29,46 @@ class SummaryScreen extends StatefulWidget {
 class _SummaryScreenState extends State<SummaryScreen> {
   SummaryPeriod _currentPeriod = SummaryPeriod.daily;
   bool _isExporting = false;
+  List<SummaryCardConfig> _cardConfigs = [];
   final ScreenshotController _screenshotController = ScreenshotController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCardConfiguration();
+  }
+
+  Future<void> _loadCardConfiguration() async {
+    final configs = await SummaryCardSettingsService.loadCardConfig();
+    if (mounted) {
+      setState(() {
+        _cardConfigs = configs;
+      });
+    }
+  }
+
+  void _showSettingsBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => CardSettingsBottomSheet(
+        cardConfigs: _cardConfigs,
+        onVisibilityChanged: _updateCardVisibility,
+        onReorder: _reorderCards,
+      ),
+    );
+  }
+
+  Future<void> _updateCardVisibility(SummaryCardType cardType, bool isVisible) async {
+    await SummaryCardSettingsService.updateCardVisibility(cardType, isVisible);
+    await _loadCardConfiguration();
+  }
+
+  Future<void> _reorderCards(int oldIndex, int newIndex) async {
+    await SummaryCardSettingsService.reorderCards(oldIndex, newIndex);
+    await _loadCardConfiguration();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +120,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
                             },
                             onExport: _handleExport,
                             isExporting: _isExporting,
+                            onSettingsTap: _showSettingsBottomSheet,
                           ),
 
                           const SizedBox(height: 16),
@@ -90,8 +133,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
                                 gradient: ThemeBackground.getGradient(themeProvider.selectedGradient),
                               ),
                               child: SummaryExportWidget(
-                                key: ValueKey('${homeProvider.userProfile?.isMetric}_$_currentPeriod'),
+                                key: ValueKey('${homeProvider.userProfile?.isMetric}_${_currentPeriod}_${_cardConfigs.length}'),
                                 period: _currentPeriod,
+                                cardConfigs: _cardConfigs,
                               ),
                             ),
                           ),
