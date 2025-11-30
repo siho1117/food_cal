@@ -52,7 +52,7 @@ class ExerciseSection extends StatelessWidget {
               ),
 
               if (exercises.isNotEmpty) ...[
-                SizedBox(height: AppWidgetTheme.spaceMD),
+                const SizedBox(height: AppWidgetTheme.spaceMD),
                 Text(
                   'Exercise Breakdown:',
                   style: AppTypography.labelLarge.copyWith(
@@ -61,7 +61,7 @@ class ExerciseSection extends StatelessWidget {
                     color: textColor,
                   ),
                 ),
-                SizedBox(height: AppWidgetTheme.spaceMD),
+                const SizedBox(height: AppWidgetTheme.spaceMD),
 
                 ...exercises.asMap().entries.map((entry) {
                   final index = entry.key;
@@ -128,7 +128,7 @@ class ExerciseSection extends StatelessWidget {
                   );
                 }),
               ] else ...[
-                SizedBox(height: AppWidgetTheme.spaceMD),
+                const SizedBox(height: AppWidgetTheme.spaceMD),
                 Text(
                   'No exercises logged today',
                   style: AppTypography.bodySmall.copyWith(

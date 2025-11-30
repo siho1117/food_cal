@@ -68,7 +68,7 @@ class NutritionSection extends StatelessWidget {
             valueColor: isOver ? NutritionColors.warning : NutritionColors.success,
           ),
 
-          SizedBox(height: AppWidgetTheme.spaceMD),
+          const SizedBox(height: AppWidgetTheme.spaceMD),
 
           // Macronutrient Breakdown Header
           Text(
@@ -80,7 +80,7 @@ class NutritionSection extends StatelessWidget {
             ),
           ),
 
-          SizedBox(height: AppWidgetTheme.spaceMD),
+          const SizedBox(height: AppWidgetTheme.spaceMD),
 
           // Protein
           _buildMacroRow(
@@ -90,7 +90,7 @@ class NutritionSection extends StatelessWidget {
             NutritionColors.proteinColor,
           ),
 
-          SizedBox(height: AppWidgetTheme.spaceSM),
+          const SizedBox(height: AppWidgetTheme.spaceSM),
 
           // Carbs
           _buildMacroRow(
@@ -100,7 +100,7 @@ class NutritionSection extends StatelessWidget {
             NutritionColors.carbsColor,
           ),
 
-          SizedBox(height: AppWidgetTheme.spaceSM),
+          const SizedBox(height: AppWidgetTheme.spaceSM),
 
           // Fat
           _buildMacroRow(

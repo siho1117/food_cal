@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import '../config/design_system/theme_background.dart';
@@ -12,6 +11,7 @@ import '../config/design_system/theme_design.dart';
 import '../providers/home_provider.dart';
 import '../providers/exercise_provider.dart';
 import '../providers/theme_provider.dart';
+import '../services/food_image_service.dart';
 import '../widgets/summary/summary_controls_widget.dart';
 import '../widgets/summary/summary_export_widget.dart';
 import '../widgets/common/custom_app_bar.dart';
@@ -173,6 +173,29 @@ class _SummaryScreenState extends State<SummaryScreen> {
     ]);
   }
 
+  /// Preload all food images to ensure they're ready for screenshot
+  Future<void> _preloadFoodImages(HomeProvider homeProvider) async {
+    final foodEntries = homeProvider.foodEntries;
+
+    // Get all image files
+    final List<File?> imageFiles = await Future.wait(
+      foodEntries
+          .where((food) => food.imagePath != null && food.imagePath!.isNotEmpty)
+          .map((food) => FoodImageService.getImageFile(food.imagePath))
+          .toList(),
+    );
+
+    // Precache images in Flutter's image cache
+    if (mounted) {
+      final validFiles = imageFiles.whereType<File>().toList();
+      if (validFiles.isNotEmpty) {
+        await Future.wait(
+          validFiles.map((file) => precacheImage(FileImage(file), context)).toList(),
+        );
+      }
+    }
+  }
+
   Future<void> _handleExport() async {
     if (_isExporting) return;
 
@@ -181,6 +204,13 @@ class _SummaryScreenState extends State<SummaryScreen> {
     });
 
     try {
+      // Preload all food images to ensure they're available for screenshot
+      final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+      await _preloadFoodImages(homeProvider);
+
+      // Wait a bit more for FutureBuilder widgets to complete rendering
+      await Future.delayed(const Duration(milliseconds: 300));
+
       // Capture the screenshot as PNG
       final Uint8List? imageBytes = await _screenshotController.capture(
         pixelRatio: 3.0, // High quality for retina displays
@@ -190,23 +220,12 @@ class _SummaryScreenState extends State<SummaryScreen> {
         throw Exception('Failed to capture screenshot');
       }
 
-      // Save to gallery (iOS Photos / Android Gallery)
-      final result = await ImageGallerySaver.saveImage(
-        imageBytes,
-        quality: 100,
-        name: 'fitness_summary_${DateTime.now().millisecondsSinceEpoch}',
-      );
-
-      if (result['isSuccess'] != true) {
-        throw Exception('Failed to save to gallery');
-      }
-
-      // Also save to temp file for sharing
+      // Save to temp file for sharing
       final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/fitness_summary.png');
+      final tempFile = File('${tempDir.path}/fitness_summary_${DateTime.now().millisecondsSinceEpoch}.png');
       await tempFile.writeAsBytes(imageBytes);
 
-      // Show native share dialog
+      // Show native share dialog (user can save from here)
       await Share.shareXFiles(
         [XFile(tempFile.path)],
         text: 'Check out my fitness summary!',
@@ -215,9 +234,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Summary exported successfully! Saved to Photos and ready to share.'),
+            content: Text('Summary exported! You can save or share from the dialog.'),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
+            duration: Duration(seconds: 2),
           ),
         );
       }
