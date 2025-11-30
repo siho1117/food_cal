@@ -25,10 +25,13 @@ class ExerciseSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalTime = SummaryDataCalculator.getTotalExerciseTime(exercises);
+    final isOverGoal = totalBurned >= burnGoal;
+    final difference = (totalBurned - burnGoal).abs();
+    final percentage = burnGoal > 0 ? ((totalBurned / burnGoal) * 100).round() : 0;
 
     return BaseSectionWidget(
       icon: Icons.fitness_center,
-      title: 'EXERCISE & ACTIVITY LOG (${SummaryDataCalculator.formatDate(DateTime.now())})',
+      title: 'EXERCISE & ACTIVITY LOG',
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
           final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
@@ -40,12 +43,12 @@ class ExerciseSection extends StatelessWidget {
               InfoRow(label: 'Total Calories Burned', value: '$totalBurned calories'),
               InfoRow(
                 label: 'Daily Burn Goal',
-                value: '$burnGoal calories (${((totalBurned / burnGoal) * 100).round()}%)',
+                value: '$burnGoal calories',
               ),
               InfoRow(
-                label: 'Remaining to Goal',
-                value: '${burnGoal - totalBurned} calories',
-                valueColor: totalBurned >= burnGoal ? NutritionColors.success : NutritionColors.warning,
+                label: isOverGoal ? 'Exceeded Goal' : 'Remaining to Goal',
+                value: '$difference calories ($percentage%)',
+                valueColor: isOverGoal ? NutritionColors.success : NutritionColors.warning,
               ),
 
               if (exercises.isNotEmpty) ...[
@@ -94,14 +97,6 @@ class ExerciseSection extends StatelessWidget {
                           children: [
                             Text(
                               'Duration: ${exercise.duration} min',
-                              style: AppTypography.bodySmall.copyWith(
-                                fontSize: AppWidgetTheme.fontSizeSM,
-                                color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Text(
-                              'Intensity: ${exercise.intensity ?? "Not set"}',
                               style: AppTypography.bodySmall.copyWith(
                                 fontSize: AppWidgetTheme.fontSizeSM,
                                 color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),

@@ -207,6 +207,16 @@ class HomeProvider extends ChangeNotifier {
     await loadData(date: _selectedDate);
   }
 
+  /// Refresh only user profile (lightweight, for settings changes)
+  Future<void> refreshUserProfile() async {
+    try {
+      _userProfile = await _userRepository.getUserProfile();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error refreshing user profile: $e');
+    }
+  }
+
   /// Change the selected date
   Future<void> changeDate(DateTime newDate) async {
     if (!_isSameDay(_selectedDate, newDate)) {

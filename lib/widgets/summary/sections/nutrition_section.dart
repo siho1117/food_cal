@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
 import '../../../config/design_system/nutrition_colors.dart';
-import '../../../utils/shared/summary_data_calculator.dart';
 import 'base_section_widget.dart';
 
 /// Nutrition Section - Daily macro and calorie summary
@@ -13,8 +12,8 @@ class NutritionSection extends StatelessWidget {
   final Map<String, num> consumedMacros;
   final Map<String, num> targetMacros;
   final int foodEntriesCount;
-  final double totalCost;
-  final double budget;
+  final bool exerciseBonusEnabled;
+  final int exerciseBonusCalories;
 
   const NutritionSection({
     super.key,
@@ -23,27 +22,50 @@ class NutritionSection extends StatelessWidget {
     required this.consumedMacros,
     required this.targetMacros,
     required this.foodEntriesCount,
-    required this.totalCost,
-    required this.budget,
+    required this.exerciseBonusEnabled,
+    required this.exerciseBonusCalories,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Calculate effective calorie goal (includes exercise bonus if enabled)
+    final effectiveGoal = calorieGoal + (exerciseBonusEnabled ? exerciseBonusCalories : 0);
+    final isOver = totalCalories > effectiveGoal;
+    final difference = (effectiveGoal - totalCalories).abs();
+    final percentage = ((totalCalories / effectiveGoal) * 100).round();
+
     return BaseSectionWidget(
       icon: Icons.restaurant,
-      title: 'DAILY NUTRITION SUMMARY (${SummaryDataCalculator.formatDate(DateTime.now())})',
+      title: 'NUTRITION SUMMARY',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Calorie Summary
           InfoRow(
             label: 'Total Calories Consumed',
-            value: '$totalCalories / $calorieGoal cal (${((totalCalories / calorieGoal) * 100).round()}%)',
+            value: '$totalCalories / $effectiveGoal cal',
           ),
+
+          // Show breakdown of the goal
           InfoRow(
-            label: 'Remaining',
-            value: '${calorieGoal - totalCalories} cal',
-            valueColor: totalCalories <= calorieGoal ? NutritionColors.success : NutritionColors.warning,
+            label: '  • Base Goal',
+            value: '$calorieGoal cal',
+          ),
+
+          // Show exercise bonus if enabled
+          if (exerciseBonusEnabled && exerciseBonusCalories > 0) ...[
+            InfoRow(
+              label: '  • Exercise Bonus (Rollover)',
+              value: '+$exerciseBonusCalories cal',
+              valueColor: NutritionColors.success,
+            ),
+          ],
+
+          // Dynamic label: "Remaining" or "Over" with percentage
+          InfoRow(
+            label: isOver ? 'Over' : 'Remaining',
+            value: '$difference cal ($percentage%)',
+            valueColor: isOver ? NutritionColors.warning : NutritionColors.success,
           ),
 
           SizedBox(height: AppWidgetTheme.spaceMD),
@@ -88,25 +110,10 @@ class NutritionSection extends StatelessWidget {
             NutritionColors.fatColor,
           ),
 
-          SizedBox(height: AppWidgetTheme.spaceMD),
+          const SizedBox(height: AppWidgetTheme.spaceMD),
 
           // Meal Statistics
           InfoRow(label: 'Meals Logged', value: '$foodEntriesCount meals'),
-          InfoRow(
-            label: 'Average per Meal',
-            value: foodEntriesCount > 0
-                ? '\$${(totalCost / foodEntriesCount).toStringAsFixed(2)}'
-                : '\$0.00',
-          ),
-          InfoRow(
-            label: 'Total Food Cost',
-            value: '\$${totalCost.toStringAsFixed(2)} / \$${budget.toStringAsFixed(2)} (${((totalCost / budget) * 100).round()}%)',
-          ),
-          InfoRow(
-            label: 'Budget Remaining',
-            value: '\$${(budget - totalCost).toStringAsFixed(2)}',
-            valueColor: totalCost <= budget ? NutritionColors.success : NutritionColors.error,
-          ),
         ],
       ),
     );

@@ -45,19 +45,24 @@ class FormatHelpers {
   ///
   /// Example:
   /// ```dart
-  /// final formatted = FormatHelpers.formatMonthlyWeightGoal(-1.5);
+  /// final formatted = FormatHelpers.formatMonthlyWeightGoal(-1.5, isMetric: true);
   /// // Returns: "1.5 kg/month (Loss)"
   ///
-  /// final formatted2 = FormatHelpers.formatMonthlyWeightGoal(0.8);
-  /// // Returns: "0.8 kg/month (Gain)"
+  /// final formatted2 = FormatHelpers.formatMonthlyWeightGoal(0.8, isMetric: false);
+  /// // Returns: "1.8 lbs/month (Gain)"
   /// ```
-  static String formatMonthlyWeightGoal(double? monthlyGoal) {
+  static String formatMonthlyWeightGoal(double? monthlyGoal, {bool isMetric = true}) {
     if (monthlyGoal == null) return 'Not set';
 
     final absValue = monthlyGoal.abs();
     final label = monthlyGoal < 0 ? 'Loss' : 'Gain';
 
-    return '${absValue.toStringAsFixed(1)} kg/month ($label)';
+    // Convert to lbs if needed (monthly goal is stored in kg)
+    const kgToLbsRatio = 2.20462;
+    final displayValue = isMetric ? absValue : absValue * kgToLbsRatio;
+    final unit = isMetric ? 'kg' : 'lbs';
+
+    return '${displayValue.toStringAsFixed(1)} $unit/month ($label)';
   }
 
   /// Format BMI value to a display string

@@ -40,7 +40,7 @@ class SettingsProvider extends ChangeNotifier {
       : 'Not set';
 
   String get formattedMonthlyGoal => _userProfile?.monthlyWeightGoal != null
-      ? FormatHelpers.formatMonthlyWeightGoal(_userProfile!.monthlyWeightGoal)
+      ? FormatHelpers.formatMonthlyWeightGoal(_userProfile!.monthlyWeightGoal, isMetric: _userProfile!.isMetric)
       : 'Not set';
 
   String get formattedStartingWeight => _userProfile?.startingWeight != null

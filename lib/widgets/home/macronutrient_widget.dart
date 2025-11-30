@@ -126,7 +126,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                   current: consumed['fat']!,
                   target: target['fat']!.toDouble(),
                   progress: progress['fat']!,
-                  color: AccentColors.goldenYellow,
+                  color: AccentColors.electricBlue,
                   borderColor: borderColor,
                   textColor: textColor,
                   icon: Icons.grain_rounded,
@@ -186,7 +186,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                     painter: _CircularProgressPainter(
                       progress: animatedProgress,
                       color: color,
-                      backgroundColor: textColor.withValues(alpha: 0.3),
+                      backgroundColor: textColor.withValues(alpha: 0.2),
                     ),
                   ),
 

@@ -7,17 +7,19 @@ import '../../../data/models/weight_data.dart';
 import '../../../utils/progress/health_metrics.dart';
 import 'base_section_widget.dart';
 
-/// Body Measurements and Composition Section
+/// Body Measurements, Composition and Metabolism Section
 class BodyMetricsSection extends StatelessWidget {
   final UserProfile? profile;
   final double? currentWeight;
   final List<WeightData> weightHistory;
+  final int calorieGoal;
 
   const BodyMetricsSection({
     super.key,
     required this.profile,
     required this.currentWeight,
     required this.weightHistory,
+    required this.calorieGoal,
   });
 
   @override
@@ -68,9 +70,17 @@ class BodyMetricsSection extends StatelessWidget {
       return displayWeight.toStringAsFixed(1);
     }
 
+    // Calculate BMR for metabolism info
+    final bmr = HealthMetrics.calculateBMR(
+      weight: currentWeight,
+      height: profile?.height,
+      age: profile?.age,
+      gender: profile?.gender,
+    );
+
     return BaseSectionWidget(
           icon: Icons.straighten,
-          title: 'BODY MEASUREMENTS & COMPOSITION',
+          title: 'BODY METRICS & METABOLISM',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -134,6 +144,41 @@ class BodyMetricsSection extends StatelessWidget {
                     ],
                   ],
                 ),
+              ),
+
+              const SizedBox(height: 16.0),
+
+              // BMR and Calorie Goal Section
+              if (bmr != null) ...[
+                InfoRow(
+                  label: 'BMR (Basal Metabolic Rate)',
+                  value: '${bmr.round()} cal/day',
+                ),
+                const SizedBox(height: 4.0),
+              ],
+
+              if (profile?.monthlyWeightGoal != null) ...[
+                Builder(
+                  builder: (context) {
+                    final monthlyGoal = profile!.monthlyWeightGoal!;
+                    final label = monthlyGoal < 0 ? 'Loss' : 'Gain';
+                    final absValue = monthlyGoal.abs();
+                    const kgToLbsRatio = 2.20462;
+                    final displayValue = isMetric ? absValue : absValue * kgToLbsRatio;
+                    final unit = isMetric ? 'kg' : 'lbs';
+
+                    return InfoRow(
+                      label: 'Monthly Goal ($label)',
+                      value: '${displayValue.toStringAsFixed(1)} $unit/month',
+                    );
+                  },
+                ),
+                const SizedBox(height: 4.0),
+              ],
+
+              InfoRow(
+                label: 'Calorie Goal',
+                value: '$calorieGoal cal/day',
               ),
             ],
           ),

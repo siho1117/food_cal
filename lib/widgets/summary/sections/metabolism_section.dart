@@ -111,7 +111,7 @@ class MetabolismSection extends StatelessWidget {
               builder: (context, themeProvider, _) {
                 final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
                 return Text(
-                  '  • Monthly Goal: ${FormatHelpers.formatMonthlyWeightGoal(profile!.monthlyWeightGoal)}',
+                  '  • Monthly Goal: ${FormatHelpers.formatMonthlyWeightGoal(profile!.monthlyWeightGoal, isMetric: profile!.isMetric)}',
                   style: AppTypography.bodySmall.copyWith(
                     fontSize: AppWidgetTheme.fontSizeSM,
                     color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),

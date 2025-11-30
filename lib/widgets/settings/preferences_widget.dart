@@ -207,9 +207,10 @@ class PreferencesWidget extends StatelessWidget {
     await settingsProvider.updateUnitPreference(newValue);
 
     // IMPORTANT: Refresh HomeProvider to pick up the updated profile
+    // Using targeted refresh (only reloads profile, not food entries/macros)
     if (context.mounted) {
       final homeProvider = Provider.of<HomeProvider>(context, listen: false);
-      await homeProvider.refreshData();
+      await homeProvider.refreshUserProfile();
     }
 
     if (context.mounted) {

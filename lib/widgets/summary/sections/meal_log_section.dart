@@ -1,26 +1,24 @@
 // lib/widgets/summary/sections/meal_log_section.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
-import '../../../config/design_system/nutrition_colors.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../data/models/food_item.dart';
-import '../../../utils/shared/summary_data_calculator.dart';
+import '../../../services/food_image_service.dart';
 import 'base_section_widget.dart';
 
 /// Detailed Meal Log Section
 class MealLogSection extends StatelessWidget {
   final List<FoodItem> foodEntries;
   final int totalCalories;
-  final double totalCost;
   final Map<String, num> consumedMacros;
 
   const MealLogSection({
     super.key,
     required this.foodEntries,
     required this.totalCalories,
-    required this.totalCost,
     required this.consumedMacros,
   });
 
@@ -28,7 +26,7 @@ class MealLogSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return BaseSectionWidget(
       icon: Icons.restaurant_menu,
-      title: 'DETAILED MEAL LOG (${SummaryDataCalculator.formatDate(DateTime.now())})',
+      title: 'MEAL LOG',
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
           final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
@@ -50,51 +48,58 @@ class MealLogSection extends StatelessWidget {
                   final index = entry.key;
                   final food = entry.value;
 
+                  // Get nutrition values adjusted for serving size
+                  final nutrition = food.getNutritionForServing();
+                  final calories = nutrition['calories']!.round();
+                  final protein = nutrition['proteins']!.round();
+                  final carbs = nutrition['carbs']!.round();
+                  final fat = nutrition['fats']!.round();
+
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: Column(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
+                        // Food content (left side)
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Row 1: Name
+                              Text(
                                 '${index + 1}. ${food.name}',
                                 style: AppTypography.bodyMedium.copyWith(
                                   fontSize: AppWidgetTheme.fontSizeSM,
                                   fontWeight: FontWeight.w600,
                                   color: textColor,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            Text(
-                              '${food.calories} cal',
-                              style: AppTypography.bodyMedium.copyWith(
-                                fontSize: AppWidgetTheme.fontSizeSM,
-                                fontWeight: FontWeight.bold,
-                                color: NutritionColors.caloriesColor,
+                              const SizedBox(height: 2.5),
+                              // Row 2: Calories and Servings
+                              Text(
+                                '$calories cal  |  ${food.servingSize} ${food.servingUnit}',
+                                style: AppTypography.bodySmall.copyWith(
+                                  fontSize: AppWidgetTheme.fontSizeSM,
+                                  color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '\$${(food.cost ?? 0).toStringAsFixed(2)}',
-                              style: AppTypography.bodyMedium.copyWith(
-                                fontSize: AppWidgetTheme.fontSizeSM,
-                                fontWeight: FontWeight.bold,
-                                color: NutritionColors.budgetColor,
+                              const SizedBox(height: 2.5),
+                              // Row 3: Macros
+                              Text(
+                                'P: ${protein}g  C: ${carbs}g  F: ${fat}g',
+                                style: AppTypography.bodySmall.copyWith(
+                                  fontSize: AppWidgetTheme.fontSizeSM,
+                                  color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'P: ${food.proteins.round()}g  C: ${food.carbs.round()}g  F: ${food.fats.round()}g',
-                          style: AppTypography.bodySmall.copyWith(
-                            fontSize: AppWidgetTheme.fontSizeSM,
-                            color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                            ],
                           ),
                         ),
+                        const SizedBox(width: 12),
+                        // Food image (right side)
+                        _buildFoodImage(food, textColor),
                       ],
                     ),
                   );
@@ -104,6 +109,7 @@ class MealLogSection extends StatelessWidget {
                 const Divider(),
                 const SizedBox(height: 8),
 
+                // Daily Totals
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -125,32 +131,61 @@ class MealLogSection extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Total Cost:',
-                      style: AppTypography.labelLarge.copyWith(
-                        fontSize: AppWidgetTheme.fontSizeMS,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                      ),
-                    ),
-                    Text(
-                      '\$${totalCost.toStringAsFixed(2)}',
-                      style: AppTypography.bodyMedium.copyWith(
-                        fontSize: AppWidgetTheme.fontSizeSM,
-                        fontWeight: FontWeight.w600,
-                        color: textColor,
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ],
           );
         },
+      ),
+    );
+  }
+
+  /// Build food image with File-based loading
+  Widget _buildFoodImage(FoodItem food, Color textColor) {
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.3),
+          width: 1.0,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(7), // Slightly smaller to account for border
+        child: (food.imagePath == null || food.imagePath!.isEmpty)
+            ? _buildImagePlaceholder(textColor)
+            : FutureBuilder<File?>(
+                future: FoodImageService.getImageFile(food.imagePath),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return _buildImagePlaceholder(textColor);
+                  }
+
+                  if (snapshot.hasData && snapshot.data != null) {
+                    return Image.file(
+                      snapshot.data!,
+                      width: 58, // Reduced to account for border
+                      height: 58,
+                      fit: BoxFit.cover,
+                    );
+                  }
+
+                  return _buildImagePlaceholder(textColor);
+                },
+              ),
+      ),
+    );
+  }
+
+  /// Build placeholder when no image available
+  Widget _buildImagePlaceholder(Color textColor) {
+    return Container(
+      color: Colors.white.withValues(alpha: 0.1),
+      child: Icon(
+        Icons.restaurant,
+        color: textColor.withValues(alpha: 0.5),
+        size: 30,
       ),
     );
   }

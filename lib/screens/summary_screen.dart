@@ -53,46 +53,52 @@ class _SummaryScreenState extends State<SummaryScreen> {
                   return _buildErrorState(context, homeProvider, exerciseProvider);
                 }
 
-                return NotificationListener<OverscrollIndicatorNotification>(
-                  onNotification: (notification) {
-                    notification.disallowIndicator();
-                    return true;
-                  },
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 10),
-                        
-                        // Period Switcher + Export Controls
-                        SummaryControlsWidget(
-                          currentPeriod: _currentPeriod,
-                          onPeriodChanged: (period) {
-                            setState(() {
-                              _currentPeriod = period;
-                            });
-                          },
-                          onExport: _handleExport,
-                          isExporting: _isExporting,
-                        ),
-                        
-                        const SizedBox(height: 16),
-                        
-                        // Main Summary Content (Wrapped for Export)
-                        Screenshot(
-                          controller: _screenshotController,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: ThemeBackground.getGradient(themeProvider.selectedGradient),
-                            ),
-                            child: SummaryExportWidget(
-                              key: ValueKey('${homeProvider.userProfile?.isMetric}_$_currentPeriod'),
-                              period: _currentPeriod,
+                return RefreshIndicator(
+                  onRefresh: () => _handleRefresh(homeProvider, exerciseProvider),
+                  color: Colors.white,
+                  backgroundColor: Colors.black.withValues(alpha: 0.7),
+                  child: NotificationListener<OverscrollIndicatorNotification>(
+                    onNotification: (notification) {
+                      notification.disallowIndicator();
+                      return true;
+                    },
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 10),
+
+                          // Period Switcher + Export Controls
+                          SummaryControlsWidget(
+                            currentPeriod: _currentPeriod,
+                            onPeriodChanged: (period) {
+                              setState(() {
+                                _currentPeriod = period;
+                              });
+                            },
+                            onExport: _handleExport,
+                            isExporting: _isExporting,
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Main Summary Content (Wrapped for Export)
+                          Screenshot(
+                            controller: _screenshotController,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: ThemeBackground.getGradient(themeProvider.selectedGradient),
+                              ),
+                              child: SummaryExportWidget(
+                                key: ValueKey('${homeProvider.userProfile?.isMetric}_$_currentPeriod'),
+                                period: _currentPeriod,
+                              ),
                             ),
                           ),
-                        ),
-                        
-                        const SizedBox(height: 80),
-                      ],
+
+                          const SizedBox(height: 80),
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -157,6 +163,14 @@ class _SummaryScreenState extends State<SummaryScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _handleRefresh(HomeProvider homeProvider, ExerciseProvider exerciseProvider) async {
+    // Refresh both providers to get latest data
+    await Future.wait([
+      homeProvider.refreshData(),
+      exerciseProvider.refreshData(),
+    ]);
   }
 
   Future<void> _handleExport() async {
