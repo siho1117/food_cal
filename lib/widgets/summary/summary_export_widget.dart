@@ -2,11 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/design_system/widget_theme.dart';
-import '../../config/design_system/typography.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/exercise_provider.dart';
 import '../../providers/progress_data.dart';
-import '../../providers/theme_provider.dart';
 import '../../data/models/summary_card_config.dart';
 import 'summary_controls_widget.dart';
 import 'sections/report_header_section.dart';

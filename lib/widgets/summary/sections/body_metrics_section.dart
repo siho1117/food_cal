@@ -137,7 +137,7 @@ class BodyMetricsSection extends StatelessWidget {
                         startingBodyFat != null ? startingBodyFat.toStringAsFixed(1) : 'N/A',
                         currentBodyFat.toStringAsFixed(1),
                         targetBodyFat != null ? targetBodyFat.toStringAsFixed(1) : 'N/A',
-                        (startingBodyFat != null && currentBodyFat != null)
+                        startingBodyFat != null
                             ? (currentBodyFat - startingBodyFat).toStringAsFixed(1)
                             : 'N/A',
                       ),
