@@ -106,28 +106,48 @@ class MealLogSection extends StatelessWidget {
                 }),
 
                 const SizedBox(height: 8),
-                const Divider(),
+                Divider(color: textColor.withValues(alpha: 0.3)),
                 const SizedBox(height: 8),
 
                 // Daily Totals
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Daily Totals:',
-                      style: AppTypography.labelLarge.copyWith(
-                        fontSize: AppWidgetTheme.fontSizeMS,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                      ),
+                    // Row 1: Title and Calories
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Daily Totals:',
+                          style: AppTypography.labelLarge.copyWith(
+                            fontSize: AppWidgetTheme.fontSizeMS,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          '$totalCalories cal',
+                          style: AppTypography.bodyMedium.copyWith(
+                            fontSize: AppWidgetTheme.fontSizeSM,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      '$totalCalories cal  |  P: ${consumedMacros['protein']?.round() ?? 0}g  C: ${consumedMacros['carbs']?.round() ?? 0}g  F: ${consumedMacros['fat']?.round() ?? 0}g',
-                      style: AppTypography.bodyMedium.copyWith(
-                        fontSize: AppWidgetTheme.fontSizeSM,
-                        fontWeight: FontWeight.w600,
-                        color: textColor,
-                      ),
+                    const SizedBox(height: 4),
+                    // Row 2: Macros (right-aligned)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Protein: ${consumedMacros['protein']?.round() ?? 0}g  |  Carbs: ${consumedMacros['carbs']?.round() ?? 0}g  |  Fat: ${consumedMacros['fat']?.round() ?? 0}g',
+                          style: AppTypography.bodyMedium.copyWith(
+                            fontSize: AppWidgetTheme.fontSizeSM,
+                            color: Colors.white.withValues(alpha: AppWidgetTheme.opacityHigher),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

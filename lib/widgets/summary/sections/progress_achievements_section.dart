@@ -39,9 +39,6 @@ class ProgressAchievementsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Calculate weight progress
-    final weightLost = startingWeight != null && currentWeight != null
-        ? startingWeight! - currentWeight!
-        : null;
     final weightRemaining = goalWeight != null && currentWeight != null
         ? currentWeight! - goalWeight!
         : null;
@@ -49,7 +46,6 @@ class ProgressAchievementsSection extends StatelessWidget {
     // Format weight values
     final currentWeightDisplay = _formatWeight(currentWeight);
     final goalWeightDisplay = _formatWeight(goalWeight);
-    final weightLostDisplay = _formatWeight(weightLost?.abs());
     final weightRemainingDisplay = _formatWeight(weightRemaining?.abs());
     final unit = isMetric ? 'kg' : 'lbs';
 
@@ -88,13 +84,6 @@ class ProgressAchievementsSection extends StatelessWidget {
               label: 'Goal',
               value: '$goalWeightDisplay $unit',
             ),
-            if (weightLost != null && weightLost != 0) ...[
-              InfoRow(
-                label: weightLost > 0 ? 'Weight Lost' : 'Weight Gained',
-                value: '${weightLost > 0 ? '-' : '+'}$weightLostDisplay $unit',
-                valueColor: weightLost > 0 ? NutritionColors.success : NutritionColors.warning,
-              ),
-            ],
             if (weightRemaining != null && weightRemaining != 0) ...[
               InfoRow(
                 label: 'Remaining to Goal',
