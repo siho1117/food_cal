@@ -7,7 +7,7 @@ import '../../config/design_system/accent_colors.dart';
 import '../../providers/theme_provider.dart';
 import '../../data/models/user_profile.dart';
 
-/// Combined health metrics display widget showing BMI, Body Fat, and BMR baseline
+/// Combined health metrics display widget showing BMI, Body Fat, and BMR
 ///
 /// This widget is purely for display - all calculations are handled by
 /// HealthMetrics utility class and passed in via props.
@@ -366,7 +366,7 @@ class HealthMetricsWidget extends StatelessWidget {
     );
   }
 
-  /// Metabolism timeline showing BMR and baseline
+  /// BMR section showing basal metabolic rate
   Widget _buildMetabolismTimeline({
     required double? bmr,
     required double? baseline,
@@ -386,7 +386,7 @@ class HealthMetricsWidget extends StatelessWidget {
         children: [
           // Row 1: Title/Label only
           Text(
-            'Metabolism',
+            'BMR (Basal Metabolic Rate)',
             style: TextStyle(
               fontSize: AppWidgetTheme.fontSizeSM,
               fontWeight: FontWeight.w600,
@@ -396,20 +396,19 @@ class HealthMetricsWidget extends StatelessWidget {
 
           SizedBox(height: AppWidgetTheme.spaceXS),
 
-          // Row 2: BMR and Baseline values
+          // Row 2: BMR value and badge
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Baseline and BMR values
+              // BMR value with unit
               Expanded(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    // Baseline
                     Text(
-                      baseline != null ? '${baseline.round()}' : '--',
+                      bmr != null ? '${bmr.round()}' : '--',
                       style: TextStyle(
                         fontSize: AppWidgetTheme.fontSizeXL,
                         fontWeight: FontWeight.w700,
@@ -417,48 +416,20 @@ class HealthMetricsWidget extends StatelessWidget {
                         height: 1.0,
                       ),
                     ),
-                    SizedBox(width: 4),
-                    Text(
-                      'Baseline',
-                      style: TextStyle(
-                        fontSize: AppWidgetTheme.fontSizeXS,
-                        fontWeight: FontWeight.w600,
-                        color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
-                      ),
-                    ),
                     SizedBox(width: AppWidgetTheme.spaceXS),
                     Text(
-                      '→',
+                      'cal/day',
                       style: TextStyle(
-                        fontSize: AppWidgetTheme.fontSizeMD,
-                        fontWeight: FontWeight.w500,
-                        color: textColor.withValues(alpha: AppWidgetTheme.opacityHigh),
-                      ),
-                    ),
-                    SizedBox(width: AppWidgetTheme.spaceXS),
-                    // BMR
-                    Text(
-                      bmr != null ? '${bmr.round()}' : '--',
-                      style: TextStyle(
-                        fontSize: AppWidgetTheme.fontSizeML,
+                        fontSize: AppWidgetTheme.fontSizeSM,
                         fontWeight: FontWeight.w600,
                         color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
                         height: 1.0,
                       ),
                     ),
-                    SizedBox(width: 4),
-                    Text(
-                      'BMR',
-                      style: TextStyle(
-                        fontSize: AppWidgetTheme.fontSizeXS,
-                        fontWeight: FontWeight.w600,
-                        color: textColor.withValues(alpha: AppWidgetTheme.opacityHigh),
-                      ),
-                    ),
                   ],
                 ),
               ),
-              // Baseline badge (BMR)
+              // BMR badge
               Container(
                 padding: EdgeInsets.symmetric(
                   horizontal: AppWidgetTheme.spaceSM,
@@ -484,14 +455,12 @@ class HealthMetricsWidget extends StatelessWidget {
 
           // Explanation text
           Text(
-            'Baseline = BMR (basal metabolic rate)\nExercise should be logged separately',
+            'Calories your body burns at rest',
             style: TextStyle(
               fontSize: AppWidgetTheme.fontSizeXS,
               fontWeight: FontWeight.w500,
-              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigh),
-              fontStyle: FontStyle.italic,
+              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -586,22 +555,7 @@ class HealthMetricsWidget extends StatelessWidget {
               ),
               SizedBox(height: AppDialogTheme.spaceXS),
               Text(
-                'Calories burned at rest. This is your baseline energy expenditure.',
-                style: AppDialogTheme.bodyStyle,
-              ),
-              SizedBox(height: AppDialogTheme.spaceMD),
-
-              // Baseline Section
-              Text(
-                'Baseline (BMR)',
-                style: AppDialogTheme.bodyStyle.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppDialogTheme.colorPrimaryDark,
-                ),
-              ),
-              SizedBox(height: AppDialogTheme.spaceXS),
-              Text(
-                'Your basal metabolic rate - calories needed at complete rest. Exercise is logged separately to avoid double-counting.',
+                'Your basal metabolic rate - the number of calories your body burns at rest to maintain basic life functions like breathing, circulation, and cell production.',
                 style: AppDialogTheme.bodyStyle,
               ),
             ],

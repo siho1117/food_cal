@@ -86,22 +86,22 @@ class _ProgressScreenState extends State<ProgressScreen> {
                         ),
                         
                         const SizedBox(height: 20),
-                        
-                        // Exercise Log Widget - SECOND
+
+                        // Weight Widget (full width) - SECOND
+                        CombinedWeightWidget(
+                          currentWeight: progressData.currentWeight,
+                          isMetric: progressData.isMetric,
+                          onWeightEntered: progressData.addWeightEntry,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Exercise Log Widget - THIRD
                         ExerciseLogWidget(
                           showHeader: true,
                           onExerciseAdded: () {
                             exerciseProvider.refreshData();
                           },
-                        ),
-                        
-                        const SizedBox(height: 20),
-
-                        // Weight Widget (full width)
-                        CombinedWeightWidget(
-                          currentWeight: progressData.currentWeight,
-                          isMetric: progressData.isMetric,
-                          onWeightEntered: progressData.addWeightEntry,
                         ),
 
                         const SizedBox(height: 20),

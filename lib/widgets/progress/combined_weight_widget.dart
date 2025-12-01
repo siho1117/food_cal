@@ -5,7 +5,7 @@ import '../../config/design_system/widget_theme.dart';
 import '../../providers/progress_data.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
-import 'weight_edit_dialog.dart';
+import 'weight_edit_dialog.dart' show showWeightEditDialog, WeightMode;
 
 class CombinedWeightWidget extends StatefulWidget {
   final double? currentWeight;
@@ -102,6 +102,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
                 // Visual Journey Timeline with animations
                 _buildJourneyTimeline(
                   context,
+                  progressData,
                   startingWeight,
                   widget.currentWeight,
                   targetWeight,
@@ -176,6 +177,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
 
   Widget _buildJourneyTimeline(
     BuildContext context,
+    ProgressData progressData,
     double? start,
     double? current,
     double? target,
@@ -188,16 +190,19 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
   ) {
     return Column(
       children: [
-        // Labels row - all on same level
+        // Labels row - all on same level with tap handlers
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Start',
-              style: TextStyle(
-                fontSize: AppWidgetTheme.fontSizeXS,
-                fontWeight: FontWeight.w500,
-                color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+            GestureDetector(
+              onTap: () => _showWeightDialog(context, progressData, initialMode: WeightMode.start),
+              child: Text(
+                'Start',
+                style: TextStyle(
+                  fontSize: AppWidgetTheme.fontSizeXS,
+                  fontWeight: FontWeight.w500,
+                  color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                ),
               ),
             ),
             Text(
@@ -208,39 +213,45 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
                 color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
               ),
             ),
-            Text(
-              'Goal',
-              style: TextStyle(
-                fontSize: AppWidgetTheme.fontSizeXS,
-                fontWeight: FontWeight.w500,
-                color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+            GestureDetector(
+              onTap: () => _showWeightDialog(context, progressData, initialMode: WeightMode.target),
+              child: Text(
+                'Goal',
+                style: TextStyle(
+                  fontSize: AppWidgetTheme.fontSizeXS,
+                  fontWeight: FontWeight.w500,
+                  color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                ),
               ),
             ),
           ],
         ),
 
-        SizedBox(height: AppWidgetTheme.spaceXS),
+        const SizedBox(height: 4),
 
         // Numbers row with animated counter
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Start weight with animation
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _AnimatedNumber(
-                  value: start,
-                  prevValue: prevStart,
-                  isMetric: widget.isMetric,
-                  style: TextStyle(
-                    fontSize: AppWidgetTheme.fontSizeML,
-                    fontWeight: FontWeight.w600,
-                    color: textColor.withValues(alpha: AppWidgetTheme.opacityHighest),
+            // Start weight with animation - tappable to open dialog on Start tab
+            GestureDetector(
+              onTap: () => _showWeightDialog(context, progressData, initialMode: WeightMode.start),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _AnimatedNumber(
+                    value: start,
+                    prevValue: prevStart,
+                    isMetric: widget.isMetric,
+                    style: TextStyle(
+                      fontSize: AppWidgetTheme.fontSizeML,
+                      fontWeight: FontWeight.w600,
+                      color: textColor.withValues(alpha: AppWidgetTheme.opacityHighest),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             // Current weight (prominent) with animation
             _AnimatedNumber(
@@ -253,26 +264,29 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
                 color: textColor,
               ),
             ),
-            // Goal weight with animation
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _AnimatedNumber(
-                  value: target,
-                  prevValue: prevTarget,
-                  isMetric: widget.isMetric,
-                  style: TextStyle(
-                    fontSize: AppWidgetTheme.fontSizeML,
-                    fontWeight: FontWeight.w600,
-                    color: textColor.withValues(alpha: AppWidgetTheme.opacityHighest),
+            // Goal weight with animation - tappable to open dialog on Target tab
+            GestureDetector(
+              onTap: () => _showWeightDialog(context, progressData, initialMode: WeightMode.target),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _AnimatedNumber(
+                    value: target,
+                    prevValue: prevTarget,
+                    isMetric: widget.isMetric,
+                    style: TextStyle(
+                      fontSize: AppWidgetTheme.fontSizeML,
+                      fontWeight: FontWeight.w600,
+                      color: textColor.withValues(alpha: AppWidgetTheme.opacityHighest),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
 
-        SizedBox(height: AppWidgetTheme.spaceMD),
+        const SizedBox(height: 8),
 
         // Progress bar with animation
         _AnimatedProgressBar(
@@ -376,7 +390,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
     );
   }
 
-  void _showWeightDialog(BuildContext context, ProgressData progressData) {
+  void _showWeightDialog(BuildContext context, ProgressData progressData, {WeightMode initialMode = WeightMode.current}) {
     final settingsProvider = context.read<SettingsProvider>();
 
     showWeightEditDialog(
@@ -385,6 +399,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
       isMetric: widget.isMetric,
       targetWeight: progressData.targetWeight,
       startingWeight: progressData.startingWeight,
+      initialMode: initialMode,
       onAddWeight: (weight, isMetric) async {
         widget.onWeightEntered(weight, isMetric);
 

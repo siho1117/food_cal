@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../data/models/weight_data.dart';
 
+enum WeightMode { start, current, target }
+
 /// Shows a dialog to edit a weight entry with scrolling wheel pickers
 ///
 /// Can be used in multiple modes:
@@ -23,6 +25,7 @@ Future<void> showWeightEditDialog({
   Function(double weight, bool isMetric)? onAddWeight,
   required Function(double targetWeight) onSaveTarget,
   Function(double startingWeight)? onSaveStartingWeight,
+  WeightMode initialMode = WeightMode.current,
 }) async {
   // Validate: must have either entry (edit mode) or initialWeight (add mode)
   assert(
@@ -42,6 +45,7 @@ Future<void> showWeightEditDialog({
       onAddWeight: onAddWeight,
       onSaveTarget: onSaveTarget,
       onSaveStartingWeight: onSaveStartingWeight,
+      initialMode: initialMode,
     ),
   );
 }
@@ -56,6 +60,7 @@ class _WeightEditDialog extends StatefulWidget {
   final Function(double weight, bool isMetric)? onAddWeight;
   final Function(double targetWeight) onSaveTarget;
   final Function(double startingWeight)? onSaveStartingWeight;
+  final WeightMode initialMode;
 
   const _WeightEditDialog({
     this.entry,
@@ -67,13 +72,12 @@ class _WeightEditDialog extends StatefulWidget {
     this.onAddWeight,
     required this.onSaveTarget,
     this.onSaveStartingWeight,
+    this.initialMode = WeightMode.current,
   });
 
   @override
   State<_WeightEditDialog> createState() => _WeightEditDialogState();
 }
-
-enum WeightMode { start, current, target }
 
 /// Represents the state of a single weight mode (start/current/target)
 class _WeightModeState {
@@ -102,7 +106,7 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
   late FixedExtentScrollController _weightDecimalController;
 
   // Current active tab
-  WeightMode _currentMode = WeightMode.current;
+  late WeightMode _currentMode;
 
   // Clean state management: one state object per mode
   late _WeightModeState _startState;
@@ -120,6 +124,9 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
   @override
   void initState() {
     super.initState();
+
+    // Set initial mode from widget parameter
+    _currentMode = widget.initialMode;
 
     // Initialize each mode state with its database value
     final fallbackWeight = widget.entry?.weight ?? widget.initialWeight ?? 70.0;
