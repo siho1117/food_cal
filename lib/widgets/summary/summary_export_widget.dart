@@ -108,6 +108,7 @@ class SummaryExportWidget extends StatelessWidget {
           foodEntriesCount: homeProvider.foodEntriesCount,
           totalCost: homeProvider.totalFoodCost,
           budget: homeProvider.dailyFoodBudget,
+          foodEntries: homeProvider.foodEntries,
         );
 
       case SummaryCardType.exercise:

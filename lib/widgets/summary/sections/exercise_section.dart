@@ -74,12 +74,35 @@ class ExerciseSection extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              '${index + 1}. ${exercise.name}',
-                              style: AppTypography.bodyMedium.copyWith(
-                                fontSize: AppWidgetTheme.fontSizeSM,
-                                fontWeight: FontWeight.w600,
-                                color: textColor,
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Text(
+                                    '${index + 1}.',
+                                    style: AppTypography.bodyMedium.copyWith(
+                                      fontSize: AppWidgetTheme.fontSizeSM,
+                                      fontWeight: FontWeight.w600,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppWidgetTheme.spaceXS),
+                                  Icon(
+                                    _getExerciseIcon(exercise.name),
+                                    color: textColor,
+                                    size: AppWidgetTheme.iconSizeMedium,
+                                  ),
+                                  const SizedBox(width: AppWidgetTheme.spaceXS),
+                                  Expanded(
+                                    child: Text(
+                                      exercise.name,
+                                      style: AppTypography.bodyMedium.copyWith(
+                                        fontSize: AppWidgetTheme.fontSizeSM,
+                                        fontWeight: FontWeight.w600,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             Text(
@@ -143,5 +166,29 @@ class ExerciseSection extends StatelessWidget {
         },
       ),
     );
+  }
+
+  /// Get the appropriate icon for an exercise based on its name
+  IconData _getExerciseIcon(String exerciseName) {
+    final iconMap = {
+      'running': Icons.directions_run,
+      'cycling': Icons.directions_bike,
+      'swimming': Icons.pool,
+      'walking': Icons.directions_walk,
+      'weight training': Icons.fitness_center,
+      'yoga': Icons.self_improvement,
+      'hiking': Icons.terrain,
+      'basketball': Icons.sports_basketball,
+      'soccer': Icons.sports_soccer,
+      'tennis': Icons.sports_tennis,
+    };
+
+    final key = exerciseName.toLowerCase();
+    for (var entry in iconMap.entries) {
+      if (key.contains(entry.key)) {
+        return entry.value;
+      }
+    }
+    return Icons.sports_gymnastics;
   }
 }

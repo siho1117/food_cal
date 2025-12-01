@@ -99,7 +99,7 @@ class ExerciseLogWidget extends StatelessWidget {
         return entry.value;
       }
     }
-    return Icons.fitness_center;
+    return Icons.sports_gymnastics;
   }
 
   @override

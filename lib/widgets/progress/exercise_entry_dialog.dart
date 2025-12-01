@@ -319,7 +319,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
       'Weight Training': Icons.fitness_center,
       'Yoga': Icons.self_improvement,
     };
-    return iconMap[exerciseName] ?? Icons.fitness_center;
+    return iconMap[exerciseName] ?? Icons.sports_gymnastics;
   }
 
   Widget _buildCustomExerciseName() {
