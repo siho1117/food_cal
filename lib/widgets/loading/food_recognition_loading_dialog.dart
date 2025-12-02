@@ -1,8 +1,10 @@
 // lib/widgets/common/food_recognition_loading_dialog.dart
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../main.dart'; // Import for navigatorKey
 import '../../data/models/food_item.dart';
+import '../../config/design_system/dialog_theme.dart';
 import '../food/food_card.dart';
 
 // ═══════════════════════════════════════════════════════════════
@@ -43,14 +45,20 @@ void showFoodRecognitionLoading(BuildContext? context, {String? imagePath}) {
 
     // Create new overlay entry with skeleton card loading UI
     _loadingOverlay = OverlayEntry(
-      builder: (context) => Material(
-        color: Colors.black.withValues(alpha: 0.75),
-        child: Center(
-          child: FoodCardWidget(
-            foodItem: FoodItem.skeleton(),
-            isLoading: true,
-            isEditable: false,
-            imagePath: imagePath,
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: AppDialogTheme.backdropBlurSigmaX,
+          sigmaY: AppDialogTheme.backdropBlurSigmaY,
+        ),
+        child: Material(
+          color: Colors.black.withValues(alpha: 0.15),
+          child: Center(
+            child: FoodCardWidget(
+              foodItem: FoodItem.skeleton(),
+              isLoading: true,
+              isEditable: false,
+              imagePath: imagePath,
+            ),
           ),
         ),
       ),
@@ -156,35 +164,41 @@ Future<FoodItem> showFoodRecognitionPreview({
 
     // Create new overlay entry with completed food card
     _previewOverlay = OverlayEntry(
-      builder: (context) => Material(
-        type: MaterialType.transparency,
-        child: Stack(
-          children: [
-            // Background tap area for dismissing
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: hideFoodRecognitionPreview,
-                child: Container(
-                  color: Colors.black.withValues(alpha: 0.75),
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: AppDialogTheme.backdropBlurSigmaX,
+          sigmaY: AppDialogTheme.backdropBlurSigmaY,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: Stack(
+            children: [
+              // Background tap area for dismissing
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: hideFoodRecognitionPreview,
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.15),
+                  ),
                 ),
               ),
-            ),
-            // Card in center - taps on this don't dismiss
-            Center(
-              child: FoodCardWidget(
-                foodItem: _updatedFoodItem!,
-                isLoading: false,
-                isEditable: false,
-                imagePath: imagePath,
-                isPreviewMode: true,
-                costEntryCompleted: _costEntryCompleted,
-                onCostPickerOpened: _onCostPickerOpened,
-                onCostPickerClosed: _onCostPickerClosed,
-                onCostUpdated: _onCostUpdated,
-                // Removed: All other edit callbacks (only cost is editable)
+              // Card in center - taps on this don't dismiss
+              Center(
+                child: FoodCardWidget(
+                  foodItem: _updatedFoodItem!,
+                  isLoading: false,
+                  isEditable: false,
+                  imagePath: imagePath,
+                  isPreviewMode: true,
+                  costEntryCompleted: _costEntryCompleted,
+                  onCostPickerOpened: _onCostPickerOpened,
+                  onCostPickerClosed: _onCostPickerClosed,
+                  onCostUpdated: _onCostUpdated,
+                  // Removed: All other edit callbacks (only cost is editable)
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

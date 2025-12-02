@@ -1,5 +1,6 @@
 // lib/widgets/home/food_log_widget.dart
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +11,7 @@ import '../../providers/theme_provider.dart';
 import '../../data/models/food_item.dart';
 import '../../services/food_image_service.dart';
 import 'quick_edit_food_dialog.dart';
+import '../common/quick_actions_dialog.dart';
 
 class FoodLogWidget extends StatelessWidget {
   final VoidCallback? onFoodAdded;
@@ -79,9 +81,9 @@ class FoodLogWidget extends StatelessWidget {
                     ),
                     // Add button
                     IconButton(
-                      onPressed: () => _showManualEntryDialog(context, homeProvider),
+                      onPressed: () => showQuickActionsDialog(context),
                       icon: Icon(Icons.add, color: textColor),
-                      tooltip: 'Add Food Manually',
+                      tooltip: 'Quick Actions',
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
@@ -154,7 +156,7 @@ class FoodLogWidget extends StatelessWidget {
             const SizedBox(height: 16),
             // Add Food button
             OutlinedButton.icon(
-              onPressed: () => _showManualEntryDialog(context, homeProvider),
+              onPressed: () => showQuickActionsDialog(context),
               icon: Icon(
                 Icons.add,
                 size: 18,
@@ -225,109 +227,118 @@ class FoodLogWidget extends StatelessWidget {
         ),
         child: GestureDetector(
           onTap: () => _showQuickEditDialog(context, item, homeProvider),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                // Top section: Image + Title
-                Row(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(
+                sigmaX: AppDialogTheme.backdropBlurSigmaX,
+                sigmaY: AppDialogTheme.backdropBlurSigmaY,
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
                   children: [
-                    // Food image
-                    _buildFoodImage(item),
+                    // Top section: Image + Title
+                    Row(
+                      children: [
+                        // Food image
+                        _buildFoodImage(item),
 
-                    const SizedBox(width: 12),
+                        const SizedBox(width: 12),
 
-                    // Title section
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.name,
-                            style: const TextStyle(
-                              fontSize: AppWidgetTheme.fontSizeMD,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                        // Title section
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.name,
+                                style: const TextStyle(
+                                  fontSize: AppWidgetTheme.fontSizeMD,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${_formatTime(item.timestamp)}${itemCost > 0 ? ' • \$${itemCost.toStringAsFixed(2)}' : ''}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${_formatTime(item.timestamp)}${itemCost > 0 ? ' • \$${itemCost.toStringAsFixed(2)}' : ''}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.7),
-                            ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Divider
+                    Container(
+                      height: 1,
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Bottom section: Quantity + Macros | Calories
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Quantity + Macros
+                        Expanded(
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              Text(
+                                '×${item.servingSize.toStringAsFixed(item.servingSize.truncateToDouble() == item.servingSize ? 0 : 1)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                '•',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                ),
+                              ),
+                              Text(
+                                '${protein}P • ${carbs}C • ${fat}F',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+
+                        // Calories
+                        Text(
+                          '$itemCalories cal',
+                          style: const TextStyle(
+                            fontSize: AppWidgetTheme.fontSizeLG,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 12),
-
-                // Divider
-                Container(
-                  height: 1,
-                  color: Colors.white.withValues(alpha: 0.3),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Bottom section: Quantity + Macros | Calories
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Quantity + Macros
-                    Expanded(
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        children: [
-                          Text(
-                            '×${item.servingSize.toStringAsFixed(item.servingSize.truncateToDouble() == item.servingSize ? 0 : 1)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            '•',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.5),
-                            ),
-                          ),
-                          Text(
-                            '${protein}P • ${carbs}C • ${fat}F',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.8),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Calories
-                    Text(
-                      '$itemCalories cal',
-                      style: const TextStyle(
-                        fontSize: AppWidgetTheme.fontSizeLG,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -441,24 +452,6 @@ class FoodLogWidget extends StatelessWidget {
             child: const Text('Delete'),
           ),
         ],
-      ),
-    );
-  }
-
-  Future<void> _showManualEntryDialog(
-    BuildContext context,
-    HomeProvider homeProvider,
-  ) async {
-    // Create an empty food item for manual entry
-    final emptyFoodItem = FoodItem.empty();
-
-    await showDialog<void>(
-      context: context,
-      builder: (context) => QuickEditFoodDialog(
-        foodItem: emptyFoodItem,
-        onUpdated: () {
-          homeProvider.refreshData();
-        },
       ),
     );
   }

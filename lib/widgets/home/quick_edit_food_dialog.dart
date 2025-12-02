@@ -46,35 +46,41 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Food card wrapped in RepaintBoundary for export (excludes buttons)
-            RepaintBoundary(
-              key: _cardKey,
-              child: FoodCardWidget(
-                foodItem: widget.foodItem,
-                isEditable: true,
-                imagePath: _controller.imagePath,
-                onImageTap: _showImageSourceDialog,
-                onExportTap: _exportFoodCard,
-                nameController: _controller.nameController,
-                caloriesController: _controller.caloriesController,
-                servingSizeController: _controller.servingSizeController,
-                proteinController: _controller.proteinController,
-                carbsController: _controller.carbsController,
-                fatController: _controller.fatController,
-                costController: _controller.costController,
+    return BackdropFilter(
+      filter: ui.ImageFilter.blur(
+        sigmaX: AppDialogTheme.backdropBlurSigmaX,
+        sigmaY: AppDialogTheme.backdropBlurSigmaY,
+      ),
+      child: Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Food card wrapped in RepaintBoundary for export (excludes buttons)
+              RepaintBoundary(
+                key: _cardKey,
+                child: FoodCardWidget(
+                  foodItem: widget.foodItem,
+                  isEditable: true,
+                  imagePath: _controller.imagePath,
+                  onImageTap: _showImageSourceDialog,
+                  onExportTap: _exportFoodCard,
+                  nameController: _controller.nameController,
+                  caloriesController: _controller.caloriesController,
+                  servingSizeController: _controller.servingSizeController,
+                  proteinController: _controller.proteinController,
+                  carbsController: _controller.carbsController,
+                  fatController: _controller.fatController,
+                  costController: _controller.costController,
+                ),
               ),
-            ),
 
-            // Action Buttons (outside RepaintBoundary - excluded from export)
-            _buildActionButtons(),
-          ],
+              // Action Buttons (outside RepaintBoundary - excluded from export)
+              _buildActionButtons(),
+            ],
+          ),
         ),
       ),
     );

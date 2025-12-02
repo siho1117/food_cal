@@ -1,4 +1,5 @@
 // lib/widgets/progress/exercise_entry_dialog.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../config/design_system/dialog_theme.dart';
@@ -103,29 +104,35 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: AppDialogTheme.shape,
-      backgroundColor: AppDialogTheme.backgroundColor,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 700,
-          maxHeight: 700,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  child: _isCustomTab ? _buildCustomTab() : _buildPresetTab(),
+    return BackdropFilter(
+      filter: ImageFilter.blur(
+        sigmaX: AppDialogTheme.backdropBlurSigmaX,
+        sigmaY: AppDialogTheme.backdropBlurSigmaY,
+      ),
+      child: Dialog(
+        shape: AppDialogTheme.shape,
+        backgroundColor: AppDialogTheme.backgroundColor,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: 700,
+            maxHeight: 700,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    child: _isCustomTab ? _buildCustomTab() : _buildPresetTab(),
+                  ),
                 ),
               ),
-            ),
-            _buildActions(),
-          ],
+              _buildActions(),
+            ],
+          ),
         ),
       ),
     );
