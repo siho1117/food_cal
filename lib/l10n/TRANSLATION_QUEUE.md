@@ -1,4 +1,4 @@
-# Translation Queue for Food Cal App
+# Translation Queue for OptiMate App
 
 > **Purpose**: Track strings that need translation during UI refinement
 > **Last Updated**: 2025-11-22

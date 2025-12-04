@@ -99,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen>
                     const SizedBox(height: 30),
                     // App name
                     const Text(
-                      'FOOD CAL',
+                      'OptiMate',
                       style: TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.bold,

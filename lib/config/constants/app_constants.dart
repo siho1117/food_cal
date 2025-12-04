@@ -12,8 +12,8 @@ class AppConstants {
   // APP METADATA
   // ═══════════════════════════════════════════════════════════════
 
-  static const String appName = 'Food LLM';
-  static const String appDisplayName = 'FOOD LLM';
+  static const String appName = 'OptiMate';
+  static const String appDisplayName = 'OptiMate';
 
   // ═══════════════════════════════════════════════════════════════
   // FOOD CONSTANTS

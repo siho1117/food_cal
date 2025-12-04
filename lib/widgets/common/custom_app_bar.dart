@@ -50,18 +50,38 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // App name - hardcoded, does NOT change with language
+                  // App logo and name
                   Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        'Food LLM', // Brand name - stays the same in all languages
-                        style: AppTypography.displayXLarge.copyWith(
-                          fontSize: 38,
-                          color: textColor,  // ✅ CHANGED: Use theme-adaptive color
-                          letterSpacing: 2,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Logo
+                        Image.asset(
+                          'assets/branding/logo.png',
+                          height: 32,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            // If logo fails to load, show nothing
+                            return const SizedBox.shrink();
+                          },
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        // App name
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'OptiMate',
+                              style: AppTypography.displayXLarge.copyWith(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w700,
+                                color: textColor,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 

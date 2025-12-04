@@ -148,7 +148,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
             left: 28,
             top: 16,
             child: Text(
-              'Food LLM',
+              'OptiMate',
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w700,

@@ -155,10 +155,18 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
     final animatedTarget = target * _animation.value;
     
     // Calculate percentage from raw values (can go beyond 100%)
-    final actualPercentage = animatedTarget > 0 
-        ? (animatedCurrent / animatedTarget) 
+    final actualPercentage = animatedTarget > 0
+        ? (animatedCurrent / animatedTarget)
         : 0.0;
-    final displayPercentage = (actualPercentage * 100).round();
+
+    // Format display: show as multiplier (e.g., 1.4x, 2.3x) when over 100%
+    final String displayText;
+    if (actualPercentage > 1.0) {
+      displayText = '${actualPercentage.toStringAsFixed(1)}x';
+    } else {
+      final displayPercentage = (actualPercentage * 100).round();
+      displayText = '$displayPercentage%';
+    }
 
     return Opacity(
       opacity: _animation.value,
@@ -190,10 +198,10 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                     ),
                   ),
 
-                  // Percentage in Center (can show beyond 100%)
+                  // Percentage in Center (shows as multiplier when over 100%)
                   Center(
                     child: Text(
-                      '$displayPercentage%',
+                      displayText,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,

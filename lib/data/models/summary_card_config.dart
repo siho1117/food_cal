@@ -86,32 +86,32 @@ class SummaryCardConfig {
   static List<SummaryCardConfig> getDefaultConfig() {
     return [
       const SummaryCardConfig(
-        type: SummaryCardType.bodyMetrics,
+        type: SummaryCardType.progress,
         isVisible: true,
         order: 0,
       ),
       const SummaryCardConfig(
-        type: SummaryCardType.nutrition,
+        type: SummaryCardType.bodyMetrics,
         isVisible: true,
         order: 1,
       ),
       const SummaryCardConfig(
-        type: SummaryCardType.budget,
+        type: SummaryCardType.mealLog,
         isVisible: true,
         order: 2,
       ),
       const SummaryCardConfig(
-        type: SummaryCardType.exercise,
+        type: SummaryCardType.nutrition,
         isVisible: true,
         order: 3,
       ),
       const SummaryCardConfig(
-        type: SummaryCardType.progress,
+        type: SummaryCardType.exercise,
         isVisible: true,
         order: 4,
       ),
       const SummaryCardConfig(
-        type: SummaryCardType.mealLog,
+        type: SummaryCardType.budget,
         isVisible: true,
         order: 5,
       ),

@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>FOOD LLM</string>
+	<string>OptiMate</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>food_llm</string>
+	<string>OptiMate</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -31,13 +31,13 @@
 		<string>_dartobservatory._tcp</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>FOOD LLM needs camera access to take photos of food for AI-powered nutrition analysis.</string>
+	<string>OptiMate needs camera access to take photos of food for AI-powered nutrition analysis.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>FOOD LLM may access local network for development and debugging purposes.</string>
+	<string>OptiMate may access local network for development and debugging purposes.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>FOOD LLM saves nutrition summaries and analysis results to your photo library.</string>
+	<string>OptiMate saves nutrition summaries and analysis results to your photo library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>FOOD LLM needs access to your photo library to save nutrition summaries and select food photos.</string>
+	<string>OptiMate needs access to your photo library to save nutrition summaries and select food photos.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
