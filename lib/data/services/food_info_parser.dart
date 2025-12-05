@@ -75,6 +75,63 @@ class FoodInfoParser {
   /// Uses regex patterns to find nutritional data
   Map<String, dynamic> extractFromText(String text) {
     try {
+      debugPrint('🔍 Parsing text response: $text');
+
+      // First, try to extract JSON from markdown code blocks (```json ... ```)
+      final markdownJsonMatch = RegExp(
+        r'```(?:json)?\s*(\{[^`]*\})\s*```',
+        multiLine: true,
+        dotAll: true
+      ).firstMatch(text);
+
+      if (markdownJsonMatch != null) {
+        try {
+          final jsonString = markdownJsonMatch.group(1)!;
+          debugPrint('📦 Found JSON in markdown: $jsonString');
+          final jsonData = jsonDecode(jsonString);
+
+          final name = jsonData['name'] ?? 'Unknown Food';
+          final calories = parseDoubleValue(jsonData['calories']) ?? 0.0;
+          final protein = parseDoubleValue(jsonData['protein']) ?? 0.0;
+          final carbs = parseDoubleValue(jsonData['carbs']) ?? 0.0;
+          final fat = parseDoubleValue(jsonData['fat']) ?? 0.0;
+
+          debugPrint('✅ Extracted from JSON: name=$name, calories=$calories, protein=$protein, carbs=$carbs, fat=$fat');
+          return _formatResponse(name, calories, protein, carbs, fat);
+        } catch (e) {
+          debugPrint('❌ Failed to parse JSON from markdown: $e');
+        }
+      }
+
+      // Try to find raw JSON (without markdown)
+      final rawJsonMatch = RegExp(
+        r'\{[^\{\}]*"name"[^\{\}]*\}',
+        multiLine: true,
+        dotAll: true
+      ).firstMatch(text);
+
+      if (rawJsonMatch != null) {
+        try {
+          final jsonString = rawJsonMatch.group(0)!;
+          debugPrint('📦 Found raw JSON: $jsonString');
+          final jsonData = jsonDecode(jsonString);
+
+          final name = jsonData['name'] ?? 'Unknown Food';
+          final calories = parseDoubleValue(jsonData['calories']) ?? 0.0;
+          final protein = parseDoubleValue(jsonData['protein']) ?? 0.0;
+          final carbs = parseDoubleValue(jsonData['carbs']) ?? 0.0;
+          final fat = parseDoubleValue(jsonData['fat']) ?? 0.0;
+
+          debugPrint('✅ Extracted from JSON: name=$name, calories=$calories, protein=$protein, carbs=$carbs, fat=$fat');
+          return _formatResponse(name, calories, protein, carbs, fat);
+        } catch (e) {
+          debugPrint('❌ Failed to parse raw JSON: $e');
+        }
+      }
+
+      // Fallback: Extract using regex patterns for text-based responses
+      debugPrint('🔄 Falling back to regex extraction');
+
       // Extract food name
       String foodName = 'Unidentified Food Item';
 

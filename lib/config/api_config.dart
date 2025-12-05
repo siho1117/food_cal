@@ -1,32 +1,82 @@
 // lib/config/api_config.dart
 
-/// Configuration constants for API services
-/// Centralizes all hardcoded values related to API configuration
-class ApiConfig {
-  // OpenAI Configuration
-  static const String openAIBaseUrl = 'api.openai.com';
-  static const String openAIImagesEndpoint = '/v1/chat/completions';
-  static const String visionModel = 'gpt-5-mini';
-  static const String textModel = 'gpt-5-mini';
+import 'providers/gemini_config.dart';
+// import 'providers/openai_config.dart';  // Uncomment to switch to OpenAI
 
-  // VM Proxy Configuration (Fallback Provider)
+/// Main API Configuration
+///
+/// This file acts as the central access point for all API configurations.
+/// To switch providers, simply change the import above.
+///
+/// Current Provider: Google Gemini (gemini-2.0-flash-exp)
+/// Backup Available: OpenAI (gpt-4o-mini) - see providers/openai_config.dart
+class ApiConfig {
+  // Private constructor to prevent instantiation
+  ApiConfig._();
+
+  // ═══════════════════════════════════════════════════════════════
+  // ACTIVE PROVIDER CONFIGURATION
+  // ═══════════════════════════════════════════════════════════════
+
+  /// Base URL for the active API provider
+  static const String geminiBaseUrl = GeminiConfig.baseUrl;
+
+  /// API endpoint path
+  static const String geminiEndpoint = GeminiConfig.endpoint;
+
+  /// Model for vision/image recognition tasks
+  static const String visionModel = GeminiConfig.visionModel;
+
+  /// Model for text generation tasks
+  static const String textModel = GeminiConfig.textModel;
+
+  /// Environment variable key for API key
+  static const String apiKeyEnvVar = GeminiConfig.apiKeyEnvVar;
+
+  // ═══════════════════════════════════════════════════════════════
+  // VM PROXY CONFIGURATION (Fallback Provider)
+  // ═══════════════════════════════════════════════════════════════
+
   static const String vmProxyUrl = '35.201.20.109';
   static const int vmProxyPort = 3000;
   static const String vmProxyEndpoint = '/api/openai-proxy';
 
-  // Quota Configuration
+  // ═══════════════════════════════════════════════════════════════
+  // QUOTA CONFIGURATION
+  // ═══════════════════════════════════════════════════════════════
+
   static const int dailyQuotaLimit = 150;
 
-  // Storage Keys
+  // ═══════════════════════════════════════════════════════════════
+  // STORAGE KEYS
+  // ═══════════════════════════════════════════════════════════════
+
   static const String errorLogKey = 'api_error_log';
   static const String quotaUsedKey = 'food_api_quota_used';
   static const String quotaDateKey = 'food_api_quota_date';
 
-  // Timeout Configuration
+  // ═══════════════════════════════════════════════════════════════
+  // TIMEOUT CONFIGURATION
+  // ═══════════════════════════════════════════════════════════════
+
   static const Duration imageAnalysisTimeout = Duration(seconds: 60);
   static const Duration textAnalysisTimeout = Duration(seconds: 15);
   static const Duration standardTimeout = Duration(seconds: 10);
 
-  // Private constructor to prevent instantiation
-  ApiConfig._();
+  // ═══════════════════════════════════════════════════════════════
+  // HOW TO SWITCH PROVIDERS
+  // ═══════════════════════════════════════════════════════════════
+  //
+  // To switch from Gemini to OpenAI:
+  // 1. Comment out: import 'providers/gemini_config.dart';
+  // 2. Uncomment: import 'providers/openai_config.dart';
+  // 3. Update constants to use OpenAIConfig instead of GeminiConfig:
+  //    - geminiBaseUrl = OpenAIConfig.baseUrl
+  //    - geminiEndpoint = OpenAIConfig.endpoint
+  //    - visionModel = OpenAIConfig.visionModel
+  //    - textModel = OpenAIConfig.textModel
+  //    - apiKeyEnvVar = OpenAIConfig.apiKeyEnvVar
+  // 4. Update .env file with appropriate API key
+  // 5. Update api_service.dart method names if needed
+  //
 }

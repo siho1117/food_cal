@@ -23,12 +23,11 @@ class FoodApiService {
   // Food info parser
   final FoodInfoParser _parser = FoodInfoParser();
 
-  // Get OpenAI API key from environment variables
-  String get _openAIApiKey {
-    final key = dotenv.env['OPENAI_API_KEY'];
+  // Get API key from environment variables (provider-agnostic)
+  String get _geminiApiKey {
+    final key = dotenv.env[ApiConfig.apiKeyEnvVar];
     if (key == null || key.isEmpty) {
-      // ✅ FIXED: Replace print with debugPrint
-      debugPrint('WARNING: OPENAI_API_KEY not found in .env file');
+      debugPrint('WARNING: ${ApiConfig.apiKeyEnvVar} not found in .env file');
       return '';
     }
     return key;
@@ -44,25 +43,24 @@ class FoodApiService {
     }
 
     try {
-      // Try OpenAI first
-      return await _analyzeWithOpenAI(imageFile);
+      // Try Gemini first
+      return await _analyzeWithGemini(imageFile);
     } catch (e) {
       // Log the error for analytics
-      await _logError('OpenAI', e.toString());
-      // ✅ FIXED: Replace print with debugPrint
-      debugPrint('OpenAI direct access error, trying fallback provider: $e');
+      await _logError('Gemini', e.toString());
+      debugPrint('Gemini direct access error, trying fallback provider: $e');
 
       // Increment quota usage
       await incrementQuotaUsage();
 
       // Use fallback provider (Taiwan VM proxy)
       return await _fallbackProvider.analyzeImage(
-          imageFile, _openAIApiKey, ApiConfig.visionModel);
+          imageFile, _geminiApiKey, ApiConfig.visionModel);
     }
   }
 
-  /// Analyze food image using OpenAI's API directly
-  Future<Map<String, dynamic>> _analyzeWithOpenAI(File imageFile) async {
+  /// Analyze food image using Gemini's API directly
+  Future<Map<String, dynamic>> _analyzeWithGemini(File imageFile) async {
     // Convert image to base64
     final bytes = await imageFile.readAsBytes();
     final base64Image = base64Encode(bytes);
@@ -70,45 +68,46 @@ class FoodApiService {
     // MIME type: PhotoCompressionService always outputs JPEG
     const String mimeType = 'image/jpeg';
 
-    debugPrint('📤 Sending to OpenAI API with MIME type: $mimeType');
+    debugPrint('📤 Sending to Gemini API with MIME type: $mimeType');
 
-    // Create OpenAI API request body with token-optimized prompts
+    // Combine system and user prompts for Gemini
+    final combinedPrompt = '${AiPrompts.foodImageSystemPrompt}\n\n${AiPrompts.foodImageUserPrompt}';
+
+    // Create Gemini API request body
     final requestBody = {
-      "model": ApiConfig.visionModel,
-      "messages": [
+      "contents": [
         {
-          "role": "system",
-          "content": AiPrompts.foodImageSystemPrompt
-        },
-        {
-          "role": "user",
-          "content": [
+          "parts": [
             {
-              "type": "text",
-              "text": AiPrompts.foodImageUserPrompt
+              "text": combinedPrompt
             },
             {
-              "type": "image_url",
-              "image_url": {
-                "url": "data:$mimeType;base64,$base64Image",
-                "detail": "low"
+              "inline_data": {
+                "mime_type": mimeType,
+                "data": base64Image
               }
             }
           ]
         }
       ],
-      "max_completion_tokens": 1500,
-      "reasoning_effort": "low"
+      "generationConfig": {
+        "temperature": 0.1,
+        "maxOutputTokens": 1500,
+      }
     };
 
-    // Send request to OpenAI
-    final uri = Uri.https(ApiConfig.openAIBaseUrl, ApiConfig.openAIImagesEndpoint);
+    // Send request to Gemini
+    final uri = Uri.https(
+      ApiConfig.geminiBaseUrl,
+      '${ApiConfig.geminiEndpoint}${ApiConfig.visionModel}:generateContent',
+      {'key': _geminiApiKey}
+    );
+
     final response = await http
         .post(
           uri,
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer $_openAIApiKey',
           },
           body: jsonEncode(requestBody),
         )
@@ -116,44 +115,44 @@ class FoodApiService {
 
     if (response.statusCode != 200) {
       throw Exception(
-          'OpenAI API error: ${response.statusCode}, ${response.body}');
+          'Gemini API error: ${response.statusCode}, ${response.body}');
     }
 
-    // Parse OpenAI response
+    // Parse Gemini response
     final responseData = jsonDecode(response.body);
 
-    // Debug: Log full response and token usage (debug builds only)
+    // Debug: Log full response (debug builds only)
     if (kDebugMode) {
-      debugPrint('🔍 Full OpenAI Response: ${jsonEncode(responseData)}');
+      debugPrint('🔍 Full Gemini Response: ${jsonEncode(responseData)}');
 
-      // Extract and log token usage details
-      final usage = responseData['usage'];
-      if (usage != null) {
+      // Extract and log token usage details if available
+      final usageMetadata = responseData['usageMetadata'];
+      if (usageMetadata != null) {
         debugPrint('📊 Token Usage Breakdown:');
-        debugPrint('   Prompt tokens: ${usage['prompt_tokens']}');
-        debugPrint('   Completion tokens: ${usage['completion_tokens']}');
-        debugPrint('   Total tokens: ${usage['total_tokens']}');
-
-        // GPT-5 specific: reasoning tokens
-        final completionDetails = usage['completion_tokens_details'];
-        if (completionDetails != null) {
-          debugPrint('   └─ Reasoning tokens: ${completionDetails['reasoning_tokens']}');
-          debugPrint('   └─ Output tokens: ${usage['completion_tokens'] - (completionDetails['reasoning_tokens'] ?? 0)}');
-        }
-
-        // Cost estimation (GPT-5 Mini pricing)
-        final inputCost = (usage['prompt_tokens'] ?? 0) * 0.0003 / 1000;
-        final outputCost = (usage['completion_tokens'] ?? 0) * 0.0012 / 1000;
-        final totalCost = inputCost + outputCost;
-        debugPrint('   💰 Estimated cost: \$${totalCost.toStringAsFixed(6)}');
+        debugPrint('   Prompt tokens: ${usageMetadata['promptTokenCount']}');
+        debugPrint('   Completion tokens: ${usageMetadata['candidatesTokenCount']}');
+        debugPrint('   Total tokens: ${usageMetadata['totalTokenCount']}');
       }
     }
 
     // Increment quota usage for successful requests
     await incrementQuotaUsage();
 
-    // Extract food information from OpenAI response using parser
-    return _parser.extractFromOpenAIResponse(responseData);
+    // Extract text from Gemini response
+    if (responseData['candidates'] != null &&
+        responseData['candidates'].isNotEmpty &&
+        responseData['candidates'][0]['content'] != null &&
+        responseData['candidates'][0]['content']['parts'] != null &&
+        responseData['candidates'][0]['content']['parts'].isNotEmpty) {
+
+      final textContent = responseData['candidates'][0]['content']['parts'][0]['text'];
+      debugPrint('Gemini text response: $textContent');
+
+      // Parse the text response using the parser
+      return _parser.extractFromText(textContent);
+    }
+
+    throw Exception('Invalid Gemini response format');
   }
 
 
@@ -165,50 +164,58 @@ class FoodApiService {
     }
 
     try {
-      // Try OpenAI first
-      return await _getFoodInfoFromOpenAI(name);
+      // Try Gemini first
+      return await _getFoodInfoFromGemini(name);
     } catch (e) {
       // Log the error for analytics
-      await _logError('OpenAI', e.toString());
-      // ✅ FIXED: Replace print with debugPrint
-      debugPrint('OpenAI error, using fallback provider: $e');
+      await _logError('Gemini', e.toString());
+      debugPrint('Gemini error, using fallback provider: $e');
 
       // Increment quota usage
       await incrementQuotaUsage();
 
       // Use fallback provider
       return await _fallbackProvider.getFoodInformation(
-          name, _openAIApiKey, ApiConfig.textModel);
+          name, _geminiApiKey, ApiConfig.textModel);
     }
   }
 
-  /// Get food information from OpenAI
-  Future<Map<String, dynamic>> _getFoodInfoFromOpenAI(String name) async {
-    // Create OpenAI API request body with token-optimized format
+  /// Get food information from Gemini
+  Future<Map<String, dynamic>> _getFoodInfoFromGemini(String name) async {
+    debugPrint('Getting food information for: $name');
+
+    // Combine system and user prompts for Gemini
+    final combinedPrompt = '${AiPrompts.foodInfoSystemPrompt}\n\n${AiPrompts.foodInfoUserPrompt(name)}';
+
+    // Create Gemini API request body
     final requestBody = {
-      "model": ApiConfig.textModel,
-      "messages": [
+      "contents": [
         {
-          "role": "system",
-          "content": AiPrompts.foodInfoSystemPrompt
-        },
-        {
-          "role": "user",
-          "content": AiPrompts.foodInfoUserPrompt(name)
+          "parts": [
+            {
+              "text": combinedPrompt
+            }
+          ]
         }
       ],
-      "max_completion_tokens": 1200,
-      "reasoning_effort": "low"
+      "generationConfig": {
+        "temperature": 0.1,
+        "maxOutputTokens": 1200,
+      }
     };
 
-    // Send request to OpenAI
-    final uri = Uri.https(ApiConfig.openAIBaseUrl, ApiConfig.openAIImagesEndpoint);
+    // Send request to Gemini
+    final uri = Uri.https(
+      ApiConfig.geminiBaseUrl,
+      '${ApiConfig.geminiEndpoint}${ApiConfig.textModel}:generateContent',
+      {'key': _geminiApiKey}
+    );
+
     final response = await http
         .post(
           uri,
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer $_openAIApiKey',
           },
           body: jsonEncode(requestBody),
         )
@@ -216,19 +223,31 @@ class FoodApiService {
 
     if (response.statusCode != 200) {
       throw Exception(
-          'OpenAI API error: ${response.statusCode}, ${response.body}');
+          'Gemini API error: ${response.statusCode}, ${response.body}');
     }
 
-    // Parse OpenAI response
+    // Parse Gemini response
     final responseData = jsonDecode(response.body);
-    // ✅ FIXED: Replace print with debugPrint
-    debugPrint('OpenAI Response: $responseData');
+    debugPrint('Gemini Response: $responseData');
 
     // Increment quota usage for successful requests
     await incrementQuotaUsage();
 
-    // Extract food information from OpenAI response using parser
-    return _parser.extractFromOpenAIResponse(responseData);
+    // Extract text from Gemini response
+    if (responseData['candidates'] != null &&
+        responseData['candidates'].isNotEmpty &&
+        responseData['candidates'][0]['content'] != null &&
+        responseData['candidates'][0]['content']['parts'] != null &&
+        responseData['candidates'][0]['content']['parts'].isNotEmpty) {
+
+      final textContent = responseData['candidates'][0]['content']['parts'][0]['text'];
+      debugPrint('Gemini text response: $textContent');
+
+      // Parse the text response using the parser
+      return _parser.extractFromText(textContent);
+    }
+
+    throw Exception('Invalid Gemini response format');
   }
 
 
