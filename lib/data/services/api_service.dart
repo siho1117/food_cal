@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart'; // Added for debugPrint
 import 'fallback_provider.dart'; // Import for fallback mechanism
 import 'food_info_parser.dart'; // Import for parsing food information
 import '../../config/api_config.dart'; // Import for centralized API configuration
+import '../../config/ai_prompts.dart'; // Import for centralized AI prompts
 
 /// Service to interact with OpenAI API for food recognition with fallback to Taiwan VM proxy
 class FoodApiService {
@@ -77,14 +78,14 @@ class FoodApiService {
       "messages": [
         {
           "role": "system",
-          "content": "Food recognition. Return ONLY JSON with exact values (no rounding). Name: capitalize first letter, max 8 words, no parentheses. Assume 1.017 servings."
+          "content": AiPrompts.foodImageSystemPrompt
         },
         {
           "role": "user",
           "content": [
             {
               "type": "text",
-              "text": "Identify food, assume 1.017 servings, return ONLY this JSON: {\"name\": \"Food name\", \"calories\": 0, \"protein\": 0, \"carbs\": 0, \"fat\": 0}"
+              "text": AiPrompts.foodImageUserPrompt
             },
             {
               "type": "image_url",
@@ -189,11 +190,11 @@ class FoodApiService {
       "messages": [
         {
           "role": "system",
-          "content": "Nutrition data with exact values (no rounding). Name: capitalize first letter, max 8 words, no parentheses."
+          "content": AiPrompts.foodInfoSystemPrompt
         },
         {
           "role": "user",
-          "content": "Precise nutrition for $name:\nFood Name: $name\nCalories: ? cal\nProtein: ? g\nCarbs: ? g\nFat: ? g"
+          "content": AiPrompts.foodInfoUserPrompt(name)
         }
       ],
       "max_completion_tokens": 1200,
