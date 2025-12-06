@@ -76,8 +76,8 @@ class ExerciseSection extends StatelessWidget {
 
                 // Show exercises based on period
                 if (period == SummaryPeriod.daily) ...[
-                  // Daily: Show detailed view with duration and pace
-                  ...exercises.asMap().entries.map((entry) {
+                  // Daily: Show detailed view with duration and pace (latest first)
+                  ...exercises.reversed.toList().asMap().entries.map((entry) {
                     final index = entry.key;
                     final exercise = entry.value;
                     return Padding(
@@ -165,8 +165,8 @@ class ExerciseSection extends StatelessWidget {
                     );
                   }),
                 ] else ...[
-                  // Weekly/Monthly: Show simplified compact list with dates
-                  ...exercises.asMap().entries.map((entry) {
+                  // Weekly/Monthly: Show simplified compact list with dates (latest first)
+                  ...exercises.reversed.toList().asMap().entries.map((entry) {
                     final index = entry.key;
                     final exercise = entry.value;
 

@@ -94,8 +94,8 @@ class CostBudgetSection extends StatelessWidget {
 
                 // Show food entries based on period
                 if (period == SummaryPeriod.daily) ...[
-                  // Daily: Show just name and cost
-                  ...foodEntries.asMap().entries.map((entry) {
+                  // Daily: Show just name and cost (latest first)
+                  ...foodEntries.reversed.toList().asMap().entries.map((entry) {
                     final index = entry.key;
                     final food = entry.value;
                     final foodCost = food.cost ?? 0.0;
@@ -130,8 +130,8 @@ class CostBudgetSection extends StatelessWidget {
                     );
                   }),
                 ] else ...[
-                  // Weekly/Monthly: Show name, cost, and date
-                  ...foodEntries.asMap().entries.map((entry) {
+                  // Weekly/Monthly: Show name, cost, and date (latest first)
+                  ...foodEntries.reversed.toList().asMap().entries.map((entry) {
                     final index = entry.key;
                     final food = entry.value;
                     final foodCost = food.cost ?? 0.0;

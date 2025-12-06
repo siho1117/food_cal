@@ -49,8 +49,8 @@ class MealLogSection extends StatelessWidget {
               ] else ...[
                 // Show meals based on period
                 if (period == SummaryPeriod.daily) ...[
-                  // Daily: Show detailed view with images
-                  ...foodEntries.asMap().entries.map((entry) {
+                  // Daily: Show detailed view with images (latest first)
+                  ...foodEntries.reversed.toList().asMap().entries.map((entry) {
                     final index = entry.key;
                     final food = entry.value;
 
@@ -111,8 +111,8 @@ class MealLogSection extends StatelessWidget {
                     );
                   }),
                 ] else ...[
-                  // Weekly/Monthly: Show simplified compact list
-                  ...foodEntries.asMap().entries.map((entry) {
+                  // Weekly/Monthly: Show simplified compact list (latest first)
+                  ...foodEntries.reversed.toList().asMap().entries.map((entry) {
                     final index = entry.key;
                     final food = entry.value;
 

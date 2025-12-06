@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
+import '../../../config/design_system/nutrition_colors.dart';
 import 'base_section_widget.dart';
 import '../summary_controls_widget.dart';
 
@@ -186,7 +187,7 @@ class ProgressAchievementsSection extends StatelessWidget {
           // Status indicator (checkmark or X)
           Icon(
             isMet ? Icons.check_circle : Icons.cancel,
-            color: Colors.white,
+            color: isMet ? NutritionColors.success : NutritionColors.warning,
             size: 20,
           ),
           const SizedBox(width: AppWidgetTheme.spaceXS),

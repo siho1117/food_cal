@@ -219,10 +219,8 @@ class _SummaryExportWidgetState extends State<SummaryExportWidget> {
         final totalCost = (_aggregatedNutrition!['cost'] as num).toDouble();
         final mealCount = (_aggregatedNutrition!['mealCount'] as num).toInt();
 
-        // Use aggregated food entries for weekly/monthly, today's entries for daily
-        final foodEntries = widget.period == SummaryPeriod.daily
-            ? homeProvider.foodEntries
-            : (_aggregatedFoodEntries ?? []);
+        // Always use aggregated food entries for correct date range
+        final foodEntries = _aggregatedFoodEntries ?? [];
 
         return CostBudgetSection(
           foodEntriesCount: mealCount,
@@ -236,10 +234,8 @@ class _SummaryExportWidgetState extends State<SummaryExportWidget> {
         // Use aggregated exercise data
         final totalBurned = (_aggregatedExercise!['caloriesBurned'] as num).toInt();
 
-        // Use aggregated exercise entries for weekly/monthly, today's entries for daily
-        final exerciseEntries = widget.period == SummaryPeriod.daily
-            ? exerciseProvider.exerciseEntries
-            : (_aggregatedExerciseEntries ?? []);
+        // Always use aggregated exercise entries for correct date range
+        final exerciseEntries = _aggregatedExerciseEntries ?? [];
 
         return ExerciseSection(
           exercises: exerciseEntries,
@@ -277,10 +273,8 @@ class _SummaryExportWidgetState extends State<SummaryExportWidget> {
           'fat': _aggregatedNutrition!['fat'] as num,
         };
 
-        // Use aggregated food entries for weekly/monthly, today's entries for daily
-        final foodEntries = widget.period == SummaryPeriod.daily
-            ? homeProvider.foodEntries
-            : (_aggregatedFoodEntries ?? []);
+        // Always use aggregated food entries for correct date range
+        final foodEntries = _aggregatedFoodEntries ?? [];
 
         return MealLogSection(
           foodEntries: foodEntries,
