@@ -5,6 +5,9 @@ import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/typography.dart';
 import '../../providers/theme_provider.dart';
 
+/// Feature flag: Set to true to enable monthly view in Stage 2
+const bool _enableMonthlyView = false;
+
 enum SummaryPeriod { daily, weekly, monthly }
 
 class SummaryControlsWidget extends StatelessWidget {
@@ -76,7 +79,9 @@ class SummaryControlsWidget extends StatelessWidget {
       ),
       padding: EdgeInsets.all(AppWidgetTheme.spaceXXS), // Small padding around tabs
       child: Row(
-        children: SummaryPeriod.values.map((period) {
+        children: SummaryPeriod.values
+            .where((period) => _enableMonthlyView || period != SummaryPeriod.monthly)
+            .map((period) {
           final isSelected = period == currentPeriod;
           return Expanded(
             child: GestureDetector(
