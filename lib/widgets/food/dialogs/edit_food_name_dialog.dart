@@ -20,7 +20,7 @@ import '../../../config/design_system/dialog_theme.dart';
 /// );
 /// if (result != null) {
 ///   // User saved a new name
-///   print('New name: $result');
+///   debugPrint('New name: $result');
 /// }
 /// ```
 class EditFoodNameDialog extends StatefulWidget {

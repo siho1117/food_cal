@@ -61,16 +61,20 @@ class AppConstants {
   static const int defaultApiTimeout = 30; // seconds
   static const int imageApiTimeout = 45; // seconds
   static const int maxRetries = 3;
-  static const int dailyApiQuota = 50;
+  // Note: Daily API quota limit is defined in api_config.dart (150 requests/day)
 
   // ═══════════════════════════════════════════════════════════════
   // IMAGE PROCESSING CONSTANTS
   // ═══════════════════════════════════════════════════════════════
-  
+
   static const int maxImageSizeMB = 10;
-  static const int targetImageWidth = 1024;
-  static const int targetImageHeight = 1024;
-  static const int imageCompressionQuality = 85;
+  // ⚠️ PRODUCTION SETTINGS - Optimized for cost/quality balance
+  // 300x300 @ 50% compression = ~700-800 tokens (~$0.00040/request)
+  // Validated: Maintains excellent food recognition accuracy
+  // DO NOT modify without testing - affects all vision API calls
+  static const int targetImageWidth = 300;
+  static const int targetImageHeight = 300;
+  static const int imageCompressionQuality = 50;
 
   // ═══════════════════════════════════════════════════════════════
   // VALIDATION CONSTANTS

@@ -36,7 +36,8 @@ dependencies:
   # ⚠️ CAMERA & IMAGE HANDLING - CONSERVATIVE VERSIONS
   camera: ^0.10.5+9
   image_picker: ^1.0.4
-  flutter_image_compress: ^1.1.3
+  flutter_image_compress: ^2.4.0
+  image: ^4.0.17  # For proper image resizing
   image_gallery_saver: ^2.0.3
   screenshot: ^3.0.0
 

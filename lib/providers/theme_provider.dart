@@ -136,43 +136,4 @@ class ThemeProvider extends ChangeNotifier {
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // DEPRECATED METHODS (kept for backward compatibility)
-  // ═══════════════════════════════════════════════════════════════
-  
-  /// @deprecated No longer supports brightness parameter
-  /// Use getCurrentGradient() instead
-  LinearGradient getGradient(String name, Brightness brightness) {
-    debugPrint('⚠️ WARNING: getGradient(name, brightness) is deprecated. Use getCurrentGradient() instead.');
-    return ThemeBackground.getGradient(name);
-  }
-
-  /// @deprecated No longer supports brightness parameter
-  /// Use getCurrentGradientColors() instead
-  List<Color> getGradientColors(String name, Brightness brightness) {
-    debugPrint('⚠️ WARNING: getGradientColors(name, brightness) is deprecated. Use getCurrentGradientColors() instead.');
-    return ThemeBackground.gradients[name] ?? 
-           ThemeBackground.gradients[ThemeBackground.defaultThemeId]!;
-  }
-
-  /// @deprecated Border colors no longer theme-dependent
-  /// Use AppColors.borderLight or AppColors.borderDark instead
-  Color getBorderColor(String name, Brightness brightness) {
-    debugPrint('⚠️ WARNING: getBorderColor() is deprecated. Use AppColors.borderLight or borderDark instead.');
-    return Colors.white.withOpacity(0.8);
-  }
-
-  /// @deprecated Text colors no longer theme-dependent
-  /// Use AppColors.textDark or AppColors.textLight instead
-  Color getTextColor(String name, Brightness brightness) {
-    debugPrint('⚠️ WARNING: getTextColor() is deprecated. Use AppColors.textDark or textLight instead.');
-    return Colors.white;
-  }
-
-  /// @deprecated Use getCurrentGradientColors() instead
-  Color getTopColor(Brightness brightness, {double opacity = 0.7}) {
-    debugPrint('⚠️ WARNING: getTopColor() is deprecated. Use getCurrentGradientColors().first instead.');
-    final colors = getCurrentGradientColors();
-    return colors.first.withOpacity(opacity);
-  }
 }

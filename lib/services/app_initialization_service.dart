@@ -80,7 +80,7 @@ class AppInitializationService {
   /// Usage:
   /// ```dart
   /// final stats = await AppInitializationService.getStorageStats();
-  /// print('Food images: ${stats['imageCount']} files, ${stats['storageMB']} MB');
+  /// debugPrint('Food images: ${stats['imageCount']} files, ${stats['storageMB']} MB');
   /// ```
   static Future<Map<String, dynamic>> getStorageStats() async {
     final imageCount = await FoodImageService.getImageCount();

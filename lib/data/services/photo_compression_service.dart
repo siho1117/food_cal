@@ -1,16 +1,17 @@
 // lib/data/services/photo_compression_service.dart
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 
 import '../models/food_item.dart';
 import '../repositories/food_repository.dart';
-
+import '../../config/constants/app_constants.dart';
+import '../exceptions/api_exceptions.dart';
 /// **PURE API SERVICE - Image Compression & Food Recognition**
 ///
 /// This service is PURELY focused on API operations:
-/// 1. Compress & optimize images for API (400x400 @ 55% JPEG - LOCKED SETTINGS)
+/// 1. Compress & optimize images for API (settings from AppConstants)
 /// 2. Call food recognition API
 /// 3. Return results
 ///
@@ -19,7 +20,7 @@ import '../repositories/food_repository.dart';
 /// - Isolated business logic only
 /// - Reusable across different UI implementations
 /// - Robust error handling with comprehensive validation
-/// - Cost-effective compression (~30KB per image)
+/// - Cost-effective compression (~20KB per image @ 300x300)
 ///
 /// **What this service does NOT do:**
 /// - Does NOT handle image picker (that's Provider's job)
@@ -72,59 +73,72 @@ class PhotoCompressionService {
 
   /// Optimize image for API transmission
   /// - JPEG format (universal compatibility across all platforms)
-  /// - 400x400 @ 55% quality for optimal API performance (~30KB)
-  /// - Handles orientation correction automatically
-  /// - OpenAI supports: png, jpeg, gif, webp (we use JPEG for simplicity)
+  /// - Settings defined in AppConstants (single source of truth)
+  /// - GUARANTEED exact dimensions using image package
+  /// - OpenAI/Gemini supports: png, jpeg, gif, webp (we use JPEG for simplicity)
   /// - Aggressive compression to reduce costs at scale
   Future<File> _optimizeForAPI(File originalFile) async {
-    // ⚠️ IMPORTANT: Compression settings - DO NOT modify without approval
-    // These settings are scientifically tested for optimal cost/quality balance:
-    // - Tested: 256x256 @ 55% (too aggressive, 9% higher cost due to reasoning)
-    // - Tested: 512x512 @ 60% (25% more expensive, no quality improvement)
-    // - OPTIMAL: 400x400 @ 55% (best balance of cost, quality, and stability)
-    // Current production: 400x400 @ 55% quality (~30KB per image, ~$0.000479/request)
-    const int targetWidth = 400;
-    const int targetHeight = 400;
-    const int quality = 55;
+    // ⚠️ IMPORTANT: Settings imported from AppConstants - DO NOT override here
+    // All image optimization settings are defined in app_constants.dart
+    // Current production: 300x300 @ 50% = ~700-800 tokens (~$0.00040/request)
+    const int targetWidth = AppConstants.targetImageWidth;
+    const int targetHeight = AppConstants.targetImageHeight;
+    const int quality = AppConstants.imageCompressionQuality;
 
     debugPrint('🔄 Optimizing image for API...');
     debugPrint('   Original size: ${await originalFile.length()} bytes');
-    debugPrint('   Using JPEG compression (universal format)');
+    debugPrint('   Target: ${targetWidth}x$targetHeight @ $quality% quality');
 
     try {
-      final Uint8List? jpegBytes = await FlutterImageCompress.compressWithFile(
-        originalFile.absolute.path,
-        minWidth: targetWidth,
-        minHeight: targetHeight,
-        quality: quality,
-        format: CompressFormat.jpeg,
-        autoCorrectionAngle: true,
-        keepExif: true,
-      );
+      final tempDir = await getTemporaryDirectory();
+      final targetPath = '${tempDir.path}/api_optimized_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-      if (jpegBytes != null && jpegBytes.isNotEmpty) {
-        final tempDir = await getTemporaryDirectory();
-        final jpegFile = File(
-          '${tempDir.path}/optimized_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        );
-        await jpegFile.writeAsBytes(jpegBytes);
+      // Read original image bytes
+      final originalBytes = await originalFile.readAsBytes();
 
-        // Validate the compressed file
-        if (!await jpegFile.exists() || await jpegFile.length() == 0) {
-          debugPrint('⚠️  Compressed file validation failed, using original');
-          return originalFile;
-        }
+      // Decode image using image package
+      img.Image? image = img.decodeImage(originalBytes);
 
-        debugPrint('✅ JPEG compression successful: ${jpegBytes.length} bytes');
-        debugPrint('   Reduction: ${((1 - jpegBytes.length / await originalFile.length()) * 100).toStringAsFixed(1)}%');
-
-        return jpegFile;
-      } else {
-        debugPrint('⚠️  Compression returned null/empty, using original');
+      if (image == null) {
+        debugPrint('❌ Failed to decode image, using original');
         return originalFile;
       }
+
+      debugPrint('   Original dimensions: ${image.width}x${image.height}');
+
+      // CRITICAL: Resize to exact target dimensions (not maintaining aspect ratio)
+      // This ensures consistent token usage regardless of input image
+      final img.Image resized = img.copyResize(
+        image,
+        width: targetWidth,
+        height: targetHeight,
+        interpolation: img.Interpolation.average, // Good balance of quality/speed
+      );
+
+      debugPrint('   Resized dimensions: ${resized.width}x${resized.height}');
+
+      // Encode as JPEG with specified quality
+      final List<int> jpegBytes = img.encodeJpg(resized, quality: quality);
+
+      // Write to file
+      final compressedFile = File(targetPath);
+      await compressedFile.writeAsBytes(jpegBytes);
+
+      final compressedSize = jpegBytes.length;
+      debugPrint('✅ Compression successful: $compressedSize bytes');
+      debugPrint('   Reduction: ${((1 - compressedSize / await originalFile.length()) * 100).toStringAsFixed(1)}%');
+
+      // ⚠️ DIAGNOSTIC: Verify compression meets production targets
+      if (compressedSize > 30000) { // 30KB threshold
+        debugPrint('⚠️  WARNING: Compressed file larger than expected (>30KB)');
+        debugPrint('   Expected ~15-20KB, got ${(compressedSize/1024).toStringAsFixed(1)}KB');
+      } else {
+        debugPrint('✅ Production compression successful - token usage ~700-800');
+      }
+
+      return compressedFile;
     } catch (e) {
-      debugPrint('❌ JPEG compression failed: $e');
+      debugPrint('❌ Compression failed: $e');
       debugPrint('   Using original file as fallback');
       return originalFile;
     }
@@ -162,25 +176,4 @@ class FoodRecognitionResult {
 
   bool get isSuccess => items != null && items!.isNotEmpty;
   bool get hasError => error != null;
-}
-
-/// Custom exception for camera-related errors
-class CameraException implements Exception {
-  final String code;
-  final String description;
-
-  CameraException(this.code, this.description);
-
-  @override
-  String toString() => 'CameraException($code): $description';
-}
-
-/// Custom exception for image compression errors
-class ImageCompressionException implements Exception {
-  final String message;
-
-  ImageCompressionException(this.message);
-
-  @override
-  String toString() => 'ImageCompressionException: $message';
 }

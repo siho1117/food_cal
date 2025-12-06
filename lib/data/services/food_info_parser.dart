@@ -10,67 +10,6 @@ class FoodInfoParser {
   factory FoodInfoParser() => _instance;
   FoodInfoParser._internal();
 
-  /// Extract food information from OpenAI API response
-  /// Handles both JSON and text-based responses
-  Map<String, dynamic> extractFromOpenAIResponse(Map<String, dynamic> responseData) {
-    try {
-      // Get the content from OpenAI response
-      final choices = responseData['choices'] as List?;
-      if (choices == null || choices.isEmpty) {
-        throw Exception('No choices in OpenAI response');
-      }
-
-      final content = choices[0]['message']['content'] as String?;
-      if (content == null || content.isEmpty) {
-        throw Exception('No content in OpenAI response');
-      }
-
-      debugPrint('OpenAI Response Content: $content');
-
-      // Try to extract JSON from the response first
-      String name = 'Unknown Food';
-      double calories = 0.0;
-      double protein = 0.0;
-      double carbs = 0.0;
-      double fat = 0.0;
-
-      // Try to parse JSON first
-      try {
-        final jsonMatch = RegExp(r'\{[^}]*\}').firstMatch(content);
-        if (jsonMatch != null) {
-          final jsonData = jsonDecode(jsonMatch.group(0)!);
-          name = jsonData['name'] ?? 'Unknown Food';
-          calories = parseDoubleValue(jsonData['calories']) ?? 0.0;
-          protein = parseDoubleValue(jsonData['protein']) ?? 0.0;
-          carbs = parseDoubleValue(jsonData['carbs']) ?? 0.0;
-          fat = parseDoubleValue(jsonData['fat']) ?? 0.0;
-        }
-      } catch (e) {
-        debugPrint('JSON parsing failed, using regex extraction: $e');
-      }
-
-      // If JSON parsing failed, use regex extraction
-      if (name == 'Unknown Food') {
-        final extracted = extractFromText(content);
-        return extracted;
-      }
-
-      // Check if the food was unidentified or unknown
-      if (name.toLowerCase().contains('unidentified') ||
-          name.toLowerCase().contains('unknown') ||
-          name.toLowerCase().contains('not food')) {
-        name = 'Unidentified Food Item';
-      }
-
-      debugPrint('Extracted values: name=$name, calories=$calories, protein=$protein, carbs=$carbs, fat=$fat');
-
-      return _formatResponse(name, calories, protein, carbs, fat);
-    } catch (e) {
-      debugPrint('Error extracting food info from OpenAI response: $e');
-      return getUndefinedFoodResponse();
-    }
-  }
-
   /// Extract food information from plain text content
   /// Uses regex patterns to find nutritional data
   Map<String, dynamic> extractFromText(String text) {

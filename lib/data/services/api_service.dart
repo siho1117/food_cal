@@ -10,7 +10,7 @@ import 'food_info_parser.dart'; // Import for parsing food information
 import '../../config/api_config.dart'; // Import for centralized API configuration
 import '../../config/ai_prompts.dart'; // Import for centralized AI prompts
 
-/// Service to interact with OpenAI API for food recognition with fallback to Taiwan VM proxy
+/// Service to interact with Vision AI (Gemini/OpenAI) for food recognition with fallback to Taiwan VM proxy
 class FoodApiService {
   // Singleton instance
   static final FoodApiService _instance = FoodApiService._internal();

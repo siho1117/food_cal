@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../data/services/photo_compression_service.dart';
 import '../data/repositories/food_repository.dart';
+import '../data/exceptions/api_exceptions.dart';
 import '../widgets/loading/food_recognition_loading_dialog.dart';
 import '../main.dart'; // Import for navigatorKey
 import '../services/food_image_service.dart';
@@ -212,11 +213,13 @@ class CameraProvider {
       }
 
       // Navigate to Home page
-      try {
-        final navigationProvider = Provider.of<NavigationProvider>(globalContext, listen: false);
-        navigationProvider.navigateToHome();
-      } catch (e) {
-        debugPrint('Error navigating to Home: $e');
+      if (globalContext.mounted) {
+        try {
+          final navigationProvider = Provider.of<NavigationProvider>(globalContext, listen: false);
+          navigationProvider.navigateToHome();
+        } catch (e) {
+          debugPrint('Error navigating to Home: $e');
+        }
       }
 
       // Show success message

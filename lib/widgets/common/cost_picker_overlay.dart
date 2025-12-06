@@ -51,7 +51,7 @@ OverlayEntry? _costPickerOverlay;
 ///   maxDollars: 999,
 /// );
 /// if (cost != null) {
-///   print('User selected: \$${cost.toStringAsFixed(2)}');
+///   debugPrint('User selected: \$${cost.toStringAsFixed(2)}');
 /// }
 /// ```
 Future<double?> showCostPickerOverlay({

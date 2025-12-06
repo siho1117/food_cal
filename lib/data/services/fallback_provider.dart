@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart'; // Added for debugPrint
 import 'food_info_parser.dart'; // Import for parsing food information
 import '../../config/api_config.dart'; // Import for centralized API configuration
 
-/// Provider to handle VM proxy for OpenAI API access
+/// Provider to handle VM proxy for Vision AI (Gemini/OpenAI) API access
 class FallbackProvider {
   // Food info parser
   final FoodInfoParser _parser = FoodInfoParser();
