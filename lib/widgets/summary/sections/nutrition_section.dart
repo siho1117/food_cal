@@ -4,6 +4,7 @@ import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
 import '../../../config/design_system/nutrition_colors.dart';
 import 'base_section_widget.dart';
+import '../summary_controls_widget.dart';
 
 /// Nutrition Section - Daily macro and calorie summary
 class NutritionSection extends StatelessWidget {
@@ -14,6 +15,8 @@ class NutritionSection extends StatelessWidget {
   final int foodEntriesCount;
   final bool exerciseBonusEnabled;
   final int exerciseBonusCalories;
+  final SummaryPeriod? period; // Optional for weekly/monthly display
+  final int? avgCaloriesPerDay; // Optional for weekly/monthly display
 
   const NutritionSection({
     super.key,
@@ -24,15 +27,38 @@ class NutritionSection extends StatelessWidget {
     required this.foodEntriesCount,
     required this.exerciseBonusEnabled,
     required this.exerciseBonusCalories,
+    this.period,
+    this.avgCaloriesPerDay,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Calculate effective calorie goal (includes exercise bonus if enabled)
-    final effectiveGoal = calorieGoal + (exerciseBonusEnabled ? exerciseBonusCalories : 0);
+    // Determine if we're showing aggregated data
+    final isWeeklyOrMonthly = period == SummaryPeriod.weekly || period == SummaryPeriod.monthly;
+    final periodLabel = period == SummaryPeriod.weekly
+        ? 'Weekly'
+        : period == SummaryPeriod.monthly
+            ? 'Monthly'
+            : 'Daily';
+
+    // Calculate period multiplier for weekly/monthly goals
+    final periodDays = period == SummaryPeriod.weekly
+        ? 7
+        : period == SummaryPeriod.monthly
+            ? 30
+            : 1;
+
+    // Calculate effective calorie goal
+    // For weekly/monthly: just use base goal × period (no exercise bonus)
+    // For daily: include exercise bonus if enabled
+    final basePeriodGoal = calorieGoal * periodDays;
+    final effectiveGoal = isWeeklyOrMonthly
+        ? basePeriodGoal
+        : basePeriodGoal + (exerciseBonusEnabled && exerciseBonusCalories > 0 ? exerciseBonusCalories : 0);
+
     final isOver = totalCalories > effectiveGoal;
     final difference = (effectiveGoal - totalCalories).abs();
-    final percentage = ((totalCalories / effectiveGoal) * 100).round();
+    final percentage = effectiveGoal > 0 ? ((totalCalories / effectiveGoal) * 100).round() : 0;
 
     return BaseSectionWidget(
       icon: Icons.restaurant,
@@ -41,32 +67,50 @@ class NutritionSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Calorie Summary
-          InfoRow(
-            label: 'Total Calories Consumed',
-            value: '$totalCalories / $effectiveGoal cal',
-          ),
-
-          // Show breakdown of the goal
-          InfoRow(
-            label: '  • Base Goal',
-            value: '$calorieGoal cal',
-          ),
-
-          // Show exercise bonus if enabled
-          if (exerciseBonusEnabled && exerciseBonusCalories > 0) ...[
+          if (isWeeklyOrMonthly) ...[
+            // Weekly/Monthly: Show total with goal (no percentage on first line)
             InfoRow(
-              label: '  • Exercise Bonus (Rollover)',
-              value: '+$exerciseBonusCalories cal',
-              valueColor: NutritionColors.success,
+              label: 'Total Calories ($periodLabel)',
+              value: '$totalCalories / $effectiveGoal cal',
+            ),
+            if (avgCaloriesPerDay != null)
+              InfoRow(
+                label: 'Average per Day',
+                value: '$avgCaloriesPerDay / $calorieGoal cal',
+              ),
+
+            // Show over/remaining with percentage
+            InfoRow(
+              label: isOver ? 'Over by' : 'Remaining',
+              value: '$difference cal ($percentage%)',
+            ),
+          ] else ...[
+            // Daily: Show current format
+            InfoRow(
+              label: 'Total Calories Consumed',
+              value: '$totalCalories / $effectiveGoal cal',
+            ),
+
+            // Show breakdown of the goal
+            InfoRow(
+              label: '  • Base Goal',
+              value: '$calorieGoal cal',
+            ),
+
+            // Show exercise bonus if enabled
+            if (exerciseBonusEnabled && exerciseBonusCalories > 0) ...[
+              InfoRow(
+                label: '  • Exercise Bonus (Rollover)',
+                value: '+$exerciseBonusCalories cal',
+              ),
+            ],
+
+            // Dynamic label: "Remaining" or "Over" with percentage
+            InfoRow(
+              label: isOver ? 'Over' : 'Remaining',
+              value: '$difference cal ($percentage%)',
             ),
           ],
-
-          // Dynamic label: "Remaining" or "Over" with percentage
-          InfoRow(
-            label: isOver ? 'Over' : 'Remaining',
-            value: '$difference cal ($percentage%)',
-            valueColor: isOver ? NutritionColors.warning : NutritionColors.success,
-          ),
 
           const SizedBox(height: AppWidgetTheme.spaceMD),
 
@@ -82,31 +126,31 @@ class NutritionSection extends StatelessWidget {
 
           const SizedBox(height: AppWidgetTheme.spaceMD),
 
-          // Protein
+          // Protein (period-adjusted targets)
           _buildMacroRow(
             'Protein',
             (consumedMacros['protein'] ?? 0).toDouble(),
-            (targetMacros['protein'] ?? 0).toDouble(),
+            (targetMacros['protein'] ?? 0).toDouble() * periodDays,
             NutritionColors.proteinColor,
           ),
 
           const SizedBox(height: AppWidgetTheme.spaceSM),
 
-          // Carbs
+          // Carbs (period-adjusted targets)
           _buildMacroRow(
             'Carbohydrates',
             (consumedMacros['carbs'] ?? 0).toDouble(),
-            (targetMacros['carbs'] ?? 0).toDouble(),
+            (targetMacros['carbs'] ?? 0).toDouble() * periodDays,
             NutritionColors.carbsColor,
           ),
 
           const SizedBox(height: AppWidgetTheme.spaceSM),
 
-          // Fat
+          // Fat (period-adjusted targets)
           _buildMacroRow(
             'Fat',
             (consumedMacros['fat'] ?? 0).toDouble(),
-            (targetMacros['fat'] ?? 0).toDouble(),
+            (targetMacros['fat'] ?? 0).toDouble() * periodDays,
             NutritionColors.fatColor,
           ),
 

@@ -2,11 +2,11 @@
 import 'package:flutter/material.dart';
 import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
-import '../../../config/design_system/nutrition_colors.dart';
 import 'base_section_widget.dart';
+import '../summary_controls_widget.dart';
 
 /// Progress & Achievements Section
-/// Shows weight progress and today's goal status
+/// Shows weight progress and period goals (daily/weekly/monthly)
 class ProgressAchievementsSection extends StatelessWidget {
   // Weight Progress
   final double? currentWeight;
@@ -14,13 +14,14 @@ class ProgressAchievementsSection extends StatelessWidget {
   final double? startingWeight;
   final bool isMetric;
 
-  // Today's Goals
+  // Period Goals (totals for the period)
   final int totalCalories;
-  final int calorieGoal;
+  final int calorieGoal; // Daily goal (will be multiplied for weekly/monthly)
   final int totalBurned;
-  final int burnGoal;
+  final int burnGoal; // Daily goal (will be multiplied for weekly/monthly)
   final double totalCost;
-  final double budget;
+  final double budget; // Daily budget (will be multiplied for weekly/monthly)
+  final SummaryPeriod? period; // Optional period for weekly/monthly display
 
   const ProgressAchievementsSection({
     super.key,
@@ -34,10 +35,30 @@ class ProgressAchievementsSection extends StatelessWidget {
     required this.burnGoal,
     required this.totalCost,
     required this.budget,
+    this.period,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Determine period multiplier
+    final periodDays = period == SummaryPeriod.weekly
+        ? 7
+        : period == SummaryPeriod.monthly
+            ? 30
+            : 1;
+
+    // Calculate period goals (multiply daily goals by period)
+    final periodCalorieGoal = calorieGoal * periodDays;
+    final periodBurnGoal = burnGoal * periodDays;
+    final periodBudget = budget * periodDays;
+
+    // Determine period label for title
+    final goalsTitle = period == SummaryPeriod.weekly
+        ? 'Weekly Goals'
+        : period == SummaryPeriod.monthly
+            ? 'Monthly Goals'
+            : 'Today\'s Goals';
+
     // Calculate weight progress
     final weightRemaining = goalWeight != null && currentWeight != null
         ? currentWeight! - goalWeight!
@@ -49,14 +70,20 @@ class ProgressAchievementsSection extends StatelessWidget {
     final weightRemainingDisplay = _formatWeight(weightRemaining?.abs());
     final unit = isMetric ? 'kg' : 'lbs';
 
-    // Today's goal status
-    final caloriesMet = totalCalories <= calorieGoal;
-    final exerciseMet = totalBurned >= burnGoal;
-    final budgetMet = totalCost <= budget;
+    // Period goal status
+    final caloriesMet = totalCalories <= periodCalorieGoal;
+    final exerciseMet = totalBurned >= periodBurnGoal;
+    final budgetMet = totalCost <= periodBudget;
 
-    final caloriePercentage = ((totalCalories / calorieGoal) * 100).round();
-    final exercisePercentage = burnGoal > 0 ? ((totalBurned / burnGoal) * 100).round() : 0;
-    final budgetPercentage = budget > 0 ? ((totalCost / budget) * 100).round() : 0;
+    final caloriePercentage = periodCalorieGoal > 0
+        ? ((totalCalories / periodCalorieGoal) * 100).round()
+        : 0;
+    final exercisePercentage = periodBurnGoal > 0
+        ? ((totalBurned / periodBurnGoal) * 100).round()
+        : 0;
+    final budgetPercentage = periodBudget > 0
+        ? ((totalCost / periodBudget) * 100).round()
+        : 0;
 
     return BaseSectionWidget(
       icon: Icons.emoji_events,
@@ -106,9 +133,9 @@ class ProgressAchievementsSection extends StatelessWidget {
             color: Colors.white,
           ),
 
-          // Today's Goals Section
+          // Period Goals Section
           Text(
-            'Today\'s Goals',
+            goalsTitle,
             style: AppTypography.bodyMedium.copyWith(
               fontSize: AppWidgetTheme.fontSizeMS,
               fontWeight: FontWeight.w700,
@@ -121,7 +148,7 @@ class ProgressAchievementsSection extends StatelessWidget {
           _buildGoalRow(
             icon: Icons.restaurant_menu,
             label: 'Calories',
-            value: '$totalCalories / $calorieGoal cal ($caloriePercentage%)',
+            value: '$totalCalories / $periodCalorieGoal cal ($caloriePercentage%)',
             isMet: caloriesMet,
           ),
 
@@ -129,7 +156,7 @@ class ProgressAchievementsSection extends StatelessWidget {
           _buildGoalRow(
             icon: Icons.fitness_center,
             label: 'Exercise',
-            value: '$totalBurned / $burnGoal cal ($exercisePercentage%)',
+            value: '$totalBurned / $periodBurnGoal cal ($exercisePercentage%)',
             isMet: exerciseMet,
           ),
 
@@ -137,7 +164,7 @@ class ProgressAchievementsSection extends StatelessWidget {
           _buildGoalRow(
             icon: Icons.attach_money,
             label: 'Budget',
-            value: '\$${totalCost.toStringAsFixed(2)} / \$${budget.toStringAsFixed(2)} ($budgetPercentage%)',
+            value: '\$${totalCost.toStringAsFixed(2)} / \$${periodBudget.toStringAsFixed(2)} ($budgetPercentage%)',
             isMet: budgetMet,
           ),
         ],
@@ -159,7 +186,7 @@ class ProgressAchievementsSection extends StatelessWidget {
           // Status indicator (checkmark or X)
           Icon(
             isMet ? Icons.check_circle : Icons.cancel,
-            color: isMet ? NutritionColors.success : NutritionColors.warning,
+            color: Colors.white,
             size: 20,
           ),
           const SizedBox(width: AppWidgetTheme.spaceXS),

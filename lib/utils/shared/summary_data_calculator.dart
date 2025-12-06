@@ -9,20 +9,68 @@ class SummaryDataCalculator {
   SummaryDataCalculator._();
 
   /// Calculate key metrics for the top row display
-  static Map<String, String> calculateKeyMetrics(
+  static Future<Map<String, String>> calculateKeyMetrics(
     SummaryPeriod period,
     HomeProvider homeProvider,
     ExerciseProvider exerciseProvider,
-  ) {
-    // For now, show daily data for all periods to avoid misleading multiplication
-    // TODO: Implement actual weekly/monthly data aggregation in providers
-    final consumedProtein = homeProvider.consumedMacros['protein'] ?? 0.0;
+  ) async {
+    if (period == SummaryPeriod.daily) {
+      // Daily: Use current day's data
+      final consumedProtein = homeProvider.consumedMacros['protein'] ?? 0.0;
 
-    return {
-      'calories': homeProvider.totalCalories.toString(),
-      'protein': '${consumedProtein.round()}g',
-      'exercise': '${exerciseProvider.totalCaloriesBurned} cal',
-    };
+      return {
+        'calories': homeProvider.totalCalories.toString(),
+        'protein': '${consumedProtein.round()}g',
+        'exercise': '${exerciseProvider.totalCaloriesBurned} cal',
+      };
+    } else if (period == SummaryPeriod.weekly) {
+      // Weekly: Aggregate last 7 days
+      final now = DateTime.now();
+      final startDate = now.subtract(const Duration(days: 6));
+
+      // Get food entries for the week
+      final foodEntries = await homeProvider.getFoodEntriesForRange(startDate, now);
+
+      // Calculate total calories and protein
+      int totalCalories = 0;
+      double totalProtein = 0.0;
+
+      for (final item in foodEntries) {
+        final nutrition = item.getNutritionForServing();
+        totalCalories += (nutrition['calories'] ?? 0).round();
+        totalProtein += nutrition['proteins'] ?? 0;
+      }
+
+      // Get exercise data for the week
+      final exerciseEntries = await exerciseProvider.getExerciseEntriesForDateRange(startDate, now);
+      int totalExerciseCalories = 0;
+
+      for (final dayEntries in exerciseEntries.values) {
+        for (final exercise in dayEntries) {
+          totalExerciseCalories += exercise.caloriesBurned;
+        }
+      }
+
+      // Calculate daily averages
+      final avgCalories = (totalCalories / 7).round();
+      final avgProtein = (totalProtein / 7).round();
+      final avgExercise = (totalExerciseCalories / 7).round();
+
+      return {
+        'calories': '$totalCalories ($avgCalories/day)',
+        'protein': '${totalProtein.round()}g (${avgProtein}g/day)',
+        'exercise': '$totalExerciseCalories cal ($avgExercise/day)',
+      };
+    } else {
+      // Monthly: Will be implemented later
+      final consumedProtein = homeProvider.consumedMacros['protein'] ?? 0.0;
+
+      return {
+        'calories': homeProvider.totalCalories.toString(),
+        'protein': '${consumedProtein.round()}g',
+        'exercise': '${exerciseProvider.totalCaloriesBurned} cal',
+      };
+    }
   }
 
   /// Calculate progress data for status display
@@ -141,7 +189,7 @@ class SummaryDataCalculator {
       case SummaryPeriod.daily:
         return 'DAILY SUMMARY';
       case SummaryPeriod.weekly:
-        return 'WEEKLY SUMMARY';
+        return '7-DAY SUMMARY';
       case SummaryPeriod.monthly:
         return 'MONTHLY SUMMARY';
     }
@@ -150,14 +198,14 @@ class SummaryDataCalculator {
   /// Get period subtitle with date range
   static String getPeriodSubtitle(SummaryPeriod period) {
     final now = DateTime.now();
-    
+
     switch (period) {
       case SummaryPeriod.daily:
         return formatDate(now);
       case SummaryPeriod.weekly:
-        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-        final endOfWeek = startOfWeek.add(const Duration(days: 6));
-        return '${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}';
+        // Last 7 days (rolling window)
+        final startDate = now.subtract(const Duration(days: 6));
+        return 'Last 7 Days: ${formatDate(startDate)} - ${formatDate(now)}';
       case SummaryPeriod.monthly:
         return formatMonth(now);
     }

@@ -273,7 +273,7 @@ class ExerciseProvider extends ChangeNotifier {
 
   /// Get exercise entries for a date range
   Future<Map<String, List<ExerciseEntry>>> getExerciseEntriesForDateRange(
-    DateTime startDate, 
+    DateTime startDate,
     DateTime endDate,
   ) async {
     final Map<String, List<ExerciseEntry>> entriesByDate = {};
@@ -306,5 +306,33 @@ class ExerciseProvider extends ChangeNotifier {
       debugPrint('Error getting exercise entries for date range: $e');
       return {};
     }
+  }
+
+  /// Calculate aggregated exercise data for a date range
+  ///
+  /// Returns total calories burned and exercise count.
+  Future<Map<String, num>> calculateAggregatedExercise(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    final entriesByDate = await getExerciseEntriesForDateRange(startDate, endDate);
+
+    int totalCaloriesBurned = 0;
+    int totalDuration = 0;
+    int totalExercises = 0;
+
+    for (final dayEntries in entriesByDate.values) {
+      for (final exercise in dayEntries) {
+        totalCaloriesBurned += exercise.caloriesBurned;
+        totalDuration += exercise.duration;
+        totalExercises++;
+      }
+    }
+
+    return {
+      'caloriesBurned': totalCaloriesBurned,
+      'duration': totalDuration,
+      'exerciseCount': totalExercises,
+    };
   }
 }

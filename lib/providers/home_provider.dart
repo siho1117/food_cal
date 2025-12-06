@@ -392,6 +392,69 @@ class HomeProvider extends ChangeNotifier {
   /// Get formatted date string for display
   String get formattedSelectedDate => DateHelper.formatRelativeDate(_selectedDate);
 
+  /// Get food entries for a date range (inclusive)
+  ///
+  /// Used for weekly/monthly summary aggregation.
+  Future<List<FoodItem>> getFoodEntriesForRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    try {
+      final List<FoodItem> allEntries = [];
+
+      // Iterate through each day in the range
+      for (var date = startDate;
+          !date.isAfter(endDate);
+          date = date.add(const Duration(days: 1))) {
+        final entries = await _foodRepository.storageService.getFoodEntries(date);
+        allEntries.addAll(entries);
+      }
+
+      return allEntries;
+    } catch (e) {
+      debugPrint('Error getting food entries for range: $e');
+      return [];
+    }
+  }
+
+  /// Calculate aggregated nutrition data for a date range
+  ///
+  /// Returns total calories and macros for the given period.
+  Future<Map<String, num>> calculateAggregatedNutrition(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    final entries = await getFoodEntriesForRange(startDate, endDate);
+
+    int totalCalories = 0;
+    double totalProtein = 0.0;
+    double totalCarbs = 0.0;
+    double totalFat = 0.0;
+    double totalCost = 0.0;
+
+    for (final item in entries) {
+      final nutrition = item.getNutritionForServing();
+      totalCalories += (nutrition['calories'] ?? 0).round();
+      totalProtein += nutrition['proteins'] ?? 0;
+      totalCarbs += nutrition['carbs'] ?? 0;
+      totalFat += nutrition['fats'] ?? 0;
+
+      final cost = item.getCostForServing();
+      if (cost != null) {
+        totalCost += cost;
+      }
+    }
+
+    return {
+      'calories': totalCalories,
+      'protein': totalProtein,
+      'carbs': totalCarbs,
+      'fat': totalFat,
+      'cost': totalCost,
+      'mealCount': entries.length,
+    };
+  }
+
   /// Set the exercise provider reference
   ///
   /// This allows HomeProvider to access exercise data for bonus calculations.

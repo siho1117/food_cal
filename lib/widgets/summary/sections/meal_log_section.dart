@@ -8,18 +8,21 @@ import '../../../providers/theme_provider.dart';
 import '../../../data/models/food_item.dart';
 import '../../../services/food_image_service.dart';
 import 'base_section_widget.dart';
+import '../summary_controls_widget.dart';
 
 /// Detailed Meal Log Section
 class MealLogSection extends StatelessWidget {
   final List<FoodItem> foodEntries;
   final int totalCalories;
   final Map<String, num> consumedMacros;
+  final SummaryPeriod? period; // Optional period for weekly/monthly display
 
   const MealLogSection({
     super.key,
     required this.foodEntries,
     required this.totalCalories,
     required this.consumedMacros,
+    this.period,
   });
 
   @override
@@ -36,7 +39,7 @@ class MealLogSection extends StatelessWidget {
             children: [
               if (foodEntries.isEmpty) ...[
                 Text(
-                  'No meals logged today',
+                  _getEmptyMessage(),
                   style: AppTypography.bodySmall.copyWith(
                     fontSize: AppWidgetTheme.fontSizeSM,
                     color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -44,72 +47,120 @@ class MealLogSection extends StatelessWidget {
                   ),
                 ),
               ] else ...[
-                ...foodEntries.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final food = entry.value;
+                // Show meals based on period
+                if (period == SummaryPeriod.daily) ...[
+                  // Daily: Show detailed view with images
+                  ...foodEntries.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final food = entry.value;
 
-                  // Get nutrition values adjusted for serving size
-                  final nutrition = food.getNutritionForServing();
-                  final calories = nutrition['calories']!.round();
-                  final protein = nutrition['proteins']!.round();
-                  final carbs = nutrition['carbs']!.round();
-                  final fat = nutrition['fats']!.round();
+                    // Get nutrition values adjusted for serving size
+                    final nutrition = food.getNutritionForServing();
+                    final calories = nutrition['calories']!.round();
+                    final protein = nutrition['proteins']!.round();
+                    final carbs = nutrition['carbs']!.round();
+                    final fat = nutrition['fats']!.round();
 
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Food content (left side)
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Row 1: Name
-                              Text(
-                                '${index + 1}. ${food.name}',
-                                style: AppTypography.bodyMedium.copyWith(
-                                  fontSize: AppWidgetTheme.fontSizeSM,
-                                  fontWeight: FontWeight.w600,
-                                  color: textColor,
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Food content (left side)
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Row 1: Name
+                                Text(
+                                  '${index + 1}. ${food.name}',
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    fontSize: AppWidgetTheme.fontSizeSM,
+                                    fontWeight: FontWeight.w600,
+                                    color: textColor,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2.5),
-                              // Row 2: Calories and Servings
-                              Text(
-                                '$calories cal  |  ${food.servingSize} ${food.servingUnit}',
-                                style: AppTypography.bodySmall.copyWith(
-                                  fontSize: AppWidgetTheme.fontSizeSM,
-                                  color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                                const SizedBox(height: 2.5),
+                                // Row 2: Calories and Servings
+                                Text(
+                                  '$calories cal  |  ${food.servingSize} ${food.servingUnit}',
+                                  style: AppTypography.bodySmall.copyWith(
+                                    fontSize: AppWidgetTheme.fontSizeSM,
+                                    color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 2.5),
-                              // Row 3: Macros
-                              Text(
-                                'P: ${protein}g  C: ${carbs}g  F: ${fat}g',
-                                style: AppTypography.bodySmall.copyWith(
-                                  fontSize: AppWidgetTheme.fontSizeSM,
-                                  color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                                const SizedBox(height: 2.5),
+                                // Row 3: Macros
+                                Text(
+                                  'P: ${protein}g  C: ${carbs}g  F: ${fat}g',
+                                  style: AppTypography.bodySmall.copyWith(
+                                    fontSize: AppWidgetTheme.fontSizeSM,
+                                    color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        // Food image (right side)
-                        _buildFoodImage(food, textColor),
-                      ],
-                    ),
-                  );
-                }),
+                          const SizedBox(width: 12),
+                          // Food image (right side)
+                          _buildFoodImage(food, textColor),
+                        ],
+                      ),
+                    );
+                  }),
+                ] else ...[
+                  // Weekly/Monthly: Show simplified compact list
+                  ...foodEntries.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final food = entry.value;
+
+                    // Get nutrition values adjusted for serving size
+                    final nutrition = food.getNutritionForServing();
+                    final calories = nutrition['calories']!.round();
+
+                    // Format date
+                    final dateStr = _formatDate(food.timestamp);
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Left: Food name
+                          Expanded(
+                            child: Text(
+                              '${index + 1}. ${food.name}',
+                              style: AppTypography.bodyMedium.copyWith(
+                                fontSize: AppWidgetTheme.fontSizeSM,
+                                fontWeight: FontWeight.w600,
+                                color: textColor,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Right: Calories and Date
+                          Text(
+                            '$calories cal  •  $dateStr',
+                            style: AppTypography.bodySmall.copyWith(
+                              fontSize: AppWidgetTheme.fontSizeSM,
+                              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
 
                 const SizedBox(height: 8),
                 Divider(color: textColor.withValues(alpha: 0.3)),
                 const SizedBox(height: 8),
 
-                // Daily Totals
+                // Period Totals
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -118,7 +169,7 @@ class MealLogSection extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Daily Totals:',
+                          _getTotalsLabel(),
                           style: AppTypography.labelLarge.copyWith(
                             fontSize: AppWidgetTheme.fontSizeMS,
                             fontWeight: FontWeight.bold,
@@ -157,6 +208,33 @@ class MealLogSection extends StatelessWidget {
         },
       ),
     );
+  }
+
+  /// Get empty message based on period
+  String _getEmptyMessage() {
+    if (period == SummaryPeriod.weekly) {
+      return 'No meals logged this week';
+    } else if (period == SummaryPeriod.monthly) {
+      return 'No meals logged this month';
+    }
+    return 'No meals logged today';
+  }
+
+  /// Get totals label based on period
+  String _getTotalsLabel() {
+    if (period == SummaryPeriod.weekly) {
+      return 'Weekly Totals (${foodEntries.length} meals):';
+    } else if (period == SummaryPeriod.monthly) {
+      return 'Monthly Totals (${foodEntries.length} meals):';
+    }
+    return 'Daily Totals:';
+  }
+
+  /// Format date for display (MM/DD)
+  String _formatDate(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$month/$day';
   }
 
   /// Build food image with File-based loading
