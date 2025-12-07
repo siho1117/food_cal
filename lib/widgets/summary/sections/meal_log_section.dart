@@ -9,6 +9,7 @@ import '../../../data/models/food_item.dart';
 import '../../../services/food_image_service.dart';
 import 'base_section_widget.dart';
 import '../summary_controls_widget.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 /// Detailed Meal Log Section
 class MealLogSection extends StatelessWidget {
@@ -27,9 +28,10 @@ class MealLogSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return BaseSectionWidget(
       icon: Icons.restaurant_menu,
-      title: 'MEAL LOG',
+      title: l10n.mealLog,
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
           final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
@@ -39,7 +41,7 @@ class MealLogSection extends StatelessWidget {
             children: [
               if (foodEntries.isEmpty) ...[
                 Text(
-                  _getEmptyMessage(),
+                  _getEmptyMessage(l10n),
                   style: AppTypography.bodySmall.copyWith(
                     fontSize: AppWidgetTheme.fontSizeSM,
                     color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -85,7 +87,7 @@ class MealLogSection extends StatelessWidget {
                                 const SizedBox(height: 2.5),
                                 // Row 2: Calories and Servings
                                 Text(
-                                  '$calories cal  |  ${food.servingSize} ${food.servingUnit}',
+                                  '$calories ${l10n.cal}  |  ${food.servingSize} ${food.servingUnit}',
                                   style: AppTypography.bodySmall.copyWith(
                                     fontSize: AppWidgetTheme.fontSizeSM,
                                     color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -94,7 +96,7 @@ class MealLogSection extends StatelessWidget {
                                 const SizedBox(height: 2.5),
                                 // Row 3: Macros
                                 Text(
-                                  'P: ${protein}g  C: ${carbs}g  F: ${fat}g',
+                                  '${l10n.proteinShort}: $protein${l10n.g}  ${l10n.carbsShort}: $carbs${l10n.g}  ${l10n.fatShort}: $fat${l10n.g}',
                                   style: AppTypography.bodySmall.copyWith(
                                     fontSize: AppWidgetTheme.fontSizeSM,
                                     color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -144,7 +146,7 @@ class MealLogSection extends StatelessWidget {
                           const SizedBox(width: 12),
                           // Right: Calories and Date
                           Text(
-                            '$calories cal  •  $dateStr',
+                            '$calories ${l10n.cal}  •  $dateStr',
                             style: AppTypography.bodySmall.copyWith(
                               fontSize: AppWidgetTheme.fontSizeSM,
                               color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -169,7 +171,7 @@ class MealLogSection extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          _getTotalsLabel(),
+                          _getTotalsLabel(l10n),
                           style: AppTypography.labelLarge.copyWith(
                             fontSize: AppWidgetTheme.fontSizeMS,
                             fontWeight: FontWeight.bold,
@@ -177,7 +179,7 @@ class MealLogSection extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '$totalCalories cal',
+                          '$totalCalories ${l10n.cal}',
                           style: AppTypography.bodyMedium.copyWith(
                             fontSize: AppWidgetTheme.fontSizeSM,
                             fontWeight: FontWeight.w600,
@@ -192,7 +194,7 @@ class MealLogSection extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Text(
-                          'Protein: ${consumedMacros['protein']?.round() ?? 0}g  |  Carbs: ${consumedMacros['carbs']?.round() ?? 0}g  |  Fat: ${consumedMacros['fat']?.round() ?? 0}g',
+                          '${l10n.protein}: ${consumedMacros['protein']?.round() ?? 0}${l10n.g}  |  ${l10n.carbs}: ${consumedMacros['carbs']?.round() ?? 0}${l10n.g}  |  ${l10n.fat}: ${consumedMacros['fat']?.round() ?? 0}${l10n.g}',
                           style: AppTypography.bodyMedium.copyWith(
                             fontSize: AppWidgetTheme.fontSizeSM,
                             color: Colors.white.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -211,23 +213,23 @@ class MealLogSection extends StatelessWidget {
   }
 
   /// Get empty message based on period
-  String _getEmptyMessage() {
+  String _getEmptyMessage(AppLocalizations l10n) {
     if (period == SummaryPeriod.weekly) {
-      return 'No meals logged this week';
+      return l10n.noMealsLoggedWeek;
     } else if (period == SummaryPeriod.monthly) {
-      return 'No meals logged this month';
+      return l10n.noMealsLoggedMonth;
     }
-    return 'No meals logged today';
+    return l10n.noMealsLoggedToday;
   }
 
   /// Get totals label based on period
-  String _getTotalsLabel() {
+  String _getTotalsLabel(AppLocalizations l10n) {
     if (period == SummaryPeriod.weekly) {
-      return 'Weekly Totals (${foodEntries.length} meals):';
+      return '${l10n.weeklyGoals.replaceFirst('Goals', 'Totals')} (${foodEntries.length} ${l10n.meals}):';
     } else if (period == SummaryPeriod.monthly) {
-      return 'Monthly Totals (${foodEntries.length} meals):';
+      return '${l10n.monthlyGoals.replaceFirst('Goals', 'Totals')} (${foodEntries.length} ${l10n.meals}):';
     }
-    return 'Daily Totals:';
+    return l10n.dailyTotals;
   }
 
   /// Format date for display (MM/DD)

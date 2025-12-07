@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../config/design_system/theme_background.dart';
 import '../config/design_system/theme_design.dart';
 import '../providers/home_provider.dart';
@@ -155,6 +156,8 @@ class _SummaryScreenState extends State<SummaryScreen> {
   }
 
   Widget _buildErrorState(BuildContext context, HomeProvider homeProvider, ExerciseProvider exerciseProvider) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -165,9 +168,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
             size: 48,
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Error Loading Summary Data',
-            style: TextStyle(
+          Text(
+            l10n.errorLoadingSummaryData,
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -175,7 +178,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            homeProvider.errorMessage ?? exerciseProvider.errorMessage ?? 'Unknown error occurred',
+            homeProvider.errorMessage ?? exerciseProvider.errorMessage ?? l10n.unknownErrorOccurred,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.8),
@@ -191,7 +194,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
               backgroundColor: Colors.white,
               foregroundColor: AppColors.textDark,
             ),
-            child: const Text('Retry'),
+            child: Text(l10n.retry),
           ),
           const SizedBox(height: 8),
           TextButton(
@@ -202,7 +205,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
             style: TextButton.styleFrom(
               foregroundColor: Colors.white,
             ),
-            child: const Text('Dismiss'),
+            child: Text(l10n.dismiss),
           ),
         ],
       ),
@@ -261,7 +264,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
       );
 
       if (imageBytes == null) {
-        throw Exception('Failed to capture screenshot');
+        throw Exception(AppLocalizations.of(context)!.failedToCaptureScreenshot);
       }
 
       // Save to temp file for sharing
@@ -272,15 +275,15 @@ class _SummaryScreenState extends State<SummaryScreen> {
       // Show native share dialog (user can save from here)
       await Share.shareXFiles(
         [XFile(tempFile.path)],
-        text: 'Check out my fitness summary!',
+        text: AppLocalizations.of(context)!.checkOutMyFitnessSummary,
       );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Summary exported! You can save or share from the dialog.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.summaryExportedSuccessfully),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -288,7 +291,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Export error: ${e.toString()}'),
+            content: Text('${AppLocalizations.of(context)!.exportError}${e.toString()}'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),

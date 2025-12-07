@@ -8,6 +8,7 @@ import '../../../data/models/exercise_entry.dart';
 import '../../../utils/shared/summary_data_calculator.dart';
 import '../summary_controls_widget.dart';
 import 'base_section_widget.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 /// Exercise & Activity Log Section
 class ExerciseSection extends StatelessWidget {
@@ -26,6 +27,8 @@ class ExerciseSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     // Calculate period multiplier for weekly/monthly goals
     final periodDays = period == SummaryPeriod.weekly
         ? 7
@@ -43,29 +46,30 @@ class ExerciseSection extends StatelessWidget {
 
     return BaseSectionWidget(
       icon: Icons.fitness_center,
-      title: 'EXERCISE & ACTIVITY LOG',
+      title: l10n.exerciseActivityLog,
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
+          final l10n = AppLocalizations.of(context)!;
           final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              InfoRow(label: 'Total Exercise Duration', value: totalTime),
-              InfoRow(label: 'Total Calories Burned', value: '$totalBurned calories'),
+              InfoRow(label: l10n.totalExerciseDuration, value: totalTime),
+              InfoRow(label: l10n.totalCaloriesBurned, value: '$totalBurned ${l10n.calories}'),
               InfoRow(
-                label: _getBurnGoalLabel(),
-                value: '$periodBurnGoal calories',
+                label: _getBurnGoalLabel(l10n),
+                value: '$periodBurnGoal ${l10n.calories}',
               ),
               InfoRow(
-                label: isOverGoal ? 'Exceeded Goal' : 'Remaining to Goal',
-                value: '$difference calories ($percentage%)',
+                label: isOverGoal ? l10n.exceededGoal : l10n.remainingToGoal,
+                value: '$difference ${l10n.calories} ($percentage%)',
               ),
 
               if (exercises.isNotEmpty) ...[
                 const SizedBox(height: AppWidgetTheme.spaceMD),
                 Text(
-                  'Exercise Breakdown:',
+                  '${l10n.exerciseBreakdown}:',
                   style: AppTypography.labelLarge.copyWith(
                     fontSize: AppWidgetTheme.fontSizeMS,
                     fontWeight: FontWeight.bold,
@@ -120,7 +124,7 @@ class ExerciseSection extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                '${exercise.caloriesBurned} cal',
+                                '${exercise.caloriesBurned} ${l10n.cal}',
                                 style: AppTypography.bodyMedium.copyWith(
                                   fontSize: AppWidgetTheme.fontSizeSM,
                                   fontWeight: FontWeight.bold,
@@ -133,7 +137,7 @@ class ExerciseSection extends StatelessWidget {
                           Row(
                             children: [
                               Text(
-                                'Duration: ${exercise.duration} min',
+                                '${l10n.durationLabel}${exercise.duration} ${l10n.min}',
                                 style: AppTypography.bodySmall.copyWith(
                                   fontSize: AppWidgetTheme.fontSizeSM,
                                   color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -141,7 +145,7 @@ class ExerciseSection extends StatelessWidget {
                               ),
                               const SizedBox(width: 16),
                               Text(
-                                'Pace: ${(exercise.caloriesBurned / exercise.duration).toStringAsFixed(1)} cal/min',
+                                '${l10n.paceLabel}${(exercise.caloriesBurned / exercise.duration).toStringAsFixed(1)} ${l10n.calPerMin}',
                                 style: AppTypography.bodySmall.copyWith(
                                   fontSize: AppWidgetTheme.fontSizeSM,
                                   color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -152,7 +156,7 @@ class ExerciseSection extends StatelessWidget {
                           if (exercise.notes != null && exercise.notes!.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             Text(
-                              'Notes: ${exercise.notes}',
+                              '${l10n.notesLabel}${exercise.notes}',
                               style: AppTypography.bodySmall.copyWith(
                                 fontSize: AppWidgetTheme.fontSizeSM,
                                 color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -197,7 +201,7 @@ class ExerciseSection extends StatelessWidget {
                           const SizedBox(width: 12),
                           // Right: Calories | Duration | Date
                           Text(
-                            '${exercise.caloriesBurned} cal  |  $durationStr  |  $dateStr',
+                            '${exercise.caloriesBurned} ${l10n.cal}  |  $durationStr  |  $dateStr',
                             style: AppTypography.bodySmall.copyWith(
                               fontSize: AppWidgetTheme.fontSizeSM,
                               color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -211,7 +215,7 @@ class ExerciseSection extends StatelessWidget {
               ] else ...[
                 const SizedBox(height: AppWidgetTheme.spaceMD),
                 Text(
-                  _getEmptyMessage(),
+                  _getEmptyMessage(l10n),
                   style: AppTypography.bodySmall.copyWith(
                     fontSize: AppWidgetTheme.fontSizeSM,
                     color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -251,23 +255,23 @@ class ExerciseSection extends StatelessWidget {
   }
 
   /// Get burn goal label based on period
-  String _getBurnGoalLabel() {
+  String _getBurnGoalLabel(AppLocalizations l10n) {
     if (period == SummaryPeriod.weekly) {
-      return 'Weekly Burn Goal';
+      return l10n.weeklyBurnGoal;
     } else if (period == SummaryPeriod.monthly) {
-      return 'Monthly Burn Goal';
+      return l10n.monthlyBurnGoal;
     }
-    return 'Daily Burn Goal';
+    return l10n.dailyBurnGoal;
   }
 
   /// Get empty message based on period
-  String _getEmptyMessage() {
+  String _getEmptyMessage(AppLocalizations l10n) {
     if (period == SummaryPeriod.weekly) {
-      return 'No exercises logged this week';
+      return l10n.noExercisesLoggedWeek;
     } else if (period == SummaryPeriod.monthly) {
-      return 'No exercises logged this month';
+      return l10n.noExercisesLoggedMonth;
     }
-    return 'No exercises logged today';
+    return l10n.noExercisesLoggedToday;
   }
 
   /// Format date for display (MM/DD)

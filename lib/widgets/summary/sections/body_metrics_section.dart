@@ -6,6 +6,7 @@ import '../../../data/models/user_profile.dart';
 import '../../../data/models/weight_data.dart';
 import '../../../utils/progress/health_metrics.dart';
 import 'base_section_widget.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 /// Body Measurements, Composition and Metabolism Section
 class BodyMetricsSection extends StatelessWidget {
@@ -60,15 +61,7 @@ class BodyMetricsSection extends StatelessWidget {
 
     // Get unit preferences from profile
     final isMetric = profile?.isMetric ?? true;
-    final weightUnit = isMetric ? 'kg' : 'lbs';
     const kgToLbsRatio = 2.20462;
-
-    // Format weight values based on unit preference
-    String formatWeight(double? weight) {
-      if (weight == null) return 'N/A';
-      final displayWeight = isMetric ? weight : weight * kgToLbsRatio;
-      return displayWeight.toStringAsFixed(1);
-    }
 
     // Calculate BMR for metabolism info
     final bmr = HealthMetrics.calculateBMR(
@@ -78,16 +71,54 @@ class BodyMetricsSection extends StatelessWidget {
       gender: profile?.gender,
     );
 
-    return BaseSectionWidget(
+    return Builder(
+      builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        final weightUnit = isMetric ? l10n.kg : l10n.lbs;
+
+        // Format weight values based on unit preference
+        String formatWeight(double? weight) {
+          if (weight == null) return l10n.na;
+          final displayWeight = isMetric ? weight : weight * kgToLbsRatio;
+          return displayWeight.toStringAsFixed(1);
+        }
+
+        // Get localized BMI classification
+        String getBMIClassificationLocalized(double bmi) {
+          final key = HealthMetrics.getBMIClassificationKey(bmi);
+          switch (key) {
+            case 'underweight':
+              return l10n.bmiUnderweight;
+            case 'normal':
+              return l10n.bmiNormal;
+            case 'overweight':
+              return l10n.bmiOverweight;
+            case 'obese':
+              return l10n.bmiObese;
+            default:
+              return l10n.na;
+          }
+        }
+
+        return BaseSectionWidget(
           icon: Icons.straighten,
-          title: 'BODY METRICS & METABOLISM',
+          title: l10n.bodyMetricsMetabolism,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Height (Simple row) - Moved above table
               InfoRow(
-                label: 'Height',
-                value: profile?.formattedHeight() ?? 'Not set',
+                label: l10n.height,
+                value: profile?.height != null
+                    ? (isMetric
+                        ? '${profile!.height} ${l10n.cm}'
+                        : (() {
+                            final totalInches = profile!.height! / 2.54;
+                            final feet = (totalInches / 12).floor();
+                            final inches = (totalInches % 12).round();
+                            return '$feet\' $inches"';
+                          })())
+                    : l10n.na,
               ),
 
               const SizedBox(height: 4.0),
@@ -108,24 +139,24 @@ class BodyMetricsSection extends StatelessWidget {
 
                     // Weight Row
                     _buildGridDataRow(
-                      'Weight ($weightUnit)',
+                      '${l10n.weight} ($weightUnit)',
                       formatWeight(startingWeight),
                       formatWeight(currentWeight),
                       formatWeight(goalWeight),
                       (startingWeight != null && currentWeight != null)
                           ? formatWeight(currentWeight! - startingWeight)
-                          : 'N/A',
+                          : l10n.na,
                     ),
 
                     const SizedBox(height: AppWidgetTheme.spaceXS),
 
                     // BMI Row
                     _buildGridDataRow(
-                      'BMI',
-                      startingBMI != null ? startingBMI.toStringAsFixed(1) : 'N/A',
-                      currentBMI != null ? currentBMI.toStringAsFixed(1) : 'N/A',
-                      goalBMI != null ? goalBMI.toStringAsFixed(1) : 'N/A',
-                      currentBMI != null ? HealthMetrics.getBMIClassification(currentBMI) : 'N/A',
+                      l10n.bmi,
+                      startingBMI != null ? startingBMI.toStringAsFixed(1) : l10n.na,
+                      currentBMI != null ? currentBMI.toStringAsFixed(1) : l10n.na,
+                      goalBMI != null ? goalBMI.toStringAsFixed(1) : l10n.na,
+                      currentBMI != null ? getBMIClassificationLocalized(currentBMI) : l10n.na,
                     ),
 
                     if (currentBodyFat != null) ...[
@@ -133,13 +164,13 @@ class BodyMetricsSection extends StatelessWidget {
 
                       // Body Fat % Row
                       _buildGridDataRow(
-                        'Body Fat (%)',
-                        startingBodyFat != null ? startingBodyFat.toStringAsFixed(1) : 'N/A',
+                        l10n.bodyFatPercent,
+                        startingBodyFat != null ? startingBodyFat.toStringAsFixed(1) : l10n.na,
                         currentBodyFat.toStringAsFixed(1),
-                        targetBodyFat != null ? targetBodyFat.toStringAsFixed(1) : 'N/A',
+                        targetBodyFat != null ? targetBodyFat.toStringAsFixed(1) : l10n.na,
                         startingBodyFat != null
                             ? (currentBodyFat - startingBodyFat).toStringAsFixed(1)
-                            : 'N/A',
+                            : l10n.na,
                       ),
                     ],
                   ],
@@ -151,8 +182,8 @@ class BodyMetricsSection extends StatelessWidget {
               // BMR and Calorie Goal Section
               if (bmr != null) ...[
                 InfoRow(
-                  label: 'BMR (Basal Metabolic Rate)',
-                  value: '${bmr.round()} cal/day',
+                  label: l10n.bmrBasalMetabolicRate,
+                  value: '${bmr.round()} ${l10n.calPerDay}',
                 ),
                 const SizedBox(height: 4.0),
               ],
@@ -160,16 +191,17 @@ class BodyMetricsSection extends StatelessWidget {
               if (profile?.monthlyWeightGoal != null) ...[
                 Builder(
                   builder: (context) {
+                    final l10n = AppLocalizations.of(context)!;
                     final monthlyGoal = profile!.monthlyWeightGoal!;
-                    final label = monthlyGoal < 0 ? 'Loss' : 'Gain';
+                    final label = monthlyGoal < 0 ? l10n.loss : l10n.gain;
                     final absValue = monthlyGoal.abs();
                     const kgToLbsRatio = 2.20462;
                     final displayValue = isMetric ? absValue : absValue * kgToLbsRatio;
-                    final unit = isMetric ? 'kg' : 'lbs';
+                    final unit = isMetric ? l10n.kg : l10n.lbs;
 
                     return InfoRow(
-                      label: 'Monthly Goal ($label)',
-                      value: '${displayValue.toStringAsFixed(1)} $unit/month',
+                      label: l10n.monthlyGoalLabel(label),
+                      value: '${displayValue.toStringAsFixed(1)} $unit${l10n.perMonth}',
                     );
                   },
                 ),
@@ -177,82 +209,89 @@ class BodyMetricsSection extends StatelessWidget {
               ],
 
               InfoRow(
-                label: 'Calorie Goal',
-                value: '$calorieGoal cal/day',
+                label: l10n.calorieGoal,
+                value: '$calorieGoal ${l10n.calPerDay}',
               ),
             ],
           ),
         );
+      },
+    );
   }
 
   Widget _buildGridHeaderRow() {
-    return Row(
-      children: [
-        // Metric column
-        Expanded(
-          flex: 2,
-          child: Text(
-            'Metric',
-            style: AppTypography.bodySmall.copyWith(
-              fontSize: AppWidgetTheme.fontSizeXS,
-              color: Colors.white.withValues(alpha: 0.5),
-              fontWeight: FontWeight.w600,
+    return Builder(
+      builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        return Row(
+          children: [
+            // Metric column
+            Expanded(
+              flex: 2,
+              child: Text(
+                l10n.metric,
+                style: AppTypography.bodySmall.copyWith(
+                  fontSize: AppWidgetTheme.fontSizeXS,
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
-          ),
-        ),
-        // Starting column
-        Expanded(
-          flex: 2,
-          child: Text(
-            'Starting',
-            style: AppTypography.bodySmall.copyWith(
-              fontSize: AppWidgetTheme.fontSizeXS,
-              color: Colors.white.withValues(alpha: 0.5),
-              fontWeight: FontWeight.w600,
+            // Starting column
+            Expanded(
+              flex: 2,
+              child: Text(
+                l10n.starting,
+                style: AppTypography.bodySmall.copyWith(
+                  fontSize: AppWidgetTheme.fontSizeXS,
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        // Current column
-        Expanded(
-          flex: 2,
-          child: Text(
-            'Current',
-            style: AppTypography.bodySmall.copyWith(
-              fontSize: AppWidgetTheme.fontSizeXS,
-              color: Colors.white.withValues(alpha: 0.5),
-              fontWeight: FontWeight.w600,
+            // Current column
+            Expanded(
+              flex: 2,
+              child: Text(
+                l10n.current,
+                style: AppTypography.bodySmall.copyWith(
+                  fontSize: AppWidgetTheme.fontSizeXS,
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        // Goal column
-        Expanded(
-          flex: 2,
-          child: Text(
-            'Goal',
-            style: AppTypography.bodySmall.copyWith(
-              fontSize: AppWidgetTheme.fontSizeXS,
-              color: Colors.white.withValues(alpha: 0.5),
-              fontWeight: FontWeight.w600,
+            // Goal column
+            Expanded(
+              flex: 2,
+              child: Text(
+                l10n.goal,
+                style: AppTypography.bodySmall.copyWith(
+                  fontSize: AppWidgetTheme.fontSizeXS,
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        // Progress/Status column
-        Expanded(
-          flex: 2,
-          child: Text(
-            'Progress',
-            style: AppTypography.bodySmall.copyWith(
-              fontSize: AppWidgetTheme.fontSizeXS,
-              color: Colors.white.withValues(alpha: 0.5),
-              fontWeight: FontWeight.w600,
+            // Progress/Status column
+            Expanded(
+              flex: 2,
+              child: Text(
+                l10n.progress,
+                style: AppTypography.bodySmall.copyWith(
+                  fontSize: AppWidgetTheme.fontSizeXS,
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 

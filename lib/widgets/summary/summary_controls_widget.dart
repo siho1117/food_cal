@@ -5,6 +5,7 @@ import 'dart:ui';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/typography.dart';
 import '../../providers/theme_provider.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Feature flag: Set to true to enable monthly view in Stage 2
 const bool _enableMonthlyView = false;
@@ -90,68 +91,73 @@ class SummaryControlsWidget extends StatelessWidget {
   }
 
   Widget _buildPeriodSwitcher(Color textColor, Color borderColor) {
-    return Container(
-      decoration: BoxDecoration(
-        color: textColor.withValues(alpha: AppWidgetTheme.opacityLight),
-        borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXL), // Pill shape
-      ),
-      padding: EdgeInsets.all(AppWidgetTheme.spaceXXS), // Small padding around tabs
-      child: Row(
-        children: SummaryPeriod.values
-            .where((period) => _enableMonthlyView || period != SummaryPeriod.monthly)
-            .map((period) {
-          final isSelected = period == currentPeriod;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onPeriodChanged(period),
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  vertical: 10.0,
-                  horizontal: AppWidgetTheme.spaceXS, // Horizontal padding to prevent overflow
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? textColor.withValues(alpha: 1.0)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXL), // Pill shape tabs
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min, // Minimize space usage
-                  children: [
-                    Icon(
-                      _getPeriodIcon(period),
-                      size: AppWidgetTheme.iconSizeSmall,
-                      color: isSelected
-                          ? (textColor == AppWidgetTheme.colorPrimaryDark
-                              ? Colors.white
-                              : AppWidgetTheme.colorPrimaryDark)
-                          : textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+    return Builder(
+      builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        return Container(
+          decoration: BoxDecoration(
+            color: textColor.withValues(alpha: AppWidgetTheme.opacityLight),
+            borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXL), // Pill shape
+          ),
+          padding: EdgeInsets.all(AppWidgetTheme.spaceXXS), // Small padding around tabs
+          child: Row(
+            children: SummaryPeriod.values
+                .where((period) => _enableMonthlyView || period != SummaryPeriod.monthly)
+                .map((period) {
+              final isSelected = period == currentPeriod;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => onPeriodChanged(period),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      vertical: 10.0,
+                      horizontal: AppWidgetTheme.spaceXS, // Horizontal padding to prevent overflow
                     ),
-                    SizedBox(width: AppWidgetTheme.spaceXXS), // Smaller gap
-                    Flexible(
-                      child: Text(
-                        _getPeriodLabel(period),
-                        overflow: TextOverflow.ellipsis, // Prevent overflow
-                        maxLines: 1,
-                        style: AppTypography.displaySmall.copyWith(
-                          fontSize: AppWidgetTheme.fontSizeXS, // Smaller font
-                          fontWeight: FontWeight.w600,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? textColor.withValues(alpha: 1.0)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXL), // Pill shape tabs
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min, // Minimize space usage
+                      children: [
+                        Icon(
+                          _getPeriodIcon(period),
+                          size: AppWidgetTheme.iconSizeSmall,
                           color: isSelected
                               ? (textColor == AppWidgetTheme.colorPrimaryDark
                                   ? Colors.white
                                   : AppWidgetTheme.colorPrimaryDark)
                               : textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
                         ),
-                      ),
+                        SizedBox(width: AppWidgetTheme.spaceXXS), // Smaller gap
+                        Flexible(
+                          child: Text(
+                            _getPeriodLabel(period, l10n),
+                            overflow: TextOverflow.ellipsis, // Prevent overflow
+                            maxLines: 1,
+                            style: AppTypography.displaySmall.copyWith(
+                              fontSize: AppWidgetTheme.fontSizeXS, // Smaller font
+                              fontWeight: FontWeight.w600,
+                              color: isSelected
+                                  ? (textColor == AppWidgetTheme.colorPrimaryDark
+                                      ? Colors.white
+                                      : AppWidgetTheme.colorPrimaryDark)
+                                  : textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 
@@ -239,14 +245,14 @@ class SummaryControlsWidget extends StatelessWidget {
     }
   }
 
-  String _getPeriodLabel(SummaryPeriod period) {
+  String _getPeriodLabel(SummaryPeriod period, AppLocalizations l10n) {
     switch (period) {
       case SummaryPeriod.daily:
-        return 'Daily';
+        return l10n.daily;
       case SummaryPeriod.weekly:
-        return 'Weekly';
+        return l10n.weekly;
       case SummaryPeriod.monthly:
-        return 'Monthly';
+        return l10n.monthly;
     }
   }
 }

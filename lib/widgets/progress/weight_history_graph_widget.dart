@@ -9,6 +9,7 @@ import '../../data/models/weight_data.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/progress_data.dart';
 import '../../providers/settings_provider.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'weight_edit_dialog.dart';
 
 enum TimeRange { sevenDays, twentyEightDays, threeMonths, sixMonths, oneYear }
@@ -29,18 +30,18 @@ extension TimeRangeExtension on TimeRange {
     }
   }
 
-  String get title {
+  String getTitle(AppLocalizations l10n) {
     switch (this) {
       case TimeRange.sevenDays:
-        return 'Weight History (7 Days)';
+        return l10n.weightHistory7Days;
       case TimeRange.twentyEightDays:
-        return 'Weight History (28 Days)';
+        return l10n.weightHistory28Days;
       case TimeRange.threeMonths:
-        return 'Weight History (3 Months)';
+        return l10n.weightHistory3Months;
       case TimeRange.sixMonths:
-        return 'Weight History (6 Months)';
+        return l10n.weightHistory6Months;
       case TimeRange.oneYear:
-        return 'Weight History (1 Year)';
+        return l10n.weightHistory1Year;
     }
   }
 
@@ -219,6 +220,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
   Widget build(BuildContext context) {
     return Consumer2<ThemeProvider, ProgressData>(
       builder: (context, themeProvider, progressData, child) {
+        final l10n = AppLocalizations.of(context)!;
         final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
 
         final allWeightHistory = progressData.weightHistory;
@@ -257,7 +259,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
             children: [
               // Title
               Text(
-                _selectedRange.title,
+                _selectedRange.getTitle(l10n),
                 style: TextStyle(
                   fontSize: AppWidgetTheme.fontSizeLG,
                   fontWeight: FontWeight.w600,
@@ -324,6 +326,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
   Widget _buildFlChart(BuildContext context, List<WeightDataPoint> displayData, Color textColor, ProgressData progressData) {
     if (displayData.isEmpty) return const SizedBox.shrink();
 
+    final l10n = AppLocalizations.of(context)!;
     final weights = displayData.map((e) => e.weight).toList();
     final minWeight = weights.reduce((a, b) => a < b ? a : b);
     final maxWeight = weights.reduce((a, b) => a > b ? a : b);
@@ -425,8 +428,9 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
                 reservedSize: 45,
                 interval: yInterval,
                 getTitlesWidget: (value, meta) {
+                  final unit = widget.isMetric ? l10n.kg : l10n.lbs;
                   return Text(
-                    '${value.toStringAsFixed(0)} ${widget.isMetric ? 'kg' : 'lbs'}',
+                    '${value.toStringAsFixed(0)} $unit',
                     style: TextStyle(
                       fontSize: AppWidgetTheme.fontSizeXS,
                       color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -502,12 +506,13 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
                   final index = spot.x.toInt();
                   if (index >= 0 && index < displayData.length) {
                     final point = displayData[index];
+                    final unit = widget.isMetric ? l10n.kg : l10n.lbs;
                     String suffix = '';
                     if (point.isForwardFilled) {
                       suffix = ' (tap to add)';
                     }
                     return LineTooltipItem(
-                      '${spot.y.toStringAsFixed(1)} ${widget.isMetric ? 'kg' : 'lbs'}$suffix\n${DateFormat('MMM d').format(displayData[index].timestamp)}',
+                      '${spot.y.toStringAsFixed(1)} $unit$suffix\n${DateFormat('MMM d').format(displayData[index].timestamp)}',
                       const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

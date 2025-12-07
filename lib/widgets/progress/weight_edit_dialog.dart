@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../data/models/weight_data.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 enum WeightMode { start, current, target }
 
@@ -308,7 +309,8 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final unit = widget.isMetric ? 'kg' : 'lbs';
+    final l10n = AppLocalizations.of(context)!;
+    final unit = widget.isMetric ? l10n.kg : l10n.lbs;
 
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),

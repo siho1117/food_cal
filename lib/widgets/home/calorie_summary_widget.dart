@@ -448,11 +448,13 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
   Widget _buildExerciseBonusToggle(HomeProvider homeProvider, Color textColor) {
     final isEnabled = homeProvider.exerciseBonusEnabled;
 
+    final l10n = AppLocalizations.of(context)!;
+
     return Semantics(
       button: true,
-      label: 'Exercise calorie bonus toggle',
-      value: isEnabled ? 'On' : 'Off',
-      hint: 'Double tap to toggle exercise calorie bonus',
+      label: l10n.exerciseCalorieBonusToggle,
+      value: isEnabled ? l10n.on : l10n.off,
+      hint: l10n.doubleTapToToggleExerciseBonus,
       child: Material(
         color: Colors.transparent,
         child: InkWell(

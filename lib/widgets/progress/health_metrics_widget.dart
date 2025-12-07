@@ -7,6 +7,7 @@ import '../../config/design_system/dialog_theme.dart';
 import '../../config/design_system/accent_colors.dart';
 import '../../providers/theme_provider.dart';
 import '../../data/models/user_profile.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Combined health metrics display widget showing BMI, Body Fat, and BMR
 ///
@@ -50,6 +51,7 @@ class HealthMetricsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
+        final l10n = AppLocalizations.of(context)!;
         final borderColor = AppWidgetTheme.getBorderColor(
           themeProvider.selectedGradient,
           AppWidgetTheme.cardBorderOpacity,
@@ -88,7 +90,7 @@ class HealthMetricsWidget extends StatelessWidget {
                   ),
                   SizedBox(width: AppWidgetTheme.spaceMS),
                   Text(
-                    'Health Metrics',
+                    l10n.healthMetrics,
                     style: TextStyle(
                       fontSize: AppWidgetTheme.fontSizeLG,
                       fontWeight: FontWeight.w600,
@@ -123,10 +125,10 @@ class HealthMetricsWidget extends StatelessWidget {
                 targetValue: targetBMI?.toStringAsFixed(1) ?? '--',
                 progress: bmiProgress ?? 0.0,
                 zones: [
-                  _ScaleZone('Underweight', 0, 18.5, AccentColors.electricBlue),
-                  _ScaleZone('Normal', 18.5, 25, AccentColors.brightGreen),
-                  _ScaleZone('Overweight', 25, 30, AccentColors.goldenYellow),
-                  _ScaleZone('Obese', 30, 40, AccentColors.vibrantRed),
+                  _ScaleZone(l10n.bmiUnderweight, 0, 18.5, AccentColors.electricBlue),
+                  _ScaleZone(l10n.bmiNormal, 18.5, 25, AccentColors.brightGreen),
+                  _ScaleZone(l10n.bmiOverweight, 25, 30, AccentColors.goldenYellow),
+                  _ScaleZone(l10n.bmiObese, 30, 40, AccentColors.vibrantRed),
                 ],
                 currentPosition: bmi,
                 targetPosition: targetBMI,
@@ -139,11 +141,11 @@ class HealthMetricsWidget extends StatelessWidget {
               // Body Fat Timeline
               _buildTimelineMetric(
                 context,
-                label: 'Body Fat Estimate %',
+                label: l10n.bodyFatEstimatePercent,
                 currentValue: bodyFat != null ? '${bodyFat!.toStringAsFixed(1)}%' : '--',
                 targetValue: targetBodyFat != null ? '${targetBodyFat!.toStringAsFixed(1)}%' : '--',
                 progress: bodyFatProgress ?? 0.0,
-                zones: _getBodyFatZones(userProfile?.gender),
+                zones: _getBodyFatZones(userProfile?.gender, l10n),
                 currentPosition: bodyFat,
                 targetPosition: targetBodyFat,
                 maxValue: _getBodyFatMaxValue(userProfile?.gender),
@@ -154,6 +156,7 @@ class HealthMetricsWidget extends StatelessWidget {
 
               // Metabolism Timeline
               _buildMetabolismTimeline(
+                context: context,
                 bmr: bmr,
                 baseline: baseline, // BMR baseline
                 textColor: textColor,
@@ -378,10 +381,12 @@ class HealthMetricsWidget extends StatelessWidget {
 
   /// BMR section showing basal metabolic rate
   Widget _buildMetabolismTimeline({
+    required BuildContext context,
     required double? bmr,
     required double? baseline,
     required Color textColor,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: EdgeInsets.all(AppWidgetTheme.spaceMD),
       decoration: BoxDecoration(
@@ -478,13 +483,14 @@ class HealthMetricsWidget extends StatelessWidget {
   }
 
   void _showInfoDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: AppDialogTheme.shape,
         backgroundColor: AppDialogTheme.backgroundColor,
         title: Text(
-          'Health Metrics Info',
+          l10n.healthMetricsInfo,
           style: AppDialogTheme.titleStyle,
         ),
         contentPadding: AppDialogTheme.contentPadding,
@@ -503,7 +509,7 @@ class HealthMetricsWidget extends StatelessWidget {
               ),
               SizedBox(height: AppDialogTheme.spaceXS),
               Text(
-                'Measures weight relative to height. Range: Underweight (<18.5), Normal (18.5-25), Overweight (25-30), Obese (>30)',
+                l10n.bmiDescription,
                 style: AppDialogTheme.bodyStyle,
               ),
               SizedBox(height: AppDialogTheme.spaceMD),
@@ -518,7 +524,7 @@ class HealthMetricsWidget extends StatelessWidget {
               ),
               SizedBox(height: AppDialogTheme.spaceXS),
               Text(
-                'Estimated body fat percentage based on BMI, age, and gender using the Deurenberg formula. Lower percentages indicate more lean muscle mass.',
+                l10n.bodyFatDescription,
                 style: AppDialogTheme.bodyStyle,
               ),
               const SizedBox(height: AppDialogTheme.spaceXS),
@@ -543,7 +549,7 @@ class HealthMetricsWidget extends StatelessWidget {
                     const SizedBox(width: AppDialogTheme.spaceXS),
                     Expanded(
                       child: Text(
-                        'This is an estimate with ±4-5% margin of error (Male/Female) or ±7-10% (non-binary). For medical purposes, consult a healthcare professional.',
+                        l10n.warningText,
                         style: AppDialogTheme.bodyStyle.copyWith(
                           fontSize: 12,
                           color: Colors.orange.shade900,
@@ -565,7 +571,7 @@ class HealthMetricsWidget extends StatelessWidget {
               ),
               SizedBox(height: AppDialogTheme.spaceXS),
               Text(
-                'Your basal metabolic rate - the number of calories your body burns at rest to maintain basic life functions like breathing, circulation, and cell production.',
+                l10n.bmrDescription,
                 style: AppDialogTheme.bodyStyle,
               ),
             ],
@@ -576,7 +582,7 @@ class HealthMetricsWidget extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             style: AppDialogTheme.cancelButtonStyle,
-            child: Text('Close'),
+            child: Text(l10n.close),
           ),
         ],
       ),
@@ -584,26 +590,26 @@ class HealthMetricsWidget extends StatelessWidget {
   }
 
   /// Get body fat zones based on gender
-  static List<_ScaleZone> _getBodyFatZones(String? gender) {
+  static List<_ScaleZone> _getBodyFatZones(String? gender, AppLocalizations l10n) {
     if (gender == 'Male') {
       return [
-        _ScaleZone('Athletic', 0, 14, AccentColors.brightGreen),
-        _ScaleZone('Fitness', 14, 18, AccentColors.goldenYellow),
+        _ScaleZone(l10n.athletic, 0, 14, AccentColors.brightGreen),
+        _ScaleZone(l10n.fitness, 14, 18, AccentColors.goldenYellow),
         _ScaleZone('Average', 18, 25, AccentColors.brightOrange),
         _ScaleZone('High', 25, 40, AccentColors.vibrantRed),
       ];
     } else if (gender == 'Female') {
       return [
-        _ScaleZone('Athletic', 0, 21, AccentColors.brightGreen),
-        _ScaleZone('Fitness', 21, 25, AccentColors.goldenYellow),
+        _ScaleZone(l10n.athletic, 0, 21, AccentColors.brightGreen),
+        _ScaleZone(l10n.fitness, 21, 25, AccentColors.goldenYellow),
         _ScaleZone('Average', 25, 32, AccentColors.brightOrange),
         _ScaleZone('High', 32, 45, AccentColors.vibrantRed),
       ];
     } else {
       // Gender-neutral zones (midpoint between male and female)
       return [
-        _ScaleZone('Athletic', 0, 18, AccentColors.brightGreen),
-        _ScaleZone('Fitness', 18, 22, AccentColors.goldenYellow),
+        _ScaleZone(l10n.athletic, 0, 18, AccentColors.brightGreen),
+        _ScaleZone(l10n.fitness, 18, 22, AccentColors.goldenYellow),
         _ScaleZone('Average', 22, 28, AccentColors.brightOrange),
         _ScaleZone('High', 28, 42, AccentColors.vibrantRed),
       ];

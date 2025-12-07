@@ -7,6 +7,7 @@ import '../../../providers/theme_provider.dart';
 import '../../../data/models/food_item.dart';
 import '../summary_controls_widget.dart';
 import 'base_section_widget.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 /// Cost Budget Section - Food cost tracking (daily/weekly/monthly)
 class CostBudgetSection extends StatelessWidget {
@@ -27,6 +28,7 @@ class CostBudgetSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // Calculate period multiplier for weekly/monthly budgets
     final periodDays = period == SummaryPeriod.weekly
         ? 7
@@ -43,7 +45,7 @@ class CostBudgetSection extends StatelessWidget {
 
     return BaseSectionWidget(
       icon: Icons.attach_money,
-      title: 'FOOD BUDGET',
+      title: l10n.foodBudget,
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
           final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
@@ -53,27 +55,27 @@ class CostBudgetSection extends StatelessWidget {
             children: [
               // Total Cost Summary
               InfoRow(
-                label: 'Total Food Cost',
+                label: l10n.totalFoodCost,
                 value: '\$${totalCost.toStringAsFixed(2)} / \$${periodBudget.toStringAsFixed(2)}',
               ),
               InfoRow(
-                label: isOver ? 'Budget Exceeded' : 'Budget Remaining',
+                label: isOver ? l10n.budgetExceeded : l10n.budgetRemaining,
                 value: '\$${difference.toStringAsFixed(2)} ($percentage%)',
               ),
               // Meal Statistics
-              InfoRow(label: 'Meals Logged', value: '$foodEntriesCount meals'),
+              InfoRow(label: l10n.mealsLogged, value: '$foodEntriesCount ${l10n.meals}'),
 
               // Show average per meal for daily, average per day for weekly/monthly
               if (period == SummaryPeriod.daily) ...[
                 InfoRow(
-                  label: 'Average per Meal',
+                  label: l10n.averagePerMeal,
                   value: foodEntriesCount > 0
                       ? '\$${(totalCost / foodEntriesCount).toStringAsFixed(2)}'
                       : '\$0.00',
                 ),
               ] else ...[
                 InfoRow(
-                  label: 'Average per Day',
+                  label: l10n.averagePerDay,
                   value: periodDays > 0
                       ? '\$${(totalCost / periodDays).toStringAsFixed(2)}'
                       : '\$0.00',
@@ -83,7 +85,7 @@ class CostBudgetSection extends StatelessWidget {
               if (foodEntries.isNotEmpty) ...[
                 const SizedBox(height: AppWidgetTheme.spaceMD),
                 Text(
-                  'Budget Breakdown:',
+                  '${l10n.budgetBreakdown}:',
                   style: AppTypography.labelLarge.copyWith(
                     fontSize: AppWidgetTheme.fontSizeMS,
                     fontWeight: FontWeight.bold,

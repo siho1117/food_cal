@@ -5,6 +5,7 @@ import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/typography.dart';
 import '../../providers/theme_provider.dart';
 import '../../data/models/summary_card_config.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Bottom sheet for customizing which summary cards are visible
 class CardSettingsBottomSheet extends StatefulWidget {
@@ -69,6 +70,7 @@ class _CardSettingsBottomSheetState extends State<CardSettingsBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) {
         final borderColor = AppWidgetTheme.getBorderColor(
@@ -105,7 +107,7 @@ class _CardSettingsBottomSheetState extends State<CardSettingsBottomSheet> {
                   const SizedBox(width: AppWidgetTheme.spaceMD),
                   Expanded(
                     child: Text(
-                      'Customize Summary Cards',
+                      l10n.customizeSummaryCards,
                       style: AppTypography.displaySmall.copyWith(
                         fontSize: AppWidgetTheme.fontSizeLG,
                         fontWeight: FontWeight.bold,
@@ -123,7 +125,7 @@ class _CardSettingsBottomSheetState extends State<CardSettingsBottomSheet> {
               const SizedBox(height: AppWidgetTheme.spaceSM),
 
               Text(
-                'Choose which cards to show in your summary',
+                l10n.chooseCardsToShow,
                 style: AppTypography.bodySmall.copyWith(
                   fontSize: AppWidgetTheme.fontSizeSM,
                   color: Colors.white.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -175,81 +177,86 @@ class _CardSettingsBottomSheetState extends State<CardSettingsBottomSheet> {
     Color borderColor, {
     Key? key,
   }) {
-    return Container(
-      key: key,
-      margin: const EdgeInsets.only(bottom: AppWidgetTheme.spaceMD),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: borderColor.withValues(alpha: 0.3),
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
-      ),
-      child: Row(
-        children: [
-          // Drag handle icon
-          Padding(
-            padding: const EdgeInsets.only(
-              left: AppWidgetTheme.spaceXS,
-              right: AppWidgetTheme.spaceXS,
+    return Builder(
+      builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        return Container(
+          key: key,
+          margin: const EdgeInsets.only(bottom: AppWidgetTheme.spaceMD),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: borderColor.withValues(alpha: 0.3),
+              width: 1,
             ),
-            child: Icon(
-              Icons.drag_handle,
-              color: Colors.white.withValues(alpha: 0.5),
-              size: AppWidgetTheme.iconSizeMedium,
-            ),
+            borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
           ),
-
-          // Card icon
-          Padding(
-            padding: const EdgeInsets.only(
-              left: AppWidgetTheme.spaceXS,
-              right: AppWidgetTheme.spaceSM,
-            ),
-            child: Icon(
-              config.type.icon,
-              color: Colors.white,
-              size: AppWidgetTheme.iconSizeMedium,
-            ),
-          ),
-
-          // Card info and toggle
-          Expanded(
-            child: SwitchListTile(
-              title: Text(
-                config.type.displayName,
-                style: AppTypography.bodyMedium.copyWith(
-                  fontSize: AppWidgetTheme.fontSizeMD,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+          child: Row(
+            children: [
+              // Drag handle icon
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: AppWidgetTheme.spaceXS,
+                  right: AppWidgetTheme.spaceXS,
+                ),
+                child: Icon(
+                  Icons.drag_handle,
+                  color: Colors.white.withValues(alpha: 0.5),
+                  size: AppWidgetTheme.iconSizeMedium,
                 ),
               ),
-              subtitle: config.isVisible
-                  ? null
-                  : Text(
-                      'Hidden from summary',
-                      style: AppTypography.bodySmall.copyWith(
-                        fontSize: AppWidgetTheme.fontSizeXS,
-                        color: Colors.white.withValues(alpha: 0.5),
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-              value: config.isVisible,
-              onChanged: (value) {
-                _handleVisibilityChanged(config.type, value);
-              },
-              activeColor: Colors.white,
-              activeTrackColor: Colors.white.withValues(alpha: 0.5),
-              inactiveThumbColor: Colors.white.withValues(alpha: 0.3),
-              inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: AppWidgetTheme.spaceSM,
-                vertical: AppWidgetTheme.spaceXS,
+
+              // Card icon
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: AppWidgetTheme.spaceXS,
+                  right: AppWidgetTheme.spaceSM,
+                ),
+                child: Icon(
+                  config.type.icon,
+                  color: Colors.white,
+                  size: AppWidgetTheme.iconSizeMedium,
+                ),
               ),
-            ),
+
+              // Card info and toggle
+              Expanded(
+                child: SwitchListTile(
+                  title: Text(
+                    config.type.displayName,
+                    style: AppTypography.bodyMedium.copyWith(
+                      fontSize: AppWidgetTheme.fontSizeMD,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  subtitle: config.isVisible
+                      ? null
+                      : Text(
+                          l10n.hiddenFromSummary,
+                          style: AppTypography.bodySmall.copyWith(
+                            fontSize: AppWidgetTheme.fontSizeXS,
+                            color: Colors.white.withValues(alpha: 0.5),
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                  value: config.isVisible,
+                  onChanged: (value) {
+                    _handleVisibilityChanged(config.type, value);
+                  },
+                  activeColor: Colors.white,
+                  activeTrackColor: Colors.white.withValues(alpha: 0.5),
+                  inactiveThumbColor: Colors.white.withValues(alpha: 0.3),
+                  inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppWidgetTheme.spaceSM,
+                    vertical: AppWidgetTheme.spaceXS,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

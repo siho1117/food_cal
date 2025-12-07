@@ -32,7 +32,9 @@ class HealthMetrics {
     return weight / (heightInMeters * heightInMeters);
   }
 
-  /// Get BMI classification based on standard ranges
+  /// Get BMI classification based on standard ranges (English only - deprecated)
+  /// Use getBMIClassificationLocalized instead for proper i18n support
+  @Deprecated('Use getBMIClassificationLocalized with AppLocalizations for proper i18n')
   static String getBMIClassification(double bmi) {
     if (bmi < 18.5) {
       return 'Underweight';
@@ -42,6 +44,20 @@ class HealthMetrics {
       return 'Overweight';
     } else {
       return 'Obese';
+    }
+  }
+
+  /// Get BMI classification key for localization
+  /// Returns one of: 'underweight', 'normal', 'overweight', 'obese'
+  static String getBMIClassificationKey(double bmi) {
+    if (bmi < 18.5) {
+      return 'underweight';
+    } else if (bmi >= 18.5 && bmi < 25) {
+      return 'normal';
+    } else if (bmi >= 25 && bmi < 30) {
+      return 'overweight';
+    } else {
+      return 'obese';
     }
   }
 

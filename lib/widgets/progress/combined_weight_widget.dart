@@ -6,6 +6,7 @@ import '../../config/design_system/widget_theme.dart';
 import '../../providers/progress_data.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'weight_edit_dialog.dart' show showWeightEditDialog, WeightMode;
 
 class CombinedWeightWidget extends StatefulWidget {
@@ -45,7 +46,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
     return displayWeight.toStringAsFixed(1);
   }
 
-  String _getUnit() => widget.isMetric ? 'kg' : 'lbs';
+  String _getUnit(AppLocalizations l10n) => widget.isMetric ? l10n.kg : l10n.lbs;
 
   double _calculateProgress(double? start, double? current, double? target) {
     if (start == null || current == null || target == null) return 0.0;
@@ -59,6 +60,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
   Widget build(BuildContext context) {
     return Consumer2<ProgressData, ThemeProvider>(
       builder: (context, progressData, themeProvider, child) {
+        final l10n = AppLocalizations.of(context)!;
         final startingWeight = progressData.startingWeight;
         final targetWeight = progressData.targetWeight;
         final progress = _calculateProgress(startingWeight, widget.currentWeight, targetWeight);
@@ -103,7 +105,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header
-                _buildHeader(context, progressData, textColor),
+                _buildHeader(context, progressData, textColor, l10n),
 
                 SizedBox(height: AppWidgetTheme.spaceLG),
 
@@ -131,6 +133,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
                   targetWeight,
                   progress,
                   textColor,
+                  l10n,
                 ),
               ],
                 ),
@@ -142,7 +145,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, ProgressData progressData, Color textColor) {
+  Widget _buildHeader(BuildContext context, ProgressData progressData, Color textColor, AppLocalizations l10n) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -155,7 +158,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
             ),
             SizedBox(width: AppWidgetTheme.spaceMS),
             Text(
-              'Weight',
+              l10n.weight,
               style: TextStyle(
                 fontSize: AppWidgetTheme.fontSizeLG,
                 fontWeight: FontWeight.w600,
@@ -207,7 +210,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
             GestureDetector(
               onTap: () => _showWeightDialog(context, progressData, initialMode: WeightMode.start),
               child: Text(
-                'Start',
+                AppLocalizations.of(context)!.start,
                 style: TextStyle(
                   fontSize: AppWidgetTheme.fontSizeXS,
                   fontWeight: FontWeight.w500,
@@ -216,7 +219,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
               ),
             ),
             Text(
-              'Current',
+              AppLocalizations.of(context)!.current,
               style: TextStyle(
                 fontSize: AppWidgetTheme.fontSizeXS,
                 fontWeight: FontWeight.w500,
@@ -226,7 +229,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
             GestureDetector(
               onTap: () => _showWeightDialog(context, progressData, initialMode: WeightMode.target),
               child: Text(
-                'Goal',
+                AppLocalizations.of(context)!.goal,
                 style: TextStyle(
                   fontSize: AppWidgetTheme.fontSizeXS,
                   fontWeight: FontWeight.w500,
@@ -314,6 +317,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
     double? target,
     double progress,
     Color textColor,
+    AppLocalizations l10n,
   ) {
     // Calculate stats
     double? lost;
@@ -339,7 +343,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
         children: [
           // Progress percentage
           _buildStatItem(
-            label: 'Progress',
+            label: l10n.progress,
             value: '$progressPercent%',
             textColor: textColor,
           ),
@@ -351,8 +355,8 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
           ),
           // Lost/Gained
           _buildStatItem(
-            label: start != null && current != null && start > current ? 'Lost' : 'Gained',
-            value: lost != null ? '${_formatWeight(lost)} ${_getUnit()}' : '--',
+            label: start != null && current != null && start > current ? l10n.lost : l10n.gained,
+            value: lost != null ? '${_formatWeight(lost)} ${_getUnit(l10n)}' : '--',
             textColor: textColor,
           ),
           // Divider
@@ -363,8 +367,8 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
           ),
           // Remaining
           _buildStatItem(
-            label: 'To Go',
-            value: remaining != null ? '${_formatWeight(remaining)} ${_getUnit()}' : '--',
+            label: l10n.toGo,
+            value: remaining != null ? '${_formatWeight(remaining)} ${_getUnit(l10n)}' : '--',
             textColor: textColor,
           ),
         ],
@@ -414,11 +418,12 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
         widget.onWeightEntered(weight, isMetric);
 
         if (context.mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Weight updated successfully'),
+            SnackBar(
+              content: Text(l10n.weightUpdatedSuccessfully),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -428,11 +433,12 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
         await progressData.updateTargetWeight(targetWeight);
 
         if (context.mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Target weight updated successfully'),
+            SnackBar(
+              content: Text(l10n.targetWeightUpdatedSuccessfully),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -445,11 +451,12 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
         await progressData.refreshData();
 
         if (context.mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Starting weight updated successfully'),
+            SnackBar(
+              content: Text(l10n.startingWeightUpdated),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
             ),
           );

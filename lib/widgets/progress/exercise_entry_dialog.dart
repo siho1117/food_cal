@@ -6,6 +6,7 @@ import '../../config/design_system/dialog_theme.dart';
 import '../../config/design_system/typography.dart';
 import '../../providers/exercise_provider.dart';
 import '../../data/models/exercise_entry.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'exercise_dialog_controller.dart';
 
 class ExerciseEntryDialog extends StatefulWidget {
@@ -139,6 +140,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
   }
 
   Widget _buildHeader() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
       decoration: const BoxDecoration(
@@ -152,7 +154,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
           // Title
           Expanded(
             child: Text(
-              widget.existingExercise != null ? 'Edit Exercise' : 'Log Exercise',
+              widget.existingExercise != null ? l10n.editExercise : l10n.logExercise,
               style: AppDialogTheme.titleStyle,
             ),
           ),
@@ -166,11 +168,11 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildTabButton('Preset', !_isCustomTab, () {
+                _buildTabButton(l10n.preset, !_isCustomTab, () {
                   setState(() => _isCustomTab = false);
                 }),
                 const SizedBox(width: 6),
-                _buildTabButton('Custom', _isCustomTab, () {
+                _buildTabButton(l10n.custom, _isCustomTab, () {
                   setState(() => _isCustomTab = true);
                 }),
               ],
@@ -253,10 +255,11 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
   }
 
   Widget _buildExerciseSelection() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionLabel('Choose Exercise', required: true),
+        _buildSectionLabel(l10n.chooseExercise, required: true),
         const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,
@@ -330,21 +333,22 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
   }
 
   Widget _buildCustomExerciseName() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionLabel('Exercise Name', required: true),
+        _buildSectionLabel(l10n.exerciseName, required: true),
         const SizedBox(height: 12),
         TextFormField(
           initialValue: _controller.selectedExercise,
           onChanged: (value) => _controller.selectedExercise = value,
           style: AppDialogTheme.inputTextStyle,
           decoration: AppDialogTheme.inputDecoration(
-            hintText: 'e.g., Jump Rope, Pilates',
+            hintText: l10n.exerciseNamePlaceholder,
           ),
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Exercise name is required';
+              return l10n.exerciseNameRequired;
             }
             return null;
           },
@@ -354,10 +358,11 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
   }
 
   Widget _buildDurationSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionLabel('Duration', required: true),
+        _buildSectionLabel(l10n.duration, required: true),
         const SizedBox(height: 12),
         TextFormField(
           controller: _controller.durationController,
@@ -365,7 +370,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           style: AppDialogTheme.inputTextStyle,
           decoration: AppDialogTheme.inputDecoration(
-            hintText: 'Minutes',
+            hintText: l10n.minutes,
           ),
           validator: _controller.validateDuration,
           onChanged: _controller.onDurationChanged,
@@ -403,10 +408,11 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
   }
 
   Widget _buildIntensitySection() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionLabel('Intensity'),
+        _buildSectionLabel(l10n.intensity),
         const SizedBox(height: 12),
         Row(
           children: _controller.getIntensityLevels().map((intensity) {
@@ -446,10 +452,11 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
   }
 
   Widget _buildCalorieSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionLabel('Calories Burned'),
+        _buildSectionLabel(l10n.caloriesBurned),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
@@ -465,7 +472,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _isManualCalories ? 'MANUAL OVERRIDE' : 'ESTIMATED CALORIES',
+                      _isManualCalories ? l10n.manualOverride.toUpperCase() : l10n.estimatedCalories.toUpperCase(),
                       style: AppTypography.overline.copyWith(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -498,7 +505,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
                               ),
                               validator: (value) {
                                 if (_isManualCalories && (value == null || value.isEmpty)) {
-                                  return 'Required';
+                                  return l10n.required;
                                 }
                                 return null;
                               },
@@ -534,7 +541,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    _isManualCalories ? 'Auto' : 'Edit',
+                    _isManualCalories ? l10n.auto : l10n.edit,
                     style: AppTypography.labelMedium.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -551,10 +558,11 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
   }
 
   Widget _buildCustomCaloriesInput() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionLabel('Calories Burned', required: true),
+        _buildSectionLabel(l10n.caloriesBurned, required: true),
         const SizedBox(height: 12),
         TextFormField(
           controller: _manualCaloriesController,
@@ -562,15 +570,15 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           style: AppDialogTheme.inputTextStyle,
           decoration: AppDialogTheme.inputDecoration(
-            hintText: 'Enter calories burned',
+            hintText: l10n.enterCaloriesBurned,
           ),
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Calories are required for custom exercises';
+              return l10n.caloriesRequiredCustom;
             }
             final cal = int.tryParse(value);
             if (cal == null || cal <= 0) {
-              return 'Please enter a valid number';
+              return l10n.enterValidNumber;
             }
             return null;
           },
@@ -586,6 +594,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
   }
 
   Widget _buildActions() {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: AppDialogTheme.actionsPadding,
       child: Row(
@@ -594,7 +603,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
             child: TextButton(
               onPressed: () => Navigator.of(context).pop(),
               style: AppDialogTheme.cancelButtonStyle,
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
             ),
           ),
           const SizedBox(width: AppDialogTheme.buttonGap),
@@ -612,7 +621,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Text('Save'),
+                  : Text(l10n.save),
             ),
           ),
         ],

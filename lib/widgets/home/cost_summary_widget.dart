@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
+import '../../l10n/generated/app_localizations.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/typography.dart';
 import '../../config/design_system/dialog_theme.dart';
@@ -128,7 +129,7 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                'Daily Spend',
+                                AppLocalizations.of(context)!.dailySpend,
                                 style: TextStyle(
                                   fontSize: AppWidgetTheme.fontSizeLG,
                                   fontWeight: FontWeight.w700,
@@ -334,8 +335,8 @@ class _BudgetEditDialogState extends State<_BudgetEditDialog> {
       contentPadding: AppDialogTheme.contentPadding,
       actionsPadding: AppDialogTheme.actionsPadding,
 
-      title: const Text(
-        'Budget',
+      title: Text(
+        AppLocalizations.of(context)!.budget,
         style: AppDialogTheme.titleStyle,
       ),
 
@@ -359,29 +360,30 @@ class _BudgetEditDialogState extends State<_BudgetEditDialog> {
           }
         },
       ),
-      
+
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
           style: AppDialogTheme.cancelButtonStyle,
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context)!.cancel),
         ),
         const SizedBox(width: AppDialogTheme.buttonGap),
         FilledButton(
           onPressed: _isLoading ? null : _handleSave,
           style: AppDialogTheme.primaryButtonStyle,
-          child: Text(_isLoading ? 'Saving...' : 'Save'),
+          child: Text(_isLoading ? AppLocalizations.of(context)!.saving : AppLocalizations.of(context)!.save),
         ),
       ],
     );
   }
 
   Future<void> _handleSave() async {
+    final l10n = AppLocalizations.of(context)!;
     final budgetText = _budgetController.text.trim();
     final budget = double.tryParse(budgetText);
 
     if (budget == null || budget <= 0) {
-      setState(() => _errorText = 'Enter a valid amount');
+      setState(() => _errorText = l10n.enterValidAmount);
       return;
     }
 
@@ -397,7 +399,7 @@ class _BudgetEditDialogState extends State<_BudgetEditDialog> {
       debugPrint('Error saving budget: $e');
       if (mounted) {
         setState(() {
-          _errorText = 'Save failed';
+          _errorText = l10n.saveFailed;
           _isLoading = false;
         });
       }

@@ -1,6 +1,7 @@
 // lib/screens/progress_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../providers/progress_data.dart';
 import '../providers/exercise_provider.dart';
 import '../providers/theme_provider.dart';
@@ -146,6 +147,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
   }
 
   Widget _buildErrorState(BuildContext context, String errorMessage) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -167,7 +170,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Oops! Something went wrong',
+              l10n.oopsSomethingWentWrong,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -189,7 +192,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                 context.read<ExerciseProvider>().refreshData();
               },
               icon: const Icon(Icons.refresh),
-              label: const Text('Try Again'),
+              label: Text(l10n.tryAgain),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.textDark,

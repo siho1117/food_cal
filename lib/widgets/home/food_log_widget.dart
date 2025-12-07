@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../providers/home_provider.dart';
@@ -76,7 +77,7 @@ class FoodLogWidget extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'Food Log',
+                          AppLocalizations.of(context)!.foodLog,
                           style: TextStyle(
                             fontSize: AppWidgetTheme.fontSizeLG,
                             color: textColor,
@@ -90,7 +91,7 @@ class FoodLogWidget extends StatelessWidget {
                     IconButton(
                       onPressed: () => showQuickActionsDialog(context),
                       icon: Icon(Icons.add, color: textColor),
-                      tooltip: 'Quick Actions',
+                      tooltip: AppLocalizations.of(context)!.quickActions,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
@@ -130,6 +131,8 @@ class FoodLogWidget extends StatelessWidget {
     Color textColor,
     HomeProvider homeProvider,
   ) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 40),
@@ -143,7 +146,7 @@ class FoodLogWidget extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No food logged today',
+              l10n.noFoodLoggedToday,
               style: TextStyle(
                 color: textColor.withValues(alpha: AppWidgetTheme.opacityVeryHigh),
                 fontSize: AppWidgetTheme.fontSizeML,
@@ -154,7 +157,7 @@ class FoodLogWidget extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Take a photo or add manually',
+              l10n.takePhotoOrAddManually,
               style: TextStyle(
                 color: textColor.withValues(alpha: AppWidgetTheme.opacityHigh),
                 fontSize: AppWidgetTheme.fontSizeMS,
@@ -172,7 +175,7 @@ class FoodLogWidget extends StatelessWidget {
                 color: textColor.withValues(alpha: AppWidgetTheme.opacityVeryHigh),
               ),
               label: Text(
-                'Add Food',
+                l10n.addFood,
                 style: TextStyle(
                   color: textColor.withValues(alpha: AppWidgetTheme.opacityVeryHigh),
                   fontWeight: FontWeight.w600,
@@ -276,7 +279,7 @@ class FoodLogWidget extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '${_formatTime(item.timestamp)}${itemCost > 0 ? ' • \$${itemCost.toStringAsFixed(2)}' : ''}',
+                                '${_formatTime(context, item.timestamp)}${itemCost > 0 ? ' • \$${itemCost.toStringAsFixed(2)}' : ''}',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.white.withValues(alpha: 0.7),
@@ -336,7 +339,7 @@ class FoodLogWidget extends StatelessWidget {
 
                         // Calories
                         Text(
-                          '$itemCalories cal',
+                          '$itemCalories ${AppLocalizations.of(context)!.cal}',
                           style: const TextStyle(
                             fontSize: AppWidgetTheme.fontSizeLG,
                             fontWeight: FontWeight.w700,
@@ -405,10 +408,11 @@ class FoodLogWidget extends StatelessWidget {
     );
   }
 
-  String _formatTime(DateTime timestamp) {
+  String _formatTime(BuildContext context, DateTime timestamp) {
+    final l10n = AppLocalizations.of(context)!;
     final hour = timestamp.hour;
     final minute = timestamp.minute.toString().padLeft(2, '0');
-    final period = hour >= 12 ? 'PM' : 'AM';
+    final period = hour >= 12 ? l10n.pm : l10n.am;
     final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
     return '$displayHour:$minute $period';
   }
@@ -434,6 +438,8 @@ class FoodLogWidget extends StatelessWidget {
     FoodItem item,
     HomeProvider homeProvider,
   ) {
+    final l10n = AppLocalizations.of(context)!;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -441,15 +447,15 @@ class FoodLogWidget extends StatelessWidget {
         shape: AppDialogTheme.shape,
         contentPadding: AppDialogTheme.contentPadding,
         actionsPadding: AppDialogTheme.actionsPadding,
-        title: const Text(
-          'Delete Food Item',
+        title: Text(
+          l10n.deleteFoodItem,
           style: AppDialogTheme.titleStyle,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: AppDialogTheme.cancelButtonStyle,
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           const SizedBox(width: AppDialogTheme.buttonGap),
           FilledButton(
@@ -458,7 +464,7 @@ class FoodLogWidget extends StatelessWidget {
               await homeProvider.deleteFoodEntry(item.id);
             },
             style: AppDialogTheme.destructiveButtonStyle,
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),

@@ -5,6 +5,7 @@ import '../../../config/design_system/typography.dart';
 import '../../../config/design_system/nutrition_colors.dart';
 import 'base_section_widget.dart';
 import '../summary_controls_widget.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 /// Progress & Achievements Section
 /// Shows weight progress and period goals (daily/weekly/monthly)
@@ -41,6 +42,7 @@ class ProgressAchievementsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // Determine period multiplier
     final periodDays = period == SummaryPeriod.weekly
         ? 7
@@ -55,10 +57,10 @@ class ProgressAchievementsSection extends StatelessWidget {
 
     // Determine period label for title
     final goalsTitle = period == SummaryPeriod.weekly
-        ? 'Weekly Goals'
+        ? l10n.weeklyGoals
         : period == SummaryPeriod.monthly
-            ? 'Monthly Goals'
-            : 'Today\'s Goals';
+            ? l10n.monthlyGoals
+            : l10n.todaysGoals;
 
     // Calculate weight progress
     final weightRemaining = goalWeight != null && currentWeight != null
@@ -69,7 +71,6 @@ class ProgressAchievementsSection extends StatelessWidget {
     final currentWeightDisplay = _formatWeight(currentWeight);
     final goalWeightDisplay = _formatWeight(goalWeight);
     final weightRemainingDisplay = _formatWeight(weightRemaining?.abs());
-    final unit = isMetric ? 'kg' : 'lbs';
 
     // Period goal status
     final caloriesMet = totalCalories <= periodCalorieGoal;
@@ -86,15 +87,17 @@ class ProgressAchievementsSection extends StatelessWidget {
         ? ((totalCost / periodBudget) * 100).round()
         : 0;
 
+    final unit = isMetric ? l10n.kg : l10n.lbs;
+
     return BaseSectionWidget(
       icon: Icons.emoji_events,
-      title: 'PROGRESS & ACHIEVEMENTS',
+      title: l10n.progressAchievements,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Weight Progress Section
           Text(
-            'Weight Progress',
+            l10n.weightProgress,
             style: AppTypography.bodyMedium.copyWith(
               fontSize: AppWidgetTheme.fontSizeMS,
               fontWeight: FontWeight.w700,
@@ -105,22 +108,22 @@ class ProgressAchievementsSection extends StatelessWidget {
 
           if (currentWeight != null && goalWeight != null) ...[
             InfoRow(
-              label: 'Current',
+              label: l10n.current,
               value: '$currentWeightDisplay $unit',
             ),
             InfoRow(
-              label: 'Goal',
+              label: l10n.goal,
               value: '$goalWeightDisplay $unit',
             ),
             if (weightRemaining != null && weightRemaining != 0) ...[
               InfoRow(
-                label: 'Remaining to Goal',
+                label: l10n.remainingToGoal,
                 value: '$weightRemainingDisplay $unit',
               ),
             ],
           ] else ...[
             Text(
-              'Set your goal weight in settings',
+              l10n.setGoalWeightInSettings,
               style: AppTypography.bodyMedium.copyWith(
                 fontSize: AppWidgetTheme.fontSizeSM,
                 color: Colors.white.withValues(alpha: 0.7),
@@ -148,23 +151,23 @@ class ProgressAchievementsSection extends StatelessWidget {
           // Calories Goal
           _buildGoalRow(
             icon: Icons.restaurant_menu,
-            label: 'Calories',
-            value: '$totalCalories / $periodCalorieGoal cal ($caloriePercentage%)',
+            label: l10n.calories,
+            value: '$totalCalories / $periodCalorieGoal ${l10n.cal} ($caloriePercentage%)',
             isMet: caloriesMet,
           ),
 
           // Exercise Goal
           _buildGoalRow(
             icon: Icons.fitness_center,
-            label: 'Exercise',
-            value: '$totalBurned / $periodBurnGoal cal ($exercisePercentage%)',
+            label: l10n.exercise,
+            value: '$totalBurned / $periodBurnGoal ${l10n.cal} ($exercisePercentage%)',
             isMet: exerciseMet,
           ),
 
           // Budget Goal
           _buildGoalRow(
             icon: Icons.attach_money,
-            label: 'Budget',
+            label: l10n.budget,
             value: '\$${totalCost.toStringAsFixed(2)} / \$${periodBudget.toStringAsFixed(2)} ($budgetPercentage%)',
             isMet: budgetMet,
           ),

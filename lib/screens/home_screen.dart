@@ -1,6 +1,7 @@
 // lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../config/design_system/theme_background.dart';
 import '../config/design_system/theme_design.dart';
 import '../providers/home_provider.dart';
@@ -148,6 +149,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildErrorState(BuildContext context, HomeProvider homeProvider) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -169,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Unable to Load Data',
+              l10n.unableToLoadData,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -178,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              homeProvider.errorMessage ?? 'An unexpected error occurred',
+              homeProvider.errorMessage ?? l10n.unexpectedError,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Colors.white.withValues(alpha: 0.8),
               ),
@@ -188,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ElevatedButton.icon(
               onPressed: () => homeProvider.refreshData(),
               icon: const Icon(Icons.refresh),
-              label: const Text('Try Again'),
+              label: Text(l10n.tryAgain),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.textDark,

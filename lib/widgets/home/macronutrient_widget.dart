@@ -261,7 +261,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
 
             // 3. Target
             Text(
-              '/ ${target.round()}g',
+              '/ ${target.round()}${AppLocalizations.of(context)!.g}',
               style: TextStyle(
                 fontSize: 12,
                 color: textColor.withValues(alpha: 0.6),

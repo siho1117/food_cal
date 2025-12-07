@@ -5,6 +5,7 @@ import '../../../config/design_system/typography.dart';
 import '../../../config/design_system/nutrition_colors.dart';
 import 'base_section_widget.dart';
 import '../summary_controls_widget.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 /// Nutrition Section - Daily macro and calorie summary
 class NutritionSection extends StatelessWidget {
@@ -33,13 +34,9 @@ class NutritionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // Determine if we're showing aggregated data
     final isWeeklyOrMonthly = period == SummaryPeriod.weekly || period == SummaryPeriod.monthly;
-    final periodLabel = period == SummaryPeriod.weekly
-        ? 'Weekly'
-        : period == SummaryPeriod.monthly
-            ? 'Monthly'
-            : 'Daily';
 
     // Calculate period multiplier for weekly/monthly goals
     final periodDays = period == SummaryPeriod.weekly
@@ -62,7 +59,7 @@ class NutritionSection extends StatelessWidget {
 
     return BaseSectionWidget(
       icon: Icons.restaurant,
-      title: 'NUTRITION SUMMARY',
+      title: l10n.nutritionSummary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -70,45 +67,45 @@ class NutritionSection extends StatelessWidget {
           if (isWeeklyOrMonthly) ...[
             // Weekly/Monthly: Show total with goal (no percentage on first line)
             InfoRow(
-              label: 'Total Calories ($periodLabel)',
-              value: '$totalCalories / $effectiveGoal cal',
+              label: l10n.totalCaloriesConsumed,
+              value: '$totalCalories / $effectiveGoal ${l10n.cal}',
             ),
             if (avgCaloriesPerDay != null)
               InfoRow(
-                label: 'Average per Day',
-                value: '$avgCaloriesPerDay / $calorieGoal cal',
+                label: l10n.averagePerDay,
+                value: '$avgCaloriesPerDay / $calorieGoal ${l10n.cal}',
               ),
 
             // Show over/remaining with percentage
             InfoRow(
-              label: isOver ? 'Over by' : 'Remaining',
-              value: '$difference cal ($percentage%)',
+              label: isOver ? l10n.overBy : l10n.remaining,
+              value: '$difference ${l10n.cal} ($percentage%)',
             ),
           ] else ...[
             // Daily: Show current format
             InfoRow(
-              label: 'Total Calories Consumed',
-              value: '$totalCalories / $effectiveGoal cal',
+              label: l10n.totalCaloriesConsumed,
+              value: '$totalCalories / $effectiveGoal ${l10n.cal}',
             ),
 
             // Show breakdown of the goal
             InfoRow(
-              label: '  • Base Goal',
-              value: '$calorieGoal cal',
+              label: '  • ${l10n.baseGoal}',
+              value: '$calorieGoal ${l10n.cal}',
             ),
 
             // Show exercise bonus if enabled
             if (exerciseBonusEnabled && exerciseBonusCalories > 0) ...[
               InfoRow(
-                label: '  • Exercise Bonus (Rollover)',
-                value: '+$exerciseBonusCalories cal',
+                label: '  • ${l10n.exerciseBonusRollover}',
+                value: '+$exerciseBonusCalories ${l10n.cal}',
               ),
             ],
 
             // Dynamic label: "Remaining" or "Over" with percentage
             InfoRow(
-              label: isOver ? 'Over' : 'Remaining',
-              value: '$difference cal ($percentage%)',
+              label: isOver ? l10n.over : l10n.remaining,
+              value: '$difference ${l10n.cal} ($percentage%)',
             ),
           ],
 
@@ -116,7 +113,7 @@ class NutritionSection extends StatelessWidget {
 
           // Macronutrient Breakdown Header
           Text(
-            'Macronutrient Breakdown:',
+            '${l10n.macronutrientBreakdown}:',
             style: AppTypography.labelLarge.copyWith(
               fontSize: AppWidgetTheme.fontSizeMS,
               fontWeight: FontWeight.bold,
@@ -128,7 +125,8 @@ class NutritionSection extends StatelessWidget {
 
           // Protein (period-adjusted targets)
           _buildMacroRow(
-            'Protein',
+            context,
+            l10n.protein,
             (consumedMacros['protein'] ?? 0).toDouble(),
             (targetMacros['protein'] ?? 0).toDouble() * periodDays,
             NutritionColors.proteinColor,
@@ -138,7 +136,8 @@ class NutritionSection extends StatelessWidget {
 
           // Carbs (period-adjusted targets)
           _buildMacroRow(
-            'Carbohydrates',
+            context,
+            l10n.carbohydrates,
             (consumedMacros['carbs'] ?? 0).toDouble(),
             (targetMacros['carbs'] ?? 0).toDouble() * periodDays,
             NutritionColors.carbsColor,
@@ -148,7 +147,8 @@ class NutritionSection extends StatelessWidget {
 
           // Fat (period-adjusted targets)
           _buildMacroRow(
-            'Fat',
+            context,
+            l10n.fat,
             (consumedMacros['fat'] ?? 0).toDouble(),
             (targetMacros['fat'] ?? 0).toDouble() * periodDays,
             NutritionColors.fatColor,
@@ -157,13 +157,14 @@ class NutritionSection extends StatelessWidget {
           const SizedBox(height: AppWidgetTheme.spaceMD),
 
           // Meal Statistics
-          InfoRow(label: 'Meals Logged', value: '$foodEntriesCount meals'),
+          InfoRow(label: l10n.mealsLogged, value: '$foodEntriesCount ${l10n.meals}'),
         ],
       ),
     );
   }
 
-  Widget _buildMacroRow(String label, double consumed, double target, Color color) {
+  Widget _buildMacroRow(BuildContext context, String label, double consumed, double target, Color color) {
+    final l10n = AppLocalizations.of(context)!;
     final percentage = target > 0 ? (consumed / target * 100).round() : 0;
     final progress = target > 0 ? (consumed / target).clamp(0.0, 1.0) : 0.0;
 
@@ -181,7 +182,7 @@ class NutritionSection extends StatelessWidget {
               ),
             ),
             Text(
-              '${consumed.round()}g / ${target.round()}g ($percentage%)',
+              '${consumed.round()}${l10n.g} / ${target.round()}${l10n.g} ($percentage%)',
               style: AppTypography.bodyMedium.copyWith(
                 fontSize: AppWidgetTheme.fontSizeSM,
                 color: Colors.white,

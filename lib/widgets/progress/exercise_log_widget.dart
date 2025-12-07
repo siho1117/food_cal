@@ -9,11 +9,8 @@ import '../../data/models/exercise_entry.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../config/design_system/accent_colors.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'exercise_entry_dialog.dart';
-
-// TODO: Add localization
-// Required translation keys: exercise, calories, minutes, exercises,
-// noActivityYet, logFirstExercise, logExercise
 
 class ExerciseLogWidget extends StatelessWidget {
   final bool showHeader;
@@ -45,6 +42,8 @@ class ExerciseLogWidget extends StatelessWidget {
     ExerciseProvider provider,
     ExerciseEntry exercise,
   ) {
+    final l10n = AppLocalizations.of(context)!;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -52,15 +51,15 @@ class ExerciseLogWidget extends StatelessWidget {
         shape: AppDialogTheme.shape,
         contentPadding: AppDialogTheme.contentPadding,
         actionsPadding: AppDialogTheme.actionsPadding,
-        title: const Text(
-          'Delete Exercise',
+        title: Text(
+          l10n.deleteExercise,
           style: AppDialogTheme.titleStyle,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: AppDialogTheme.cancelButtonStyle,
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           const SizedBox(width: AppDialogTheme.buttonGap),
           FilledButton(
@@ -69,7 +68,7 @@ class ExerciseLogWidget extends StatelessWidget {
               await provider.deleteExercise(exercise.id);
             },
             style: AppDialogTheme.destructiveButtonStyle,
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -105,6 +104,8 @@ class ExerciseLogWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Consumer2<ExerciseProvider, ThemeProvider>(
       builder: (context, exerciseProvider, themeProvider, child) {
         if (exerciseProvider.isLoading) {
@@ -112,16 +113,16 @@ class ExerciseLogWidget extends StatelessWidget {
         }
 
         if (exerciseProvider.errorMessage != null) {
-          return _buildErrorState(context, exerciseProvider, themeProvider);
+          return _buildErrorState(context, exerciseProvider, themeProvider, l10n);
         }
 
         final exercises = exerciseProvider.exerciseEntries;
 
         if (exercises.isEmpty) {
-          return _buildEmptyState(context, exerciseProvider, themeProvider);
+          return _buildEmptyState(context, exerciseProvider, themeProvider, l10n);
         }
 
-        return _buildContent(context, exerciseProvider, themeProvider, exercises);
+        return _buildContent(context, exerciseProvider, themeProvider, exercises, l10n);
       },
     );
   }
@@ -131,6 +132,7 @@ class ExerciseLogWidget extends StatelessWidget {
     ExerciseProvider provider,
     ThemeProvider themeProvider,
     List<ExerciseEntry> exercises,
+    AppLocalizations l10n,
   ) {
     final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
     final totalCalories = _calculateTotalCalories(exercises);
@@ -173,7 +175,7 @@ class ExerciseLogWidget extends StatelessWidget {
                   ),
                   SizedBox(width: AppWidgetTheme.spaceMS),
                   Text(
-                    'Exercise',
+                    l10n.exercise,
                     style: TextStyle(
                       fontSize: AppWidgetTheme.fontSizeLG,
                       fontWeight: FontWeight.w600,
@@ -205,6 +207,7 @@ class ExerciseLogWidget extends StatelessWidget {
                 currentCalories: totalCalories,
                 targetCalories: provider.dailyBurnGoal,
                 progressPercentage: provider.burnProgress,
+                l10n: l10n,
               ),
               SizedBox(width: AppWidgetTheme.spaceLG),
 
@@ -365,6 +368,7 @@ class ExerciseLogWidget extends StatelessWidget {
     BuildContext context,
     ExerciseProvider provider,
     ThemeProvider themeProvider,
+    AppLocalizations l10n,
   ) {
     final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
 
@@ -404,7 +408,7 @@ class ExerciseLogWidget extends StatelessWidget {
                 ),
                 SizedBox(width: AppWidgetTheme.spaceMS),
                 Text(
-                  'Exercise',
+                  l10n.exercise,
                   style: TextStyle(
                     fontSize: AppWidgetTheme.fontSizeLG,
                     fontWeight: FontWeight.w600,
@@ -436,7 +440,7 @@ class ExerciseLogWidget extends StatelessWidget {
           ),
           SizedBox(height: AppWidgetTheme.spaceMD),
           Text(
-            'No activity yet',
+            l10n.noActivityYet,
             style: TextStyle(
               fontSize: AppWidgetTheme.fontSizeML,
               fontWeight: FontWeight.w600,
@@ -446,7 +450,7 @@ class ExerciseLogWidget extends StatelessWidget {
           ),
           SizedBox(height: AppWidgetTheme.spaceXS),
           Text(
-            'Log your first exercise',
+            l10n.logFirstExercise,
             style: TextStyle(
               fontSize: AppWidgetTheme.fontSizeSM,
               color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -477,7 +481,7 @@ class ExerciseLogWidget extends StatelessWidget {
                   Icon(Icons.add, size: AppWidgetTheme.spaceLG, color: textColor),
                   SizedBox(width: AppWidgetTheme.spaceXS),
                   Text(
-                    'Log Exercise',
+                    l10n.logExercise,
                     style: TextStyle(
                       fontSize: AppWidgetTheme.fontSizeSM,
                       fontWeight: FontWeight.w600,
@@ -535,6 +539,7 @@ class ExerciseLogWidget extends StatelessWidget {
     BuildContext context,
     ExerciseProvider provider,
     ThemeProvider themeProvider,
+    AppLocalizations l10n,
   ) {
     final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
 
@@ -569,7 +574,7 @@ class ExerciseLogWidget extends StatelessWidget {
           ),
           SizedBox(height: AppWidgetTheme.spaceLG),
           Text(
-            'Error Loading Exercises',
+            l10n.errorLoadingExercises,
             style: TextStyle(
               fontSize: AppWidgetTheme.fontSizeLG,
               fontWeight: FontWeight.w600,
@@ -578,7 +583,7 @@ class ExerciseLogWidget extends StatelessWidget {
           ),
           SizedBox(height: AppWidgetTheme.spaceSM),
           Text(
-            provider.errorMessage ?? 'Unknown error occurred',
+            provider.errorMessage ?? l10n.unknownErrorOccurred,
             style: TextStyle(
               fontSize: AppWidgetTheme.fontSizeMS,
               color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -592,7 +597,7 @@ class ExerciseLogWidget extends StatelessWidget {
               backgroundColor: textColor.withValues(alpha: AppWidgetTheme.opacityMedium),
               foregroundColor: textColor,
             ),
-            child: const Text('Retry'),
+            child: Text(l10n.retry),
           ),
         ],
       ),
@@ -608,12 +613,14 @@ class _AnimatedStatsCard extends StatefulWidget {
   final int currentCalories;
   final int targetCalories;
   final double progressPercentage;
+  final AppLocalizations l10n;
 
   const _AnimatedStatsCard({
     required this.textColor,
     required this.currentCalories,
     required this.targetCalories,
     required this.progressPercentage,
+    required this.l10n,
   });
 
   @override
@@ -721,6 +728,7 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
                 widget.textColor,
                 currentCal,
                 targetCal,
+                widget.l10n,
               ),
               Container(
                 height: 1,
@@ -734,6 +742,7 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
                 widget.textColor,
                 percentage,
                 _percentageAnimation.value,
+                widget.l10n,
               ),
             ],
           );
@@ -742,7 +751,7 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
     );
   }
 
-  Widget _buildCaloriesFractionItem(Color textColor, int current, int target) {
+  Widget _buildCaloriesFractionItem(Color textColor, int current, int target, AppLocalizations l10n) {
     return Column(
       children: [
         // Calories Burned (current)
@@ -775,7 +784,7 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
         ),
         SizedBox(height: 4),
         Text(
-          'CALORIES',
+          l10n.calories,
           style: TextStyle(
             fontSize: AppWidgetTheme.fontSizeXS,
             fontWeight: FontWeight.w600,
@@ -788,7 +797,7 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
     );
   }
 
-  Widget _buildPercentageRing(Color textColor, int percentage, double progress) {
+  Widget _buildPercentageRing(Color textColor, int percentage, double progress, AppLocalizations l10n) {
     // Use brightGreen when progress is 100% or above
     final ringColor = progress >= 1.0 ? AccentColors.brightGreen : textColor;
 
@@ -850,7 +859,7 @@ class _AnimatedStatsCardState extends State<_AnimatedStatsCard>
         ),
         const SizedBox(height: 6),
         Text(
-          'COMPLETE',
+          l10n.complete,
           style: TextStyle(
             fontSize: AppWidgetTheme.fontSizeXS,
             fontWeight: FontWeight.w600,
