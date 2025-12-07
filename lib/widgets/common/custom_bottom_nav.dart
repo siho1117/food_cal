@@ -1,5 +1,6 @@
 // lib/widgets/common/custom_bottom_nav.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:ui';
 import '../../config/design_system/theme_design.dart';
 
@@ -67,7 +68,7 @@ class CustomBottomNav extends StatelessWidget {
             padding: const EdgeInsets.all(7.0),
             child: Stack(
               children: [
-                // Sliding selector pill
+                // Sliding circular background
                 AnimatedAlign(
                   duration: const Duration(milliseconds: 400),
                   curve: Curves.easeInOutCubic,
@@ -76,25 +77,29 @@ class CustomBottomNav extends StatelessWidget {
                     widthFactor: 1 / _navIcons.length,
                     child: Container(
                       height: 62.0,
-                      margin: const EdgeInsets.symmetric(horizontal: 3.0),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF2A3342)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(26.0),
-                        border: Border.all(
+                      alignment: Alignment.center,
+                      child: Container(
+                        width: 52.0,
+                        height: 52.0,
+                        decoration: BoxDecoration(
                           color: isDark
-                              ? Colors.white.withOpacity(0.2)
-                              : Colors.black.withOpacity(0.08),
-                          width: 1.0,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(isDark ? 0.15 : 0.1),
-                            blurRadius: 12.0,
-                            offset: const Offset(0, 4),
+                              ? const Color(0xFF2A3342)
+                              : Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.2)
+                                : Colors.black.withValues(alpha: 0.08),
+                            width: 1.0,
                           ),
-                        ],
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.1),
+                              blurRadius: 12.0,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -138,10 +143,10 @@ class CustomBottomNav extends StatelessWidget {
   }) {
     // Check if this is the center '+' button
     final bool isCenterButton = index == 2;
-    
+
     // ✅ OPTION B: Always black for center button, theme-adaptive for others
     Color iconColor;
-    
+
     if (isCenterButton) {
       // ✅ Center '+' button: ALWAYS black for maximum visibility
       iconColor = AppColors.textDark;
@@ -160,29 +165,29 @@ class CustomBottomNav extends StatelessWidget {
       label: label,
       button: true,
       selected: isActive,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => onTap(index),
-          borderRadius: BorderRadius.circular(26.0),
-          child: Container(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap(index);
+        },
+        child: Container(
             height: 62.0,
             alignment: Alignment.center,
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // ✅ Elevated circle background (only for center '+' button)
+                // Elevated circle background (only for center '+' button)
                 if (isCenterButton)
                   Container(
                     width: 44.0,
                     height: 44.0,
                     decoration: BoxDecoration(
                       // Subtle black circle with low opacity
-                      color: AppColors.textDark.withOpacity(0.12),
+                      color: AppColors.textDark.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                   ),
-                
+
                 // Icon with animation
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
@@ -203,7 +208,6 @@ class CustomBottomNav extends StatelessWidget {
               ],
             ),
           ),
-        ),
       ),
     );
   }
