@@ -306,6 +306,60 @@ class GlassCardStyle {
   static const double backgroundTintOpacity = 0.08;
 }
 
+/// Frosted pill glassmorphism style
+///
+/// This style creates a frosted glass pill appearance with:
+/// - Light blur backdrop filter (5.0 sigma)
+/// - Fully transparent background
+/// - White semi-transparent border (0.6 opacity)
+/// - Pill-shaped border radius (34.0)
+///
+/// Used in:
+/// - Custom bottom navigation
+/// - Summary controls widget
+/// - Report sections
+///
+/// Usage example:
+/// ```dart
+/// ClipRRect(
+///   borderRadius: BorderRadius.circular(FrostedPillStyle.borderRadius),
+///   child: BackdropFilter(
+///     filter: ImageFilter.blur(
+///       sigmaX: FrostedPillStyle.blurSigma,
+///       sigmaY: FrostedPillStyle.blurSigma,
+///     ),
+///     child: Container(
+///       decoration: BoxDecoration(
+///         color: Colors.white.withValues(alpha: FrostedPillStyle.backgroundTintOpacity),
+///         borderRadius: BorderRadius.circular(FrostedPillStyle.borderRadius),
+///         border: Border.all(
+///           color: Colors.white.withValues(alpha: FrostedPillStyle.borderOpacity),
+///           width: FrostedPillStyle.borderWidth,
+///         ),
+///       ),
+///     ),
+///   ),
+/// )
+/// ```
+class FrostedPillStyle {
+  FrostedPillStyle._(); // Private constructor to prevent instantiation
+
+  /// Thin border width for delicate frosted appearance
+  static const double borderWidth = 1.0;
+
+  /// White border opacity for frosted glass effect
+  static const double borderOpacity = 0.6;
+
+  /// Light blur intensity for subtle frosted effect
+  static const double blurSigma = 5.0;
+
+  /// Fully transparent background (no tint)
+  static const double backgroundTintOpacity = 0.0;
+
+  /// Pill-shaped border radius (matches custom bottom nav)
+  static const double borderRadius = 34.0;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // REPORT COLORS (WHITE BACKGROUND PROFESSIONAL STYLE)
 // ═══════════════════════════════════════════════════════════════

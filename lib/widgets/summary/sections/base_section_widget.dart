@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
+import '../../common/frosted_glass_card.dart';
 
 /// Base widget for all summary report sections
 /// Glassmorphism design with frosted glass effect on gradient background
@@ -20,18 +21,7 @@ class BaseSectionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: AppWidgetTheme.spaceXL),
-      padding: EdgeInsets.all(AppWidgetTheme.cardPadding.top),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-        border: Border.all(
-          color: Colors.black.withValues(alpha: 0.10),
-          width: 2.5,
-        ),
-      ),
+    return FrostedGlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -1,6 +1,7 @@
 // lib/widgets/summary/summary_controls_widget.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:ui';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/typography.dart';
 import '../../providers/theme_provider.dart';
@@ -38,31 +39,45 @@ class SummaryControlsWidget extends StatelessWidget {
 
         return Container(
           margin: EdgeInsets.symmetric(horizontal: AppWidgetTheme.spaceXL),
-          padding: EdgeInsets.all(AppWidgetTheme.spaceLG),
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            border: Border.all(
-              color: borderColor,
-              width: AppWidgetTheme.cardBorderWidth,
-            ),
-            borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXL), // Pill shape
-          ),
           child: Row(
             children: [
-              // Period Switcher
+              // Main pill container with period switcher and customize icon
               Expanded(
-                child: _buildPeriodSwitcher(textColor, borderColor),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(34.0),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.0),
+                        borderRadius: BorderRadius.circular(34.0),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          width: 1,
+                        ),
+                      ),
+                      padding: EdgeInsets.all(AppWidgetTheme.spaceLG),
+                      child: Row(
+                        children: [
+                          // Period Switcher
+                          Expanded(
+                            child: _buildPeriodSwitcher(textColor, borderColor),
+                          ),
+
+                          // Settings/Customize Icon (if callback provided)
+                          if (onSettingsTap != null) ...[
+                            SizedBox(width: AppWidgetTheme.spaceLG),
+                            _buildSettingsButton(textColor),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
 
+              // Export Button (Outside the pill, to the right)
               SizedBox(width: AppWidgetTheme.spaceLG),
-
-              // Settings Gear Icon (if callback provided)
-              if (onSettingsTap != null) ...[
-                _buildSettingsButton(textColor),
-                SizedBox(width: AppWidgetTheme.spaceSM),
-              ],
-
-              // Export Button (Icon Only)
               _buildExportIconButton(textColor),
             ],
           ),
@@ -159,7 +174,7 @@ class SummaryControlsWidget extends StatelessWidget {
           onTap: onSettingsTap,
           child: Center(
             child: Icon(
-              Icons.settings,
+              Icons.tune,
               size: AppWidgetTheme.iconSizeLarge,
               color: iconColor,
             ),

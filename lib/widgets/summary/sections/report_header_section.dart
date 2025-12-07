@@ -8,6 +8,7 @@ import '../../../data/models/user_profile.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../utils/shared/summary_data_calculator.dart';
 import '../summary_controls_widget.dart';
+import '../../common/frosted_glass_card.dart';
 
 /// Combined Report Header + Client Info Section
 /// Glassmorphism design with frosted glass effect
@@ -27,7 +28,7 @@ class ReportHeaderSection extends StatelessWidget {
       builder: (context, themeProvider, _) {
         final now = DateTime.now();
 
-        return _buildGlassCard(
+        return FrostedGlassCard(
           child: Center(
             child: Column(
               children: [
@@ -103,23 +104,6 @@ class ReportHeaderSection extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildGlassCard({required Widget child}) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: AppWidgetTheme.spaceXL),
-      padding: const EdgeInsets.all(AppWidgetTheme.spaceXL),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-        border: Border.all(
-          color: Colors.black.withValues(alpha: 0.10),
-          width: 2.5,
-        ),
-      ),
-      child: child,
     );
   }
 
