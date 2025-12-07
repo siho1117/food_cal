@@ -54,27 +54,15 @@ class CustomBottomNav extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(34.0),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Container(
             decoration: BoxDecoration(
-              // Theme-adaptive background
-              color: isDark
-                  ? const Color(0xFF1A2332).withOpacity(0.85)
-                  : Colors.white.withOpacity(0.25),
+              color: Colors.white.withValues(alpha: 0.0),
               borderRadius: BorderRadius.circular(34.0),
               border: Border.all(
-                color: isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.white.withOpacity(0.6),
-                width: 4.0,
+                color: Colors.white.withValues(alpha: 0.6),
+                width: 1,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-                  blurRadius: 30.0,
-                  offset: const Offset(0, 8),
-                ),
-              ],
             ),
             padding: const EdgeInsets.all(7.0),
             child: Stack(
