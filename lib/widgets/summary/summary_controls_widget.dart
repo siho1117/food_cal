@@ -46,17 +46,20 @@ class SummaryControlsWidget extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(34.0),
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                    filter: ImageFilter.blur(
+                      sigmaX: GlassCardStyle.blurSigma,
+                      sigmaY: GlassCardStyle.blurSigma,
+                    ),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.0),
+                        color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
                         borderRadius: BorderRadius.circular(34.0),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          width: 1,
+                          color: borderColor,
+                          width: GlassCardStyle.borderWidth,
                         ),
                       ),
-                      padding: EdgeInsets.all(AppWidgetTheme.spaceLG),
+                      padding: const EdgeInsets.all(AppWidgetTheme.spaceMD),
                       child: Row(
                         children: [
                           // Period Switcher
@@ -103,7 +106,7 @@ class SummaryControlsWidget extends StatelessWidget {
               onTap: () => onPeriodChanged(period),
               child: Container(
                 padding: EdgeInsets.symmetric(
-                  vertical: AppWidgetTheme.spaceMD,
+                  vertical: 10.0,
                   horizontal: AppWidgetTheme.spaceXS, // Horizontal padding to prevent overflow
                 ),
                 decoration: BoxDecoration(
@@ -153,30 +156,27 @@ class SummaryControlsWidget extends StatelessWidget {
   }
 
   Widget _buildSettingsButton(Color textColor) {
-    final bgColor = textColor == AppWidgetTheme.colorPrimaryDark
-        ? AppWidgetTheme.colorPrimaryDark
-        : Colors.white;
-    final iconColor = textColor == AppWidgetTheme.colorPrimaryDark
-        ? Colors.white
-        : AppWidgetTheme.colorPrimaryDark;
+    // Calculate height to match tab buttons exactly
+    // Tab height = vertical padding (10px * 2) + icon (20px) + outer padding (3px * 2)
+    const buttonSize = 46.0;
 
     return Container(
-      width: AppWidgetTheme.iconContainerLarge,
-      height: AppWidgetTheme.iconContainerLarge,
+      width: buttonSize,
+      height: buttonSize,
       decoration: BoxDecoration(
-        color: bgColor,
+        color: textColor.withValues(alpha: AppWidgetTheme.opacityLight),
         shape: BoxShape.circle,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppWidgetTheme.iconContainerLarge / 2),
+          borderRadius: BorderRadius.circular(buttonSize / 2),
           onTap: onSettingsTap,
           child: Center(
             child: Icon(
               Icons.tune,
-              size: AppWidgetTheme.iconSizeLarge,
-              color: iconColor,
+              size: AppWidgetTheme.iconSizeMedium,
+              color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
             ),
           ),
         ),
@@ -192,9 +192,12 @@ class SummaryControlsWidget extends StatelessWidget {
         ? Colors.white
         : AppWidgetTheme.colorPrimaryDark;
 
+    // Calculate height to match tab buttons exactly
+    const buttonSize = 46.0;
+
     return Container(
-      width: AppWidgetTheme.iconContainerLarge,
-      height: AppWidgetTheme.iconContainerLarge,
+      width: buttonSize,
+      height: buttonSize,
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle, // Perfect circle
@@ -202,7 +205,7 @@ class SummaryControlsWidget extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppWidgetTheme.iconContainerLarge / 2), // Circular ripple
+          borderRadius: BorderRadius.circular(buttonSize / 2), // Circular ripple
           onTap: isExporting ? null : onExport,
           child: Center(
             child: isExporting
@@ -216,7 +219,7 @@ class SummaryControlsWidget extends StatelessWidget {
                   )
                 : Icon(
                     Icons.file_download_outlined,
-                    size: AppWidgetTheme.iconSizeLarge,
+                    size: AppWidgetTheme.iconSizeMedium,
                     color: iconColor,
                   ),
           ),

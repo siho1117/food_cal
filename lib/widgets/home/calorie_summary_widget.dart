@@ -269,9 +269,6 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
     final textColor = AppWidgetTheme.getTextColor(
       themeProvider.selectedGradient,
     );
-    final accentColor = AppWidgetTheme.getAccentColor(
-      themeProvider.selectedGradient,
-    );
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
@@ -323,7 +320,7 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
               ],
             ),
 
-            SizedBox(height: AppWidgetTheme.spaceXL),
+            const SizedBox(height: AppWidgetTheme.spaceXL),
 
             // Main calorie number
             _buildMainDisplay(
@@ -334,12 +331,12 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
               textColor,
             ),
 
-            SizedBox(height: AppWidgetTheme.spaceXXL),
+            const SizedBox(height: AppWidgetTheme.spaceXXL),
 
             // Progress bar (red when over budget)
             _buildSegmentedProgress(calorieProgress, isOverBudget, textColor),
 
-            SizedBox(height: AppWidgetTheme.spaceML),
+            const SizedBox(height: AppWidgetTheme.spaceML),
 
             // Remaining calories
             _buildRemainingInfo(remaining, textColor),
@@ -384,7 +381,7 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
             },
           ),
 
-          SizedBox(height: AppWidgetTheme.spaceSM),
+          const SizedBox(height: AppWidgetTheme.spaceSM),
 
           // Goal line with bonus
           _buildGoalLine(calorieGoal, bonusCalories, bonusEnabled, textColor),
