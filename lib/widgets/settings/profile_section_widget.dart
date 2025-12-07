@@ -39,23 +39,26 @@ class ProfileSectionWidget extends StatelessWidget {
     // Get theme-adaptive colors using widget theme
     final borderColor = AppWidgetTheme.getBorderColor(
       themeProvider.selectedGradient,
-      AppWidgetTheme.cardBorderOpacity,
+      GlassCardStyle.borderOpacity,
     );
     final textColor = AppWidgetTheme.getTextColor(
       themeProvider.selectedGradient,
     );
-    
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXL),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+        filter: ImageFilter.blur(
+          sigmaX: GlassCardStyle.blurSigma,
+          sigmaY: GlassCardStyle.blurSigma,
+        ),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.transparent, // Fully transparent to show gradient
+            color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
             borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXL),
             border: Border.all(
               color: borderColor,
-              width: AppWidgetTheme.cardBorderWidth,
+              width: GlassCardStyle.borderWidth,
             ),
           ),
           child: Material(

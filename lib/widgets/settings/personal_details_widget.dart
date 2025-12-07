@@ -1,4 +1,5 @@
 // lib/widgets/settings/personal_details_widget.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
@@ -18,22 +19,29 @@ class PersonalDetailsWidget extends StatelessWidget {
       builder: (context, settingsProvider, themeProvider, child) {
         final borderColor = AppWidgetTheme.getBorderColor(
           themeProvider.selectedGradient,
-          AppWidgetTheme.cardBorderOpacity,
+          GlassCardStyle.borderOpacity,
         );
         final textColor = AppWidgetTheme.getTextColor(
           themeProvider.selectedGradient,
         );
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-            border: Border.all(
-              color: borderColor,
-              width: AppWidgetTheme.cardBorderWidth,
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(
+              sigmaX: GlassCardStyle.blurSigma,
+              sigmaY: GlassCardStyle.blurSigma,
             ),
-          ),
-          child: Column(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+                borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+                border: Border.all(
+                  color: borderColor,
+                  width: GlassCardStyle.borderWidth,
+                ),
+              ),
+              child: Column(
             children: [
               _buildDetailItem(
                 context,
@@ -101,6 +109,8 @@ class PersonalDetailsWidget extends StatelessWidget {
                 onTap: () => _showGenderDialog(context, settingsProvider),
               ),
             ],
+          ),
+            ),
           ),
         );
       },

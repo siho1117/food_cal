@@ -1,4 +1,5 @@
 // lib/widgets/settings/preferences_widget.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
@@ -24,22 +25,29 @@ class PreferencesWidget extends StatelessWidget {
 
         final borderColor = AppWidgetTheme.getBorderColor(
           themeProvider.selectedGradient,
-          AppWidgetTheme.cardBorderOpacity,
+          GlassCardStyle.borderOpacity,
         );
         final textColor = AppWidgetTheme.getTextColor(
           themeProvider.selectedGradient,
         );
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-            border: Border.all(
-              color: borderColor,
-              width: AppWidgetTheme.cardBorderWidth,
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(
+              sigmaX: GlassCardStyle.blurSigma,
+              sigmaY: GlassCardStyle.blurSigma,
             ),
-          ),
-          child: Column(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+                borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+                border: Border.all(
+                  color: borderColor,
+                  width: GlassCardStyle.borderWidth,
+                ),
+              ),
+              child: Column(
             children: [
               // Language preference
               _buildPreferenceItem(
@@ -116,6 +124,8 @@ class PreferencesWidget extends StatelessWidget {
                 isLast: true,
               ),
             ],
+          ),
+            ),
           ),
         );
       },

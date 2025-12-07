@@ -1,8 +1,11 @@
 // lib/widgets/settings/feedback_widget.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../config/design_system/theme_design.dart';
+import '../../config/design_system/widget_theme.dart';
 
 class FeedbackWidget extends StatelessWidget {
   final VoidCallback? onSendFeedback; // Optional callback for additional actions
@@ -15,55 +18,90 @@ class FeedbackWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
-        return InkWell(
-          onTap: () => _showFeedbackDialog(context, settingsProvider),
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    // ✅ FIXED: Use withValues instead of withOpacity
-                    color: AppColors.textDark.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.feedback,
-                    color: AppColors.textDark,
-                    size: 24,
-                  ),
+    return Consumer2<SettingsProvider, ThemeProvider>(
+      builder: (context, settingsProvider, themeProvider, child) {
+        final borderColor = AppWidgetTheme.getBorderColor(
+          themeProvider.selectedGradient,
+          GlassCardStyle.borderOpacity,
+        );
+        final textColor = AppWidgetTheme.getTextColor(
+          themeProvider.selectedGradient,
+        );
+
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(
+              sigmaX: GlassCardStyle.blurSigma,
+              sigmaY: GlassCardStyle.blurSigma,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+                borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+                border: Border.all(
+                  color: borderColor,
+                  width: GlassCardStyle.borderWidth,
                 ),
-                const SizedBox(width: 16),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Send Feedback',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _showFeedbackDialog(context, settingsProvider),
+                  borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: AppWidgetTheme.iconContainerMedium,
+                          height: AppWidgetTheme.iconContainerMedium,
+                          decoration: BoxDecoration(
+                            color: textColor.withValues(alpha: AppWidgetTheme.opacityLight),
+                            borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
+                          ),
+                          child: Icon(
+                            Icons.feedback,
+                            color: textColor,
+                            size: AppWidgetTheme.iconSizeMedium,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'Help us improve the app',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Send Feedback',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: textColor,
+                                ),
+                              ),
+                              Text(
+                                'Help us improve the app',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: textColor.withValues(
+                                    alpha: AppWidgetTheme.opacityVeryHigh,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                        Icon(
+                          Icons.chevron_right,
+                          color: textColor.withValues(
+                            alpha: AppWidgetTheme.opacityHigh,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const Icon(
-                  Icons.chevron_right,
-                  color: Colors.grey,
-                ),
-              ],
+              ),
             ),
           ),
         );
