@@ -1,128 +1,310 @@
-# Translation Queue for OptiMate App
+# OptiMate Translation Inventory
 
-> **Purpose**: Track strings that need translation during UI refinement
-> **Last Updated**: 2025-11-22
-> **Workflow**: English strings are added here first, then translated to zh, zh_CN, zh_TW when ready
-
----
-
-## 🔴 Pending Translations
-
-### CalorieSummaryWidget
-
-#### `caloriesOver`
-- **English**: "Calories over"
-- **Context**: Displayed when user exceeds their daily calorie goal
-- **Previous value**: "Over budget" (❌ rejected - too financial)
-- **UI Example**:
-  ```
-  🔥 Calories Intake 🔥
-       2,300
-    / 2,000 cal
-
-  Calories over +300
-  ```
-- **Status**: 🔴 Needs translation to zh, zh_CN, zh_TW
+> **Last Updated**: 2025-12-07
+> **Exclude from translation**: "OptiMate" (app name)
 
 ---
 
-### MacronutrientWidget
+## How This Works
 
-#### `protein`
-- **English**: "Protein"
-- **Context**: Label for protein macronutrient card
-- **UI Example**: Displayed as "PROTEIN" (uppercase) at bottom of card
-- **Status**: 🔴 Needs translation to zh, zh_CN, zh_TW
+### Purpose
+Track all user-facing text in the app for internationalization (i18n). This file serves as the source of truth during development before finalizing translations.
 
-#### `carbs`
-- **English**: "Carbs"
-- **Context**: Label for carbohydrates macronutrient card
-- **UI Example**: Displayed as "CARBS" (uppercase) at bottom of card
-- **Status**: 🔴 Needs translation to zh, zh_CN, zh_TW
+### Workflow
 
-#### `fat`
-- **English**: "Fat"
-- **Context**: Label for fat macronutrient card
-- **UI Example**: Displayed as "FAT" (uppercase) at bottom of card
-- **Status**: 🔴 Needs translation to zh, zh_CN, zh_TW
+**During Development (Current Phase):**
+1. Audit one screen at a time
+2. Document all user-facing strings in simple tables below
+3. Review and update as UI evolves
+4. Re-audit screens when text changes
+
+**When Ready to Localize:**
+1. Review this file - ensure all text is current
+2. Generate `app_en.arb` from this inventory
+3. Translate to target languages (zh_CN, zh_TW, ja, ko, de, fr, es, pt_BR, ar)
+4. Replace hardcoded strings with `AppLocalizations.of(context)!.keyName`
+5. Run `flutter gen-l10n`
+6. Test each language
+
+### Key Naming Convention
+- **Simple, descriptive names** in camelCase
+- **Screen titles**: `homeTitle`, `settingsTitle`
+- **Buttons**: `save`, `cancel`, `addFood`
+- **Labels**: `caloriesToday`, `protein`, `dailySpend`
+- **Messages**: `errorLoadingData`, `settingsSavedSuccess`
+- **Reuse keys** across screens when text is identical (e.g., "Save" button)
+- **Add prefix** only if conflict exists (e.g., `saveAndContinue` vs `save`)
+
+### Format
+Each screen section contains a simple 2-column table:
+- **Key**: Future ARB key name (camelCase)
+- **Text**: Current English string in the app
+
+Common elements (dialogs, errors, shared buttons) appear under the screen where they're first used.
 
 ---
 
-### CostSummaryWidget
+## Translation Inventory by Screen
 
-#### `dailySpend`
-- **English**: "Daily Spend"
-- **Context**: Title for daily food cost tracking widget
-- **UI Example**: Displayed with wallet icon as "Daily Spend" header
-- **Status**: 🔴 Needs translation to zh, zh_CN, zh_TW
+### Home Screen
 
-#### `budget`
-- **English**: "Budget"
-- **Context**: Dialog title when editing daily food budget
-- **UI Example**: Simple dialog title "Budget"
-- **Status**: 🔴 Needs translation to zh, zh_CN, zh_TW
+#### Calorie Summary Widget
+| Key | Text |
+|-----|------|
+| caloriesToday | Calories Intake |
+| cal | cal |
+| remainingCalories | Remaining calories |
+| caloriesOver | Calories over |
+
+#### Macronutrient Widget
+| Key | Text |
+|-----|------|
+| protein | Protein |
+| carbs | Carbs |
+| fat | Fat |
+
+#### Cost Summary Widget
+| Key | Text |
+|-----|------|
+| dailySpend | Daily Spend |
+| budget | Budget |
+| cancel | Cancel |
+| save | Save |
+
+#### Cost Summary - Dialog
+| Key | Text |
+|-----|------|
+| saving | Saving... |
+| enterValidAmount | Enter a valid amount |
+| saveFailed | Save failed |
+
+#### Week Navigation Widget
+| Key | Text |
+|-----|------|
+| today | Today |
+| yesterday | Yesterday |
+
+#### Food Log Widget
+| Key | Text |
+|-----|------|
+| foodLog | Food Log |
+| quickActions | Quick Actions |
+| noFoodLoggedToday | No food logged today |
+| takePhotoOrAddManually | Take a photo or add manually |
+| addFood | Add Food |
+| deleteFoodItem | Delete Food Item |
+| delete | Delete |
+
+#### Error State
+| Key | Text |
+|-----|------|
+| unableToLoadData | Unable to Load Data |
+| unexpectedError | An unexpected error occurred |
+| tryAgain | Try Again |
 
 ---
-
-## ✅ Already Translated
-
-### CalorieSummaryWidget
-- ✅ `caloriesToday` - "Calories Intake"
-- ✅ `cal` - "cal"
-- ✅ `remainingCalories` - "Remaining calories"
-
-### WeekNavigationWidget
-- ✅ `today` - "Today"
-- ✅ `yesterday` - "Yesterday"
 
 ### Settings Screen
-- ✅ `settingsTitle` - "Settings"
-- ✅ `language` - "Language"
-- ✅ `selectLanguage` - "Select Language"
-- ✅ `preferences` - "Preferences"
-- ✅ `units` - "Units"
-- ✅ `metric` - "Metric"
-- ✅ `imperial` - "Imperial"
 
-### Common Actions
-- ✅ `save` - "Save"
-- ✅ `cancel` - "Cancel"
-- ✅ `retry` - "Retry"
-- ✅ `close` - "Close"
+#### Screen Title
+| Key | Text |
+|-----|------|
+| settings | Settings |
 
-### Error Messages
-- ✅ `errorLoadingData` - "Error Loading Data"
-- ✅ `unknownError` - "An unknown error occurred"
-- ✅ `settingsSavedSuccess` - "Settings saved successfully!"
+#### Profile Section
+| Key | Text |
+|-----|------|
+| tapToEdit | Tap to edit |
+| editName | Edit Name |
 
-### Common Labels
-- ✅ `name` - "Name"
-- ✅ `tapToEdit` - "Tap to edit"
+#### Personal Details Section
+| Key | Text |
+|-----|------|
+| dateOfBirth | Date of Birth |
+| height | Height |
+| currentWeight | Current Weight |
+| startingWeight | Starting Weight |
+| gender | Gender |
+| notSet | Not set |
+| dateOfBirthUpdated | Date of birth updated |
+| genderUpdated | Gender updated |
+| weightUpdated | Weight updated |
+| startingWeightUpdated | Starting weight updated |
+| error | Error |
+| setYourWeightWhenStarted | Set your weight when you started your journey |
+
+#### Gender Options
+| Key | Text |
+|-----|------|
+| male | Male |
+| female | Female |
+| other | Other |
+| preferNotToSay | Prefer not to say |
+
+#### Unit Labels
+| Key | Text |
+|-----|------|
+| kg | kg |
+| lbs | lbs |
+
+#### Preferences Section
+| Key | Text |
+|-----|------|
+| language | Language |
+| theme | Theme |
+| units | Units |
+| metric | Metric |
+| imperial | Imperial |
+| monthlyWeightGoal | Monthly Weight Goal |
+| unitsChangedToMetric | Units changed to Metric |
+| unitsChangedToImperial | Units changed to Imperial |
+
+#### Language Selector Dialog
+| Key | Text |
+|-----|------|
+| selectLanguage | Select Language |
+| choosePreferredLanguage | Choose your preferred language |
+| languageSavedApplied | Language will be saved and applied immediately |
+
+#### Theme Selector Dialog
+| Key | Text |
+|-----|------|
+| selectTheme | Select Theme |
+| chooseColorScheme | Choose your color scheme |
+| themeAppliedAllScreens | Theme will be applied to all screens |
+
+#### Monthly Goal Dialog
+| Key | Text |
+|-----|------|
+| lose | Lose |
+| gain | Gain |
+| safe | Safe |
+| aggressive | Aggressive |
+| gradual | Gradual |
+| athletic | Athletic |
+
+#### Feedback Section
+| Key | Text |
+|-----|------|
+| sendFeedback | Send Feedback |
+| helpUsImprove | Help us improve the app |
+| feedbackAppreciated | We appreciate your feedback! Please let us know how we can improve the app. |
+| yourFeedbackHere | Your feedback here... |
+| send | Send |
+| thankYouForFeedback | Thank you for your feedback! |
+| enterFeedbackFirst | Please enter your feedback first |
 
 ---
 
-## 📝 Translation Guidelines
+### Food Entry & Quick Actions
 
-1. **Tone**: Keep neutral and informative, avoid judgment
-2. **Consistency**: Match existing app voice and terminology
-3. **Context**: Consider how the text appears in the UI
-4. **Brevity**: Mobile screens are small - keep translations concise
-5. **User-first**: Prioritize clarity over literal translation
+#### Quick Actions Dialog
+| Key | Text |
+|-----|------|
+| gallery | Gallery |
+| pickFoodPhoto | Pick food photo |
+| type | Type |
+| logManually | Log manually |
+| takePhoto | Take Photo |
+| scanFoodWithCamera | Scan food with camera |
+| weight | Weight |
+| update | Update |
+| exercise | Exercise |
+| logActivity | Log activity |
+| weightUpdatedSuccessfully | Weight updated successfully |
+| targetWeightUpdatedSuccessfully | Target weight updated successfully |
+
+#### Food Edit Dialog
+| Key | Text |
+|-----|------|
+| addFoodPhoto | Add Food Photo |
+| editFoodName | Edit Food Name |
+| chooseFromGallery | Choose from Gallery |
+| removePhoto | Remove Photo |
+| failedToAddPhoto | Failed to add photo |
+| failedToSaveChanges | Failed to save changes |
+| remove | Remove |
+| failedToDeleteItem | Failed to delete item |
+| errorOccurredWhileDeleting | An error occurred while deleting |
+| failedToCaptureCard | Failed to capture food card |
+| failedToExportCard | Failed to export food card |
 
 ---
 
-## 🔄 How to Use This File
+### Progress Screen
 
-### For Developers:
-When adding new UI strings:
-1. Add English text to appropriate `.arb` file
-2. Add entry to this file under "🔴 Pending Translations"
-3. Group by widget/feature
-4. Include context and UI example
+#### Exercise Entry Dialog
+| Key | Text |
+|-----|------|
+| editExercise | Edit Exercise |
+| logExercise | Log Exercise |
+| preset | Preset |
+| custom | Custom |
+| chooseExercise | Choose Exercise |
+| running | Running |
+| walking | Walking |
+| cycling | Cycling |
+| swimming | Swimming |
+| weightTraining | Weight Training |
+| exerciseName | Exercise Name |
+| exerciseNameRequired | Exercise name is required |
+| duration | Duration |
+| minutes | Minutes |
+| intensity | Intensity |
+| caloriesBurned | Calories Burned |
+| required | Required |
+| caloriesRequiredCustom | Calories are required for custom exercises |
+| enterValidNumber | Please enter a valid number |
+| enterCaloriesBurned | Enter calories burned |
+| moderate | Moderate |
 
-### For Translators:
-1. Find entries marked 🔴 (needs translation)
-2. Translate to zh, zh_CN, zh_TW
-3. Update all `.arb` files
-4. Run `flutter gen-l10n`
-5. Move entry to "✅ Already Translated" section
+#### Weight Edit Dialog
+| Key | Text |
+|-----|------|
+| editWeight | Edit Weight |
+| current | Current |
+| target | Target |
+| targetWeight | Target Weight |
+| failedToSave | Failed to save |
+
+#### Exercise Summary
+| Key | Text |
+|-----|------|
+| totalExerciseDuration | Total Exercise Duration |
+| totalCaloriesBurned | Total Calories Burned |
+| calories | calories |
+| exceededGoal | Exceeded Goal |
+| remainingToGoal | Remaining to Goal |
+| exerciseBreakdown | Exercise Breakdown |
+| pace | Pace |
+| notes | Notes |
+| weeklyBurnGoal | Weekly Burn Goal |
+| monthlyBurnGoal | Monthly Burn Goal |
+
+---
+
+### Summary Screen
+
+#### Controls
+| Key | Text |
+|-----|------|
+| daily | Daily |
+| weekly | Weekly |
+| monthly | Monthly |
+| trackYourNutrition | Track your nutrition |
+
+---
+
+### Splash Screen
+
+| Key | Text |
+|-----|------|
+| _No translatable strings - only "OptiMate" (excluded) and "Track your nutrition" (shared)_ |
+
+---
+
+## Audit Notes
+
+- **Screen order**: Auditing by user journey (Splash → Home → Food Entry → Settings)
+- **Exclusions**: Debug messages, technical IDs, API endpoints, file paths
+- **App name**: "OptiMate" should NOT be translated
