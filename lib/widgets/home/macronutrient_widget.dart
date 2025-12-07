@@ -1,4 +1,5 @@
 // lib/widgets/home/macronutrient_widget.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
@@ -73,10 +74,14 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
         // Get theme-adaptive colors
         final borderColor = AppWidgetTheme.getBorderColor(
           themeProvider.selectedGradient,
-          AppWidgetTheme.cardBorderOpacity,
+          GlassCardStyle.borderOpacity,
         );
 
         final textColor = AppWidgetTheme.getTextColor(
+          themeProvider.selectedGradient,
+        );
+
+        final accentColor = AppWidgetTheme.getAccentColor(
           themeProvider.selectedGradient,
         );
 
@@ -95,6 +100,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                   color: AccentColors.coral,
                   borderColor: borderColor,
                   textColor: textColor,
+                  accentColor: accentColor,
                   icon: Icons.set_meal,
                 ),
               ),
@@ -112,6 +118,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                   color: AccentColors.brightGreen,
                   borderColor: borderColor,
                   textColor: textColor,
+                  accentColor: accentColor,
                   icon: Icons.local_pizza,
                 ),
               ),
@@ -129,6 +136,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                   color: AccentColors.electricBlue,
                   borderColor: borderColor,
                   textColor: textColor,
+                  accentColor: accentColor,
                   icon: Icons.grain_rounded,
                 ),
               ),
@@ -148,6 +156,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
     required Color color,
     required Color borderColor,
     required Color textColor,
+    required Color accentColor,
     IconData? icon,
   }) {
     final animatedProgress = progress * _animation.value;
@@ -170,17 +179,24 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
 
     return Opacity(
       opacity: _animation.value,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.1), // Subtle depth for readability
-          borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-          border: Border.all(
-            color: borderColor,
-            width: AppWidgetTheme.cardBorderWidth,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: GlassCardStyle.blurSigma,
+            sigmaY: GlassCardStyle.blurSigma,
           ),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-        child: Column(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+              borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+              border: Border.all(
+                color: borderColor,
+                width: GlassCardStyle.borderWidth,
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+            child: Column(
           children: [
             // 1. Circular Progress with Percentage inside
             SizedBox(
@@ -268,6 +284,8 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
               ),
             ),
           ],
+        ),
+          ),
         ),
       ),
     );

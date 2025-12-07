@@ -1,4 +1,5 @@
 // lib/widgets/progress/exercise_log_widget.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -134,21 +135,29 @@ class ExerciseLogWidget extends StatelessWidget {
     final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
     final totalCalories = _calculateTotalCalories(exercises);
 
-    return Container(
-      width: double.infinity,
-      constraints: BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: AppWidgetTheme.getBorderColor(
-            themeProvider.selectedGradient,
-            AppWidgetTheme.cardBorderOpacity,
-          ),
-          width: AppWidgetTheme.cardBorderWidth,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: GlassCardStyle.blurSigma,
+          sigmaY: GlassCardStyle.blurSigma,
         ),
-        borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-      ),
-      padding: AppWidgetTheme.cardPadding,
-      child: Column(
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+            border: Border.all(
+              color: AppWidgetTheme.getBorderColor(
+                themeProvider.selectedGradient,
+                GlassCardStyle.borderOpacity,
+              ),
+              width: GlassCardStyle.borderWidth,
+            ),
+            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+          ),
+          padding: AppWidgetTheme.cardPadding,
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header - Fixed title
@@ -211,6 +220,8 @@ class ExerciseLogWidget extends StatelessWidget {
             ],
           ),
         ],
+      ),
+        ),
       ),
     );
   }
@@ -357,21 +368,29 @@ class ExerciseLogWidget extends StatelessWidget {
   ) {
     final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
 
-    return Container(
-      width: double.infinity,
-      constraints: BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: AppWidgetTheme.getBorderColor(
-            themeProvider.selectedGradient,
-            AppWidgetTheme.cardBorderOpacity,
-          ),
-          width: AppWidgetTheme.cardBorderWidth,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: GlassCardStyle.blurSigma,
+          sigmaY: GlassCardStyle.blurSigma,
         ),
-        borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-      ),
-      padding: AppWidgetTheme.cardPadding,
-      child: Column(
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+            border: Border.all(
+              color: AppWidgetTheme.getBorderColor(
+                themeProvider.selectedGradient,
+                GlassCardStyle.borderOpacity,
+              ),
+              width: GlassCardStyle.borderWidth,
+            ),
+            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+          ),
+          padding: AppWidgetTheme.cardPadding,
+          child: Column(
         children: [
           // Header - Fixed title
           Align(
@@ -472,29 +491,41 @@ class ExerciseLogWidget extends StatelessWidget {
           SizedBox(height: AppWidgetTheme.spaceXXXL),
         ],
       ),
+        ),
+      ),
     );
   }
 
   Widget _buildLoadingState(BuildContext context, ThemeProvider themeProvider) {
     final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
 
-    return Container(
-      width: double.infinity,
-      constraints: BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
-      height: 200,
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: AppWidgetTheme.getBorderColor(
-            themeProvider.selectedGradient,
-            AppWidgetTheme.cardBorderOpacity,
-          ),
-          width: AppWidgetTheme.cardBorderWidth,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: GlassCardStyle.blurSigma,
+          sigmaY: GlassCardStyle.blurSigma,
         ),
-        borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-      ),
-      child: Center(
-        child: CircularProgressIndicator(
-          color: textColor,
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
+          height: 200,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+            border: Border.all(
+              color: AppWidgetTheme.getBorderColor(
+                themeProvider.selectedGradient,
+                GlassCardStyle.borderOpacity,
+              ),
+              width: GlassCardStyle.borderWidth,
+            ),
+            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+          ),
+          child: Center(
+            child: CircularProgressIndicator(
+              color: textColor,
+            ),
+          ),
         ),
       ),
     );
@@ -507,21 +538,29 @@ class ExerciseLogWidget extends StatelessWidget {
   ) {
     final textColor = AppWidgetTheme.getTextColor(themeProvider.selectedGradient);
 
-    return Container(
-      width: double.infinity,
-      constraints: BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: AppWidgetTheme.getBorderColor(
-            themeProvider.selectedGradient,
-            AppWidgetTheme.cardBorderOpacity,
-          ),
-          width: AppWidgetTheme.cardBorderWidth,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: GlassCardStyle.blurSigma,
+          sigmaY: GlassCardStyle.blurSigma,
         ),
-        borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-      ),
-      padding: AppWidgetTheme.cardPadding,
-      child: Column(
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+            border: Border.all(
+              color: AppWidgetTheme.getBorderColor(
+                themeProvider.selectedGradient,
+                GlassCardStyle.borderOpacity,
+              ),
+              width: GlassCardStyle.borderWidth,
+            ),
+            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+          ),
+          padding: AppWidgetTheme.cardPadding,
+          child: Column(
         children: [
           Icon(
             Icons.error_outline,
@@ -556,6 +595,8 @@ class ExerciseLogWidget extends StatelessWidget {
             child: const Text('Retry'),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

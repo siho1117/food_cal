@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/design_system/typography.dart';
 import '../../config/design_system/nutrition_colors.dart';
-import '../../config/design_system/theme_background.dart';
-import '../../config/design_system/color_utils.dart';
+import '../../config/design_system/widget_theme.dart';
 import '../../data/models/food_item.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/food_image_service.dart';
@@ -27,11 +26,9 @@ class FoodCardWidget extends StatefulWidget {
   /// Get card color based on theme - calculates complementary and maps to nearest accent
   /// Use this method to ensure consistent colors across food card and action buttons
   static Color getCardColor(BuildContext context) {
-    final backgroundColor = ThemeBackground.getColors(
+    return AppWidgetTheme.getAccentColor(
       context.watch<ThemeProvider>().selectedGradient,
-    )![1]; // Tone 2
-    final complementary = ColorUtils.getComplementaryColor(backgroundColor);
-    return ColorUtils.findNearestAccentColor(complementary);
+    );
   }
 
   final FoodItem foodItem;

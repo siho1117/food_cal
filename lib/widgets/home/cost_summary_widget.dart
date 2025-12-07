@@ -1,4 +1,5 @@
 // lib/widgets/home/cost_summary_widget.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -73,7 +74,7 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
         // Get theme-adaptive colors
         final borderColor = AppWidgetTheme.getBorderColor(
           themeProvider.selectedGradient,
-          AppWidgetTheme.cardBorderOpacity,
+          GlassCardStyle.borderOpacity,
         );
         final textColor = AppWidgetTheme.getTextColor(
           themeProvider.selectedGradient,
@@ -90,17 +91,24 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
               HapticFeedback.lightImpact();
               _showBudgetEditDialog(context, homeProvider, dailyBudget);
             },
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-                border: Border.all(
-                  color: borderColor,
-                  width: AppWidgetTheme.cardBorderWidth,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: GlassCardStyle.blurSigma,
+                  sigmaY: GlassCardStyle.blurSigma,
                 ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+                    borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+                    border: Border.all(
+                      color: borderColor,
+                      width: GlassCardStyle.borderWidth,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: Row(
                   children: [
                     // Left: Cost display
@@ -180,8 +188,10 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
                 ],
               ),
             ),
+                ),
+              ),
+            ),
           ),
-        ),
         );
       },
     );

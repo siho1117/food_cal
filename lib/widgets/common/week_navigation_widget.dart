@@ -1,9 +1,11 @@
 // lib/widgets/common/week_navigation_widget.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
+import '../../config/design_system/widget_theme.dart';
 import '../../providers/theme_provider.dart';
 
 /// Widget-specific design constants
@@ -104,32 +106,30 @@ class WeekNavigationWidget extends StatelessWidget {
   }) {
     final effectiveWidth = dayItemWidth ?? _WeekNavigationDesign.dayItemWidth;
     final effectiveHeight = dayItemHeight ?? _WeekNavigationDesign.dayItemHeight;
-    
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: effectiveWidth,
         height: effectiveHeight,
-        decoration: BoxDecoration(
-          // Always transparent, no background fill
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(effectiveWidth / 2),
-          // Border for selected day (iOS-style)
-          border: isSelected
-              ? Border.all(
-                  color: textColor.withValues(
-                    alpha: AppWidgetDesign.cardBorderOpacity,
+        child: isSelected
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(effectiveWidth / 2),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(
+                    sigmaX: GlassCardStyle.blurSigma,
+                    sigmaY: GlassCardStyle.blurSigma,
                   ),
-                  width: AppWidgetDesign.cardBorderWidth,
-                )
-              : (isToday && !isSelected
-                  ? Border.all(
-                      color: textColor.withValues(alpha: 0.3),
-                      width: 1.5,
-                    )
-                  : null),
-        ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(effectiveWidth / 2),
+                      border: Border.all(
+                        color: textColor.withValues(alpha: GlassCardStyle.borderOpacity),
+                        width: GlassCardStyle.borderWidth,
+                      ),
+                    ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -171,6 +171,58 @@ class WeekNavigationWidget extends StatelessWidget {
             ],
           ],
         ),
+                  ),
+                ),
+              )
+            : Container(
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(effectiveWidth / 2),
+                  border: isToday
+                      ? Border.all(
+                          color: textColor.withValues(alpha: 0.3),
+                          width: 1.5,
+                        )
+                      : null,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Day letter (localized: M, T, W... or 一, 二, 三...)
+                    Text(
+                      _getLocalizedDayLetter(context, date),
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: textColor.withValues(alpha: 0.7),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Day number
+                    Text(
+                      date.day.toString(),
+                      style: AppTypography.labelLarge.copyWith(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: textColor.withValues(alpha: 0.85),
+                      ),
+                    ),
+                    // Small dot indicator for today when not selected
+                    if (isToday) ...[
+                      const SizedBox(height: 2),
+                      Container(
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: textColor.withValues(alpha: 0.7),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
       ),
     );
   }

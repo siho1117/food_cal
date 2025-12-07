@@ -1,4 +1,5 @@
 // lib/widgets/home/calorie_summary_widget.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -215,26 +216,35 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
   Widget _buildLoadingState(ThemeProvider themeProvider) {
     final borderColor = AppWidgetTheme.getBorderColor(
       themeProvider.selectedGradient,
-      AppWidgetTheme.cardBorderOpacity,
+      GlassCardStyle.borderOpacity,
     );
     final textColor = AppWidgetTheme.getTextColor(
       themeProvider.selectedGradient,
     );
 
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-        border: Border.all(
-          color: borderColor,
-          width: AppWidgetTheme.cardBorderWidth,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: GlassCardStyle.blurSigma,
+          sigmaY: GlassCardStyle.blurSigma,
         ),
-      ),
-      child: Center(
-        child: CircularProgressIndicator(
-          color: textColor.withValues(alpha: AppWidgetTheme.opacityHighest),
-          strokeWidth: 3,
+        child: Container(
+          height: 200,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+            border: Border.all(
+              color: borderColor,
+              width: GlassCardStyle.borderWidth,
+            ),
+          ),
+          child: Center(
+            child: CircularProgressIndicator(
+              color: textColor.withValues(alpha: AppWidgetTheme.opacityHighest),
+              strokeWidth: 3,
+            ),
+          ),
         ),
       ),
     );
@@ -254,24 +264,34 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
   }) {
     final borderColor = AppWidgetTheme.getBorderColor(
       themeProvider.selectedGradient,
-      AppWidgetTheme.cardBorderOpacity,
+      GlassCardStyle.borderOpacity,
     );
     final textColor = AppWidgetTheme.getTextColor(
       themeProvider.selectedGradient,
     );
+    final accentColor = AppWidgetTheme.getAccentColor(
+      themeProvider.selectedGradient,
+    );
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-        border: Border.all(
-          color: borderColor,
-          width: AppWidgetTheme.cardBorderWidth,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: GlassCardStyle.blurSigma,
+          sigmaY: GlassCardStyle.blurSigma,
         ),
-      ),
-      child: Padding(
-        padding: AppWidgetTheme.cardPadding,
-        child: Column(
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+            border: Border.all(
+              color: borderColor,
+              width: GlassCardStyle.borderWidth,
+            ),
+          ),
+          child: Padding(
+            padding: AppWidgetTheme.cardPadding,
+            child: Column(
           children: [
             // Title with toggle button
             Row(
@@ -324,6 +344,8 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
             // Remaining calories
             _buildRemainingInfo(remaining, textColor),
           ],
+        ),
+      ),
         ),
       ),
     );
@@ -386,8 +408,8 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
       shadows: AppWidgetTheme.textShadows,
     );
 
-    // If bonus is enabled and there's a bonus, show it
-    final showBonus = bonusEnabled && bonusCalories > 0;
+    // If bonus is enabled, show it (even if 0 to indicate feature is active)
+    final showBonus = bonusEnabled;
 
     if (showBonus) {
       // Format: / 2,000 + 200 🏋️ cal (using fitness_center icon)

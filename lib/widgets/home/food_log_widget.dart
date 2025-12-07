@@ -34,23 +34,30 @@ class FoodLogWidget extends StatelessWidget {
         // Get theme-adaptive colors
         final borderColor = AppWidgetTheme.getBorderColor(
           themeProvider.selectedGradient,
-          AppWidgetTheme.cardBorderOpacity,
+          GlassCardStyle.borderOpacity,
         );
         final textColor = AppWidgetTheme.getTextColor(
           themeProvider.selectedGradient,
         );
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-            border: Border.all(
-              color: borderColor,
-              width: AppWidgetTheme.cardBorderWidth,
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(
+              sigmaX: GlassCardStyle.blurSigma,
+              sigmaY: GlassCardStyle.blurSigma,
             ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+                borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+                border: Border.all(
+                  color: borderColor,
+                  width: GlassCardStyle.borderWidth,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -109,6 +116,8 @@ class FoodLogWidget extends StatelessWidget {
                     ),
                   ),
               ],
+            ),
+              ),
             ),
           ),
         );

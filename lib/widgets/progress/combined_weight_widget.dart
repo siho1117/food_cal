@@ -1,4 +1,5 @@
 // lib/widgets/progress/combined_weight_widget.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/design_system/widget_theme.dart';
@@ -64,7 +65,7 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
 
         final borderColor = AppWidgetTheme.getBorderColor(
           themeProvider.selectedGradient,
-          AppWidgetTheme.cardBorderOpacity,
+          GlassCardStyle.borderOpacity,
         );
         final textColor = AppWidgetTheme.getTextColor(
           themeProvider.selectedGradient,
@@ -81,17 +82,24 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
 
         return GestureDetector(
           onTap: () => _showWeightDialog(context, progressData),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-              border: Border.all(
-                color: borderColor,
-                width: AppWidgetTheme.cardBorderWidth,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(
+                sigmaX: GlassCardStyle.blurSigma,
+                sigmaY: GlassCardStyle.blurSigma,
               ),
-            ),
-            padding: AppWidgetTheme.cardPadding,
-            child: Column(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+                  borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+                  border: Border.all(
+                    color: borderColor,
+                    width: GlassCardStyle.borderWidth,
+                  ),
+                ),
+                padding: AppWidgetTheme.cardPadding,
+                child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header
@@ -125,6 +133,8 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
                   textColor,
                 ),
               ],
+                ),
+              ),
             ),
           ),
         );

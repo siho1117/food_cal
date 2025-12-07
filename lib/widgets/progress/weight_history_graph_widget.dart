@@ -1,4 +1,5 @@
 // lib/widgets/progress/weight_history_graph_widget.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -229,21 +230,29 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
 
         final stats = _calculateStats(displayData);
 
-        return Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: AppWidgetTheme.getBorderColor(
-                themeProvider.selectedGradient,
-                AppWidgetTheme.cardBorderOpacity,
-              ),
-              width: AppWidgetTheme.cardBorderWidth,
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(
+              sigmaX: GlassCardStyle.blurSigma,
+              sigmaY: GlassCardStyle.blurSigma,
             ),
-            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-          ),
-          padding: AppWidgetTheme.cardPadding,
-          child: Column(
+            child: Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+                border: Border.all(
+                  color: AppWidgetTheme.getBorderColor(
+                    themeProvider.selectedGradient,
+                    GlassCardStyle.borderOpacity,
+                  ),
+                  width: GlassCardStyle.borderWidth,
+                ),
+                borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+              ),
+              padding: AppWidgetTheme.cardPadding,
+              child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Title
@@ -264,6 +273,8 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
               const SizedBox(height: AppWidgetTheme.spaceLG),
               _buildCompactStats(stats, textColor),
             ],
+          ),
+            ),
           ),
         );
       },
@@ -690,18 +701,26 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
   }
 
   Widget _buildEmptyState(Color textColor) {
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: textColor.withValues(alpha: AppWidgetTheme.cardBorderOpacity),
-          width: AppWidgetTheme.cardBorderWidth,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: GlassCardStyle.blurSigma,
+          sigmaY: GlassCardStyle.blurSigma,
         ),
-        borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-      ),
-      padding: const EdgeInsets.all(40),
-      child: Column(
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: AppWidgetTheme.maxWidgetWidth),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+            border: Border.all(
+              color: textColor.withValues(alpha: GlassCardStyle.borderOpacity),
+              width: GlassCardStyle.borderWidth,
+            ),
+            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+          ),
+          padding: const EdgeInsets.all(40),
+          child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
@@ -728,6 +747,8 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
             textAlign: TextAlign.center,
           ),
         ],
+      ),
+        ),
       ),
     );
   }

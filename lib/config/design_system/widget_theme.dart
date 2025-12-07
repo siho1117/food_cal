@@ -1,5 +1,7 @@
 // lib/config/design_system/widget_theme.dart
 import 'package:flutter/material.dart';
+import 'theme_background.dart';
+import 'color_utils.dart';
 
 /// Widget styling constants for the NEW design system
 ///
@@ -227,6 +229,81 @@ class AppWidgetTheme {
         ? Colors.black.withValues(alpha: opacity)
         : Colors.black.withValues(alpha: opacity);
   }
+
+  /// Get dynamic accent color based on theme background
+  /// Uses complementary color theory to create visual interest
+  ///
+  /// This color is used for:
+  /// - Food card background color
+  /// - Calorie summary icon color
+  /// - Other widget accent elements
+  ///
+  /// Example:
+  /// ```dart
+  /// final accentColor = AppWidgetTheme.getAccentColor(
+  ///   context.watch<ThemeProvider>().selectedGradient,
+  /// );
+  /// ```
+  static Color getAccentColor(String gradientId) {
+    // Get Tone 2 from the background gradient
+    final backgroundColor = ThemeBackground.getColors(gradientId)?[1] ??
+        ThemeBackground.getColors(ThemeBackground.defaultThemeId)![1];
+
+    // Calculate complementary color
+    final complementary = ColorUtils.getComplementaryColor(backgroundColor);
+
+    // Map to nearest accent color from palette
+    return ColorUtils.findNearestAccentColor(complementary);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GLASSMORPHISM / BLUR CARD EFFECTS
+// ═══════════════════════════════════════════════════════════════
+
+/// Refined glassmorphism card styling for widgets with blur backdrop effects
+///
+/// This style creates a frosted glass appearance with:
+/// - Subtle blur backdrop filter
+/// - Thin, semi-transparent border
+/// - Light background tint
+///
+/// Usage example:
+/// ```dart
+/// ClipRRect(
+///   borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+///   child: BackdropFilter(
+///     filter: ImageFilter.blur(
+///       sigmaX: GlassCardStyle.blurSigma,
+///       sigmaY: GlassCardStyle.blurSigma,
+///     ),
+///     child: Container(
+///       decoration: BoxDecoration(
+///         color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+///         border: Border.all(
+///           color: borderColor,
+///           width: GlassCardStyle.borderWidth,
+///         ),
+///       ),
+///     ),
+///   ),
+/// )
+/// ```
+class GlassCardStyle {
+  GlassCardStyle._(); // Private constructor to prevent instantiation
+
+  /// Refined border width (thinner than default for delicate look)
+  static const double borderWidth = 1.0;
+
+  /// Refined border opacity (lighter than default 0.5 for subtle appearance)
+  static const double borderOpacity = 0.3;
+
+  /// Blur intensity for backdrop filter (standard glassmorphism effect)
+  static const double blurSigma = 10.0;
+
+  /// Background tint opacity (subtle darkening/lightening)
+  /// Works with both black and white tints
+  static const double backgroundTintOpacity = 0.08;
 }
 
 // ═══════════════════════════════════════════════════════════════
