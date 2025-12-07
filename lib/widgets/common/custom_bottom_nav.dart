@@ -165,14 +165,21 @@ class CustomBottomNav extends StatelessWidget {
       label: label,
       button: true,
       selected: isActive,
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onTap(index);
-        },
-        child: Container(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onTap(index);
+          },
+          borderRadius: BorderRadius.circular(28.0),
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          child: Container(
             height: 62.0,
             alignment: Alignment.center,
+            // Minimum touch target size (48x48) with padding
+            padding: const EdgeInsets.all(8.0),
             child: Stack(
               alignment: Alignment.center,
               children: [
@@ -208,6 +215,7 @@ class CustomBottomNav extends StatelessWidget {
               ],
             ),
           ),
+        ),
       ),
     );
   }

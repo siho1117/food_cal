@@ -488,7 +488,9 @@ class HomeProvider extends ChangeNotifier {
 
   /// Calculate exercise bonus calories
   ///
-  /// Uses exercise data from ExerciseProvider to calculate bonus.
+  /// Fetches exercise data for the selected date and calculates bonus.
+  /// This ensures we use the correct date's data, not whatever date
+  /// the ExerciseProvider is currently viewing.
   Future<void> _calculateExerciseBonus() async {
     // If feature is disabled, no bonus
     if (!_exerciseBonusEnabled) {
@@ -503,7 +505,23 @@ class HomeProvider extends ChangeNotifier {
     }
 
     try {
-      final totalBurned = _exerciseProvider!.totalCaloriesBurned;
+      // Fetch exercise data for the HOME SCREEN's selected date
+      // (not the ExerciseProvider's currently viewed date)
+      final exerciseEntries = await _exerciseProvider!.getExerciseEntriesForDateRange(
+        _selectedDate,
+        _selectedDate,
+      );
+
+      // Calculate total calories burned on the selected date
+      final dateKey = _getDateKey(_selectedDate);
+      final entriesForDate = exerciseEntries[dateKey] ?? [];
+      final totalBurned = entriesForDate.fold<int>(
+        0,
+        (sum, entry) => sum + entry.caloriesBurned,
+      );
+
+      // Use the burn goal from ExerciseProvider (user's daily goal)
+      // This is a static value that doesn't change by date
       final burnGoal = _exerciseProvider!.dailyBurnGoal;
 
       _exerciseBonusCalories = ExerciseBonusCalculator.calculateBonus(
@@ -514,6 +532,11 @@ class HomeProvider extends ChangeNotifier {
       debugPrint('Error calculating exercise bonus: $e');
       _exerciseBonusCalories = 0;
     }
+  }
+
+  /// Get date key string from DateTime (YYYY-MM-DD format)
+  String _getDateKey(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
   /// Load exercise bonus enabled state from preferences
