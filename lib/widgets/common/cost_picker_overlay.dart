@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:numberpicker/numberpicker.dart';
 import '../../main.dart';
 import '../../config/design_system/dialog_theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // UNIVERSAL COST PICKER OVERLAY
@@ -169,6 +170,8 @@ class _CostPickerOverlayContentState extends State<_CostPickerOverlayContent> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     // Get keyboard height to adjust dialog position
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
@@ -200,7 +203,7 @@ class _CostPickerOverlayContentState extends State<_CostPickerOverlayContent> {
                   children: [
                     // Title
                     Text(
-                      'Add Cost per Serving',
+                      l10n.addCostPerServing,
                       style: AppDialogTheme.titleStyle,
                     ),
                     const SizedBox(height: 24),
@@ -262,7 +265,7 @@ class _CostPickerOverlayContentState extends State<_CostPickerOverlayContent> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'cents',
+                              l10n.cents,
                               style: AppDialogTheme.bodyStyle.copyWith(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -314,7 +317,7 @@ class _CostPickerOverlayContentState extends State<_CostPickerOverlayContent> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Or enter amount over \$${widget.maxDollars}:',
+                            l10n.orEnterAmount(widget.maxDollars.toString()),
                             style: AppDialogTheme.bodyStyle.copyWith(
                               fontSize: 14,
                             ),
@@ -325,7 +328,7 @@ class _CostPickerOverlayContentState extends State<_CostPickerOverlayContent> {
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             style: AppDialogTheme.inputTextStyle,
                             decoration: AppDialogTheme.inputDecoration(
-                              hintText: 'e.g., 1234.56',
+                              hintText: l10n.egAmount,
                             ).copyWith(
                               prefixText: '\$ ',
                               prefixStyle: AppDialogTheme.inputTextStyle,
@@ -347,7 +350,7 @@ class _CostPickerOverlayContentState extends State<_CostPickerOverlayContent> {
                         TextButton(
                           onPressed: () => widget.onResult(null),
                           style: AppDialogTheme.cancelButtonStyle,
-                          child: const Text('Cancel'),
+                          child: Text(l10n.cancel),
                         ),
                         const SizedBox(width: AppDialogTheme.buttonGap),
                         FilledButton(
@@ -365,7 +368,7 @@ class _CostPickerOverlayContentState extends State<_CostPickerOverlayContent> {
                             widget.onResult(result);
                           },
                           style: AppDialogTheme.primaryButtonStyle,
-                          child: const Text('Save'),
+                          child: Text(l10n.save),
                         ),
                       ],
                     ),

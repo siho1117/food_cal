@@ -1,6 +1,11 @@
 {
   "@@locale": "en",
 
+  "@_NAVIGATION": {},
+  "home": "Home",
+  "quickAdd": "Quick Add",
+  "summary": "Summary",
+
   "@_HOME_SCREEN": {},
   "@_CALORIE_SUMMARY": {},
   "caloriesToday": "Calories Intake",
@@ -220,10 +225,48 @@
   "failedToAddPhoto": "Failed to add photo",
   "failedToSaveChanges": "Failed to save changes",
   "remove": "Remove",
+  "removeFoodFromLog": "Remove \"{foodName}\" from your food log?",
+  "@removeFoodFromLog": {
+    "placeholders": {
+      "foodName": {
+        "type": "String"
+      }
+    }
+  },
   "failedToDeleteItem": "Failed to delete item",
   "errorOccurredWhileDeleting": "An error occurred while deleting",
   "failedToCaptureCard": "Failed to capture food card",
   "failedToExportCard": "Failed to export food card",
+  "tapToAddPhoto": "Tap + to add photo",
+  "analyzingYourFood": "Analyzing your food...",
+  "foodName": "Food name",
+  "calories": "CALORIES",
+  "serving": "SERVING",
+  "ok": "OK",
+  "addCostPerServing": "Add Cost per Serving",
+  "cents": "cents",
+  "orEnterAmount": "Or enter amount over ${maxDollars}:",
+  "@orEnterAmount": {
+    "placeholders": {
+      "maxDollars": {
+        "type": "String"
+      }
+    }
+  },
+  "egAmount": "e.g., 1234.56",
+  "durationIsRequired": "Duration is required",
+  "durationMustBePositive": "Duration must be positive",
+  "durationCannotExceed24Hours": "Duration cannot exceed 24 hours",
+  "pleaseFillInAllRequiredFields": "Please fill in all required fields",
+  "errorSavingExercise": "Error saving exercise",
+  "light": "Light",
+  "moderate": "Moderate",
+  "intense": "Intense",
+  "walking": "Walking",
+  "cycling": "Cycling",
+  "swimming": "Swimming",
+  "weightTraining": "Weight Training",
+  "yoga": "Yoga",
 
   "@_EXERCISE_ENTRY": {},
   "editExercise": "Edit Exercise",

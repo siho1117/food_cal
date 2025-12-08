@@ -8,6 +8,7 @@ import '../../config/design_system/widget_theme.dart';
 import '../../data/models/food_item.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/food_image_service.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../loading/animations/pulse_widget.dart';
 import '../loading/animations/animated_text_widget.dart';
 import '../loading/animations/animated_ellipsis_widget.dart';
@@ -303,7 +304,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Tap + to add photo',
+              AppLocalizations.of(context)!.tapToAddPhoto,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],
@@ -318,11 +319,13 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
 
   /// Build food name field (editable or display)
   Widget _buildFoodNameField() {
+    final l10n = AppLocalizations.of(context)!;
+
     // Show "Analyzing your food..." text with animation when loading
     if (widget.isLoading) {
-      return const AnimatedTextWidget(
-        text: 'Analyzing your food...',
-        textStyle: TextStyle(
+      return AnimatedTextWidget(
+        text: l10n.analyzingYourFood,
+        textStyle: const TextStyle(
           fontSize: 20,
           color: Colors.white,
           fontWeight: FontWeight.w700,
@@ -346,7 +349,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
           ),
           child: Text(
             widget.nameController!.text.isEmpty
-                ? 'Food name'
+                ? l10n.foodName
                 : widget.nameController!.text,
             style: TextStyle(
               fontSize: 20,
@@ -378,6 +381,8 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
 
   /// Build calories and serving size row
   Widget _buildCaloriesServingRow() {
+    final l10n = AppLocalizations.of(context)!;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -387,7 +392,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'CALORIES',
+                l10n.calories,
                 style: AppTypography.overline.copyWith(
                   color: Colors.white.withValues(alpha: 0.5),
                   fontSize: 11,
@@ -457,7 +462,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'SERVING',
+                l10n.serving,
                 style: AppTypography.overline.copyWith(
                   color: Colors.white.withValues(alpha: 0.5),
                   fontSize: 11,
@@ -527,12 +532,14 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
 
   /// Build macronutrients section
   Widget _buildMacronutrientsSection() {
+    final l10n = AppLocalizations.of(context)!;
+
     return Row(
       children: [
         // Protein (not editable in preview mode)
         Expanded(
           child: _buildMacroPill(
-            label: 'Protein',
+            label: l10n.protein,
             value: widget.foodItem.proteins,
             controller: widget.proteinController,
             color: NutritionColors.proteinColor,
@@ -544,7 +551,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
         // Carbs (not editable in preview mode)
         Expanded(
           child: _buildMacroPill(
-            label: 'Carbs',
+            label: l10n.carbs,
             value: widget.foodItem.carbs,
             controller: widget.carbsController,
             color: NutritionColors.carbsColor,
@@ -556,7 +563,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
         // Fat (not editable in preview mode)
         Expanded(
           child: _buildMacroPill(
-            label: 'Fat',
+            label: l10n.fat,
             value: widget.foodItem.fats,
             controller: widget.fatController,
             color: NutritionColors.fatColor,

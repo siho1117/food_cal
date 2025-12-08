@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 import '../../config/design_system/theme_design.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Icon-only segmented control bottom navigation bar
 /// 
@@ -32,16 +33,16 @@ class CustomBottomNav extends StatelessWidget {
     Icons.settings_rounded,
   ];
 
-  static const List<String> _navLabels = [
-    'Home',
-    'Progress',
-    'Quick Add',
-    'Summary',
-    'Settings',
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final navLabels = [
+      l10n.home,
+      l10n.progress,
+      l10n.quickAdd,
+      l10n.summary,
+      l10n.settings,
+    ];
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
 
@@ -111,7 +112,7 @@ class CustomBottomNav extends StatelessWidget {
                     (index) => Expanded(
                       child: _buildNavItem(
                         icon: _navIcons[index],
-                        label: _navLabels[index],
+                        label: navLabels[index],
                         index: index,
                         isActive: currentIndex == index,
                         isDark: isDark,

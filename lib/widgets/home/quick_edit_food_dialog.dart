@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../data/models/food_item.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../food/food_card.dart';
 import 'quick_edit_food_controller.dart';
 
@@ -88,27 +89,29 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
 
   /// Show dialog to choose image source (camera or gallery)
   Future<void> _showImageSourceDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+
     final source = await showDialog<ImageSource>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add Food Photo'),
+        title: Text(l10n.addFoodPhoto),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt),
-              title: const Text('Take Photo'),
+              title: Text(l10n.takePhoto),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from Gallery'),
+              title: Text(l10n.chooseFromGallery),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
             if (_controller.imagePath != null)
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Remove Photo'),
+                title: Text(l10n.removePhoto),
                 onTap: () => Navigator.pop(context, null),
               ),
           ],
@@ -128,17 +131,21 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
 
   /// Pick image from camera or gallery
   Future<void> _pickImage(ImageSource source) async {
+    final failedMessage = AppLocalizations.of(context)!.failedToAddPhoto;
+
     try {
       final imagePath = await _controller.pickImage(source);
       if (imagePath != null) {
         setState(() {});
       }
     } catch (e) {
-      _showErrorSnackBar('Failed to add photo');
+      _showErrorSnackBar(failedMessage);
     }
   }
 
   Widget _buildActionButtons() {
+    final l10n = AppLocalizations.of(context)!;
+
     // Use dynamic card color from FoodCardWidget to ensure consistency
     final cardColor = FoodCardWidget.getCardColor(context);
 
@@ -171,7 +178,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
                   ),
                 ),
                 child: Text(
-                  isNewItem ? 'Cancel' : 'Delete',
+                  isNewItem ? l10n.cancel : l10n.delete,
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
@@ -197,7 +204,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
                   elevation: 0,
                 ),
                 child: Text(
-                  _controller.isLoading ? 'Saving...' : 'Save',
+                  _controller.isLoading ? l10n.saving : l10n.save,
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
@@ -219,10 +226,14 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
       if (success && mounted) {
         Navigator.of(context).pop();
       } else {
-        _showErrorSnackBar('Failed to save changes');
+        if (mounted) {
+          _showErrorSnackBar(AppLocalizations.of(context)!.failedToSaveChanges);
+        }
       }
     } catch (e) {
-      _showErrorSnackBar(e.toString().replaceFirst('Exception: ', ''));
+      if (mounted) {
+        _showErrorSnackBar(e.toString().replaceFirst('Exception: ', ''));
+      }
     } finally {
       if (mounted) {
         setState(() {});
@@ -234,31 +245,34 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppDialogTheme.backgroundColor,
-        shape: AppDialogTheme.shape,
-        title: const Text(
-          'Delete Food Item',
-          style: AppDialogTheme.titleStyle,
-        ),
-        content: Text(
-          'Remove "${widget.foodItem.name}" from your food log?',
-          style: AppDialogTheme.bodyStyle,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            style: AppDialogTheme.cancelButtonStyle,
-            child: const Text('Cancel'),
+      builder: (context) {
+        final dialogL10n = AppLocalizations.of(context)!;
+        return AlertDialog(
+          backgroundColor: AppDialogTheme.backgroundColor,
+          shape: AppDialogTheme.shape,
+          title: Text(
+            dialogL10n.deleteFoodItem,
+            style: AppDialogTheme.titleStyle,
           ),
-          const SizedBox(width: AppDialogTheme.buttonGap),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: AppDialogTheme.destructiveButtonStyle,
-            child: const Text('Delete'),
+          content: Text(
+            dialogL10n.removeFoodFromLog(widget.foodItem.name),
+            style: AppDialogTheme.bodyStyle,
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              style: AppDialogTheme.cancelButtonStyle,
+              child: Text(dialogL10n.cancel),
+            ),
+            const SizedBox(width: AppDialogTheme.buttonGap),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: AppDialogTheme.destructiveButtonStyle,
+              child: Text(dialogL10n.delete),
+            ),
+          ],
+        );
+      },
     );
 
     if (confirmed == true && mounted) {
@@ -268,10 +282,14 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
         if (success && mounted) {
           Navigator.of(context).pop();
         } else {
-          _showErrorSnackBar('Failed to delete item');
+          if (mounted) {
+            _showErrorSnackBar(AppLocalizations.of(context)!.failedToDeleteItem);
+          }
         }
       } catch (e) {
-        _showErrorSnackBar('An error occurred while deleting');
+        if (mounted) {
+          _showErrorSnackBar(AppLocalizations.of(context)!.errorOccurredWhileDeleting);
+        }
       } finally {
         if (mounted) {
           setState(() {});
@@ -305,7 +323,9 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
       final boundary = _cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
 
       if (boundary == null) {
-        _showErrorSnackBar('Failed to capture food card');
+        if (mounted) {
+          _showErrorSnackBar(AppLocalizations.of(context)!.failedToCaptureCard);
+        }
         return;
       }
 
@@ -315,7 +335,9 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
       final imageBytes = byteData?.buffer.asUint8List();
 
       if (imageBytes == null) {
-        _showErrorSnackBar('Failed to capture food card');
+        if (mounted) {
+          _showErrorSnackBar(AppLocalizations.of(context)!.failedToCaptureCard);
+        }
         return;
       }
 
@@ -331,7 +353,9 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
         text: '${widget.foodItem.name} - Nutrition Info',
       );
     } catch (e) {
-      _showErrorSnackBar('Failed to export food card');
+      if (mounted) {
+        _showErrorSnackBar(AppLocalizations.of(context)!.failedToExportCard);
+      }
     }
   }
 }

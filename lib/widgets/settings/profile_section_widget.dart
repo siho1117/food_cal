@@ -6,24 +6,28 @@ import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/dialog_theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 class ProfileSectionWidget extends StatelessWidget {
   const ProfileSectionWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Consumer2<SettingsProvider, ThemeProvider>(
       builder: (context, settingsProvider, themeProvider, child) {
         // Get user name from profile (or null if not set)
         final userName = settingsProvider.userProfile?.name;
         final hasName = userName != null && userName.isNotEmpty;
-        
+
         return _buildTransparentCard(
           context: context,
           userName: userName,
           hasName: hasName,
           themeProvider: themeProvider,
           onTap: () => _handleProfileTap(context, settingsProvider),
+          l10n: l10n,
         );
       },
     );
@@ -35,6 +39,7 @@ class ProfileSectionWidget extends StatelessWidget {
     required bool hasName,
     required ThemeProvider themeProvider,
     required VoidCallback onTap,
+    required AppLocalizations l10n,
   }) {
     // Get theme-adaptive colors using widget theme
     final borderColor = AppWidgetTheme.getBorderColor(
@@ -84,7 +89,7 @@ class ProfileSectionWidget extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            hasName ? userName! : 'Tap to edit',
+                            hasName ? userName! : l10n.tapToEdit,
                             style: TextStyle(
                               fontSize: AppWidgetTheme.fontSizeXL,
                               fontWeight: FontWeight.w600,
@@ -178,9 +183,10 @@ class ProfileSectionWidget extends StatelessWidget {
   }
 
   void _showEditNameDialog(BuildContext context, SettingsProvider settingsProvider) {
+    final l10n = AppLocalizations.of(context)!;
     final currentName = settingsProvider.userProfile?.name ?? '';
     final controller = TextEditingController(text: currentName);
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -188,28 +194,28 @@ class ProfileSectionWidget extends StatelessWidget {
         shape: AppDialogTheme.shape,
         contentPadding: AppDialogTheme.contentPadding,
         actionsPadding: AppDialogTheme.actionsPadding,
-        
-        title: const Text(
-          'Edit Name',
+
+        title: Text(
+          l10n.editName,
           style: AppDialogTheme.titleStyle,
         ),
-        
+
         content: TextField(
           controller: controller,
           autofocus: true,
           style: AppDialogTheme.inputTextStyle,
           decoration: AppDialogTheme.inputDecoration(),
         ),
-        
+
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: AppDialogTheme.cancelButtonStyle,
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
-          
+
           const SizedBox(width: AppDialogTheme.buttonGap),
-          
+
           FilledButton(
             onPressed: () async {
               final newName = controller.text.trim();
@@ -221,7 +227,7 @@ class ProfileSectionWidget extends StatelessWidget {
               }
             },
             style: AppDialogTheme.primaryButtonStyle,
-            child: const Text('Save'),
+            child: Text(l10n.save),
           ),
         ],
       ),

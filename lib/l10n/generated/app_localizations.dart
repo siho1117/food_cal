@@ -97,6 +97,24 @@ abstract class AppLocalizations {
     Locale('zh', 'TW')
   ];
 
+  /// No description provided for @home.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get home;
+
+  /// No description provided for @quickAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Add'**
+  String get quickAdd;
+
+  /// No description provided for @summary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get summary;
+
   /// No description provided for @caloriesToday.
   ///
   /// In en, this message translates to:
@@ -1105,6 +1123,12 @@ abstract class AppLocalizations {
   /// **'Remove'**
   String get remove;
 
+  /// No description provided for @removeFoodFromLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove \"{foodName}\" from your food log?'**
+  String removeFoodFromLog(String foodName);
+
   /// No description provided for @failedToDeleteItem.
   ///
   /// In en, this message translates to:
@@ -1128,6 +1152,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to export food card'**
   String get failedToExportCard;
+
+  /// No description provided for @tapToAddPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap + to add photo'**
+  String get tapToAddPhoto;
+
+  /// No description provided for @analyzingYourFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing your food...'**
+  String get analyzingYourFood;
+
+  /// No description provided for @foodName.
+  ///
+  /// In en, this message translates to:
+  /// **'Food name'**
+  String get foodName;
+
+  /// No description provided for @serving.
+  ///
+  /// In en, this message translates to:
+  /// **'SERVING'**
+  String get serving;
+
+  /// No description provided for @ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
+
+  /// No description provided for @addCostPerServing.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Cost per Serving'**
+  String get addCostPerServing;
+
+  /// No description provided for @cents.
+  ///
+  /// In en, this message translates to:
+  /// **'cents'**
+  String get cents;
+
+  /// No description provided for @orEnterAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Or enter amount over \${maxDollars}:'**
+  String orEnterAmount(String maxDollars);
+
+  /// No description provided for @egAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g., 1234.56'**
+  String get egAmount;
+
+  /// No description provided for @durationIsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration is required'**
+  String get durationIsRequired;
+
+  /// No description provided for @durationMustBePositive.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration must be positive'**
+  String get durationMustBePositive;
+
+  /// No description provided for @durationCannotExceed24Hours.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration cannot exceed 24 hours'**
+  String get durationCannotExceed24Hours;
+
+  /// No description provided for @pleaseFillInAllRequiredFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fill in all required fields'**
+  String get pleaseFillInAllRequiredFields;
+
+  /// No description provided for @errorSavingExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Error saving exercise'**
+  String get errorSavingExercise;
 
   /// No description provided for @editWeight.
   ///

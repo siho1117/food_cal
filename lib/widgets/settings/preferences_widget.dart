@@ -8,6 +8,7 @@ import '../../providers/language_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/typography.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'language_selector_dialog.dart';
 import 'theme_selector_dialog.dart';
 import 'monthly_goal_dialog.dart';
@@ -17,6 +18,8 @@ class PreferencesWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, child) {
         // Also watch LanguageProvider and ThemeProvider for changes
@@ -56,7 +59,7 @@ class PreferencesWidget extends StatelessWidget {
                 textColor,
                 borderColor,
                 icon: Icons.language,
-                title: 'Language',
+                title: l10n.language,
                 value: languageProvider.currentLanguageName,
                 leadingEmoji: languageProvider.currentLanguageFlag,
                 onTap: () => _showLanguageDialog(context),
@@ -75,7 +78,7 @@ class PreferencesWidget extends StatelessWidget {
                 textColor,
                 borderColor,
                 icon: Icons.palette,
-                title: 'Theme',
+                title: l10n.theme,
                 value: themeProvider.getGradientDisplayName(themeProvider.selectedGradient),
                 leadingEmoji: themeProvider.getGradientEmoji(themeProvider.selectedGradient),
                 onTap: () => _showThemeDialog(context),
@@ -94,8 +97,8 @@ class PreferencesWidget extends StatelessWidget {
                 textColor,
                 borderColor,
                 icon: Icons.straighten,
-                title: 'Units',
-                value: settingsProvider.isMetric ? 'Metric' : 'Imperial',
+                title: l10n.units,
+                value: settingsProvider.isMetric ? l10n.metric : l10n.imperial,
                 trailing: Switch(
                   value: settingsProvider.isMetric,
                   onChanged: (value) => _toggleUnits(context, settingsProvider),
@@ -118,7 +121,7 @@ class PreferencesWidget extends StatelessWidget {
                 textColor,
                 borderColor,
                 icon: Icons.speed,
-                title: 'Monthly Weight Goal',
+                title: l10n.monthlyWeightGoal,
                 value: settingsProvider.formattedMonthlyGoal,
                 onTap: () => _showWeightGoalDialog(context, settingsProvider),
                 isLast: true,
@@ -224,9 +227,10 @@ class PreferencesWidget extends StatelessWidget {
     }
 
     if (context.mounted) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Units changed to ${newValue ? 'Metric' : 'Imperial'}'),
+          content: Text(newValue ? l10n.unitsChangedToMetric : l10n.unitsChangedToImperial),
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 2),
         ),

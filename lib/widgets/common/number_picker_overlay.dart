@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:numberpicker/numberpicker.dart';
 import '../../main.dart';
 import '../../config/design_system/dialog_theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // UNIVERSAL NUMBER PICKER OVERLAY
@@ -206,6 +207,8 @@ class _NumberPickerOverlayContentState extends State<_NumberPickerOverlayContent
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return GestureDetector(
       onTap: () => widget.onResult(null), // Tap outside to cancel
       child: Container(
@@ -261,13 +264,13 @@ class _NumberPickerOverlayContentState extends State<_NumberPickerOverlayContent
                         TextButton(
                           onPressed: () => widget.onResult(null),
                           style: AppDialogTheme.cancelButtonStyle,
-                          child: const Text('Cancel'),
+                          child: Text(l10n.cancel),
                         ),
                         const SizedBox(width: 8),
                         FilledButton(
                           onPressed: () => widget.onResult(_selectedValue),
                           style: AppDialogTheme.primaryButtonStyle,
-                          child: const Text('OK'),
+                          child: Text(l10n.ok),
                         ),
                       ],
                     ),
@@ -315,6 +318,8 @@ class _DecimalPickerOverlayContentState extends State<_DecimalPickerOverlayConte
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     // Convert to integer representation for picker
     int intValue = (_selectedValue * 10).round();
     int intMin = (widget.minValue * 10).round();
@@ -382,13 +387,13 @@ class _DecimalPickerOverlayContentState extends State<_DecimalPickerOverlayConte
                         TextButton(
                           onPressed: () => widget.onResult(null),
                           style: AppDialogTheme.cancelButtonStyle,
-                          child: const Text('Cancel'),
+                          child: Text(l10n.cancel),
                         ),
                         const SizedBox(width: 8),
                         FilledButton(
                           onPressed: () => widget.onResult(_selectedValue),
                           style: AppDialogTheme.primaryButtonStyle,
-                          child: const Text('OK'),
+                          child: Text(l10n.ok),
                         ),
                       ],
                     ),

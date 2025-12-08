@@ -9,6 +9,7 @@ import '../widgets/settings/preferences_widget.dart';
 import '../widgets/settings/feedback_widget.dart';
 import '../config/design_system/theme_background.dart';
 import '../widgets/common/custom_app_bar.dart';
+import '../l10n/generated/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
   final bool showBackButton;
@@ -44,9 +45,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: Colors.white,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
-                    title: const Text(
-                      'Settings',
-                      style: TextStyle(
+                    title: Text(
+                      AppLocalizations.of(context)!.settings,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),

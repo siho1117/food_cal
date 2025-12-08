@@ -6,6 +6,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/widget_theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 class FeedbackWidget extends StatelessWidget {
   final VoidCallback? onSendFeedback; // Optional callback for additional actions
@@ -18,6 +19,8 @@ class FeedbackWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Consumer2<SettingsProvider, ThemeProvider>(
       builder: (context, settingsProvider, themeProvider, child) {
         final borderColor = AppWidgetTheme.getBorderColor(
@@ -72,7 +75,7 @@ class FeedbackWidget extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Send Feedback',
+                                l10n.sendFeedback,
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
@@ -80,7 +83,7 @@ class FeedbackWidget extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                'Help us improve the app',
+                                l10n.helpUsImprove,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: textColor.withValues(
@@ -110,6 +113,7 @@ class FeedbackWidget extends StatelessWidget {
   }
 
   void _showFeedbackDialog(BuildContext context, SettingsProvider settingsProvider) {
+    final l10n = AppLocalizations.of(context)!;
     final TextEditingController feedbackController = TextEditingController();
     bool isLoading = false;
 
@@ -117,30 +121,30 @@ class FeedbackWidget extends StatelessWidget {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Row(
+          title: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.feedback,
                 color: AppColors.textDark,
                 size: 24,
               ),
-              SizedBox(width: 8),
-              Text('Send Feedback'),
+              const SizedBox(width: 8),
+              Text(l10n.sendFeedback),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'We appreciate your feedback! Please let us know how we can improve the app.',
-                style: TextStyle(color: Colors.grey),
+              Text(
+                l10n.feedbackAppreciated,
+                style: const TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: feedbackController,
                 decoration: InputDecoration(
-                  hintText: 'Your feedback here...',
+                  hintText: l10n.yourFeedbackHere,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -163,7 +167,7 @@ class FeedbackWidget extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: isLoading ? null : () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: isLoading
@@ -180,20 +184,21 @@ class FeedbackWidget extends StatelessWidget {
                           await settingsProvider.sendFeedback(feedback);
 
                           if (context.mounted) {
+                            final l10n = AppLocalizations.of(context)!;
                             Navigator.of(context).pop();
-                            
+
                             // Show success message
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
+                              SnackBar(
                                 content: Row(
                                   children: [
-                                    Icon(
+                                    const Icon(
                                       Icons.check_circle,
                                       color: Colors.white,
                                       size: 20,
                                     ),
-                                    SizedBox(width: 8),
-                                    Text('Thank you for your feedback!'),
+                                    const SizedBox(width: 8),
+                                    Text(l10n.thankYouForFeedback),
                                   ],
                                 ),
                                 backgroundColor: Colors.green,
@@ -233,9 +238,10 @@ class FeedbackWidget extends StatelessWidget {
                         }
                       } else {
                         // Show message for empty feedback
+                        final l10n = AppLocalizations.of(context)!;
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please enter your feedback first'),
+                          SnackBar(
+                            content: Text(l10n.enterFeedbackFirst),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
@@ -244,7 +250,7 @@ class FeedbackWidget extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.textDark,
               ),
-              child: const Text('Send'),
+              child: Text(l10n.send),
             ),
           ],
         ),

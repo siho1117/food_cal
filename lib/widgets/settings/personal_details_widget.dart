@@ -8,6 +8,7 @@ import '../../providers/theme_provider.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../config/design_system/typography.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'height_scroll_dialog.dart';
 
 class PersonalDetailsWidget extends StatelessWidget {
@@ -15,6 +16,8 @@ class PersonalDetailsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Consumer2<SettingsProvider, ThemeProvider>(
       builder: (context, settingsProvider, themeProvider, child) {
         final borderColor = AppWidgetTheme.getBorderColor(
@@ -48,7 +51,7 @@ class PersonalDetailsWidget extends StatelessWidget {
                 settingsProvider,
                 textColor,
                 icon: Icons.cake,
-                title: 'Date of Birth',
+                title: l10n.dateOfBirth,
                 value: settingsProvider.calculatedAge,
                 onTap: () => _showDatePicker(context, settingsProvider),
               ),
@@ -62,7 +65,7 @@ class PersonalDetailsWidget extends StatelessWidget {
                 settingsProvider,
                 textColor,
                 icon: Icons.height,
-                title: 'Height',
+                title: l10n.height,
                 value: settingsProvider.formattedHeight,
                 onTap: () => _showHeightDialog(context, settingsProvider),
               ),
@@ -76,7 +79,7 @@ class PersonalDetailsWidget extends StatelessWidget {
                 settingsProvider,
                 textColor,
                 icon: Icons.monitor_weight,
-                title: 'Current Weight',
+                title: l10n.currentWeight,
                 value: settingsProvider.formattedWeight,
                 onTap: () => _showWeightDialog(context, settingsProvider),
               ),
@@ -90,7 +93,7 @@ class PersonalDetailsWidget extends StatelessWidget {
                 settingsProvider,
                 textColor,
                 icon: Icons.flag,
-                title: 'Starting Weight',
+                title: l10n.startingWeight,
                 value: settingsProvider.formattedStartingWeight,
                 onTap: () => _showStartingWeightDialog(context, settingsProvider),
               ),
@@ -104,8 +107,8 @@ class PersonalDetailsWidget extends StatelessWidget {
                 settingsProvider,
                 textColor,
                 icon: Icons.person,
-                title: 'Gender',
-                value: settingsProvider.userProfile?.gender ?? 'Not set',
+                title: l10n.gender,
+                value: settingsProvider.userProfile?.gender ?? l10n.notSet,
                 onTap: () => _showGenderDialog(context, settingsProvider),
               ),
             ],
@@ -189,8 +192,9 @@ class PersonalDetailsWidget extends StatelessWidget {
           
           await settingsProvider.updateDateOfBirth(date, age);
           if (context.mounted) {
+            final l10n = AppLocalizations.of(context)!;
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Date of birth updated'), behavior: SnackBarBehavior.floating),
+              SnackBar(content: Text(l10n.dateOfBirthUpdated), behavior: SnackBarBehavior.floating),
             );
           }
         } catch (e) {
@@ -232,7 +236,8 @@ class PersonalDetailsWidget extends StatelessWidget {
   }
 
   void _showGenderDialog(BuildContext context, SettingsProvider settingsProvider) {
-    final genders = ['Male', 'Female', 'Other', 'Prefer not to say'];
+    final l10n = AppLocalizations.of(context)!;
+    final genders = [l10n.male, l10n.female, l10n.other, l10n.preferNotToSay];
     final currentGender = settingsProvider.userProfile?.gender;
 
     showDialog(
@@ -243,7 +248,7 @@ class PersonalDetailsWidget extends StatelessWidget {
         contentPadding: AppDialogTheme.contentPadding,
         actionsPadding: AppDialogTheme.actionsPadding,
         title: Text(
-          'Gender',
+          l10n.gender,
           style: AppDialogTheme.titleStyle,
         ),
         content: Column(
@@ -268,9 +273,10 @@ class PersonalDetailsWidget extends StatelessWidget {
                 try {
                   await settingsProvider.updateGender(gender);
                   if (context.mounted) {
+                    final l10n = AppLocalizations.of(context)!;
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Gender updated'), behavior: SnackBarBehavior.floating),
+                      SnackBar(content: Text(l10n.genderUpdated), behavior: SnackBarBehavior.floating),
                     );
                   }
                 } catch (e) {
@@ -288,7 +294,7 @@ class PersonalDetailsWidget extends StatelessWidget {
           TextButton(
             style: AppDialogTheme.cancelButtonStyle,
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
         ],
       ),
@@ -426,6 +432,7 @@ class _WeightScrollDialogState extends State<_WeightScrollDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final unit = _isMetric ? 'kg' : 'lbs';
 
     return AlertDialog(
@@ -436,8 +443,8 @@ class _WeightScrollDialogState extends State<_WeightScrollDialog> {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'Weight',
+          Text(
+            l10n.weight,
             style: AppDialogTheme.titleStyle,
           ),
           _buildUnitToggle(),
@@ -456,13 +463,13 @@ class _WeightScrollDialogState extends State<_WeightScrollDialog> {
             TextButton(
               onPressed: () => Navigator.pop(context),
               style: AppDialogTheme.cancelButtonStyle,
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
             ),
             const SizedBox(width: AppDialogTheme.buttonGap),
             FilledButton(
               onPressed: _handleSave,
               style: AppDialogTheme.primaryButtonStyle,
-              child: const Text('Save'),
+              child: Text(l10n.save),
             ),
           ],
         ),
@@ -719,6 +726,7 @@ class _StartingWeightScrollDialogState extends State<_StartingWeightScrollDialog
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final unit = _isMetric ? 'kg' : 'lbs';
 
     return AlertDialog(
@@ -729,8 +737,8 @@ class _StartingWeightScrollDialogState extends State<_StartingWeightScrollDialog
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'Starting Weight',
+          Text(
+            l10n.startingWeight,
             style: AppDialogTheme.titleStyle,
           ),
           _buildUnitToggle(),
@@ -740,7 +748,7 @@ class _StartingWeightScrollDialogState extends State<_StartingWeightScrollDialog
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Set your weight when you started your journey',
+            l10n.setYourWeightWhenStarted,
             style: TextStyle(
               fontSize: 13,
               color: AppDialogTheme.colorTextSecondary,
@@ -757,13 +765,13 @@ class _StartingWeightScrollDialogState extends State<_StartingWeightScrollDialog
             TextButton(
               onPressed: () => Navigator.pop(context),
               style: AppDialogTheme.cancelButtonStyle,
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
             ),
             const SizedBox(width: AppDialogTheme.buttonGap),
             FilledButton(
               onPressed: _handleSave,
               style: AppDialogTheme.primaryButtonStyle,
-              child: const Text('Save'),
+              child: Text(l10n.save),
             ),
           ],
         ),

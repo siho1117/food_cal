@@ -13,6 +13,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/navigation_provider.dart';
 import '../../data/models/food_item.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../progress/exercise_entry_dialog.dart';
 import '../progress/weight_edit_dialog.dart';
 import '../home/quick_edit_food_dialog.dart';
@@ -46,6 +47,8 @@ class _QuickActionsDialogContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(
         top: Radius.circular(28),
@@ -97,8 +100,8 @@ class _QuickActionsDialogContent extends StatelessWidget {
                           _FloatingTileSmall(
                             action: _QuickAction(
                               icon: Icons.photo_library_rounded,
-                              label: 'Gallery',
-                              subtitle: 'Pick food photo',
+                              label: l10n.gallery,
+                              subtitle: l10n.pickFoodPhoto,
                               color: AccentColors.brightOrange,
                               onTap: () => _handleGalleryAction(context),
                             ),
@@ -107,8 +110,8 @@ class _QuickActionsDialogContent extends StatelessWidget {
                           _FloatingTileSmall(
                             action: _QuickAction(
                               icon: Icons.edit_note_rounded,
-                              label: 'Type',
-                              subtitle: 'Log manually',
+                              label: l10n.type,
+                              subtitle: l10n.logManually,
                               color: AccentColors.electricBlue,
                               onTap: () => _handleManualEntryAction(context),
                             ),
@@ -125,8 +128,8 @@ class _QuickActionsDialogContent extends StatelessWidget {
                       child: _FloatingTileLarge(
                         action: _QuickAction(
                           icon: Icons.camera_alt_rounded,
-                          label: 'Take Photo',
-                          subtitle: 'Scan food with camera',
+                          label: l10n.takePhoto,
+                          subtitle: l10n.scanFoodWithCamera,
                           color: AccentColors.coral,
                           onTap: () => _handleCameraAction(context),
                         ),
@@ -145,8 +148,8 @@ class _QuickActionsDialogContent extends StatelessWidget {
                       child: _FloatingTileMedium(
                         action: _QuickAction(
                           icon: Icons.monitor_weight_rounded,
-                          label: 'Weight',
-                          subtitle: 'Update',
+                          label: l10n.weight,
+                          subtitle: l10n.update,
                           color: AccentColors.brightGreen,
                           onTap: () => _handleWeightAction(context),
                         ),
@@ -158,8 +161,8 @@ class _QuickActionsDialogContent extends StatelessWidget {
                       child: _FloatingTileMedium(
                         action: _QuickAction(
                           icon: Icons.fitness_center_rounded,
-                          label: 'Exercise',
-                          subtitle: 'Log activity',
+                          label: l10n.exercise,
+                          subtitle: l10n.logActivity,
                           color: AccentColors.periwinkle,
                           onTap: () => _handleExerciseAction(context),
                         ),
@@ -249,11 +252,12 @@ class _QuickActionsDialogContent extends StatelessWidget {
         // Navigate to Progress page after weight is saved
         navigationProvider.navigateToProgress();
         if (context.mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Weight updated successfully'),
+            SnackBar(
+              content: Text(l10n.weightUpdatedSuccessfully),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -264,11 +268,12 @@ class _QuickActionsDialogContent extends StatelessWidget {
         // Navigate to Progress page after target weight is saved
         navigationProvider.navigateToProgress();
         if (context.mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Target weight updated successfully'),
+            SnackBar(
+              content: Text(l10n.targetWeightUpdatedSuccessfully),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -283,11 +288,12 @@ class _QuickActionsDialogContent extends StatelessWidget {
         // Navigate to Progress page after starting weight is saved
         navigationProvider.navigateToProgress();
         if (context.mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Starting weight updated successfully'),
+            SnackBar(
+              content: Text(l10n.startingWeightUpdated),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
             ),
           );

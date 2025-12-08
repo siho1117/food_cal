@@ -3,14 +3,16 @@ import 'package:flutter/material.dart';
 import '../../providers/exercise_provider.dart';
 import '../../data/models/exercise_entry.dart';
 import '../../utils/progress/calorie_estimator.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Controller for exercise entry dialog
-/// 
+///
 /// Manages state, validation, and calorie estimation for logging exercises.
 /// Uses MET-based calculation for accurate calorie estimates.
 class ExerciseDialogController extends ChangeNotifier {
   final ExerciseProvider exerciseProvider;
   final ExerciseEntry? existingExercise;
+  final BuildContext context;
 
   // Input controllers
   final TextEditingController durationController = TextEditingController();
@@ -41,6 +43,7 @@ class ExerciseDialogController extends ChangeNotifier {
 
   ExerciseDialogController({
     required this.exerciseProvider,
+    required this.context,
     this.existingExercise,
     String? preselectedExercise,
   }) {
@@ -111,17 +114,19 @@ class ExerciseDialogController extends ChangeNotifier {
 
   /// Validate duration input
   String? validateDuration(String? value) {
+    final l10n = AppLocalizations.of(context)!;
+
     if (value == null || value.isEmpty) {
-      return 'Duration is required';
+      return l10n.durationIsRequired;
     }
 
     final duration = int.tryParse(value);
     if (duration == null || duration <= 0) {
-      return 'Duration must be positive';
+      return l10n.durationMustBePositive;
     }
 
     if (duration > 1440) {
-      return 'Duration cannot exceed 24 hours';
+      return l10n.durationCannotExceed24Hours;
     }
 
     return null;
@@ -135,8 +140,10 @@ class ExerciseDialogController extends ChangeNotifier {
 
   /// Save exercise to provider
   Future<String> saveExercise() async {
+    final l10n = AppLocalizations.of(context)!;
+
     if (!canSave) {
-      return 'Please fill in all required fields';
+      return l10n.pleaseFillInAllRequiredFields;
     }
 
     final error = validateDuration(durationController.text);
@@ -177,7 +184,7 @@ class ExerciseDialogController extends ChangeNotifier {
     } catch (e) {
       isLoading = false;
       notifyListeners();
-      return 'Error saving exercise: $e';
+      return l10n.errorSavingExercise;
     }
   }
 
@@ -203,4 +210,40 @@ class ExerciseDialogController extends ChangeNotifier {
   List<String> getExercises() => exercises;
   List<String> getIntensityLevels() => intensityLevels;
   List<int> getDurationPresets() => durationPresets;
+
+  // Helper to get localized exercise name
+  String getLocalizedExerciseName(String exerciseName) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (exerciseName) {
+      case 'Running':
+        return l10n.running;
+      case 'Walking':
+        return l10n.walking;
+      case 'Cycling':
+        return l10n.cycling;
+      case 'Swimming':
+        return l10n.swimming;
+      case 'Weight Training':
+        return l10n.weightTraining;
+      case 'Yoga':
+        return l10n.yoga;
+      default:
+        return exerciseName;
+    }
+  }
+
+  // Helper to get localized intensity level
+  String getLocalizedIntensity(String intensity) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (intensity) {
+      case 'Light':
+        return l10n.light;
+      case 'Moderate':
+        return l10n.moderate;
+      case 'Intense':
+        return l10n.intense;
+      default:
+        return intensity;
+    }
+  }
 }

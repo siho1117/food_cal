@@ -9,6 +9,15 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get home => '主页';
+
+  @override
+  String get quickAdd => '快速添加';
+
+  @override
+  String get summary => '总结';
+
+  @override
   String get caloriesToday => '今日卡路里摄入';
 
   @override
@@ -513,6 +522,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get remove => '移除';
 
   @override
+  String removeFoodFromLog(String foodName) {
+    return '从食物日志中移除「$foodName」？';
+  }
+
+  @override
   String get failedToDeleteItem => '删除项目失败';
 
   @override
@@ -523,6 +537,50 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get failedToExportCard => '导出食物卡片失败';
+
+  @override
+  String get tapToAddPhoto => '点击 + 添加照片';
+
+  @override
+  String get analyzingYourFood => '正在分析您的食物...';
+
+  @override
+  String get foodName => '食物名称';
+
+  @override
+  String get serving => '份量';
+
+  @override
+  String get ok => '确定';
+
+  @override
+  String get addCostPerServing => '添加每份成本';
+
+  @override
+  String get cents => '分';
+
+  @override
+  String orEnterAmount(String maxDollars) {
+    return '或输入超过 \$$maxDollars 的金额：';
+  }
+
+  @override
+  String get egAmount => '例如：1234.56';
+
+  @override
+  String get durationIsRequired => '需要输入时长';
+
+  @override
+  String get durationMustBePositive => '时长必须为正数';
+
+  @override
+  String get durationCannotExceed24Hours => '时长不能超过24小时';
+
+  @override
+  String get pleaseFillInAllRequiredFields => '请填写所有必填字段';
+
+  @override
+  String get errorSavingExercise => '保存运动时出错';
 
   @override
   String get editWeight => '编辑体重';
@@ -790,6 +848,15 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   AppLocalizationsZhCn(): super('zh_CN');
 
   @override
+  String get home => '主页';
+
+  @override
+  String get quickAdd => '快速添加';
+
+  @override
+  String get summary => '总结';
+
+  @override
   String get caloriesToday => '今日卡路里摄入';
 
   @override
@@ -1294,6 +1361,11 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get remove => '移除';
 
   @override
+  String removeFoodFromLog(String foodName) {
+    return '从食物日志中移除「$foodName」？';
+  }
+
+  @override
   String get failedToDeleteItem => '删除项目失败';
 
   @override
@@ -1304,6 +1376,50 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get failedToExportCard => '导出食物卡片失败';
+
+  @override
+  String get tapToAddPhoto => '点击 + 添加照片';
+
+  @override
+  String get analyzingYourFood => '正在分析您的食物...';
+
+  @override
+  String get foodName => '食物名称';
+
+  @override
+  String get serving => '份量';
+
+  @override
+  String get ok => '确定';
+
+  @override
+  String get addCostPerServing => '添加每份成本';
+
+  @override
+  String get cents => '分';
+
+  @override
+  String orEnterAmount(String maxDollars) {
+    return '或输入超过 \$$maxDollars 的金额：';
+  }
+
+  @override
+  String get egAmount => '例如：1234.56';
+
+  @override
+  String get durationIsRequired => '需要输入时长';
+
+  @override
+  String get durationMustBePositive => '时长必须为正数';
+
+  @override
+  String get durationCannotExceed24Hours => '时长不能超过24小时';
+
+  @override
+  String get pleaseFillInAllRequiredFields => '请填写所有必填字段';
+
+  @override
+  String get errorSavingExercise => '保存运动时出错';
 
   @override
   String get editWeight => '编辑体重';
@@ -1569,6 +1685,15 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
 class AppLocalizationsZhTw extends AppLocalizationsZh {
   AppLocalizationsZhTw(): super('zh_TW');
+
+  @override
+  String get home => '主頁';
+
+  @override
+  String get quickAdd => '快速添加';
+
+  @override
+  String get summary => '總結';
 
   @override
   String get caloriesToday => '今日卡路里攝取';
@@ -2075,6 +2200,11 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get remove => '移除';
 
   @override
+  String removeFoodFromLog(String foodName) {
+    return '從食物日誌中移除「$foodName」？';
+  }
+
+  @override
   String get failedToDeleteItem => '刪除項目失敗';
 
   @override
@@ -2085,6 +2215,50 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get failedToExportCard => '匯出食物卡片失敗';
+
+  @override
+  String get tapToAddPhoto => '點擊 + 添加照片';
+
+  @override
+  String get analyzingYourFood => '正在分析您的食物...';
+
+  @override
+  String get foodName => '食物名稱';
+
+  @override
+  String get serving => '份量';
+
+  @override
+  String get ok => '確定';
+
+  @override
+  String get addCostPerServing => '添加每份成本';
+
+  @override
+  String get cents => '分';
+
+  @override
+  String orEnterAmount(String maxDollars) {
+    return '或輸入超過 \$$maxDollars 的金額：';
+  }
+
+  @override
+  String get egAmount => '例如：1234.56';
+
+  @override
+  String get durationIsRequired => '需要輸入時長';
+
+  @override
+  String get durationMustBePositive => '時長必須為正數';
+
+  @override
+  String get durationCannotExceed24Hours => '時長不能超過24小時';
+
+  @override
+  String get pleaseFillInAllRequiredFields => '請填寫所有必填字段';
+
+  @override
+  String get errorSavingExercise => '保存運動時出錯';
 
   @override
   String get editWeight => '編輯體重';

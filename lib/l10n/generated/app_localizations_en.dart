@@ -9,6 +9,15 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get home => 'Home';
+
+  @override
+  String get quickAdd => 'Quick Add';
+
+  @override
+  String get summary => 'Summary';
+
+  @override
   String get caloriesToday => 'Calories Intake';
 
   @override
@@ -513,6 +522,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get remove => 'Remove';
 
   @override
+  String removeFoodFromLog(String foodName) {
+    return 'Remove \"$foodName\" from your food log?';
+  }
+
+  @override
   String get failedToDeleteItem => 'Failed to delete item';
 
   @override
@@ -523,6 +537,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failedToExportCard => 'Failed to export food card';
+
+  @override
+  String get tapToAddPhoto => 'Tap + to add photo';
+
+  @override
+  String get analyzingYourFood => 'Analyzing your food...';
+
+  @override
+  String get foodName => 'Food name';
+
+  @override
+  String get serving => 'SERVING';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get addCostPerServing => 'Add Cost per Serving';
+
+  @override
+  String get cents => 'cents';
+
+  @override
+  String orEnterAmount(String maxDollars) {
+    return 'Or enter amount over \$$maxDollars:';
+  }
+
+  @override
+  String get egAmount => 'e.g., 1234.56';
+
+  @override
+  String get durationIsRequired => 'Duration is required';
+
+  @override
+  String get durationMustBePositive => 'Duration must be positive';
+
+  @override
+  String get durationCannotExceed24Hours => 'Duration cannot exceed 24 hours';
+
+  @override
+  String get pleaseFillInAllRequiredFields => 'Please fill in all required fields';
+
+  @override
+  String get errorSavingExercise => 'Error saving exercise';
 
   @override
   String get editWeight => 'Edit Weight';

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:numberpicker/numberpicker.dart';
 import '../../config/design_system/dialog_theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Shows a dialog with an integer number picker
 /// Returns the selected value or null if cancelled
@@ -17,6 +18,8 @@ Future<int?> showNumberPickerDialog({
   return showDialog<int>(
     context: context,
     builder: (BuildContext context) {
+      final l10n = AppLocalizations.of(context)!;
+
       return StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
@@ -54,12 +57,12 @@ Future<int?> showNumberPickerDialog({
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: AppDialogTheme.cancelButtonStyle,
-                child: const Text('Cancel'),
+                child: Text(l10n.cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.of(context).pop(selectedValue),
                 style: AppDialogTheme.primaryButtonStyle,
-                child: const Text('OK'),
+                child: Text(l10n.ok),
               ),
             ],
           );
@@ -84,6 +87,8 @@ Future<double?> showDecimalPickerDialog({
   return showDialog<double>(
     context: context,
     builder: (BuildContext context) {
+      final l10n = AppLocalizations.of(context)!;
+
       return StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
@@ -107,12 +112,12 @@ Future<double?> showDecimalPickerDialog({
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: AppDialogTheme.cancelButtonStyle,
-                child: const Text('Cancel'),
+                child: Text(l10n.cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.of(context).pop(selectedValue),
                 style: AppDialogTheme.primaryButtonStyle,
-                child: const Text('OK'),
+                child: Text(l10n.ok),
               ),
             ],
           );

@@ -39,6 +39,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
     super.initState();
     _controller = ExerciseDialogController(
       exerciseProvider: widget.exerciseProvider,
+      context: context,
       existingExercise: widget.existingExercise,
       preselectedExercise: widget.preselectedExercise,
     );

@@ -1,6 +1,7 @@
 // lib/widgets/food/dialogs/edit_food_name_dialog.dart
 import 'package:flutter/material.dart';
 import '../../../config/design_system/dialog_theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 /// Dialog for editing the food name in the food card.
 ///
@@ -52,14 +53,16 @@ class _EditFoodNameDialogState extends State<EditFoodNameDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return AlertDialog(
       backgroundColor: AppDialogTheme.backgroundColor,
       shape: AppDialogTheme.shape,
       contentPadding: AppDialogTheme.contentPadding,
       actionsPadding: AppDialogTheme.actionsPadding,
       insetPadding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 24.0),
-      title: const Text(
-        'Edit Food Name',
+      title: Text(
+        l10n.editFoodName,
         style: AppDialogTheme.titleStyle,
       ),
       content: SingleChildScrollView(
@@ -74,7 +77,7 @@ class _EditFoodNameDialogState extends State<EditFoodNameDialog> {
         TextButton(
           onPressed: () => Navigator.pop(context, null),
           style: AppDialogTheme.cancelButtonStyle,
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         const SizedBox(width: AppDialogTheme.buttonGap),
         FilledButton(
@@ -83,7 +86,7 @@ class _EditFoodNameDialogState extends State<EditFoodNameDialog> {
             Navigator.pop(context, newName);
           },
           style: AppDialogTheme.primaryButtonStyle,
-          child: const Text('Save'),
+          child: Text(l10n.save),
         ),
       ],
     );
