@@ -509,7 +509,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
                     final unit = widget.isMetric ? l10n.kg : l10n.lbs;
                     String suffix = '';
                     if (point.isForwardFilled) {
-                      suffix = ' (tap to add)';
+                      suffix = ' ${l10n.tapToAdd}';
                     }
                     return LineTooltipItem(
                       '${spot.y.toStringAsFixed(1)} $unit$suffix\n${DateFormat('MMM d').format(displayData[index].timestamp)}',
@@ -546,6 +546,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
 
   void _showEditDialog(BuildContext context, WeightData entry, ProgressData progressData) {
     final settingsProvider = context.read<SettingsProvider>();
+    final l10n = AppLocalizations.of(context)!;
 
     showWeightEditDialog(
       context: context,
@@ -558,10 +559,10 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Weight updated successfully'),
+            SnackBar(
+              content: Text(l10n.weightUpdatedSuccessfully),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -572,10 +573,10 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Target weight updated successfully'),
+            SnackBar(
+              content: Text(l10n.targetWeightUpdatedSuccessfully),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -589,10 +590,10 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Starting weight updated successfully'),
+            SnackBar(
+              content: Text(l10n.startingWeightUpdatedSuccessfully),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -603,6 +604,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
 
   void _showAddDialog(BuildContext context, DateTime timestamp, double carriedWeight, ProgressData progressData) {
     final settingsProvider = context.read<SettingsProvider>();
+    final l10n = AppLocalizations.of(context)!;
 
     showWeightEditDialog(
       context: context,
@@ -616,10 +618,10 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Weight entry added successfully'),
+            SnackBar(
+              content: Text(l10n.weightEntryAddedSuccessfully),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -630,10 +632,10 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Target weight updated successfully'),
+            SnackBar(
+              content: Text(l10n.targetWeightUpdatedSuccessfully),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -647,10 +649,10 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Starting weight updated successfully'),
+            SnackBar(
+              content: Text(l10n.startingWeightUpdatedSuccessfully),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -660,10 +662,11 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
   }
 
   Widget _buildCompactStats(Map<String, double> stats, Color textColor) {
+    final l10n = AppLocalizations.of(context)!;
     final statsToShow = [
-      {'label': 'Total Change', 'value': '${stats['totalChange']! >= 0 ? '+' : ''}${stats['totalChange']!.toStringAsFixed(1)}'},
-      {'label': 'Average', 'value': stats['average']!.toStringAsFixed(1)},
-      {'label': 'Weekly Rate', 'value': '${stats['weeklyRate']! >= 0 ? '+' : ''}${stats['weeklyRate']!.toStringAsFixed(1)}'},
+      {'label': l10n.totalChange, 'value': '${stats['totalChange']! >= 0 ? '+' : ''}${stats['totalChange']!.toStringAsFixed(1)}'},
+      {'label': l10n.average, 'value': stats['average']!.toStringAsFixed(1)},
+      {'label': l10n.weeklyRate, 'value': '${stats['weeklyRate']! >= 0 ? '+' : ''}${stats['weeklyRate']!.toStringAsFixed(1)}'},
     ];
 
     return Container(
@@ -706,6 +709,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
   }
 
   Widget _buildEmptyState(Color textColor) {
+    final l10n = AppLocalizations.of(context)!;
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
       child: BackdropFilter(
@@ -735,7 +739,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
           ),
           const SizedBox(height: AppWidgetTheme.spaceLG),
           Text(
-            'No Weight History',
+            l10n.noWeightHistory,
             style: TextStyle(
               fontSize: AppWidgetTheme.fontSizeLG,
               fontWeight: FontWeight.w600,
@@ -744,7 +748,7 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
           ),
           const SizedBox(height: AppWidgetTheme.spaceXS),
           Text(
-            'Add weight entries to see beautiful charts',
+            l10n.addWeightEntriesToSeeCharts,
             style: TextStyle(
               fontSize: AppWidgetTheme.fontSizeSM,
               color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),

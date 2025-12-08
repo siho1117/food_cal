@@ -8,6 +8,7 @@ import '../../config/design_system/accent_colors.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/exercise_provider.dart';
 import '../../providers/home_provider.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Monthly Weight Goal Picker Dialog
 ///
@@ -218,6 +219,7 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return BackdropFilter(
       filter: ImageFilter.blur(
         sigmaX: AppDialogTheme.backdropBlurSigmaX,
@@ -239,14 +241,14 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildModeToggle(),
+                _buildModeToggle(l10n),
                 _buildUnitToggle(),
               ],
             ),
             const SizedBox(height: 16),
             _buildWeightPicker(),
             const SizedBox(height: 20),
-            _buildZoneIndicators(),
+            _buildZoneIndicators(l10n),
           ],
         ),
         actions: [
@@ -271,7 +273,7 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
     );
   }
 
-  Widget _buildModeToggle() {
+  Widget _buildModeToggle(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey.shade200,
@@ -280,8 +282,8 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildModeButton('Lose', _isLossMode),
-          _buildModeButton('Gain', !_isLossMode),
+          _buildModeButton(l10n.lose, _isLossMode),
+          _buildModeButton(l10n.gain, !_isLossMode),
         ],
       ),
     );
@@ -403,7 +405,7 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
     );
   }
 
-  Widget _buildZoneIndicators() {
+  Widget _buildZoneIndicators(AppLocalizations l10n) {
     final currentZone = _currentZone;
 
     if (_isLossMode) {
@@ -411,7 +413,7 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
       return Column(
         children: [
           _buildZoneRow(
-            'Safe',
+            l10n.safe,
             AccentColors.brightGreen,
             _formatRange(_minGoalKg, _lossSafeMax),
             currentZone == 'Safe',
@@ -419,7 +421,7 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
           ),
           const SizedBox(height: 8),
           _buildZoneRow(
-            'Moderate',
+            l10n.moderate,
             AccentColors.goldenYellow,
             _formatRange(_lossSafeMax + 0.1, _lossModerateMax),
             currentZone == 'Moderate',
@@ -427,7 +429,7 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
           ),
           const SizedBox(height: 8),
           _buildZoneRow(
-            'Aggressive',
+            l10n.aggressive,
             AccentColors.brightOrange,
             _formatRange(_lossModerateMax + 0.1, _lossAggressiveMax),
             currentZone == 'Aggressive',
@@ -435,7 +437,7 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
           ),
           const SizedBox(height: 8),
           _buildZoneRow(
-            'Custom',
+            l10n.custom,
             AccentColors.vibrantRed,
             _formatRange(_lossAggressiveMax + 0.1, _maxGoalKg),
             currentZone == 'Custom',
@@ -448,7 +450,7 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
       return Column(
         children: [
           _buildZoneRow(
-            'Gradual',
+            l10n.gradual,
             AccentColors.brightGreen,
             _formatRange(_minGoalKg, _gainGradualMax),
             currentZone == 'Gradual',
@@ -456,7 +458,7 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
           ),
           const SizedBox(height: 8),
           _buildZoneRow(
-            'Moderate',
+            l10n.moderate,
             AccentColors.goldenYellow,
             _formatRange(_gainGradualMax + 0.1, _gainModerateMax),
             currentZone == 'Moderate',
@@ -464,7 +466,7 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
           ),
           const SizedBox(height: 8),
           _buildZoneRow(
-            'Athletic',
+            l10n.athletic,
             AccentColors.brightOrange,
             _formatRange(_gainModerateMax + 0.1, _gainAthleticMax),
             currentZone == 'Athletic',
@@ -472,7 +474,7 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
           ),
           const SizedBox(height: 8),
           _buildZoneRow(
-            'Custom',
+            l10n.custom,
             AccentColors.vibrantRed,
             _formatRange(_gainAthleticMax + 0.1, _maxGoalKg),
             currentZone == 'Custom',

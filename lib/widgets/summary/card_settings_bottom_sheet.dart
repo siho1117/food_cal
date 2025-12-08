@@ -178,10 +178,10 @@ class _CardSettingsBottomSheetState extends State<CardSettingsBottomSheet> {
     Key? key,
   }) {
     return Builder(
+      key: key,
       builder: (context) {
         final l10n = AppLocalizations.of(context)!;
         return Container(
-          key: key,
           margin: const EdgeInsets.only(bottom: AppWidgetTheme.spaceMD),
           decoration: BoxDecoration(
             border: Border.all(

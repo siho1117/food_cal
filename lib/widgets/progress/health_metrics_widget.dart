@@ -120,7 +120,7 @@ class HealthMetricsWidget extends StatelessWidget {
               // BMI Timeline
               _buildTimelineMetric(
                 context,
-                label: 'BMI',
+                label: l10n.bmi,
                 currentValue: bmi?.toStringAsFixed(1) ?? '--',
                 targetValue: targetBMI?.toStringAsFixed(1) ?? '--',
                 progress: bmiProgress ?? 0.0,
@@ -401,7 +401,7 @@ class HealthMetricsWidget extends StatelessWidget {
         children: [
           // Row 1: Title/Label only
           Text(
-            'BMR (Basal Metabolic Rate)',
+            l10n.bmrFullName,
             style: TextStyle(
               fontSize: AppWidgetTheme.fontSizeSM,
               fontWeight: FontWeight.w600,
@@ -433,7 +433,7 @@ class HealthMetricsWidget extends StatelessWidget {
                     ),
                     SizedBox(width: AppWidgetTheme.spaceXS),
                     Text(
-                      'cal/day',
+                      l10n.calPerDay,
                       style: TextStyle(
                         fontSize: AppWidgetTheme.fontSizeSM,
                         fontWeight: FontWeight.w600,
@@ -455,7 +455,7 @@ class HealthMetricsWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(100),
                 ),
                 child: Text(
-                  'BMR',
+                  l10n.bmr,
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -470,7 +470,7 @@ class HealthMetricsWidget extends StatelessWidget {
 
           // Explanation text
           Text(
-            'Calories your body burns at rest',
+            l10n.caloriesYourBodyBurnsAtRest,
             style: TextStyle(
               fontSize: AppWidgetTheme.fontSizeXS,
               fontWeight: FontWeight.w500,
@@ -501,7 +501,7 @@ class HealthMetricsWidget extends StatelessWidget {
             children: [
               // BMI Section
               Text(
-                'BMI (Body Mass Index)',
+                l10n.bmiFullName,
                 style: AppDialogTheme.bodyStyle.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppDialogTheme.colorPrimaryDark,
@@ -516,7 +516,7 @@ class HealthMetricsWidget extends StatelessWidget {
 
               // Body Fat Section
               Text(
-                'Body Fat %',
+                l10n.bodyFatPercentage,
                 style: AppDialogTheme.bodyStyle.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppDialogTheme.colorPrimaryDark,
@@ -563,7 +563,7 @@ class HealthMetricsWidget extends StatelessWidget {
 
               // BMR Section
               Text(
-                'BMR (Basal Metabolic Rate)',
+                l10n.bmrFullName,
                 style: AppDialogTheme.bodyStyle.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppDialogTheme.colorPrimaryDark,
@@ -595,23 +595,23 @@ class HealthMetricsWidget extends StatelessWidget {
       return [
         _ScaleZone(l10n.athletic, 0, 14, AccentColors.brightGreen),
         _ScaleZone(l10n.fitness, 14, 18, AccentColors.goldenYellow),
-        _ScaleZone('Average', 18, 25, AccentColors.brightOrange),
-        _ScaleZone('High', 25, 40, AccentColors.vibrantRed),
+        _ScaleZone(l10n.average, 18, 25, AccentColors.brightOrange),
+        _ScaleZone(l10n.high, 25, 40, AccentColors.vibrantRed),
       ];
     } else if (gender == 'Female') {
       return [
         _ScaleZone(l10n.athletic, 0, 21, AccentColors.brightGreen),
         _ScaleZone(l10n.fitness, 21, 25, AccentColors.goldenYellow),
-        _ScaleZone('Average', 25, 32, AccentColors.brightOrange),
-        _ScaleZone('High', 32, 45, AccentColors.vibrantRed),
+        _ScaleZone(l10n.average, 25, 32, AccentColors.brightOrange),
+        _ScaleZone(l10n.high, 32, 45, AccentColors.vibrantRed),
       ];
     } else {
       // Gender-neutral zones (midpoint between male and female)
       return [
         _ScaleZone(l10n.athletic, 0, 18, AccentColors.brightGreen),
         _ScaleZone(l10n.fitness, 18, 22, AccentColors.goldenYellow),
-        _ScaleZone('Average', 22, 28, AccentColors.brightOrange),
-        _ScaleZone('High', 28, 42, AccentColors.vibrantRed),
+        _ScaleZone(l10n.average, 22, 28, AccentColors.brightOrange),
+        _ScaleZone(l10n.high, 28, 42, AccentColors.vibrantRed),
       ];
     }
   }

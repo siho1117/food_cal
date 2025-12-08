@@ -331,8 +331,8 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Edit Weight',
+                      Text(
+                        l10n.editWeight,
                         style: AppDialogTheme.titleStyle,
                       ),
                       // Add date subtitle if entry exists
@@ -378,7 +378,7 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: AppDialogTheme.cancelButtonStyle,
-                child: const Text('Cancel'),
+                child: Text(l10n.cancel),
               ),
               const SizedBox(width: AppDialogTheme.buttonGap),
 
@@ -386,7 +386,7 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
               FilledButton(
                 onPressed: _handleSave,
                 style: AppDialogTheme.primaryButtonStyle,
-                child: const Text('Save'),
+                child: Text(l10n.save),
               ),
             ],
           ),
@@ -396,13 +396,14 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
   }
 
   String _getLabelForMode() {
+    final l10n = AppLocalizations.of(context)!;
     switch (_currentMode) {
       case WeightMode.start:
-        return 'Starting Weight';
+        return l10n.startingWeight;
       case WeightMode.current:
-        return 'Current Weight';
+        return l10n.currentWeight;
       case WeightMode.target:
-        return 'Target Weight';
+        return l10n.targetWeight;
     }
   }
 
@@ -418,6 +419,7 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
   }
 
   Widget _buildTabSwitcher() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey.shade200,
@@ -427,17 +429,17 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildTabButton(
-            label: 'Start',
+            label: l10n.start,
             isSelected: _currentMode == WeightMode.start,
             onTap: () => _switchMode(WeightMode.start),
           ),
           _buildTabButton(
-            label: 'Current',
+            label: l10n.current,
             isSelected: _currentMode == WeightMode.current,
             onTap: () => _switchMode(WeightMode.current),
           ),
           _buildTabButton(
-            label: 'Target',
+            label: l10n.target,
             isSelected: _currentMode == WeightMode.target,
             onTap: () => _switchMode(WeightMode.target),
           ),

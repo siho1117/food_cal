@@ -410,10 +410,11 @@ class _WeightScrollDialogState extends State<_WeightScrollDialog> {
         _isMetric,
       );
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Weight updated'),
+          SnackBar(
+            content: Text(l10n.weightUpdated),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -704,10 +705,11 @@ class _StartingWeightScrollDialogState extends State<_StartingWeightScrollDialog
     try {
       await widget.settingsProvider.updateStartingWeight(_currentWeight);
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Starting weight updated'),
+          SnackBar(
+            content: Text(l10n.startingWeightUpdated),
             behavior: SnackBarBehavior.floating,
           ),
         );

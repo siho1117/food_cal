@@ -138,7 +138,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get start => '起始';
 
   @override
-  String get current => '当前';
+  String get current => '目前';
 
   @override
   String get goal => '目标';
@@ -171,13 +171,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get weightHistory1Year => '体重历史（1年）';
 
   @override
-  String get totalChange => '总变化';
+  String get totalChange => '總變化';
 
   @override
   String get average => '平均';
 
   @override
-  String get weeklyRate => '周增长率';
+  String get weeklyRate => '每週變化';
 
   @override
   String get bodyFatEstimatePercent => '体脂率估计 %';
@@ -189,7 +189,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get healthMetricsInfo => '健康指标信息';
 
   @override
-  String get fitness => '健身';
+  String get fitness => '健身型';
 
   @override
   String get close => '关闭';
@@ -243,7 +243,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get preset => '预设';
 
   @override
-  String get custom => '自定义';
+  String get custom => '自訂';
 
   @override
   String get chooseExercise => '选择运动';
@@ -336,10 +336,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get height => '身高';
 
   @override
-  String get currentWeight => '当前体重';
+  String get currentWeight => '目前體重';
 
   @override
-  String get startingWeight => '起始体重';
+  String get startingWeight => '起始體重';
 
   @override
   String get gender => '性别';
@@ -354,10 +354,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get genderUpdated => '性别已更新';
 
   @override
-  String get weightUpdated => '体重已更新';
+  String get weightUpdated => '體重已更新';
 
   @override
-  String get startingWeightUpdated => '起始体重已更新';
+  String get startingWeightUpdated => '起始體重已更新';
 
   @override
   String get error => '错误';
@@ -387,7 +387,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get g => '克';
 
   @override
-  String get cm => '厘米';
+  String get cm => '公分';
 
   @override
   String get language => '语言';
@@ -405,7 +405,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get imperial => '英制';
 
   @override
-  String get monthlyWeightGoal => '每月体重目标';
+  String get monthlyWeightGoal => '每月體重目標';
 
   @override
   String get unitsChangedToMetric => '单位已改为公制';
@@ -432,22 +432,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get themeAppliedAllScreens => '主题将应用到所有页面';
 
   @override
-  String get lose => '减重';
+  String get lose => '減少';
 
   @override
-  String get gain => '增重';
+  String get gain => '增加';
 
   @override
   String get safe => '安全';
 
   @override
-  String get aggressive => '激进';
+  String get aggressive => '積極';
 
   @override
-  String get gradual => '渐进';
+  String get gradual => '漸進';
 
   @override
-  String get athletic => '运动型';
+  String get athletic => '運動型';
 
   @override
   String get sendFeedback => '发送反馈';
@@ -495,10 +495,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logActivity => '记录活动';
 
   @override
-  String get weightUpdatedSuccessfully => '体重更新成功';
+  String get weightUpdatedSuccessfully => '體重更新成功';
 
   @override
-  String get targetWeightUpdatedSuccessfully => '目标体重更新成功';
+  String get targetWeightUpdatedSuccessfully => '目標體重更新成功';
 
   @override
   String get addFoodPhoto => '添加食物照片';
@@ -583,13 +583,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorSavingExercise => '保存运动时出错';
 
   @override
-  String get editWeight => '编辑体重';
+  String get editWeight => '編輯體重';
 
   @override
-  String get target => '目标';
+  String get target => '目標';
 
   @override
-  String get targetWeight => '目标体重';
+  String get targetWeight => '目標體重';
 
   @override
   String get failedToSave => '保存失败';
@@ -841,6 +841,48 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get disclaimerText => '免责声明：本报告包含基于用户提供数据的估算值。如需医疗建议，请咨询医疗专业人士。身体成分估算使用标准公式，可能与临床测量值存在差异。';
+
+  @override
+  String get noWeightHistory => '無體重紀錄';
+
+  @override
+  String get addWeightEntriesToSeeCharts => '新增體重紀錄以查看圖表';
+
+  @override
+  String get tapToAdd => '（點擊新增）';
+
+  @override
+  String get startingWeightUpdatedSuccessfully => '起始體重更新成功';
+
+  @override
+  String get weightEntryAddedSuccessfully => '體重紀錄新增成功';
+
+  @override
+  String get heightUpdated => '身高已更新';
+
+  @override
+  String get ft => '英尺';
+
+  @override
+  String get inchesUnit => '英寸';
+
+  @override
+  String get bmr => 'BMR';
+
+  @override
+  String get bmrFullName => 'BMR（基礎代謝率）';
+
+  @override
+  String get bmiFullName => 'BMI（身體質量指數）';
+
+  @override
+  String get bodyFatPercentage => '體脂率 %';
+
+  @override
+  String get caloriesYourBodyBurnsAtRest => '身體靜止時燃燒的卡路里';
+
+  @override
+  String get high => '高';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -1016,7 +1058,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get average => '平均';
 
   @override
-  String get weeklyRate => '周增长率';
+  String get weeklyRate => '每周变化';
 
   @override
   String get bodyFatEstimatePercent => '体脂率估计 %';
@@ -1028,7 +1070,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get healthMetricsInfo => '健康指标信息';
 
   @override
-  String get fitness => '健身';
+  String get fitness => '健身型';
 
   @override
   String get close => '关闭';
@@ -1271,16 +1313,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get themeAppliedAllScreens => '主题将应用到所有页面';
 
   @override
-  String get lose => '减重';
+  String get lose => '减少';
 
   @override
-  String get gain => '增重';
+  String get gain => '增加';
 
   @override
   String get safe => '安全';
 
   @override
-  String get aggressive => '激进';
+  String get aggressive => '积极';
 
   @override
   String get gradual => '渐进';
@@ -1680,6 +1722,48 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get disclaimerText => '免责声明：本报告包含基于用户提供数据的估算值。如需医疗建议，请咨询医疗专业人士。身体成分估算使用标准公式，可能与临床测量值存在差异。';
+
+  @override
+  String get noWeightHistory => '无体重记录';
+
+  @override
+  String get addWeightEntriesToSeeCharts => '添加体重记录以查看图表';
+
+  @override
+  String get tapToAdd => '（点击添加）';
+
+  @override
+  String get startingWeightUpdatedSuccessfully => '起始体重更新成功';
+
+  @override
+  String get weightEntryAddedSuccessfully => '体重记录添加成功';
+
+  @override
+  String get heightUpdated => '身高已更新';
+
+  @override
+  String get ft => '英尺';
+
+  @override
+  String get inchesUnit => '英寸';
+
+  @override
+  String get bmr => 'BMR';
+
+  @override
+  String get bmrFullName => 'BMR（基础代谢率）';
+
+  @override
+  String get bmiFullName => 'BMI（身体质量指数）';
+
+  @override
+  String get bodyFatPercentage => '体脂率 %';
+
+  @override
+  String get caloriesYourBodyBurnsAtRest => '身体静止时燃烧的卡路里';
+
+  @override
+  String get high => '高';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -1855,7 +1939,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get average => '平均';
 
   @override
-  String get weeklyRate => '週增長率';
+  String get weeklyRate => '每週變化';
 
   @override
   String get bodyFatEstimatePercent => '體脂率估計 %';
@@ -1867,7 +1951,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get healthMetricsInfo => '健康指標資訊';
 
   @override
-  String get fitness => '健身';
+  String get fitness => '健身型';
 
   @override
   String get close => '關閉';
@@ -2110,16 +2194,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get themeAppliedAllScreens => '主題將套用到所有頁面';
 
   @override
-  String get lose => '減重';
+  String get lose => '減少';
 
   @override
-  String get gain => '增重';
+  String get gain => '增加';
 
   @override
   String get safe => '安全';
 
   @override
-  String get aggressive => '激進';
+  String get aggressive => '積極';
 
   @override
   String get gradual => '漸進';
@@ -2519,4 +2603,46 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get disclaimerText => '免責聲明：本報告包含基於使用者提供資料的估算值。如需醫療建議，請諮詢醫療專業人士。身體成分估算使用標準公式，可能與臨床測量值存在差異。';
+
+  @override
+  String get noWeightHistory => '無體重紀錄';
+
+  @override
+  String get addWeightEntriesToSeeCharts => '新增體重紀錄以查看圖表';
+
+  @override
+  String get tapToAdd => '（點擊新增）';
+
+  @override
+  String get startingWeightUpdatedSuccessfully => '起始體重更新成功';
+
+  @override
+  String get weightEntryAddedSuccessfully => '體重紀錄新增成功';
+
+  @override
+  String get heightUpdated => '身高已更新';
+
+  @override
+  String get ft => '英尺';
+
+  @override
+  String get inchesUnit => '英寸';
+
+  @override
+  String get bmr => 'BMR';
+
+  @override
+  String get bmrFullName => 'BMR（基礎代謝率）';
+
+  @override
+  String get bmiFullName => 'BMI（身體質量指數）';
+
+  @override
+  String get bodyFatPercentage => '體脂率 %';
+
+  @override
+  String get caloriesYourBodyBurnsAtRest => '身體靜止時燃燒的卡路里';
+
+  @override
+  String get high => '高';
 }

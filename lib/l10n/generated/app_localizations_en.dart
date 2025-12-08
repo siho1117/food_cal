@@ -841,4 +841,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get disclaimerText => 'Disclaimer: This report contains estimates based on user-provided data. Consult healthcare professionals for medical advice. Body composition estimates use standard formulas and may vary from clinical measurements.';
+
+  @override
+  String get noWeightHistory => 'No Weight History';
+
+  @override
+  String get addWeightEntriesToSeeCharts => 'Add weight entries to see beautiful charts';
+
+  @override
+  String get tapToAdd => '(tap to add)';
+
+  @override
+  String get startingWeightUpdatedSuccessfully => 'Starting weight updated successfully';
+
+  @override
+  String get weightEntryAddedSuccessfully => 'Weight entry added successfully';
+
+  @override
+  String get heightUpdated => 'Height updated';
+
+  @override
+  String get ft => 'ft';
+
+  @override
+  String get inchesUnit => 'in';
+
+  @override
+  String get bmr => 'BMR';
+
+  @override
+  String get bmrFullName => 'BMR (Basal Metabolic Rate)';
+
+  @override
+  String get bmiFullName => 'BMI (Body Mass Index)';
+
+  @override
+  String get bodyFatPercentage => 'Body Fat %';
+
+  @override
+  String get caloriesYourBodyBurnsAtRest => 'Calories your body burns at rest';
+
+  @override
+  String get high => 'High';
 }

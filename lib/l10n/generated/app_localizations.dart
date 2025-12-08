@@ -1752,6 +1752,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Disclaimer: This report contains estimates based on user-provided data. Consult healthcare professionals for medical advice. Body composition estimates use standard formulas and may vary from clinical measurements.'**
   String get disclaimerText;
+
+  /// No description provided for @noWeightHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No Weight History'**
+  String get noWeightHistory;
+
+  /// No description provided for @addWeightEntriesToSeeCharts.
+  ///
+  /// In en, this message translates to:
+  /// **'Add weight entries to see beautiful charts'**
+  String get addWeightEntriesToSeeCharts;
+
+  /// No description provided for @tapToAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'(tap to add)'**
+  String get tapToAdd;
+
+  /// No description provided for @startingWeightUpdatedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting weight updated successfully'**
+  String get startingWeightUpdatedSuccessfully;
+
+  /// No description provided for @weightEntryAddedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight entry added successfully'**
+  String get weightEntryAddedSuccessfully;
+
+  /// No description provided for @heightUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Height updated'**
+  String get heightUpdated;
+
+  /// No description provided for @ft.
+  ///
+  /// In en, this message translates to:
+  /// **'ft'**
+  String get ft;
+
+  /// No description provided for @inchesUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'in'**
+  String get inchesUnit;
+
+  /// No description provided for @bmr.
+  ///
+  /// In en, this message translates to:
+  /// **'BMR'**
+  String get bmr;
+
+  /// No description provided for @bmrFullName.
+  ///
+  /// In en, this message translates to:
+  /// **'BMR (Basal Metabolic Rate)'**
+  String get bmrFullName;
+
+  /// No description provided for @bmiFullName.
+  ///
+  /// In en, this message translates to:
+  /// **'BMI (Body Mass Index)'**
+  String get bmiFullName;
+
+  /// No description provided for @bodyFatPercentage.
+  ///
+  /// In en, this message translates to:
+  /// **'Body Fat %'**
+  String get bodyFatPercentage;
+
+  /// No description provided for @caloriesYourBodyBurnsAtRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories your body burns at rest'**
+  String get caloriesYourBodyBurnsAtRest;
+
+  /// No description provided for @high.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get high;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

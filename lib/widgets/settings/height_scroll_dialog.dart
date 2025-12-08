@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../providers/settings_provider.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Height scroll picker dialog with different design from weight
 /// - Metric: Single cm picker (100-250 cm)
@@ -109,10 +110,11 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
 
       await widget.settingsProvider.updateHeight(_currentHeight);
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Height updated'),
+          SnackBar(
+            content: Text(l10n.heightUpdated),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -131,6 +133,7 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AlertDialog(
       backgroundColor: AppDialogTheme.backgroundColor,
       shape: AppDialogTheme.shape,
@@ -139,19 +142,19 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'Height',
+          Text(
+            l10n.height,
             style: AppDialogTheme.titleStyle,
           ),
-          _buildUnitToggle(),
+          _buildUnitToggle(l10n),
         ],
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           _isMetric
-              ? _buildMetricPicker()
-              : _buildImperialPicker(),
+              ? _buildMetricPicker(l10n)
+              : _buildImperialPicker(l10n),
         ],
       ),
       actions: [
@@ -161,13 +164,13 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
             TextButton(
               onPressed: () => Navigator.pop(context),
               style: AppDialogTheme.cancelButtonStyle,
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
             ),
             const SizedBox(width: AppDialogTheme.buttonGap),
             FilledButton(
               onPressed: _handleSave,
               style: AppDialogTheme.primaryButtonStyle,
-              child: const Text('Save'),
+              child: Text(l10n.save),
             ),
           ],
         ),
@@ -175,7 +178,7 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
     );
   }
 
-  Widget _buildUnitToggle() {
+  Widget _buildUnitToggle(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey.shade200,
@@ -184,17 +187,17 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildUnitButton('cm', _isMetric),
-          _buildUnitButton('ft', !_isMetric),
+          _buildUnitButton(l10n.cm, _isMetric, true),
+          _buildUnitButton(l10n.ft, !_isMetric, false),
         ],
       ),
     );
   }
 
-  Widget _buildUnitButton(String label, bool isSelected) {
+  Widget _buildUnitButton(String label, bool isSelected, bool isMetricButton) {
     return GestureDetector(
       onTap: () {
-        if ((label == 'cm' && !_isMetric) || (label == 'ft' && _isMetric)) {
+        if ((isMetricButton && !_isMetric) || (!isMetricButton && _isMetric)) {
           _toggleUnit();
         }
       },
@@ -216,7 +219,7 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
     );
   }
 
-  Widget _buildMetricPicker() {
+  Widget _buildMetricPicker(AppLocalizations l10n) {
     return Container(
       height: 180,
       decoration: BoxDecoration(
@@ -252,11 +255,11 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
             ),
           ),
           // Unit label
-          const Padding(
-            padding: EdgeInsets.only(left: 8, right: 16),
+          Padding(
+            padding: const EdgeInsets.only(left: 8, right: 16),
             child: Text(
-              'cm',
-              style: TextStyle(
+              l10n.cm,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF6B7280),
@@ -268,7 +271,7 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
     );
   }
 
-  Widget _buildImperialPicker() {
+  Widget _buildImperialPicker(AppLocalizations l10n) {
     return Container(
       height: 180,
       decoration: BoxDecoration(
@@ -302,11 +305,11 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
               ),
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
-              'ft',
-              style: TextStyle(
+              l10n.ft,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF6B7280),
@@ -336,11 +339,11 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
               ),
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.only(left: 8, right: 16),
+          Padding(
+            padding: const EdgeInsets.only(left: 8, right: 16),
             child: Text(
-              'in',
-              style: TextStyle(
+              l10n.inchesUnit,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF6B7280),
