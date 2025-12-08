@@ -1429,6 +1429,12 @@ abstract class AppLocalizations {
   /// **'Starting'**
   String get starting;
 
+  /// No description provided for @weightWithUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight ({unit})'**
+  String weightWithUnit(String unit);
+
   /// No description provided for @bmi.
   ///
   /// In en, this message translates to:
@@ -1513,6 +1519,12 @@ abstract class AppLocalizations {
   /// **'NUTRITION SUMMARY'**
   String get nutritionSummary;
 
+  /// No description provided for @totalCaloriesPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Calories ({period})'**
+  String totalCaloriesPeriod(String period);
+
   /// No description provided for @averagePerDay.
   ///
   /// In en, this message translates to:
@@ -1572,6 +1584,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'meals'**
   String get meals;
+
+  /// No description provided for @gramsFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'{consumed}g / {target}g ({percentage}%)'**
+  String gramsFormat(String consumed, String target, String percentage);
 
   /// No description provided for @foodBudget.
   ///
@@ -1735,11 +1753,35 @@ abstract class AppLocalizations {
   /// **'No meals logged today'**
   String get noMealsLoggedToday;
 
+  /// No description provided for @weeklyTotals.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Totals ({count} meals):'**
+  String weeklyTotals(String count);
+
+  /// No description provided for @monthlyTotals.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly Totals ({count} meals):'**
+  String monthlyTotals(String count);
+
   /// No description provided for @dailyTotals.
   ///
   /// In en, this message translates to:
   /// **'Daily Totals:'**
   String get dailyTotals;
+
+  /// No description provided for @macrosShortFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'P: {protein}g  C: {carbs}g  F: {fat}g'**
+  String macrosShortFormat(String protein, String carbs, String fat);
+
+  /// No description provided for @macrosFullFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Protein: {protein}g  |  Carbs: {carbs}g  |  Fat: {fat}g'**
+  String macrosFullFormat(String protein, String carbs, String fat);
 
   /// No description provided for @reportGeneratedBy.
   ///

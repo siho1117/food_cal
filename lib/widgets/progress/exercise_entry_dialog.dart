@@ -300,7 +300,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
                     const SizedBox(height: 6),
                     Flexible(
                       child: Text(
-                        exerciseName,
+                        _controller.getLocalizedExerciseName(exerciseName),
                         style: AppTypography.bodySmall.copyWith(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -434,7 +434,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
                       color: isSelected ? const Color(0xFFF9FAFB) : Colors.white,
                     ),
                     child: Text(
-                      intensity,
+                      _controller.getLocalizedIntensity(intensity),
                       style: AppTypography.labelMedium.copyWith(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,

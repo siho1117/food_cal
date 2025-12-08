@@ -679,6 +679,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get starting => '起始';
 
   @override
+  String weightWithUnit(String unit) {
+    return '体重 ($unit)';
+  }
+
+  @override
   String get bmi => 'BMI';
 
   @override
@@ -723,6 +728,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get nutritionSummary => '营养摘要';
 
   @override
+  String totalCaloriesPeriod(String period) {
+    return '总卡路里 ($period)';
+  }
+
+  @override
   String get averagePerDay => '每日平均';
 
   @override
@@ -751,6 +761,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get meals => '餐';
+
+  @override
+  String gramsFormat(String consumed, String target, String percentage) {
+    return '$consumed克 / $target克 ($percentage%)';
+  }
 
   @override
   String get foodBudget => '饮食预算';
@@ -834,7 +849,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noMealsLoggedToday => '今日暂无饮食记录';
 
   @override
+  String weeklyTotals(String count) {
+    return '每周总计（$count餐）：';
+  }
+
+  @override
+  String monthlyTotals(String count) {
+    return '每月总计（$count餐）：';
+  }
+
+  @override
   String get dailyTotals => '今日总计：';
+
+  @override
+  String macrosShortFormat(String protein, String carbs, String fat) {
+    return '蛋: $protein克  碳: $carbs克  脂: $fat克';
+  }
+
+  @override
+  String macrosFullFormat(String protein, String carbs, String fat) {
+    return '蛋白质: $protein克  |  碳水化合物: $carbs克  |  脂肪: $fat克';
+  }
 
   @override
   String get reportGeneratedBy => '报告由 OptiMate v1.0 生成';
@@ -1560,6 +1595,11 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get starting => '起始';
 
   @override
+  String weightWithUnit(String unit) {
+    return '体重 ($unit)';
+  }
+
+  @override
   String get bmi => 'BMI';
 
   @override
@@ -1604,6 +1644,11 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get nutritionSummary => '营养摘要';
 
   @override
+  String totalCaloriesPeriod(String period) {
+    return '总卡路里 ($period)';
+  }
+
+  @override
   String get averagePerDay => '每日平均';
 
   @override
@@ -1632,6 +1677,11 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get meals => '餐';
+
+  @override
+  String gramsFormat(String consumed, String target, String percentage) {
+    return '$consumed克 / $target克 ($percentage%)';
+  }
 
   @override
   String get foodBudget => '饮食预算';
@@ -1715,7 +1765,27 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get noMealsLoggedToday => '今日暂无饮食记录';
 
   @override
+  String weeklyTotals(String count) {
+    return '每周总计（$count餐）：';
+  }
+
+  @override
+  String monthlyTotals(String count) {
+    return '每月总计（$count餐）：';
+  }
+
+  @override
   String get dailyTotals => '今日总计：';
+
+  @override
+  String macrosShortFormat(String protein, String carbs, String fat) {
+    return '蛋: $protein克  碳: $carbs克  脂: $fat克';
+  }
+
+  @override
+  String macrosFullFormat(String protein, String carbs, String fat) {
+    return '蛋白质: $protein克  |  碳水化合物: $carbs克  |  脂肪: $fat克';
+  }
 
   @override
   String get reportGeneratedBy => '报告由 OptiMate v1.0 生成';
@@ -2441,6 +2511,11 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get starting => '起始';
 
   @override
+  String weightWithUnit(String unit) {
+    return '體重 ($unit)';
+  }
+
+  @override
   String get bmi => 'BMI';
 
   @override
@@ -2485,6 +2560,11 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get nutritionSummary => '營養摘要';
 
   @override
+  String totalCaloriesPeriod(String period) {
+    return '總卡路里 ($period)';
+  }
+
+  @override
   String get averagePerDay => '每日平均';
 
   @override
@@ -2513,6 +2593,11 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get meals => '餐';
+
+  @override
+  String gramsFormat(String consumed, String target, String percentage) {
+    return '$consumed克 / $target克 ($percentage%)';
+  }
 
   @override
   String get foodBudget => '飲食預算';
@@ -2596,7 +2681,27 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get noMealsLoggedToday => '今日暫無飲食記錄';
 
   @override
+  String weeklyTotals(String count) {
+    return '每週總計（$count餐）：';
+  }
+
+  @override
+  String monthlyTotals(String count) {
+    return '每月總計（$count餐）：';
+  }
+
+  @override
   String get dailyTotals => '今日總計：';
+
+  @override
+  String macrosShortFormat(String protein, String carbs, String fat) {
+    return '蛋: $protein克  碳: $carbs克  脂: $fat克';
+  }
+
+  @override
+  String macrosFullFormat(String protein, String carbs, String fat) {
+    return '蛋白質: $protein克  |  碳水化合物: $carbs克  |  脂肪: $fat克';
+  }
 
   @override
   String get reportGeneratedBy => '報告由 OptiMate v1.0 生成';

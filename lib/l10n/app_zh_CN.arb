@@ -331,6 +331,14 @@
   "starting": "起始",
   "goal": "目标",
   "progress": "进度",
+  "weightWithUnit": "体重 ({unit})",
+  "@weightWithUnit": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
   "bmi": "BMI",
   "bodyFatPercent": "体脂率 (%)",
   "na": "无数据",
@@ -347,6 +355,14 @@
 
   "@_SUMMARY_NUTRITION": {},
   "nutritionSummary": "营养摘要",
+  "totalCaloriesPeriod": "总卡路里 ({period})",
+  "@totalCaloriesPeriod": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
   "averagePerDay": "每日平均",
   "overBy": "超出",
   "totalCaloriesConsumed": "总卡路里摄入",
@@ -357,6 +373,20 @@
   "carbohydrates": "碳水化合物",
   "mealsLogged": "记录的餐数",
   "meals": "餐",
+  "gramsFormat": "{consumed}克 / {target}克 ({percentage}%)",
+  "@gramsFormat": {
+    "placeholders": {
+      "consumed": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "percentage": {
+        "type": "String"
+      }
+    }
+  },
 
   "@_SUMMARY_BUDGET": {},
   "foodBudget": "饮食预算",
@@ -392,7 +422,51 @@
   "noMealsLoggedWeek": "本周暂无饮食记录",
   "noMealsLoggedMonth": "本月暂无饮食记录",
   "noMealsLoggedToday": "今日暂无饮食记录",
+  "weeklyTotals": "每周总计（{count}餐）：",
+  "@weeklyTotals": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "monthlyTotals": "每月总计（{count}餐）：",
+  "@monthlyTotals": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "dailyTotals": "今日总计：",
+  "macrosShortFormat": "蛋: {protein}克  碳: {carbs}克  脂: {fat}克",
+  "@macrosShortFormat": {
+    "placeholders": {
+      "protein": {
+        "type": "String"
+      },
+      "carbs": {
+        "type": "String"
+      },
+      "fat": {
+        "type": "String"
+      }
+    }
+  },
+  "macrosFullFormat": "蛋白质: {protein}克  |  碳水化合物: {carbs}克  |  脂肪: {fat}克",
+  "@macrosFullFormat": {
+    "placeholders": {
+      "protein": {
+        "type": "String"
+      },
+      "carbs": {
+        "type": "String"
+      },
+      "fat": {
+        "type": "String"
+      }
+    }
+  },
 
   "@_SUMMARY_FOOTER": {},
   "reportGeneratedBy": "报告由 OptiMate v1.0 生成",
