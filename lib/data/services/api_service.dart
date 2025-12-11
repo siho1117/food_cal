@@ -5,23 +5,25 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart'; // Added for debugPrint
-import 'fallback_provider.dart'; // Import for fallback mechanism
 import 'food_info_parser.dart'; // Import for parsing food information
+import 'qwen_api_adapter.dart'; // Import for Qwen API adapter
 import '../../config/api_config.dart'; // Import for centralized API configuration
 import '../../config/ai_prompts.dart'; // Import for centralized AI prompts
+import '../../utils/nutrition_scaler.dart'; // Import for nutrition value scaling
 
-/// Service to interact with Vision AI (Gemini/OpenAI) for food recognition with fallback to Taiwan VM proxy
+/// Service to interact with Vision AI (Gemini/Qwen) for food recognition
+/// Uses Gemini as primary provider with Qwen as automatic fallback
 class FoodApiService {
   // Singleton instance
   static final FoodApiService _instance = FoodApiService._internal();
   factory FoodApiService() => _instance;
   FoodApiService._internal();
 
-  // Fallback provider
-  final FallbackProvider _fallbackProvider = FallbackProvider();
-
   // Food info parser
   final FoodInfoParser _parser = FoodInfoParser();
+
+  // Qwen API adapter (for fallback)
+  final QwenApiAdapter _qwenAdapter = QwenApiAdapter();
 
   // Get API key from environment variables (provider-agnostic)
   String get _geminiApiKey {
@@ -35,32 +37,62 @@ class FoodApiService {
 
   /// Analyze a food image and return recognition results
   /// Takes a [File] containing the food image
-  /// Returns a Map containing the API response
-  Future<Map<String, dynamic>> analyzeImage(File imageFile) async {
+  /// [language] - Target language for food name (default: "English")
+  /// Returns a Map containing the API response with scaled nutrition values
+  Future<Map<String, dynamic>> analyzeImage(
+    File imageFile, {
+    String language = 'English',
+  }) async {
     // Check if we've exceeded our daily quota
     if (await isDailyQuotaExceeded()) {
       throw Exception('Daily API quota exceeded. Please try again tomorrow.');
     }
 
     try {
-      // Try Gemini first
-      return await _analyzeWithGemini(imageFile);
-    } catch (e) {
-      // Log the error for analytics
-      await _logError('Gemini', e.toString());
-      debugPrint('Gemini direct access error, trying fallback provider: $e');
+      // PRIMARY: Try Gemini first
+      debugPrint('🔷 Trying Gemini API (primary)...');
+      final result = await _analyzeWithGemini(imageFile, language: language);
 
-      // Increment quota usage
+      // Increment quota usage for successful requests
       await incrementQuotaUsage();
 
-      // Use fallback provider (Taiwan VM proxy)
-      return await _fallbackProvider.analyzeImage(
-          imageFile, _geminiApiKey, ApiConfig.visionModel);
+      // Scale nutrition values before returning
+      return NutritionScaler.scale(result);
+    } catch (geminiError) {
+      // Log Gemini error
+      await _logError('Gemini', geminiError.toString());
+      debugPrint('⚠️ Gemini failed, trying Qwen backup: $geminiError');
+
+      try {
+        // BACKUP: Try Qwen
+        debugPrint('🟡 Trying Qwen API (backup)...');
+        final qwenResult = await _qwenAdapter.analyzeImage(imageFile, language: language);
+
+        // Increment quota usage for successful requests
+        await incrementQuotaUsage();
+
+        // Parse and scale the result
+        final parsed = _parser.extractFromText(qwenResult['text']);
+        return NutritionScaler.scale(parsed);
+      } catch (qwenError) {
+        // Log Qwen error
+        await _logError('Qwen', qwenError.toString());
+        debugPrint('❌ Both Gemini and Qwen failed');
+
+        // Increment quota usage
+        await incrementQuotaUsage();
+
+        // Both providers failed
+        throw Exception('All API providers failed. Gemini: $geminiError, Qwen: $qwenError');
+      }
     }
   }
 
   /// Analyze food image using Gemini's API directly
-  Future<Map<String, dynamic>> _analyzeWithGemini(File imageFile) async {
+  Future<Map<String, dynamic>> _analyzeWithGemini(
+    File imageFile, {
+    String language = 'English',
+  }) async {
     // Convert image to base64
     final bytes = await imageFile.readAsBytes();
     final base64Image = base64Encode(bytes);
@@ -68,10 +100,10 @@ class FoodApiService {
     // MIME type: PhotoCompressionService always outputs JPEG
     const String mimeType = 'image/jpeg';
 
-    debugPrint('📤 Sending to Gemini API with MIME type: $mimeType');
+    debugPrint('📤 Sending to Gemini API with MIME type: $mimeType, language: $language');
 
-    // Combine system and user prompts for Gemini
-    final combinedPrompt = '${AiPrompts.foodImageSystemPrompt}\n\n${AiPrompts.foodImageUserPrompt}';
+    // Combine system and user prompts for Gemini with language parameter
+    final combinedPrompt = '${AiPrompts.foodImageSystemPrompt(language)}\n\n${AiPrompts.foodImageUserPrompt(language)}';
 
     // Create Gemini API request body
     final requestBody = {
@@ -135,9 +167,6 @@ class FoodApiService {
       }
     }
 
-    // Increment quota usage for successful requests
-    await incrementQuotaUsage();
-
     // Extract text from Gemini response
     if (responseData['candidates'] != null &&
         responseData['candidates'].isNotEmpty &&
@@ -164,19 +193,42 @@ class FoodApiService {
     }
 
     try {
-      // Try Gemini first
-      return await _getFoodInfoFromGemini(name);
-    } catch (e) {
-      // Log the error for analytics
-      await _logError('Gemini', e.toString());
-      debugPrint('Gemini error, using fallback provider: $e');
+      // PRIMARY: Try Gemini first
+      debugPrint('🔷 Getting food info from Gemini (primary)...');
+      final result = await _getFoodInfoFromGemini(name);
 
-      // Increment quota usage
+      // Increment quota usage for successful requests
       await incrementQuotaUsage();
 
-      // Use fallback provider
-      return await _fallbackProvider.getFoodInformation(
-          name, _geminiApiKey, ApiConfig.textModel);
+      // Scale nutrition values before returning
+      return NutritionScaler.scale(result);
+    } catch (geminiError) {
+      // Log Gemini error
+      await _logError('Gemini', geminiError.toString());
+      debugPrint('⚠️ Gemini failed, trying Qwen backup: $geminiError');
+
+      try {
+        // BACKUP: Try Qwen
+        debugPrint('🟡 Getting food info from Qwen (backup)...');
+        final qwenResult = await _qwenAdapter.getFoodInformation(name);
+
+        // Increment quota usage
+        await incrementQuotaUsage();
+
+        // Parse and scale the result
+        final parsed = _parser.extractFromText(qwenResult['text']);
+        return NutritionScaler.scale(parsed);
+      } catch (qwenError) {
+        // Log Qwen error
+        await _logError('Qwen', qwenError.toString());
+        debugPrint('❌ Both Gemini and Qwen failed for food info');
+
+        // Increment quota usage
+        await incrementQuotaUsage();
+
+        // Both providers failed
+        throw Exception('All API providers failed. Gemini: $geminiError, Qwen: $qwenError');
+      }
     }
   }
 
@@ -229,9 +281,6 @@ class FoodApiService {
     // Parse Gemini response
     final responseData = jsonDecode(response.body);
     debugPrint('Gemini Response: $responseData');
-
-    // Increment quota usage for successful requests
-    await incrementQuotaUsage();
 
     // Extract text from Gemini response
     if (responseData['candidates'] != null &&

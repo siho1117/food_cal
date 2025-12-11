@@ -47,15 +47,20 @@ class PhotoCompressionService {
   /// **Process image through food recognition API**
   /// Compresses image and calls API in one operation
   /// This is the main method for the complete API flow
-  Future<FoodRecognitionResult> processImage(File imageFile) async {
+  /// [language] - Target language for food name (default: "English")
+  Future<FoodRecognitionResult> processImage(
+    File imageFile, {
+    String language = 'English',
+  }) async {
     try {
       // STEP 1: Optimize for API (Reduce size, maintain quality)
       final File optimizedFile = await _optimizeForAPI(imageFile);
 
       // STEP 2: Call Food Recognition API
-      debugPrint('🔥 Calling food recognition API...');
+      debugPrint('🔥 Calling food recognition API with language: $language');
       final List<FoodItem> recognizedItems = await _repository.recognizeFood(
         optimizedFile,
+        language: language,
       );
 
       // STEP 3: Return Results

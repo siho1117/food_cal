@@ -14,16 +14,21 @@ class AiPrompts {
 
   /// System prompt for food image recognition
   /// Sets the AI's behavior and output format requirements
-  static const String foodImageSystemPrompt =
-      "Food recognition. Return ONLY JSON with exact values (no rounding). "
-      "Name: capitalize first letter, max 8 words, no parentheses. "
-      "Assume 1.017 servings.";
+  /// [language] - Target language for food name (e.g., "English", "Simplified Chinese", "Traditional Chinese", "Spanish")
+  static String foodImageSystemPrompt(String language) =>
+      "You are a food recognition system. CRITICAL: The food name MUST be written in $language language. "
+      "Return ONLY valid JSON with exact numeric values (no rounding). "
+      "Food name requirements: write in $language, capitalize first letter, max 8 words, no parentheses. "
+      "Nutrition values: assume exactly 1.0 serving size.";
 
   /// User prompt for food image recognition
   /// Instructs the AI on what information to extract from the image
-  static const String foodImageUserPrompt =
-      "Identify food, assume 1.017 servings, return ONLY this JSON: "
-      "{\"name\": \"Food name\", \"calories\": 0, \"protein\": 0, \"carbs\": 0, \"fat\": 0}";
+  /// [language] - Target language for food name (e.g., "English", "Simplified Chinese", "Traditional Chinese", "Spanish")
+  static String foodImageUserPrompt(String language) =>
+      "Identify the food in this image. Assume 1.0 serving size. "
+      "IMPORTANT: Write the food name in $language language. "
+      "Return ONLY this JSON structure (no markdown, no code blocks): "
+      '{"name": "Food name in $language", "calories": 0, "protein": 0, "carbs": 0, "fat": 0}';
 
   // ═══════════════════════════════════════════════════════════════
   // FOOD INFORMATION LOOKUP PROMPTS

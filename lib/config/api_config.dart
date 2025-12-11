@@ -1,24 +1,24 @@
 // lib/config/api_config.dart
 
 import 'providers/gemini_config.dart';
-// import 'providers/openai_config.dart';  // Uncomment to switch to OpenAI
 
 /// Main API Configuration
 ///
 /// This file acts as the central access point for all API configurations.
-/// To switch providers, simply change the import above.
+/// To switch providers, update the constants below.
 ///
-/// Current Provider: Google Gemini (gemini-2.0-flash-exp)
-/// Backup Available: OpenAI (gpt-4o-mini) - see providers/openai_config.dart
+/// Current Provider: Google Gemini (primary) with Qwen as automatic fallback
+/// Provider configurations: see providers/gemini_config.dart and providers/qwen_config.dart
+/// Note: Qwen is accessed directly via QwenApiAdapter, not through this config file
 class ApiConfig {
   // Private constructor to prevent instantiation
   ApiConfig._();
 
   // ═══════════════════════════════════════════════════════════════
-  // ACTIVE PROVIDER CONFIGURATION
+  // ACTIVE PROVIDER CONFIGURATION - GEMINI (PRIMARY)
   // ═══════════════════════════════════════════════════════════════
 
-  /// Base URL for the active API provider
+  /// Base URL for the active API provider (Gemini)
   static const String geminiBaseUrl = GeminiConfig.baseUrl;
 
   /// API endpoint path
@@ -32,14 +32,6 @@ class ApiConfig {
 
   /// Environment variable key for API key
   static const String apiKeyEnvVar = GeminiConfig.apiKeyEnvVar;
-
-  // ═══════════════════════════════════════════════════════════════
-  // VM PROXY CONFIGURATION (Fallback Provider)
-  // ═══════════════════════════════════════════════════════════════
-
-  static const String vmProxyUrl = '35.201.20.109';
-  static const int vmProxyPort = 3000;
-  static const String vmProxyEndpoint = '/api/openai-proxy';
 
   // ═══════════════════════════════════════════════════════════════
   // QUOTA CONFIGURATION

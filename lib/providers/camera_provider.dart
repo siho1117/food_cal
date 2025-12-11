@@ -60,6 +60,11 @@ class CameraProvider {
     File? imageFile;
     FoodRecognitionResult? result;
 
+    // Get user's language from locale BEFORE any async operations
+    final locale = Localizations.localeOf(context);
+    final language = _getLanguageName(locale);
+    debugPrint('📍 Using language for food recognition: $language (${locale.toString()})');
+
     try {
       // ═══════════════════════════════════════════════════════════
       // STEP 1: Pick Image - NO LOADING (let user select)
@@ -115,10 +120,10 @@ class CameraProvider {
       // ═══════════════════════════════════════════════════════════
       // STEP 5: Call Pure API Service (compression + API)
       // ═══════════════════════════════════════════════════════════
-      result = await _apiService.processImage(imageFile);
+      result = await _apiService.processImage(imageFile, language: language);
 
       // ═══════════════════════════════════════════════════════════
-      // STEP 5: Hide Loading
+      // STEP 6: Hide Loading
       // ═══════════════════════════════════════════════════════════
       hideFoodRecognitionLoading();
 
@@ -287,6 +292,54 @@ class CameraProvider {
     } catch (e) {
       debugPrint('❌ Error saving to gallery: $e');
       return false;
+    }
+  }
+
+  /// Convert locale to full language name for API
+  /// Handles both language code and region variants (e.g., zh_CN vs zh_TW)
+  String _getLanguageName(Locale locale) {
+    final languageCode = locale.languageCode.toLowerCase();
+    final countryCode = locale.countryCode?.toLowerCase();
+
+    // Handle Chinese variants based on country/region
+    if (languageCode == 'zh') {
+      if (countryCode == 'tw' || countryCode == 'hk' || countryCode == 'mo') {
+        return 'Traditional Chinese';  // Taiwan, Hong Kong, Macau
+      } else {
+        return 'Simplified Chinese';  // Default to Simplified for mainland China
+      }
+    }
+
+    // Handle other languages
+    switch (languageCode) {
+      case 'en':
+        return 'English';
+      case 'es':
+        return 'Spanish';
+      case 'fr':
+        return 'French';
+      case 'de':
+        return 'German';
+      case 'ja':
+        return 'Japanese';
+      case 'ko':
+        return 'Korean';
+      case 'it':
+        return 'Italian';
+      case 'pt':
+        return 'Portuguese';
+      case 'ru':
+        return 'Russian';
+      case 'ar':
+        return 'Arabic';
+      case 'hi':
+        return 'Hindi';
+      case 'th':
+        return 'Thai';
+      case 'vi':
+        return 'Vietnamese';
+      default:
+        return 'English'; // Default fallback
     }
   }
 

@@ -17,10 +17,14 @@ class FoodRepository {
   /// Recognize food from an image and return results with saved image
   /// This is the main business logic that coordinates API, image storage, and data parsing
   /// Takes an image file and returns a list of recognized food items
-  Future<List<FoodItem>> recognizeFood(File imageFile) async {
+  /// [language] - Target language for food name (default: "English")
+  Future<List<FoodItem>> recognizeFood(
+    File imageFile, {
+    String language = 'English',
+  }) async {
     try {
       // Call the API to analyze the image
-      final analysisResult = await _apiService.analyzeImage(imageFile);
+      final analysisResult = await _apiService.analyzeImage(imageFile, language: language);
 
       // Save the image file for reference using FoodImageService
       final savedImagePath = await FoodImageService.saveImageFromFile(imageFile);
