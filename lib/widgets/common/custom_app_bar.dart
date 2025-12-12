@@ -60,6 +60,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                           'assets/branding/logo.png',
                           height: 32,
                           fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
+                          isAntiAlias: true,
                           errorBuilder: (context, error, stackTrace) {
                             // If logo fails to load, show nothing
                             return const SizedBox.shrink();

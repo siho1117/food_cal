@@ -74,26 +74,39 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo container
+                    // Logo
                     Container(
-                      width: 120,
-                      height: 120,
+                      width: 150,
+                      height: 150,
                       decoration: BoxDecoration(
-                        color: AppColors.textDark,
-                        shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.textDark.withValues(alpha: 0.3),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 20,
                             spreadRadius: 5,
                             offset: const Offset(0, 10),
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.fastfood,
-                        color: Colors.white,
-                        size: 60,
+                      child: Image.asset(
+                        'assets/branding/logo.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          // Fallback to icon if logo fails to load
+                          return Container(
+                            width: 120,
+                            height: 120,
+                            decoration: const BoxDecoration(
+                              color: AppColors.textDark,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.fastfood,
+                              color: Colors.white,
+                              size: 60,
+                            ),
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(height: 30),
