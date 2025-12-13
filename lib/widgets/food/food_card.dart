@@ -141,37 +141,18 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
               ),
             ),
 
-          // App logo and name - top left (Row 1)
+          // App name - top left (Row 1)
           Positioned(
             left: 28,
             top: 16,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Logo
-                Image.asset(
-                  'assets/branding/logo.png',
-                  height: 26,
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.high,
-                  isAntiAlias: true,
-                  errorBuilder: (context, error, stackTrace) {
-                    // If logo fails to load, show nothing
-                    return const SizedBox.shrink();
-                  },
-                ),
-                const SizedBox(width: 6),
-                // App name
-                const Text(
-                  'OptiMate',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
+            child: const Text(
+              'OptiMate',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
 
@@ -421,10 +402,9 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  Icon(
-                    Icons.local_fire_department_rounded,
-                    size: 20,
-                    color: Colors.white.withValues(alpha: 0.7),
+                  const Text(
+                    '🔥',
+                    style: TextStyle(fontSize: 20),
                   ),
                   const SizedBox(width: 6),
                   if (widget.isEditable && widget.caloriesController != null)
@@ -557,36 +537,36 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
       children: [
         // Protein (not editable in preview mode)
         Expanded(
-          child: _buildMacroPill(
+          child: _buildMacroPillWithEmoji(
             label: l10n.protein,
             value: widget.foodItem.proteins,
             controller: widget.proteinController,
             color: NutritionColors.proteinColor,
-            icon: Icons.set_meal,
+            emoji: '🥩',
             onPreviewTap: null, // Removed: Not editable in preview mode
           ),
         ),
         const SizedBox(width: 10),
         // Carbs (not editable in preview mode)
         Expanded(
-          child: _buildMacroPill(
+          child: _buildMacroPillWithEmoji(
             label: l10n.carbs,
             value: widget.foodItem.carbs,
             controller: widget.carbsController,
             color: NutritionColors.carbsColor,
-            icon: Icons.local_pizza,
+            emoji: '🍞',
             onPreviewTap: null, // Removed: Not editable in preview mode
           ),
         ),
         const SizedBox(width: 10),
         // Fat (not editable in preview mode)
         Expanded(
-          child: _buildMacroPill(
+          child: _buildMacroPillWithEmoji(
             label: l10n.fat,
             value: widget.foodItem.fats,
             controller: widget.fatController,
             color: NutritionColors.fatColor,
-            icon: Icons.grain_rounded,
+            emoji: '🥑',
             onPreviewTap: null, // Removed: Not editable in preview mode
           ),
         ),
@@ -594,12 +574,12 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
     );
   }
 
-  Widget _buildMacroPill({
+  Widget _buildMacroPillWithEmoji({
     required String label,
     required double value,
     TextEditingController? controller,
     required Color color,
-    required IconData icon,
+    required String emoji,
     VoidCallback? onPreviewTap,
   }) {
     return Column(
@@ -618,16 +598,15 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
         const SizedBox(height: 6),
         Row(
           children: [
-            Icon(
-              icon,
-              size: 18,
-              color: Colors.white.withValues(alpha: 0.7),
+            Text(
+              emoji,
+              style: const TextStyle(fontSize: 18),
             ),
             const SizedBox(width: 6),
             if (widget.isEditable && controller != null)
               Expanded(
                 child: GestureDetector(
-                  onTap: () => _showMacroPicker(context, label, controller),
+                  onTap: () => _showMacroPicker(context, label, controller, emoji),
                   child: AbsorbPointer(
                     child: TextField(
                       controller: controller,
@@ -710,6 +689,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
     BuildContext context,
     String label,
     TextEditingController? controller,
+    String emoji,
   ) async {
     if (controller == null) return;
 
@@ -718,6 +698,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
       context: context,
       label: label,
       currentValue: currentValue,
+      emoji: emoji,
     );
     if (result != null) {
       controller.text = result.toString();

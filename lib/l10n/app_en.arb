@@ -243,7 +243,17 @@
   "calories": "CALORIES",
   "serving": "SERVING",
   "ok": "OK",
-  "addCostPerServing": "Add Cost per Serving",
+  "addCostPerServing": "Food Cost",
+  "editCalories": "Edit Calories",
+  "editServingSize": "Edit Serving Size",
+  "editMacro": "Edit {macroName} (g)",
+  "@editMacro": {
+    "placeholders": {
+      "macroName": {
+        "type": "String"
+      }
+    }
+  },
   "cents": "cents",
   "orEnterAmount": "Or enter amount over ${maxDollars}:",
   "@orEnterAmount": {

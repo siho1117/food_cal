@@ -53,11 +53,12 @@ class FoodCardPickers {
   }) async {
     return await showNumberPickerDialog(
       context: context,
-      title: 'Select Calories',
+      title: AppLocalizations.of(context)!.editCalories,
       initialValue: currentValue,
       minValue: 0,
       maxValue: 9999,
       step: 1,
+      icon: AnimatedEmojis.fire,
     );
   }
 
@@ -77,11 +78,12 @@ class FoodCardPickers {
   }) async {
     return await showDecimalPickerDialog(
       context: context,
-      title: 'Select Serving Size',
+      title: AppLocalizations.of(context)!.editServingSize,
       initialValue: currentValue,
       minValue: 0.1,
       maxValue: 20.0,
       decimalPlaces: 1,
+      icon: AnimatedEmojis.spaghetti,
     );
   }
 
@@ -93,6 +95,7 @@ class FoodCardPickers {
   /// - [context] - BuildContext for showing dialog
   /// - [label] - Label for the macro (e.g., "Protein", "Carbs", "Fat")
   /// - [currentValue] - Current macro value in grams (default: 0)
+  /// - [emoji] - Emoji to display in the dialog (e.g., "🥩", "🍞", "🥑")
   ///
   /// **Returns:**
   /// - [Future<int?>] - Selected grams (0-999), or null if cancelled
@@ -102,14 +105,16 @@ class FoodCardPickers {
     required BuildContext context,
     required String label,
     required int currentValue,
+    required String emoji,
   }) async {
     return await showNumberPickerDialog(
       context: context,
-      title: 'Select $label (g)',
+      title: AppLocalizations.of(context)!.editMacro(label),
       initialValue: currentValue,
       minValue: 0,
       maxValue: 999,
       step: 1,
+      emoji: emoji,
     );
   }
 

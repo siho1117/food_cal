@@ -175,13 +175,13 @@ class _CurrencyPickerDialogState extends State<CurrencyPickerDialog> {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 style: AppDialogTheme.cancelButtonStyle,
-                child: const Text('Cancel'),
+                child: Text(AppLocalizations.of(context)!.cancel),
               ),
               const SizedBox(width: AppDialogTheme.buttonGap),
               FilledButton(
                 onPressed: _handleSave,
                 style: AppDialogTheme.primaryButtonStyle,
-                child: const Text('Save'),
+                child: Text(AppLocalizations.of(context)!.save),
               ),
             ],
           ),

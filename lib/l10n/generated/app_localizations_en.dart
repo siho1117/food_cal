@@ -554,7 +554,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ok => 'OK';
 
   @override
-  String get addCostPerServing => 'Add Cost per Serving';
+  String get addCostPerServing => 'Food Cost';
+
+  @override
+  String get editCalories => 'Edit Calories';
+
+  @override
+  String get editServingSize => 'Edit Serving Size';
+
+  @override
+  String editMacro(String macroName) {
+    return 'Edit $macroName (g)';
+  }
 
   @override
   String get cents => 'cents';

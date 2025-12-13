@@ -554,7 +554,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ok => '确定';
 
   @override
-  String get addCostPerServing => '添加每份成本';
+  String get addCostPerServing => '食品成本';
+
+  @override
+  String get editCalories => '编辑卡路里';
+
+  @override
+  String get editServingSize => '编辑份量';
+
+  @override
+  String editMacro(String macroName) {
+    return '编辑$macroName（克）';
+  }
 
   @override
   String get cents => '分';
@@ -1470,7 +1481,18 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get ok => '确定';
 
   @override
-  String get addCostPerServing => '添加每份成本';
+  String get addCostPerServing => '食品成本';
+
+  @override
+  String get editCalories => '编辑卡路里';
+
+  @override
+  String get editServingSize => '编辑份量';
+
+  @override
+  String editMacro(String macroName) {
+    return '编辑$macroName（克）';
+  }
 
   @override
   String get cents => '分';
@@ -2386,7 +2408,18 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get ok => '確定';
 
   @override
-  String get addCostPerServing => '添加每份成本';
+  String get addCostPerServing => '食品成本';
+
+  @override
+  String get editCalories => '編輯卡路里';
+
+  @override
+  String get editServingSize => '編輯份量';
+
+  @override
+  String editMacro(String macroName) {
+    return '編輯$macroName（克）';
+  }
 
   @override
   String get cents => '分';

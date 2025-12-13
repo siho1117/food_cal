@@ -1186,8 +1186,26 @@ abstract class AppLocalizations {
   /// No description provided for @addCostPerServing.
   ///
   /// In en, this message translates to:
-  /// **'Add Cost per Serving'**
+  /// **'Food Cost'**
   String get addCostPerServing;
+
+  /// No description provided for @editCalories.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Calories'**
+  String get editCalories;
+
+  /// No description provided for @editServingSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Serving Size'**
+  String get editServingSize;
+
+  /// No description provided for @editMacro.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit {macroName} (g)'**
+  String editMacro(String macroName);
 
   /// No description provided for @cents.
   ///

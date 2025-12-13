@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:numberpicker/numberpicker.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 
@@ -12,8 +14,17 @@ Future<int?> showNumberPickerDialog({
   required int minValue,
   required int maxValue,
   int step = 1,
+  AnimatedEmojiData? icon,
+  String? emoji,
 }) async {
-  int selectedValue = initialValue;
+  // Calculate the initial index based on value and step
+  final totalItems = ((maxValue - minValue) ~/ step) + 1;
+  final initialIndex = ((initialValue - minValue) ~/ step).clamp(0, totalItems - 1);
+
+  late FixedExtentScrollController scrollController;
+  scrollController = FixedExtentScrollController(initialItem: initialIndex);
+
+  int selectedValue = minValue + (initialIndex * step);
 
   return showDialog<int>(
     context: context,
@@ -27,28 +38,65 @@ Future<int?> showNumberPickerDialog({
             shape: AppDialogTheme.shape,
             contentPadding: AppDialogTheme.contentPadding,
             actionsPadding: AppDialogTheme.actionsPadding,
-            title: Text(
-              title,
-              style: AppDialogTheme.titleStyle,
-            ),
-            content: NumberPicker(
-              value: selectedValue,
-              minValue: minValue,
-              maxValue: maxValue,
-              step: step,
-              onChanged: (value) => setState(() => selectedValue = value),
-              textStyle: AppDialogTheme.bodyStyle.copyWith(
-                fontSize: 20,
-              ),
-              selectedTextStyle: AppDialogTheme.titleStyle.copyWith(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-              ),
+            title: icon != null
+                ? Row(
+                    children: [
+                      AnimatedEmoji(
+                        icon,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        title,
+                        style: AppDialogTheme.titleStyle,
+                      ),
+                    ],
+                  )
+                : emoji != null
+                    ? Row(
+                        children: [
+                          Text(
+                            emoji,
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            title,
+                            style: AppDialogTheme.titleStyle,
+                          ),
+                        ],
+                      )
+                    : Text(
+                        title,
+                        style: AppDialogTheme.titleStyle,
+                      ),
+            content: Container(
+              height: 180,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppDialogTheme.borderRadiusSmall),
-                border: Border.all(
-                  color: AppDialogTheme.inputBorderColor,
-                  width: AppDialogTheme.inputBorderWidth,
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: CupertinoPicker(
+                scrollController: scrollController,
+                itemExtent: 40,
+                onSelectedItemChanged: (index) {
+                  setState(() {
+                    selectedValue = minValue + (index * step);
+                  });
+                },
+                children: List.generate(
+                  totalItems,
+                  (index) => Center(
+                    child: Text(
+                      '${minValue + (index * step)}',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -81,8 +129,27 @@ Future<double?> showDecimalPickerDialog({
   required double minValue,
   required double maxValue,
   int decimalPlaces = 1,
+  AnimatedEmojiData? icon,
 }) async {
-  double selectedValue = initialValue;
+  // Split initial value into integer and decimal parts
+  final integerPart = initialValue.floor();
+  final decimalPart = ((initialValue - integerPart) * 10).round();
+
+  final minInteger = minValue.floor();
+  final maxInteger = maxValue.floor();
+
+  late FixedExtentScrollController integerController;
+  late FixedExtentScrollController decimalController;
+
+  integerController = FixedExtentScrollController(
+    initialItem: (integerPart - minInteger).clamp(0, maxInteger - minInteger),
+  );
+  decimalController = FixedExtentScrollController(
+    initialItem: decimalPart.clamp(0, 9),
+  );
+
+  int selectedInteger = integerPart;
+  int selectedDecimal = decimalPart;
 
   return showDialog<double>(
     context: context,
@@ -96,16 +163,95 @@ Future<double?> showDecimalPickerDialog({
             shape: AppDialogTheme.shape,
             contentPadding: AppDialogTheme.contentPadding,
             actionsPadding: AppDialogTheme.actionsPadding,
-            title: Text(
-              title,
-              style: AppDialogTheme.titleStyle,
-            ),
-            content: DecimalNumberPicker(
-              value: selectedValue,
-              minValue: minValue,
-              maxValue: maxValue,
-              decimalPlaces: decimalPlaces,
-              onChanged: (value) => setState(() => selectedValue = value),
+            title: icon != null
+                ? Row(
+                    children: [
+                      AnimatedEmoji(
+                        icon,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        title,
+                        style: AppDialogTheme.titleStyle,
+                      ),
+                    ],
+                  )
+                : Text(
+                    title,
+                    style: AppDialogTheme.titleStyle,
+                  ),
+            content: Container(
+              height: 180,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Integer picker
+                  Expanded(
+                    child: CupertinoPicker(
+                      scrollController: integerController,
+                      itemExtent: 40,
+                      onSelectedItemChanged: (index) {
+                        setState(() {
+                          selectedInteger = minInteger + index;
+                        });
+                      },
+                      children: List.generate(
+                        (maxInteger - minInteger) + 1,
+                        (index) => Center(
+                          child: Text(
+                            '${minInteger + index}',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1F2937),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Decimal point
+                  const Text(
+                    '.',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                  // Decimal picker
+                  Expanded(
+                    child: CupertinoPicker(
+                      scrollController: decimalController,
+                      itemExtent: 40,
+                      onSelectedItemChanged: (index) {
+                        setState(() {
+                          selectedDecimal = index;
+                        });
+                      },
+                      children: List.generate(
+                        10,
+                        (index) => Center(
+                          child: Text(
+                            '$index',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1F2937),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             actionsAlignment: MainAxisAlignment.end,
             actions: [
@@ -115,7 +261,10 @@ Future<double?> showDecimalPickerDialog({
                 child: Text(l10n.cancel),
               ),
               FilledButton(
-                onPressed: () => Navigator.of(context).pop(selectedValue),
+                onPressed: () {
+                  final finalValue = selectedInteger + (selectedDecimal / 10.0);
+                  Navigator.of(context).pop(finalValue);
+                },
                 style: AppDialogTheme.primaryButtonStyle,
                 child: Text(l10n.ok),
               ),

@@ -86,13 +86,28 @@ class FoodLogWidget extends StatelessWidget {
                         ),
                       ],
                     ),
-                    // Add button
-                    IconButton(
-                      onPressed: () => showQuickActionsDialog(context),
-                      icon: Icon(Icons.add, color: textColor),
-                      tooltip: AppLocalizations.of(context)!.quickActions,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                    // Add button with background
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => showQuickActionsDialog(context),
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: textColor.withValues(alpha: 0.12),
+                          ),
+                          child: Center(
+                            child: Icon(
+                              Icons.add,
+                              size: 20,
+                              color: textColor,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
