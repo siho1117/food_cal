@@ -1,7 +1,9 @@
 // lib/widgets/food/helpers/food_card_pickers.dart
 import 'package:flutter/material.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../common/number_picker_dialog.dart';
-import '../../common/cost_picker_overlay.dart';
+import '../../common/currency_picker_dialog.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 /// Static helper class for food card picker dialogs.
 ///
@@ -111,37 +113,48 @@ class FoodCardPickers {
     );
   }
 
-  /// Shows a cost picker overlay for selecting cost per serving (editable mode).
+  /// Shows a cost picker dialog for selecting cost per serving (editable mode).
   ///
   /// This is used in the food log edit dialog where users can modify
   /// existing food items.
   ///
   /// **Parameters:**
+  /// - [context] - BuildContext for showing dialog
   /// - [currentValue] - Current cost value (default: 0.0)
   ///
   /// **Returns:**
   /// - [Future<double?>] - Selected cost ($0.00-$999.99+), or null if cancelled
   ///
   /// **Features:**
-  /// - Dual-column picker for dollars and cents ($0.00-$999.99)
-  /// - Manual input field for amounts > $999
-  /// - Uses overlay system for guaranteed z-index control
+  /// - CupertinoPicker for dollars and cents ($0.00-$999.99)
+  /// - Manual input field with two-way sync
+  /// - Currency symbol ($) displayed in both picker and input
   static Future<double?> showCostPicker({
+    required BuildContext context,
     required double currentValue,
   }) async {
-    return await showCostPickerOverlay(
-      initialValue: currentValue,
-      showManualInput: true, // Enable manual input for food log editing
-      maxDollars: 999,
+    double? result;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => CurrencyPickerDialog(
+        initialValue: currentValue,
+        title: AppLocalizations.of(context)!.addCostPerServing,
+        icon: AnimatedEmojis.moneyWithWings,
+        onSave: (value) async {
+          result = value;
+        },
+      ),
     );
+    return result;
   }
 
-  /// Shows a cost picker overlay in preview mode (after AI recognition).
+  /// Shows a cost picker dialog in preview mode (after AI recognition).
   ///
   /// This is used during the 8-second preview period after food recognition,
   /// allowing users to add cost information before the item is saved.
   ///
   /// **Parameters:**
+  /// - [context] - BuildContext for showing dialog
   /// - [currentValue] - Current cost value (default: 0.0)
   /// - [onCostPickerOpened] - Callback fired when picker opens (cancels preview timer)
   ///
@@ -152,19 +165,27 @@ class FoodCardPickers {
   /// - Calls [onCostPickerOpened] to cancel the 8-second auto-dismiss timer
   /// - Same UI as edit mode for consistency
   static Future<double?> showCostPickerInPreview({
+    required BuildContext context,
     required double currentValue,
     VoidCallback? onCostPickerOpened,
   }) async {
     // Notify parent that cost picker is opening (cancels preview timer)
     onCostPickerOpened?.call();
 
-    // Show cost picker using custom overlay (guaranteed to be on top)
-    // Include manual input for consistency with edit mode
-    return await showCostPickerOverlay(
-      initialValue: currentValue,
-      showManualInput: true,
-      maxDollars: 999,
+    // Show cost picker using dialog
+    double? result;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => CurrencyPickerDialog(
+        initialValue: currentValue,
+        title: AppLocalizations.of(context)!.addCostPerServing,
+        icon: AnimatedEmojis.moneyWithWings,
+        onSave: (value) async {
+          result = value;
+        },
+      ),
     );
+    return result;
   }
 
 }

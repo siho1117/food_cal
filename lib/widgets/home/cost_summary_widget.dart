@@ -11,7 +11,7 @@ import '../../config/design_system/typography.dart';
 import '../../config/design_system/accent_colors.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/theme_provider.dart';
-import '../common/budget_scroll_dialog.dart';
+import '../common/currency_picker_dialog.dart';
 
 class CostSummaryWidget extends StatefulWidget {
   const CostSummaryWidget({super.key});
@@ -236,8 +236,10 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
   void _showBudgetEditDialog(BuildContext context, HomeProvider homeProvider, double currentBudget) {
     showDialog(
       context: context,
-      builder: (context) => BudgetScrollDialog(
-        currentBudget: currentBudget,
+      builder: (context) => CurrencyPickerDialog(
+        initialValue: currentBudget,
+        title: AppLocalizations.of(context)!.budget,
+        icon: AnimatedEmojis.moneyWithWings,
         onSave: (budget) async {
           await homeProvider.updateFoodBudget(budget);
         },

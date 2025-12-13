@@ -729,6 +729,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
     final currentValue = double.tryParse(widget.costController?.text ?? '0.0') ?? 0.0;
 
     final result = await FoodCardPickers.showCostPicker(
+      context: context,
       currentValue: currentValue,
     );
 
@@ -745,6 +746,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
     final currentValue = widget.foodItem.cost ?? 0.0;
 
     final result = await FoodCardPickers.showCostPickerInPreview(
+      context: context,
       currentValue: currentValue,
       onCostPickerOpened: widget.onCostPickerOpened,
     );
