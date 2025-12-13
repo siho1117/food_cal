@@ -160,7 +160,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
                     return const SizedBox.shrink();
                   },
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 // App name
                 const Text(
                   'OptiMate',
