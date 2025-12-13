@@ -141,18 +141,37 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
               ),
             ),
 
-          // App name - top left (Row 1)
-          const Positioned(
+          // App logo and name - top left (Row 1)
+          Positioned(
             left: 28,
             top: 16,
-            child: Text(
-              'OptiMate',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                letterSpacing: 0.5,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Logo
+                Image.asset(
+                  'assets/branding/logo.png',
+                  height: 26,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                  isAntiAlias: true,
+                  errorBuilder: (context, error, stackTrace) {
+                    // If logo fails to load, show nothing
+                    return const SizedBox.shrink();
+                  },
+                ),
+                const SizedBox(width: 8),
+                // App name
+                const Text(
+                  'OptiMate',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
             ),
           ),
 

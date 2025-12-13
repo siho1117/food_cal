@@ -11,7 +11,24 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+
+# ═══════════════════════════════════════════════════════════════
+# API KEYS AND SECRETS - NEVER COMMIT THESE
+# ═══════════════════════════════════════════════════════════════
 .env
+*.env
+.env.*
+
+# Google Cloud Service Account Keys
+*service-account*.json
+service-account.json
+gcp-credentials.json
+vertexai-*.json
+firebase-adminsdk-*.json
+*.json.secret
+
+# Firebase Config (if sensitive)
+functions/.runtimeconfig.json
 
 # IntelliJ related
 *.iml

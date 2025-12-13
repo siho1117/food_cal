@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../../l10n/generated/app_localizations.dart';
 import '../../config/design_system/widget_theme.dart';
-import '../../config/design_system/accent_colors.dart';
+import '../../config/design_system/nutrition_colors.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/theme_provider.dart';
 
@@ -97,11 +97,11 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                   current: consumed['protein']!,
                   target: target['protein']!.toDouble(),
                   progress: progress['protein']!,
-                  color: AccentColors.coral,
+                  color: NutritionColors.proteinColor,
                   borderColor: borderColor,
                   textColor: textColor,
                   accentColor: accentColor,
-                  icon: Icons.set_meal,
+                  emoji: '🥩',
                 ),
               ),
 
@@ -115,11 +115,11 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                   current: consumed['carbs']!,
                   target: target['carbs']!.toDouble(),
                   progress: progress['carbs']!,
-                  color: AccentColors.brightGreen,
+                  color: NutritionColors.carbsColor,
                   borderColor: borderColor,
                   textColor: textColor,
                   accentColor: accentColor,
-                  icon: Icons.local_pizza,
+                  emoji: '🍞',
                 ),
               ),
 
@@ -133,11 +133,11 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                   current: consumed['fat']!,
                   target: target['fat']!.toDouble(),
                   progress: progress['fat']!,
-                  color: AccentColors.electricBlue,
+                  color: NutritionColors.fatColor,
                   borderColor: borderColor,
                   textColor: textColor,
                   accentColor: accentColor,
-                  icon: Icons.grain_rounded,
+                  emoji: '🥑',
                 ),
               ),
             ],
@@ -157,7 +157,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
     required Color borderColor,
     required Color textColor,
     required Color accentColor,
-    IconData? icon,
+    String? emoji,
   }) {
     final animatedProgress = progress * _animation.value;
     final animatedCurrent = current * _animation.value;
@@ -232,15 +232,14 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
 
             const SizedBox(height: 8),
 
-            // 2. Current Value with Icon
+            // 2. Current Value with Emoji
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (icon != null) ...[
-                  Icon(
-                    icon,
-                    size: 20,
-                    color: textColor,
+                if (emoji != null) ...[
+                  Text(
+                    emoji,
+                    style: const TextStyle(fontSize: 20),
                   ),
                   const SizedBox(width: 4),
                 ],

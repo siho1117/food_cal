@@ -2,6 +2,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/accent_colors.dart';
@@ -297,10 +298,9 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
                 // Left: Title with flame icon
                 Row(
                   children: [
-                    Icon(
-                      Icons.local_fire_department_rounded,
-                      size: 22,
-                      color: textColor,
+                    const AnimatedEmoji(
+                      AnimatedEmojis.fire,
+                      size: 26,
                     ),
                     const SizedBox(width: 8),
                     Text(

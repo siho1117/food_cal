@@ -3,15 +3,15 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import 'dart:math' as math;
 import '../../l10n/generated/app_localizations.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/typography.dart';
-import '../../config/design_system/dialog_theme.dart';
 import '../../config/design_system/accent_colors.dart';
-import '../../config/constants/app_constants.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../common/budget_scroll_dialog.dart';
 
 class CostSummaryWidget extends StatefulWidget {
   const CostSummaryWidget({super.key});
@@ -121,11 +121,9 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
                           // Title with icon
                           Row(
                             children: [
-                              Icon(
-                                Icons.account_balance_wallet_outlined,
-                                size: AppWidgetTheme.fontSizeLG,
-                                color: textColor,
-                                shadows: AppWidgetTheme.textShadows,
+                              const AnimatedEmoji(
+                                AnimatedEmojis.moneyWithWings,
+                                size: 22,
                               ),
                               const SizedBox(width: 6),
                               Text(
@@ -238,9 +236,11 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
   void _showBudgetEditDialog(BuildContext context, HomeProvider homeProvider, double currentBudget) {
     showDialog(
       context: context,
-      builder: (context) => _BudgetEditDialog(
+      builder: (context) => BudgetScrollDialog(
         currentBudget: currentBudget,
-        homeProvider: homeProvider,
+        onSave: (budget) async {
+          await homeProvider.updateFoodBudget(budget);
+        },
       ),
     );
   }
@@ -291,118 +291,5 @@ class _CircularProgressPainter extends CustomPainter {
   bool shouldRepaint(_CircularProgressPainter oldDelegate) {
     return oldDelegate.progress != progress || 
            oldDelegate.baseColor != baseColor;
-  }
-}
-
-/// Simplified budget edit dialog
-class _BudgetEditDialog extends StatefulWidget {
-  final double currentBudget;
-  final HomeProvider homeProvider;
-
-  const _BudgetEditDialog({
-    required this.currentBudget,
-    required this.homeProvider,
-  });
-
-  @override
-  State<_BudgetEditDialog> createState() => _BudgetEditDialogState();
-}
-
-class _BudgetEditDialogState extends State<_BudgetEditDialog> {
-  late final TextEditingController _budgetController;
-  bool _isLoading = false;
-  String? _errorText;
-
-  @override
-  void initState() {
-    super.initState();
-    _budgetController = TextEditingController(
-      text: widget.currentBudget.toStringAsFixed(2),
-    );
-  }
-
-  @override
-  void dispose() {
-    _budgetController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: AppDialogTheme.backgroundColor,
-      shape: AppDialogTheme.shape,
-      contentPadding: AppDialogTheme.contentPadding,
-      actionsPadding: AppDialogTheme.actionsPadding,
-
-      title: Text(
-        AppLocalizations.of(context)!.budget,
-        style: AppDialogTheme.titleStyle,
-      ),
-
-      content: TextField(
-        controller: _budgetController,
-        autofocus: true,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(AppConstants.decimalNumberPattern)),
-        ],
-        style: AppDialogTheme.inputTextStyle,
-        decoration: AppDialogTheme.inputDecoration(
-          hintText: '0.00',
-        ).copyWith(
-          errorText: _errorText,
-        ),
-        onChanged: (_) {
-          // Clear error when user types
-          if (_errorText != null) {
-            setState(() => _errorText = null);
-          }
-        },
-      ),
-
-      actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          style: AppDialogTheme.cancelButtonStyle,
-          child: Text(AppLocalizations.of(context)!.cancel),
-        ),
-        const SizedBox(width: AppDialogTheme.buttonGap),
-        FilledButton(
-          onPressed: _isLoading ? null : _handleSave,
-          style: AppDialogTheme.primaryButtonStyle,
-          child: Text(_isLoading ? AppLocalizations.of(context)!.saving : AppLocalizations.of(context)!.save),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _handleSave() async {
-    final l10n = AppLocalizations.of(context)!;
-    final budgetText = _budgetController.text.trim();
-    final budget = double.tryParse(budgetText);
-
-    if (budget == null || budget <= 0) {
-      setState(() => _errorText = l10n.enterValidAmount);
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      await widget.homeProvider.updateFoodBudget(budget);
-
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      debugPrint('Error saving budget: $e');
-      if (mounted) {
-        setState(() {
-          _errorText = l10n.saveFailed;
-          _isLoading = false;
-        });
-      }
-    }
   }
 }

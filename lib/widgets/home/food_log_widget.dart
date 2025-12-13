@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/dialog_theme.dart';
@@ -69,13 +70,11 @@ class FoodLogWidget extends StatelessWidget {
                     // Title with icon
                     Row(
                       children: [
-                        Icon(
-                          Icons.restaurant_menu,
-                          size: AppWidgetTheme.fontSizeLG,
-                          color: textColor,
-                          shadows: AppWidgetTheme.textShadows,
+                        const AnimatedEmoji(
+                          AnimatedEmojis.spaghetti,
+                          size: 22,
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                         Text(
                           AppLocalizations.of(context)!.foodLog,
                           style: TextStyle(

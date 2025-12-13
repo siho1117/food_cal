@@ -1,37 +1,12 @@
 // lib/config/api_config.dart
 
-import 'providers/gemini_config.dart';
-
 /// Main API Configuration
 ///
-/// This file acts as the central access point for all API configurations.
-/// To switch providers, update the constants below.
-///
-/// Current Provider: Google Gemini (primary) with Qwen as automatic fallback
-/// Provider configurations: see providers/gemini_config.dart and providers/qwen_config.dart
-/// Note: Qwen is accessed directly via QwenApiAdapter, not through this config file
+/// Central configuration for API settings.
+/// Using Cloud Function proxy for Vertex AI (gemini-2.0-flash)
 class ApiConfig {
   // Private constructor to prevent instantiation
   ApiConfig._();
-
-  // ═══════════════════════════════════════════════════════════════
-  // ACTIVE PROVIDER CONFIGURATION - GEMINI (PRIMARY)
-  // ═══════════════════════════════════════════════════════════════
-
-  /// Base URL for the active API provider (Gemini)
-  static const String geminiBaseUrl = GeminiConfig.baseUrl;
-
-  /// API endpoint path
-  static const String geminiEndpoint = GeminiConfig.endpoint;
-
-  /// Model for vision/image recognition tasks
-  static const String visionModel = GeminiConfig.visionModel;
-
-  /// Model for text generation tasks
-  static const String textModel = GeminiConfig.textModel;
-
-  /// Environment variable key for API key
-  static const String apiKeyEnvVar = GeminiConfig.apiKeyEnvVar;
 
   // ═══════════════════════════════════════════════════════════════
   // QUOTA CONFIGURATION

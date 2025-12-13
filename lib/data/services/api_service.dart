@@ -1,18 +1,18 @@
 // lib/data/services/api_service.dart
 import 'dart:io';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/foundation.dart'; // Added for debugPrint
-import 'food_info_parser.dart'; // Import for parsing food information
-import 'qwen_api_adapter.dart'; // Import for Qwen API adapter
-import '../../config/api_config.dart'; // Import for centralized API configuration
-import '../../config/ai_prompts.dart'; // Import for centralized AI prompts
-import '../../utils/nutrition_scaler.dart'; // Import for nutrition value scaling
+import 'package:flutter/foundation.dart';
+import 'food_info_parser.dart';
+import 'vertex_ai_service.dart'; // Vertex AI service
+import '../../config/api_config.dart';
+import '../../config/ai_prompts.dart';
+import '../../utils/nutrition_scaler.dart';
 
-/// Service to interact with Vision AI (Gemini/Qwen) for food recognition
-/// Uses Gemini as primary provider with Qwen as automatic fallback
+/// Service to interact with Vertex AI for food recognition
+/// Uses Google Cloud Vertex AI (Gemini 2.0 Flash) exclusively
+///
+/// Changed from: Gemini/Qwen with fallback
+/// Now: Vertex AI only (no fallback for testing)
 class FoodApiService {
   // Singleton instance
   static final FoodApiService _instance = FoodApiService._internal();
@@ -22,18 +22,8 @@ class FoodApiService {
   // Food info parser
   final FoodInfoParser _parser = FoodInfoParser();
 
-  // Qwen API adapter (for fallback)
-  final QwenApiAdapter _qwenAdapter = QwenApiAdapter();
-
-  // Get API key from environment variables (provider-agnostic)
-  String get _geminiApiKey {
-    final key = dotenv.env[ApiConfig.apiKeyEnvVar];
-    if (key == null || key.isEmpty) {
-      debugPrint('WARNING: ${ApiConfig.apiKeyEnvVar} not found in .env file');
-      return '';
-    }
-    return key;
-  }
+  // Vertex AI service
+  final VertexAIService _vertexAI = VertexAIService();
 
   /// Analyze a food image and return recognition results
   /// Takes a [File] containing the food image
@@ -49,139 +39,39 @@ class FoodApiService {
     }
 
     try {
-      // PRIMARY: Try Gemini first
-      debugPrint('🔷 Trying Gemini API (primary)...');
-      final result = await _analyzeWithGemini(imageFile, language: language);
+      debugPrint('🔷 Analyzing image with Vertex AI...');
+
+      // Combine system and user prompts
+      final combinedPrompt = '${AiPrompts.foodImageSystemPrompt(language)}\n\n${AiPrompts.foodImageUserPrompt(language)}';
+
+      // Call Vertex AI
+      final rawResult = await _vertexAI.analyzeImage(
+        imageFile,
+        prompt: combinedPrompt,
+        language: language,
+      );
 
       // Increment quota usage for successful requests
       await incrementQuotaUsage();
 
+      // Parse the result (Vertex AI returns text in same format as Gemini)
+      final parsed = _parser.extractFromText(rawResult['_metadata'] != null
+        ? (rawResult['text'] ?? '')
+        : rawResult.toString());
+
       // Scale nutrition values before returning
-      return NutritionScaler.scale(result);
-    } catch (geminiError) {
-      // Log Gemini error
-      await _logError('Gemini', geminiError.toString());
-      debugPrint('⚠️ Gemini failed, trying Qwen backup: $geminiError');
+      return NutritionScaler.scale(parsed);
+    } catch (error) {
+      // Log error
+      await _logError('VertexAI', error.toString());
+      debugPrint('❌ Vertex AI failed: $error');
 
-      try {
-        // BACKUP: Try Qwen
-        debugPrint('🟡 Trying Qwen API (backup)...');
-        final qwenResult = await _qwenAdapter.analyzeImage(imageFile, language: language);
+      // Increment quota usage even on failure
+      await incrementQuotaUsage();
 
-        // Increment quota usage for successful requests
-        await incrementQuotaUsage();
-
-        // Parse and scale the result
-        final parsed = _parser.extractFromText(qwenResult['text']);
-        return NutritionScaler.scale(parsed);
-      } catch (qwenError) {
-        // Log Qwen error
-        await _logError('Qwen', qwenError.toString());
-        debugPrint('❌ Both Gemini and Qwen failed');
-
-        // Increment quota usage
-        await incrementQuotaUsage();
-
-        // Both providers failed
-        throw Exception('All API providers failed. Gemini: $geminiError, Qwen: $qwenError');
-      }
+      // Re-throw the error
+      throw Exception('Vertex AI analysis failed: $error');
     }
-  }
-
-  /// Analyze food image using Gemini's API directly
-  Future<Map<String, dynamic>> _analyzeWithGemini(
-    File imageFile, {
-    String language = 'English',
-  }) async {
-    // Convert image to base64
-    final bytes = await imageFile.readAsBytes();
-    final base64Image = base64Encode(bytes);
-
-    // MIME type: PhotoCompressionService always outputs JPEG
-    const String mimeType = 'image/jpeg';
-
-    debugPrint('📤 Sending to Gemini API with MIME type: $mimeType, language: $language');
-
-    // Combine system and user prompts for Gemini with language parameter
-    final combinedPrompt = '${AiPrompts.foodImageSystemPrompt(language)}\n\n${AiPrompts.foodImageUserPrompt(language)}';
-
-    // Create Gemini API request body
-    final requestBody = {
-      "contents": [
-        {
-          "parts": [
-            {
-              "text": combinedPrompt
-            },
-            {
-              "inline_data": {
-                "mime_type": mimeType,
-                "data": base64Image
-              }
-            }
-          ]
-        }
-      ],
-      "generationConfig": {
-        "temperature": 0.1,
-        "maxOutputTokens": 1500,
-      }
-    };
-
-    // Send request to Gemini
-    final uri = Uri.https(
-      ApiConfig.geminiBaseUrl,
-      '${ApiConfig.geminiEndpoint}${ApiConfig.visionModel}:generateContent',
-      {'key': _geminiApiKey}
-    );
-
-    final response = await http
-        .post(
-          uri,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode(requestBody),
-        )
-        .timeout(const Duration(seconds: 15));
-
-    if (response.statusCode != 200) {
-      throw Exception(
-          'Gemini API error: ${response.statusCode}, ${response.body}');
-    }
-
-    // Parse Gemini response
-    final responseData = jsonDecode(response.body);
-
-    // Debug: Log full response (debug builds only)
-    if (kDebugMode) {
-      debugPrint('🔍 Full Gemini Response: ${jsonEncode(responseData)}');
-
-      // Extract and log token usage details if available
-      final usageMetadata = responseData['usageMetadata'];
-      if (usageMetadata != null) {
-        debugPrint('📊 Token Usage Breakdown:');
-        debugPrint('   Prompt tokens: ${usageMetadata['promptTokenCount']}');
-        debugPrint('   Completion tokens: ${usageMetadata['candidatesTokenCount']}');
-        debugPrint('   Total tokens: ${usageMetadata['totalTokenCount']}');
-      }
-    }
-
-    // Extract text from Gemini response
-    if (responseData['candidates'] != null &&
-        responseData['candidates'].isNotEmpty &&
-        responseData['candidates'][0]['content'] != null &&
-        responseData['candidates'][0]['content']['parts'] != null &&
-        responseData['candidates'][0]['content']['parts'].isNotEmpty) {
-
-      final textContent = responseData['candidates'][0]['content']['parts'][0]['text'];
-      debugPrint('Gemini text response: $textContent');
-
-      // Parse the text response using the parser
-      return _parser.extractFromText(textContent);
-    }
-
-    throw Exception('Invalid Gemini response format');
   }
 
 
@@ -193,110 +83,35 @@ class FoodApiService {
     }
 
     try {
-      // PRIMARY: Try Gemini first
-      debugPrint('🔷 Getting food info from Gemini (primary)...');
-      final result = await _getFoodInfoFromGemini(name);
+      debugPrint('🔷 Getting food info from Vertex AI for: $name');
+
+      // Call Vertex AI
+      final rawResult = await _vertexAI.getFoodInformation(
+        name,
+        language: 'English',
+      );
 
       // Increment quota usage for successful requests
       await incrementQuotaUsage();
 
+      // Parse the result
+      final parsed = _parser.extractFromText(rawResult['_metadata'] != null
+        ? (rawResult['text'] ?? '')
+        : rawResult.toString());
+
       // Scale nutrition values before returning
-      return NutritionScaler.scale(result);
-    } catch (geminiError) {
-      // Log Gemini error
-      await _logError('Gemini', geminiError.toString());
-      debugPrint('⚠️ Gemini failed, trying Qwen backup: $geminiError');
+      return NutritionScaler.scale(parsed);
+    } catch (error) {
+      // Log error
+      await _logError('VertexAI', error.toString());
+      debugPrint('❌ Vertex AI food info failed: $error');
 
-      try {
-        // BACKUP: Try Qwen
-        debugPrint('🟡 Getting food info from Qwen (backup)...');
-        final qwenResult = await _qwenAdapter.getFoodInformation(name);
+      // Increment quota usage even on failure
+      await incrementQuotaUsage();
 
-        // Increment quota usage
-        await incrementQuotaUsage();
-
-        // Parse and scale the result
-        final parsed = _parser.extractFromText(qwenResult['text']);
-        return NutritionScaler.scale(parsed);
-      } catch (qwenError) {
-        // Log Qwen error
-        await _logError('Qwen', qwenError.toString());
-        debugPrint('❌ Both Gemini and Qwen failed for food info');
-
-        // Increment quota usage
-        await incrementQuotaUsage();
-
-        // Both providers failed
-        throw Exception('All API providers failed. Gemini: $geminiError, Qwen: $qwenError');
-      }
+      // Re-throw the error
+      throw Exception('Vertex AI food information failed: $error');
     }
-  }
-
-  /// Get food information from Gemini
-  Future<Map<String, dynamic>> _getFoodInfoFromGemini(String name) async {
-    debugPrint('Getting food information for: $name');
-
-    // Combine system and user prompts for Gemini
-    final combinedPrompt = '${AiPrompts.foodInfoSystemPrompt}\n\n${AiPrompts.foodInfoUserPrompt(name)}';
-
-    // Create Gemini API request body
-    final requestBody = {
-      "contents": [
-        {
-          "parts": [
-            {
-              "text": combinedPrompt
-            }
-          ]
-        }
-      ],
-      "generationConfig": {
-        "temperature": 0.1,
-        "maxOutputTokens": 1200,
-      }
-    };
-
-    // Send request to Gemini
-    final uri = Uri.https(
-      ApiConfig.geminiBaseUrl,
-      '${ApiConfig.geminiEndpoint}${ApiConfig.textModel}:generateContent',
-      {'key': _geminiApiKey}
-    );
-
-    final response = await http
-        .post(
-          uri,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode(requestBody),
-        )
-        .timeout(const Duration(seconds: 10));
-
-    if (response.statusCode != 200) {
-      throw Exception(
-          'Gemini API error: ${response.statusCode}, ${response.body}');
-    }
-
-    // Parse Gemini response
-    final responseData = jsonDecode(response.body);
-    debugPrint('Gemini Response: $responseData');
-
-    // Extract text from Gemini response
-    if (responseData['candidates'] != null &&
-        responseData['candidates'].isNotEmpty &&
-        responseData['candidates'][0]['content'] != null &&
-        responseData['candidates'][0]['content']['parts'] != null &&
-        responseData['candidates'][0]['content']['parts'].isNotEmpty) {
-
-      final textContent = responseData['candidates'][0]['content']['parts'][0]['text'];
-      debugPrint('Gemini text response: $textContent');
-
-      // Parse the text response using the parser
-      return _parser.extractFromText(textContent);
-    }
-
-    throw Exception('Invalid Gemini response format');
   }
 
 
