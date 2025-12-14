@@ -169,18 +169,25 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
             ),
           ],
         ),
-        GestureDetector(
-          onTap: () => _showWeightDialog(context, progressData),
-          child: Container(
-            padding: EdgeInsets.all(AppWidgetTheme.spaceXS),
-            decoration: BoxDecoration(
-              color: textColor.withValues(alpha: AppWidgetTheme.opacityLight),
-              borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXS),
-            ),
-            child: Icon(
-              Icons.edit_outlined,
-              size: AppWidgetTheme.iconSizeSmall,
-              color: textColor,
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _showWeightDialog(context, progressData),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: textColor.withValues(alpha: 0.12),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.edit_outlined,
+                  size: 20,
+                  color: textColor,
+                ),
+              ),
             ),
           ),
         ),

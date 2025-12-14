@@ -80,3 +80,30 @@ class ActivityEmojis {
     personCartwheeling,
   ];
 }
+
+/// All food emoji PNG paths organized by food type
+///
+/// This class provides constants for all bundled food emoji assets.
+class FoodEmojis {
+  FoodEmojis._(); // Private constructor to prevent instantiation
+
+  // ========================================
+  // 🍽️ FOOD EMOJIS
+  // ========================================
+
+  /// 🥑 Avocado - For fat/healthy fats
+  static const String avocado = 'assets/emojis/food/avocado_3d.png';
+
+  /// 🥐 Croissant - For carbs/carbohydrates
+  static const String croissant = 'assets/emojis/food/croissant_3d.png';
+
+  /// 🥩 Cut of meat - For protein
+  static const String cutOfMeat = 'assets/emojis/food/cut_of_meat_3d.png';
+
+  /// Get all food emoji paths
+  static List<String> get all => [
+    avocado,
+    croissant,
+    cutOfMeat,
+  ];
+}

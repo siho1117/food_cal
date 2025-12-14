@@ -14,6 +14,7 @@ import '../loading/animations/pulse_widget.dart';
 import '../loading/animations/animated_text_widget.dart';
 import '../loading/animations/animated_ellipsis_widget.dart';
 import '../loading/animations/animated_cost_indicator.dart';
+import '../common/activity_emoji.dart';
 import 'painters/arch_card_painter.dart';
 import 'dialogs/edit_food_name_dialog.dart';
 import 'helpers/food_card_pickers.dart';
@@ -555,7 +556,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
             value: widget.foodItem.proteins,
             controller: widget.proteinController,
             color: NutritionColors.proteinColor,
-            emoji: '🥩',
+            emojiPath: FoodEmojis.cutOfMeat,
             onPreviewTap: null, // Removed: Not editable in preview mode
           ),
         ),
@@ -567,7 +568,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
             value: widget.foodItem.carbs,
             controller: widget.carbsController,
             color: NutritionColors.carbsColor,
-            emoji: '🍞',
+            emojiPath: FoodEmojis.croissant,
             onPreviewTap: null, // Removed: Not editable in preview mode
           ),
         ),
@@ -579,7 +580,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
             value: widget.foodItem.fats,
             controller: widget.fatController,
             color: NutritionColors.fatColor,
-            emoji: '🥑',
+            emojiPath: FoodEmojis.avocado,
             onPreviewTap: null, // Removed: Not editable in preview mode
           ),
         ),
@@ -592,7 +593,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
     required double value,
     TextEditingController? controller,
     required Color color,
-    required String emoji,
+    required String emojiPath,
     VoidCallback? onPreviewTap,
   }) {
     return Column(
@@ -611,15 +612,15 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
         const SizedBox(height: 6),
         Row(
           children: [
-            Text(
-              emoji,
-              style: const TextStyle(fontSize: 18),
+            ActivityEmoji(
+              emojiPath,
+              size: 18,
             ),
             const SizedBox(width: 6),
             if (widget.isEditable && controller != null)
               Expanded(
                 child: GestureDetector(
-                  onTap: () => _showMacroPicker(context, label, controller, emoji),
+                  onTap: () => _showMacroPicker(context, label, controller, emojiPath),
                   child: AbsorbPointer(
                     child: TextField(
                       controller: controller,
@@ -702,7 +703,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
     BuildContext context,
     String label,
     TextEditingController? controller,
-    String emoji,
+    String emojiPath,
   ) async {
     if (controller == null) return;
 
@@ -711,7 +712,7 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
       context: context,
       label: label,
       currentValue: currentValue,
-      emoji: emoji,
+      emojiPath: emojiPath,
     );
     if (result != null) {
       controller.text = result.toString();

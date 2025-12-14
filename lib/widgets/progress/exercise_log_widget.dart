@@ -11,6 +11,7 @@ import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../config/design_system/accent_colors.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../common/activity_emoji.dart';
 import 'exercise_entry_dialog.dart';
 
 class ExerciseLogWidget extends StatelessWidget {
@@ -80,18 +81,14 @@ class ExerciseLogWidget extends StatelessWidget {
     return exercises.fold(0, (sum, exercise) => sum + exercise.caloriesBurned);
   }
 
-  IconData _getExerciseIconData(String exerciseName) {
+  String _getExerciseIconPath(String exerciseName) {
     final iconMap = {
-      'running': Icons.directions_run,
-      'cycling': Icons.directions_bike,
-      'swimming': Icons.pool,
-      'walking': Icons.directions_walk,
-      'weight training': Icons.fitness_center,
-      'yoga': Icons.self_improvement,
-      'hiking': Icons.terrain,
-      'basketball': Icons.sports_basketball,
-      'soccer': Icons.sports_soccer,
-      'tennis': Icons.sports_tennis,
+      'running': ActivityEmojis.personRunning,
+      'cycling': ActivityEmojis.personBiking,
+      'swimming': ActivityEmojis.personSwimming,
+      'walking': ActivityEmojis.personWalking,
+      'weight training': ActivityEmojis.personLiftingWeights,
+      'yoga': ActivityEmojis.personLotus,
     };
 
     final key = exerciseName.toLowerCase();
@@ -100,7 +97,20 @@ class ExerciseLogWidget extends StatelessWidget {
         return entry.value;
       }
     }
-    return Icons.sports_gymnastics;
+    return ActivityEmojis.personCartwheeling;
+  }
+
+  String _getLocalizedExerciseName(String exerciseName, AppLocalizations l10n) {
+    final translations = {
+      'Running': l10n.running,
+      'Walking': l10n.walking,
+      'Cycling': l10n.cycling,
+      'Swimming': l10n.swimming,
+      'Weight Training': l10n.weightTraining,
+      'Yoga': l10n.yoga,
+    };
+
+    return translations[exerciseName] ?? exerciseName;
   }
 
   @override
@@ -185,12 +195,26 @@ class ExerciseLogWidget extends StatelessWidget {
                   ),
                 ],
               ),
-              GestureDetector(
-                onTap: () => _showExerciseDialog(context, provider),
-                child: Icon(
-                  Icons.add,
-                  size: AppWidgetTheme.iconSizeMedium,
-                  color: textColor,
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _showExerciseDialog(context, provider),
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: textColor.withValues(alpha: 0.12),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.add,
+                        size: 20,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -218,6 +242,7 @@ class ExerciseLogWidget extends StatelessWidget {
                   provider,
                   exercises,
                   textColor,
+                  l10n,
                 ),
               ),
             ],
@@ -234,6 +259,7 @@ class ExerciseLogWidget extends StatelessWidget {
     ExerciseProvider provider,
     List<ExerciseEntry> exercises,
     Color textColor,
+    AppLocalizations l10n,
   ) {
     return Column(
       children: exercises.map((exercise) {
@@ -286,8 +312,8 @@ class ExerciseLogWidget extends StatelessWidget {
                   children: [
                     // Icon
                     Container(
-                      width: AppWidgetTheme.iconContainerMedium,
-                      height: AppWidgetTheme.iconContainerMedium,
+                      width: 50,
+                      height: 50,
                       decoration: BoxDecoration(
                         color: AppWidgetTheme.getIconContainerColor(
                           textColor,
@@ -295,10 +321,11 @@ class ExerciseLogWidget extends StatelessWidget {
                         ),
                         borderRadius: BorderRadius.circular(AppWidgetTheme.spaceMS),
                       ),
-                      child: Icon(
-                        _getExerciseIconData(exercise.name),
-                        size: AppWidgetTheme.iconSizeSmall,
-                        color: textColor,
+                      child: Center(
+                        child: ActivityEmoji(
+                          _getExerciseIconPath(exercise.name),
+                          size: 38,
+                        ),
                       ),
                     ),
                     SizedBox(width: AppWidgetTheme.spaceML),
@@ -310,7 +337,7 @@ class ExerciseLogWidget extends StatelessWidget {
                         children: [
                           // Line 1: Exercise name
                           Text(
-                            exercise.name,
+                            _getLocalizedExerciseName(exercise.name, l10n),
                             style: TextStyle(
                               fontSize: AppWidgetTheme.fontSizeML,
                               fontWeight: FontWeight.w600,
@@ -324,7 +351,7 @@ class ExerciseLogWidget extends StatelessWidget {
 
                           // Line 2: Calories (emphasized - key metric)
                           Text(
-                            '${exercise.caloriesBurned} cal',
+                            '${exercise.caloriesBurned} ${l10n.cal}',
                             style: TextStyle(
                               fontSize: AppWidgetTheme.fontSizeMD,
                               fontWeight: FontWeight.w600,
@@ -336,7 +363,7 @@ class ExerciseLogWidget extends StatelessWidget {
 
                           // Line 3: Duration
                           Text(
-                            '${exercise.duration} min',
+                            '${exercise.duration} ${l10n.min}',
                             style: TextStyle(
                               fontSize: AppWidgetTheme.fontSizeMS,
                               fontWeight: FontWeight.w500,

@@ -8,6 +8,7 @@ import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/nutrition_colors.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../common/activity_emoji.dart';
 
 class MacronutrientWidget extends StatefulWidget {
   const MacronutrientWidget({super.key});
@@ -101,7 +102,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                   borderColor: borderColor,
                   textColor: textColor,
                   accentColor: accentColor,
-                  emoji: '🥩',
+                  emojiPath: FoodEmojis.cutOfMeat,
                 ),
               ),
 
@@ -119,7 +120,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                   borderColor: borderColor,
                   textColor: textColor,
                   accentColor: accentColor,
-                  emoji: '🍞',
+                  emojiPath: FoodEmojis.croissant,
                 ),
               ),
 
@@ -137,7 +138,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                   borderColor: borderColor,
                   textColor: textColor,
                   accentColor: accentColor,
-                  emoji: '🥑',
+                  emojiPath: FoodEmojis.avocado,
                 ),
               ),
             ],
@@ -157,7 +158,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
     required Color borderColor,
     required Color textColor,
     required Color accentColor,
-    String? emoji,
+    String? emojiPath,
   }) {
     final animatedProgress = progress * _animation.value;
     final animatedCurrent = current * _animation.value;
@@ -236,10 +237,10 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (emoji != null) ...[
-                  Text(
-                    emoji,
-                    style: const TextStyle(fontSize: 20),
+                if (emojiPath != null) ...[
+                  ActivityEmoji(
+                    emojiPath,
+                    size: 20,
                   ),
                   const SizedBox(width: 4),
                 ],

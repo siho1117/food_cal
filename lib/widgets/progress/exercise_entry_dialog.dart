@@ -513,7 +513,7 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
                             ),
                           )
                         : Text(
-                            '${_controller.estimatedCalories} cal',
+                            '${_controller.estimatedCalories} ${l10n.cal}',
                             style: AppTypography.dataSmall.copyWith(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,

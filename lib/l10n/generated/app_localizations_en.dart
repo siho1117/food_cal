@@ -916,7 +916,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bmr => 'BMR';
 
   @override
-  String get bmrFullName => 'BMR (Basal Metabolic Rate)';
+  String get bmrFullName => 'Basal Metabolic Rate';
 
   @override
   String get bmiFullName => 'BMI (Body Mass Index)';

@@ -916,7 +916,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get bmr => 'BMR';
 
   @override
-  String get bmrFullName => 'BMR（基礎代謝率）';
+  String get bmrFullName => '基礎代謝率';
 
   @override
   String get bmiFullName => 'BMI（身體質量指數）';
@@ -1843,7 +1843,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get bmr => 'BMR';
 
   @override
-  String get bmrFullName => 'BMR（基础代谢率）';
+  String get bmrFullName => '基础代谢率';
 
   @override
   String get bmiFullName => 'BMI（身体质量指数）';
@@ -2770,7 +2770,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get bmr => 'BMR';
 
   @override
-  String get bmrFullName => 'BMR（基礎代謝率）';
+  String get bmrFullName => '基礎代謝率';
 
   @override
   String get bmiFullName => 'BMI（身體質量指數）';

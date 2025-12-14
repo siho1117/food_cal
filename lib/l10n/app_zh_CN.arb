@@ -510,7 +510,7 @@
   "@_HEALTH_METRICS": {},
   "bmi": "BMI",
   "bmr": "BMR",
-  "bmrFullName": "BMR（基础代谢率）",
+  "bmrFullName": "基础代谢率",
   "bmiFullName": "BMI（身体质量指数）",
   "bodyFatPercentage": "体脂率 %",
   "calPerDay": "卡/天",

@@ -2,6 +2,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../config/design_system/accent_colors.dart';
@@ -83,10 +84,9 @@ class HealthMetricsWidget extends StatelessWidget {
               // Header
               Row(
                 children: [
-                  Icon(
-                    Icons.monitor_heart_outlined,
-                    size: AppWidgetTheme.iconSizeSmall,
-                    color: textColor,
+                  const AnimatedEmoji(
+                    AnimatedEmojis.heartExclamationPoint,
+                    size: 26,
                   ),
                   SizedBox(width: AppWidgetTheme.spaceMS),
                   Text(

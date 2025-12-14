@@ -1870,7 +1870,7 @@ abstract class AppLocalizations {
   /// No description provided for @bmrFullName.
   ///
   /// In en, this message translates to:
-  /// **'BMR (Basal Metabolic Rate)'**
+  /// **'Basal Metabolic Rate'**
   String get bmrFullName;
 
   /// No description provided for @bmiFullName.

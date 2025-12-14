@@ -4,6 +4,7 @@ import 'package:numberpicker/numberpicker.dart';
 import 'package:animated_emoji/animated_emoji.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../common/activity_emoji.dart';
 
 /// Shows a dialog with an integer number picker
 /// Returns the selected value or null if cancelled
@@ -16,6 +17,7 @@ Future<int?> showNumberPickerDialog({
   int step = 1,
   AnimatedEmojiData? icon,
   String? emoji,
+  String? emojiPath,
 }) async {
   // Calculate the initial index based on value and step
   final totalItems = ((maxValue - minValue) ~/ step) + 1;
@@ -52,12 +54,12 @@ Future<int?> showNumberPickerDialog({
                       ),
                     ],
                   )
-                : emoji != null
+                : emojiPath != null
                     ? Row(
                         children: [
-                          Text(
-                            emoji,
-                            style: const TextStyle(fontSize: 24),
+                          ActivityEmoji(
+                            emojiPath,
+                            size: 24,
                           ),
                           const SizedBox(width: 12),
                           Text(
@@ -66,10 +68,24 @@ Future<int?> showNumberPickerDialog({
                           ),
                         ],
                       )
-                    : Text(
-                        title,
-                        style: AppDialogTheme.titleStyle,
-                      ),
+                    : emoji != null
+                        ? Row(
+                            children: [
+                              Text(
+                                emoji,
+                                style: const TextStyle(fontSize: 24),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                title,
+                                style: AppDialogTheme.titleStyle,
+                              ),
+                            ],
+                          )
+                        : Text(
+                            title,
+                            style: AppDialogTheme.titleStyle,
+                          ),
             content: Container(
               height: 180,
               decoration: BoxDecoration(

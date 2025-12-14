@@ -95,7 +95,7 @@ class FoodCardPickers {
   /// - [context] - BuildContext for showing dialog
   /// - [label] - Label for the macro (e.g., "Protein", "Carbs", "Fat")
   /// - [currentValue] - Current macro value in grams (default: 0)
-  /// - [emoji] - Emoji to display in the dialog (e.g., "🥩", "🍞", "🥑")
+  /// - [emojiPath] - Path to PNG emoji asset (e.g., FoodEmojis.cutOfMeat)
   ///
   /// **Returns:**
   /// - [Future<int?>] - Selected grams (0-999), or null if cancelled
@@ -105,7 +105,7 @@ class FoodCardPickers {
     required BuildContext context,
     required String label,
     required int currentValue,
-    required String emoji,
+    required String emojiPath,
   }) async {
     return await showNumberPickerDialog(
       context: context,
@@ -114,7 +114,7 @@ class FoodCardPickers {
       minValue: 0,
       maxValue: 999,
       step: 1,
-      emoji: emoji,
+      emojiPath: emojiPath,
     );
   }
 

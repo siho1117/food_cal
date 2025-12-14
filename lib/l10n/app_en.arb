@@ -531,7 +531,7 @@
   "@_HEALTH_METRICS": {},
   "bmi": "BMI",
   "bmr": "BMR",
-  "bmrFullName": "BMR (Basal Metabolic Rate)",
+  "bmrFullName": "Basal Metabolic Rate",
   "bmiFullName": "BMI (Body Mass Index)",
   "bodyFatPercentage": "Body Fat %",
   "calPerDay": "cal/day",
