@@ -207,14 +207,14 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
     // For ring display, cap at 100%
     final ringProgress = animatedPercentage.clamp(0.0, 1.0);
 
-    // Use vibrantRed for over-budget state
-    final progressColor = isOverBudget ? AccentColors.vibrantRed : textColor;
+    // Use vibrantRed for ring when over-budget, but keep text color normal
+    final ringColor = isOverBudget ? AccentColors.vibrantRed : textColor;
 
     return CustomPaint(
       size: const Size(64, 64),
       painter: _CircularProgressPainter(
         progress: ringProgress,
-        baseColor: progressColor,
+        baseColor: ringColor,
       ),
       child: SizedBox(
         width: 64,
@@ -223,7 +223,7 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
           child: Text(
             '$displayPercentage%',
             style: AppTypography.labelMedium.copyWith(
-              color: progressColor,
+              color: textColor,
               fontWeight: FontWeight.bold,
               shadows: AppWidgetTheme.textShadows,
             ),

@@ -82,6 +82,14 @@ class ArchCardPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     canvas.drawPath(cardWithCutout, cardPaint);
+
+    // Paint border on arch window's inside edge
+    final borderPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.25)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    canvas.drawRRect(archWindowRect, borderPaint);
   }
 
   @override

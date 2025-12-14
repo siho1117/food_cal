@@ -2,6 +2,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../config/design_system/typography.dart';
 import '../../config/design_system/nutrition_colors.dart';
 import '../../config/design_system/widget_theme.dart';
@@ -187,22 +188,34 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
 
               // Content on colored card (tighter spacing)
               Padding(
-                padding: const EdgeInsets.fromLTRB(28, 12, 28, 20),
+                padding: const EdgeInsets.fromLTRB(28, 12, 28, 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Food Name Input/Display
                     _buildFoodNameField(),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 14),
 
-                    // Calories and Serving Size Row
-                    _buildCaloriesServingRow(),
+                    // Dark overlay container for nutrition info
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        children: [
+                          // Calories and Serving Size Row
+                          _buildCaloriesServingRow(),
 
-                    const SizedBox(height: 18),
+                          const SizedBox(height: 10),
 
-                    // Macronutrients Section
-                    _buildMacronutrientsSection(),
+                          // Macronutrients Section
+                          _buildMacronutrientsSection(),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -392,9 +405,9 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                l10n.calories,
+                l10n.calories.toUpperCase(),
                 style: AppTypography.overline.copyWith(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: Colors.white.withValues(alpha: 0.8),
                   fontSize: 11,
                   letterSpacing: 1.0,
                 ),
@@ -402,9 +415,9 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  const Text(
-                    '🔥',
-                    style: TextStyle(fontSize: 20),
+                  const AnimatedEmoji(
+                    AnimatedEmojis.fire,
+                    size: 26,
                   ),
                   const SizedBox(width: 6),
                   if (widget.isEditable && widget.caloriesController != null)
@@ -461,9 +474,9 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                l10n.serving,
+                l10n.serving.toUpperCase(),
                 style: AppTypography.overline.copyWith(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: Colors.white.withValues(alpha: 0.8),
                   fontSize: 11,
                   letterSpacing: 1.0,
                 ),
@@ -587,11 +600,11 @@ class _FoodCardWidgetState extends State<FoodCardWidget> {
       children: [
         // Label with unit
         Text(
-          '${label.toUpperCase()} / g',
+          '${label.toUpperCase()}/g',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: Colors.white.withValues(alpha: 0.5),
+            color: Colors.white.withValues(alpha: 0.8),
             letterSpacing: 1.0,
           ),
         ),
