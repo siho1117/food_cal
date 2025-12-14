@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../providers/exercise_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../data/models/exercise_entry.dart';
@@ -168,10 +169,9 @@ class ExerciseLogWidget extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.fitness_center,
-                    size: AppWidgetTheme.iconSizeSmall,
-                    color: textColor,
+                  const AnimatedEmoji(
+                    AnimatedEmojis.muscle,
+                    size: 26,
                   ),
                   SizedBox(width: AppWidgetTheme.spaceMS),
                   Text(

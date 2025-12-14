@@ -77,6 +77,8 @@ flutter:
     - .env
     - assets/branding/
     - assets/icon/
+    - assets/emojis/activities/
+    - assets/emojis/food/
 
 # ✅ APP ICON CONFIGURATION
 flutter_launcher_icons:

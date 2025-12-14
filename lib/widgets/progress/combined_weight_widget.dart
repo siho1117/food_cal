@@ -2,6 +2,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../providers/progress_data.dart';
 import '../../providers/settings_provider.dart';
@@ -151,10 +152,9 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
       children: [
         Row(
           children: [
-            Icon(
-              Icons.monitor_weight_outlined,
-              size: AppWidgetTheme.iconSizeSmall,
-              color: textColor,
+            const AnimatedEmoji(
+              AnimatedEmojis.directHit,
+              size: 26,
             ),
             SizedBox(width: AppWidgetTheme.spaceMS),
             Text(

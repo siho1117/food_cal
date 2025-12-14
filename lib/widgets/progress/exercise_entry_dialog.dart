@@ -8,6 +8,7 @@ import '../../providers/exercise_provider.dart';
 import '../../data/models/exercise_entry.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'exercise_dialog_controller.dart';
+import '../common/activity_emoji.dart';
 
 class ExerciseEntryDialog extends StatefulWidget {
   final ExerciseProvider exerciseProvider;
@@ -292,10 +293,9 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    ActivityEmoji(
                       _getExerciseIcon(exerciseName),
-                      size: 29,
-                      color: const Color(0xFF4B5563),
+                      size: 60,
                     ),
                     const SizedBox(height: 6),
                     Flexible(
@@ -321,16 +321,16 @@ class _ExerciseEntryDialogState extends State<ExerciseEntryDialog> {
     );
   }
 
-  IconData _getExerciseIcon(String exerciseName) {
+  String _getExerciseIcon(String exerciseName) {
     final iconMap = {
-      'Running': Icons.directions_run,
-      'Walking': Icons.directions_walk,
-      'Cycling': Icons.directions_bike,
-      'Swimming': Icons.pool,
-      'Weight Training': Icons.fitness_center,
-      'Yoga': Icons.self_improvement,
+      'Running': ActivityEmojis.personRunning,
+      'Walking': ActivityEmojis.personWalking,
+      'Cycling': ActivityEmojis.personBiking,
+      'Swimming': ActivityEmojis.personSwimming,
+      'Weight Training': ActivityEmojis.personLiftingWeights,
+      'Yoga': ActivityEmojis.personLotus,
     };
-    return iconMap[exerciseName] ?? Icons.sports_gymnastics;
+    return iconMap[exerciseName] ?? ActivityEmojis.personCartwheeling;
   }
 
   Widget _buildCustomExerciseName() {
