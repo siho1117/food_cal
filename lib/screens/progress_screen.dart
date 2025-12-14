@@ -111,6 +111,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                         WeightHistoryGraphWidget(
                           weightHistory: progressData.weightHistory,
                           isMetric: progressData.isMetric,
+                          targetWeight: progressData.targetWeight,
                         ),
 
                         const SizedBox(height: 20),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../data/models/weight_data.dart';
 import '../../providers/theme_provider.dart';
@@ -89,8 +90,13 @@ class WeightDataPoint {
 }
 
 class WeightHistoryGraphWidget extends StatefulWidget {
+  /// Weight history entries (weight always stored in kg)
   final List<WeightData> weightHistory;
+
+  /// Display preference: true = kg, false = lbs (data stored in kg regardless)
   final bool isMetric;
+
+  /// Target/goal weight in kg (converted for display based on isMetric)
   final double? targetWeight;
 
   const WeightHistoryGraphWidget({
@@ -106,6 +112,26 @@ class WeightHistoryGraphWidget extends StatefulWidget {
 
 class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
   TimeRange _selectedRange = TimeRange.sevenDays;
+
+  // Y-axis label spacing constants
+  static const int _metricSpacing = 2;     // Show every 2 kg (odd numbers)
+  static const int _imperialSpacing = 4;   // Show every 4 lbs
+
+  /// Convert weight from kg to display unit (kg or lbs)
+  double _toDisplayWeight(double weightInKg) {
+    return widget.isMetric ? weightInKg : weightInKg * 2.20462;
+  }
+
+  /// Round value down to nearest multiple of spacing
+  int _roundDownToMultiple(int value, int multiple) {
+    return value - (value % multiple);
+  }
+
+  /// Round value up to nearest multiple of spacing
+  int _roundUpToMultiple(int value, int multiple) {
+    final remainder = value % multiple;
+    return remainder == 0 ? value : value + (multiple - remainder);
+  }
 
   /// Get data for selected time range
   List<WeightDataPoint> _getDataForRange(List<WeightData> weightHistory) {
@@ -195,11 +221,14 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
     return result;
   }
 
+  /// Calculate statistics from weight data points
+  /// Returns values in kg (caller must convert to display units)
   Map<String, double> _calculateStats(List<WeightDataPoint> data) {
     if (data.isEmpty) {
       return {'totalChange': 0.0, 'average': 0.0, 'weeklyRate': 0.0};
     }
 
+    // All weights are in kg
     final firstWeight = data.first.weight;
     final lastWeight = data.last.weight;
     final totalChange = lastWeight - firstWeight;
@@ -210,9 +239,9 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
     final weeklyRate = daysDiff > 0 ? (totalChange / daysDiff) * 7 : 0.0;
 
     return {
-      'totalChange': totalChange,
-      'average': average,
-      'weeklyRate': weeklyRate,
+      'totalChange': totalChange, // kg
+      'average': average,          // kg
+      'weeklyRate': weeklyRate,    // kg/week
     };
   }
 
@@ -257,15 +286,24 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
               child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title
-              Text(
-                _selectedRange.getTitle(l10n),
-                style: TextStyle(
-                  fontSize: AppWidgetTheme.fontSizeLG,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.2,
-                  color: textColor,
-                ),
+              // Title with icon
+              Row(
+                children: [
+                  const AnimatedEmoji(
+                    AnimatedEmojis.pencil,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _selectedRange.getTitle(l10n),
+                    style: TextStyle(
+                      fontSize: AppWidgetTheme.fontSizeLG,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.2,
+                      color: textColor,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: AppWidgetTheme.spaceMD),
               // Time range selector (simplified)
@@ -327,24 +365,53 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
     if (displayData.isEmpty) return const SizedBox.shrink();
 
     final l10n = AppLocalizations.of(context)!;
-    final weights = displayData.map((e) => e.weight).toList();
+
+    final weights = displayData.map((e) => _toDisplayWeight(e.weight)).toList();
+
+    // Include starting weight and target weight in range calculation
+    if (progressData.startingWeight != null) {
+      weights.add(_toDisplayWeight(progressData.startingWeight!));
+    }
+    if (widget.targetWeight != null) {
+      weights.add(_toDisplayWeight(widget.targetWeight!));
+    }
+
+    // Safety check: should never happen due to displayData.isEmpty check above
+    // but adding defensive programming for robustness
+    if (weights.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     final minWeight = weights.reduce((a, b) => a < b ? a : b);
     final maxWeight = weights.reduce((a, b) => a > b ? a : b);
 
-    // Add ±2kg buffer with whole numbers
-    final minY = (minWeight - 2).floorToDouble();
-    final maxY = (maxWeight + 2).ceilToDouble();
+    // Dynamic buffer: 5% of range, minimum 2 units for readability
+    final range = maxWeight - minWeight;
+    final buffer = range > 0 ? (range * 0.05).clamp(2.0, double.infinity) : 2.0;
+
+    // Round boundaries based on unit system
+    final spacing = widget.isMetric ? _metricSpacing : _imperialSpacing;
+    final rawMinY = (minWeight - buffer).floor();
+    final rawMaxY = (maxWeight + buffer).ceil();
+
+    final minY = widget.isMetric
+        ? (rawMinY % 2 == 1 ? rawMinY : rawMinY - 1).toDouble()  // Odd numbers for metric
+        : _roundDownToMultiple(rawMinY, spacing).toDouble();     // Multiples of 4 for imperial
+
+    final maxY = widget.isMetric
+        ? (rawMaxY % 2 == 1 ? rawMaxY : rawMaxY + 1).toDouble()  // Odd numbers for metric
+        : _roundUpToMultiple(rawMaxY, spacing).toDouble();       // Multiples of 4 for imperial
 
     // Weight data line
     final weightSpots = displayData.asMap().entries.map((entry) {
-      return FlSpot(entry.key.toDouble(), entry.value.weight);
+      return FlSpot(entry.key.toDouble(), _toDisplayWeight(entry.value.weight));
     }).toList();
 
-    // Target weight line (horizontal)
-    final List<FlSpot> targetSpots = [];
-    if (widget.targetWeight != null && displayData.isNotEmpty) {
-      targetSpots.add(FlSpot(0, widget.targetWeight!));
-      targetSpots.add(FlSpot((displayData.length - 1).toDouble(), widget.targetWeight!));
+    // Guideline from starting weight (left) to goal weight (right)
+    final List<FlSpot> guidelineSpots = [];
+    if (progressData.startingWeight != null && widget.targetWeight != null && displayData.isNotEmpty) {
+      guidelineSpots.add(FlSpot(0, _toDisplayWeight(progressData.startingWeight!)));
+      guidelineSpots.add(FlSpot((displayData.length - 1).toDouble(), _toDisplayWeight(widget.targetWeight!)));
     }
 
     // Calculate Y-axis interval for clean labels
@@ -409,15 +476,37 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
                 ),
               ),
             ),
-            // Target weight reference line (horizontal)
-            if (targetSpots.isNotEmpty)
+            // Guideline from starting weight to goal weight (diagonal)
+            if (guidelineSpots.isNotEmpty)
               LineChartBarData(
-                spots: targetSpots,
+                spots: guidelineSpots,
                 isCurved: false,
-                color: textColor.withValues(alpha: 0.5),
-                barWidth: 2,
-                dashArray: [5, 5],
-                dotData: const FlDotData(show: false),
+                color: textColor.withValues(alpha: 0.35),
+                barWidth: 1.5,
+                dashArray: [8, 4],
+                dotData: FlDotData(
+                  show: true,
+                  getDotPainter: (spot, percent, barData, index) {
+                    // Start point (left) - Green circle (30% smaller)
+                    if (index == 0) {
+                      return FlDotCirclePainter(
+                        radius: 4.2,
+                        color: Colors.green.withValues(alpha: 0.8),
+                        strokeWidth: 1.5,
+                        strokeColor: Colors.white,
+                      );
+                    }
+                    // Goal point (right) - Blue circle (30% smaller)
+                    else {
+                      return FlDotCirclePainter(
+                        radius: 4.2,
+                        color: Colors.blue.withValues(alpha: 0.8),
+                        strokeWidth: 1.5,
+                        strokeColor: Colors.white,
+                      );
+                    }
+                  },
+                ),
                 belowBarData: BarAreaData(show: false),
               ),
           ],
@@ -425,12 +514,22 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 45,
+                reservedSize: 28,
                 interval: yInterval,
                 getTitlesWidget: (value, meta) {
-                  final unit = widget.isMetric ? l10n.kg : l10n.lbs;
+                  final intValue = value.toInt();
+
+                  // Filter labels based on unit system
+                  final shouldShow = widget.isMetric
+                      ? intValue % 2 == 1  // Odd numbers only for metric
+                      : intValue % _imperialSpacing == 0;  // Multiples of 4 for imperial
+
+                  if (!shouldShow) {
+                    return const SizedBox.shrink();
+                  }
+
                   return Text(
-                    '${value.toStringAsFixed(0)} $unit',
+                    intValue.toString(),
                     style: TextStyle(
                       fontSize: AppWidgetTheme.fontSizeXS,
                       color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
@@ -530,18 +629,12 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
     );
   }
 
-  /// Calculate a nice interval for Y-axis labels based on range
-  /// Small range (< 10kg): Every 2kg
-  /// Medium range (10-20kg): Every 5kg
-  /// Large range (> 20kg): Every 10kg
+  /// Calculate interval for Y-axis labels
+  /// Returns 1.0 so fl_chart generates all integers, then we filter in getTitlesWidget:
+  /// - Metric: Show odd numbers only (2 kg spacing)
+  /// - Imperial: Show multiples of 4 only (4 lbs spacing)
   double _calculateNiceInterval(double range, int targetDivisions) {
-    if (range < 10) {
-      return 2.0;
-    } else if (range < 20) {
-      return 5.0;
-    } else {
-      return 10.0;
-    }
+    return 1.0; // Generate all integers, filter based on unit system
   }
 
   void _showEditDialog(BuildContext context, WeightData entry, ProgressData progressData) {
@@ -663,10 +756,11 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
 
   Widget _buildCompactStats(Map<String, double> stats, Color textColor) {
     final l10n = AppLocalizations.of(context)!;
+
     final statsToShow = [
-      {'label': l10n.totalChange, 'value': '${stats['totalChange']! >= 0 ? '+' : ''}${stats['totalChange']!.toStringAsFixed(1)}'},
-      {'label': l10n.average, 'value': stats['average']!.toStringAsFixed(1)},
-      {'label': l10n.weeklyRate, 'value': '${stats['weeklyRate']! >= 0 ? '+' : ''}${stats['weeklyRate']!.toStringAsFixed(1)}'},
+      {'label': l10n.totalChange, 'value': '${_toDisplayWeight(stats['totalChange']!) >= 0 ? '+' : ''}${_toDisplayWeight(stats['totalChange']!).toStringAsFixed(1)}'},
+      {'label': l10n.average, 'value': _toDisplayWeight(stats['average']!).toStringAsFixed(1)},
+      {'label': l10n.weeklyRate, 'value': '${_toDisplayWeight(stats['weeklyRate']!) >= 0 ? '+' : ''}${_toDisplayWeight(stats['weeklyRate']!).toStringAsFixed(1)}'},
     ];
 
     return Container(
