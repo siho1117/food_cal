@@ -1,10 +1,12 @@
 // lib/widgets/summary/sections/cost_budget_section.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../data/models/food_item.dart';
+import '../../../utils/summary/summary_period_utils.dart';
 import '../summary_controls_widget.dart';
 import 'base_section_widget.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -30,11 +32,7 @@ class CostBudgetSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     // Calculate period multiplier for weekly/monthly budgets
-    final periodDays = period == SummaryPeriod.weekly
-        ? 7
-        : period == SummaryPeriod.monthly
-            ? 30
-            : 1;
+    final periodDays = SummaryPeriodUtils.getPeriodDays(period);
 
     // Scale budget based on period
     final periodBudget = budget * periodDays;
@@ -44,7 +42,7 @@ class CostBudgetSection extends StatelessWidget {
     final percentage = periodBudget > 0 ? ((totalCost / periodBudget) * 100).round() : 0;
 
     return BaseSectionWidget(
-      icon: Icons.attach_money,
+      icon: AnimatedEmojis.moneyWithWings,
       title: l10n.foodBudget,
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
@@ -69,16 +67,12 @@ class CostBudgetSection extends StatelessWidget {
               if (period == SummaryPeriod.daily) ...[
                 InfoRow(
                   label: l10n.averagePerMeal,
-                  value: foodEntriesCount > 0
-                      ? '\$${(totalCost / foodEntriesCount).toStringAsFixed(2)}'
-                      : '\$0.00',
+                  value: '\$${SummaryPeriodUtils.safeDivide(totalCost, foodEntriesCount).toStringAsFixed(2)}',
                 ),
               ] else ...[
                 InfoRow(
                   label: l10n.averagePerDay,
-                  value: periodDays > 0
-                      ? '\$${(totalCost / periodDays).toStringAsFixed(2)}'
-                      : '\$0.00',
+                  value: '\$${SummaryPeriodUtils.safeDivide(totalCost, periodDays).toStringAsFixed(2)}',
                 ),
               ],
 

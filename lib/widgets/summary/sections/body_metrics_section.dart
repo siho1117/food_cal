@@ -1,10 +1,12 @@
 // lib/widgets/summary/sections/body_metrics_section.dart
 import 'package:flutter/material.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
 import '../../../data/models/user_profile.dart';
 import '../../../data/models/weight_data.dart';
 import '../../../utils/progress/health_metrics.dart';
+import '../../../utils/summary/summary_constants.dart';
 import 'base_section_widget.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
@@ -61,7 +63,6 @@ class BodyMetricsSection extends StatelessWidget {
 
     // Get unit preferences from profile
     final isMetric = profile?.isMetric ?? true;
-    const kgToLbsRatio = 2.20462;
 
     // Calculate BMR for metabolism info
     final bmr = HealthMetrics.calculateBMR(
@@ -79,7 +80,7 @@ class BodyMetricsSection extends StatelessWidget {
         // Format weight values based on unit preference
         String formatWeight(double? weight) {
           if (weight == null) return l10n.na;
-          final displayWeight = isMetric ? weight : weight * kgToLbsRatio;
+          final displayWeight = isMetric ? weight : weight * SummaryConstants.kgToLbsRatio;
           return displayWeight.toStringAsFixed(1);
         }
 
@@ -101,7 +102,7 @@ class BodyMetricsSection extends StatelessWidget {
         }
 
         return BaseSectionWidget(
-          icon: Icons.straighten,
+          icon: AnimatedEmojis.fire,
           title: l10n.bodyMetricsMetabolism,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,8 +196,7 @@ class BodyMetricsSection extends StatelessWidget {
                     final monthlyGoal = profile!.monthlyWeightGoal!;
                     final label = monthlyGoal < 0 ? l10n.loss : l10n.gain;
                     final absValue = monthlyGoal.abs();
-                    const kgToLbsRatio = 2.20462;
-                    final displayValue = isMetric ? absValue : absValue * kgToLbsRatio;
+                    final displayValue = isMetric ? absValue : absValue * SummaryConstants.kgToLbsRatio;
                     final unit = isMetric ? l10n.kg : l10n.lbs;
 
                     return InfoRow(

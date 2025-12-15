@@ -2,6 +2,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
 import '../../../providers/theme_provider.dart';
@@ -30,7 +31,7 @@ class MealLogSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return BaseSectionWidget(
-      icon: Icons.restaurant_menu,
+      icon: AnimatedEmojis.spaghetti,
       title: l10n.mealLog,
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {

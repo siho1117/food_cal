@@ -1,11 +1,14 @@
 // lib/widgets/summary/sections/nutrition_section.dart
 import 'package:flutter/material.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
 import '../../../config/design_system/nutrition_colors.dart';
+import '../../../utils/summary/summary_period_utils.dart';
 import 'base_section_widget.dart';
 import '../summary_controls_widget.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../common/activity_emoji.dart';
 
 /// Nutrition Section - Daily macro and calorie summary
 class NutritionSection extends StatelessWidget {
@@ -39,11 +42,7 @@ class NutritionSection extends StatelessWidget {
     final isWeeklyOrMonthly = period == SummaryPeriod.weekly || period == SummaryPeriod.monthly;
 
     // Calculate period multiplier for weekly/monthly goals
-    final periodDays = period == SummaryPeriod.weekly
-        ? 7
-        : period == SummaryPeriod.monthly
-            ? 30
-            : 1;
+    final periodDays = SummaryPeriodUtils.getPeriodDays(period);
 
     // Calculate effective calorie goal
     // For weekly/monthly: just use base goal × period (no exercise bonus)
@@ -58,7 +57,7 @@ class NutritionSection extends StatelessWidget {
     final percentage = effectiveGoal > 0 ? ((totalCalories / effectiveGoal) * 100).round() : 0;
 
     return BaseSectionWidget(
-      icon: Icons.restaurant,
+      icon: AnimatedEmojis.balanceScale,
       title: l10n.nutritionSummary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,6 +129,7 @@ class NutritionSection extends StatelessWidget {
             (consumedMacros['protein'] ?? 0).toDouble(),
             (targetMacros['protein'] ?? 0).toDouble() * periodDays,
             NutritionColors.proteinColor,
+            FoodEmojis.cutOfMeat,
           ),
 
           const SizedBox(height: AppWidgetTheme.spaceSM),
@@ -141,6 +141,7 @@ class NutritionSection extends StatelessWidget {
             (consumedMacros['carbs'] ?? 0).toDouble(),
             (targetMacros['carbs'] ?? 0).toDouble() * periodDays,
             NutritionColors.carbsColor,
+            FoodEmojis.croissant,
           ),
 
           const SizedBox(height: AppWidgetTheme.spaceSM),
@@ -152,6 +153,7 @@ class NutritionSection extends StatelessWidget {
             (consumedMacros['fat'] ?? 0).toDouble(),
             (targetMacros['fat'] ?? 0).toDouble() * periodDays,
             NutritionColors.fatColor,
+            FoodEmojis.avocado,
           ),
 
           const SizedBox(height: AppWidgetTheme.spaceMD),
@@ -163,7 +165,7 @@ class NutritionSection extends StatelessWidget {
     );
   }
 
-  Widget _buildMacroRow(BuildContext context, String label, double consumed, double target, Color color) {
+  Widget _buildMacroRow(BuildContext context, String label, double consumed, double target, Color color, String emojiPath) {
     final l10n = AppLocalizations.of(context)!;
     final percentage = target > 0 ? (consumed / target * 100).round() : 0;
     final progress = target > 0 ? (consumed / target).clamp(0.0, 1.0) : 0.0;
@@ -174,12 +176,21 @@ class NutritionSection extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              style: AppTypography.bodyMedium.copyWith(
-                fontSize: AppWidgetTheme.fontSizeSM,
-                color: Colors.white,
-              ),
+            Row(
+              children: [
+                ActivityEmoji(
+                  emojiPath,
+                  size: 20,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontSize: AppWidgetTheme.fontSizeSM,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
             Text(
               '${consumed.round()}${l10n.g} / ${target.round()}${l10n.g} ($percentage%)',

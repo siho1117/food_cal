@@ -8,6 +8,7 @@ import '../../providers/progress_data.dart';
 import '../../data/models/summary_card_config.dart';
 import '../../data/models/food_item.dart';
 import '../../data/models/exercise_entry.dart';
+import '../../utils/summary/summary_period_utils.dart';
 import 'summary_controls_widget.dart';
 import 'sections/report_header_section.dart';
 import 'sections/body_metrics_section.dart';
@@ -41,6 +42,9 @@ class _SummaryExportWidgetState extends State<SummaryExportWidget> {
   List<ExerciseEntry>? _aggregatedExerciseEntries;
   bool _isLoading = false;
 
+  // Track last data hash to detect changes
+  String? _lastDataHash;
+
   @override
   void initState() {
     super.initState();
@@ -65,19 +69,9 @@ class _SummaryExportWidgetState extends State<SummaryExportWidget> {
       final exerciseProvider = Provider.of<ExerciseProvider>(context, listen: false);
 
       final now = DateTime.now();
-      final DateTime startDate;
 
-      // Calculate date range based on period
-      if (widget.period == SummaryPeriod.daily) {
-        // Daily: Load today's data (regardless of home page selected date)
-        startDate = now;
-      } else if (widget.period == SummaryPeriod.weekly) {
-        // Weekly: Last 7 days
-        startDate = now.subtract(const Duration(days: 6));
-      } else {
-        // Monthly: Last 30 days
-        startDate = now.subtract(const Duration(days: 29));
-      }
+      // Calculate date range based on period using utility
+      final startDate = SummaryPeriodUtils.getStartDateForPeriod(widget.period);
 
       // Load aggregated data for the period
       final nutrition = await homeProvider.calculateAggregatedNutrition(startDate, now);
@@ -117,12 +111,42 @@ class _SummaryExportWidgetState extends State<SummaryExportWidget> {
   Widget build(BuildContext context) {
     return Consumer3<HomeProvider, ExerciseProvider, ProgressData>(
       builder: (context, homeProvider, exerciseProvider, progressData, child) {
+        // Create hash of current data to detect changes
+        final currentHash = '${homeProvider.foodEntries.length}-'
+            '${exerciseProvider.totalCaloriesBurned}-'
+            '${progressData.currentWeight}';
+
+        // Only reload if data has actually changed
+        if (_lastDataHash != null && _lastDataHash != currentHash && !_isLoading) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _lastDataHash = currentHash;
+              _loadAggregatedData();
+            }
+          });
+        } else if (_lastDataHash == null) {
+          _lastDataHash = currentHash;
+        }
+
         // Show loading if aggregating weekly/monthly data
         if (_isLoading) {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(40.0),
               child: CircularProgressIndicator(color: Colors.white),
+            ),
+          );
+        }
+
+        // Check if data loaded successfully - if not, show error
+        if (_aggregatedNutrition == null || _aggregatedExercise == null) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(40.0),
+              child: Text(
+                'Failed to load summary data',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+              ),
             ),
           );
         }
@@ -198,8 +222,9 @@ class _SummaryExportWidgetState extends State<SummaryExportWidget> {
         final foodEntriesCount = (_aggregatedNutrition!['mealCount'] as num).toInt();
 
         // Calculate average calories for weekly/monthly only
+        final periodDays = SummaryPeriodUtils.getPeriodDays(widget.period);
         final avgCalories = widget.period != SummaryPeriod.daily
-            ? (totalCalories / (widget.period == SummaryPeriod.weekly ? 7 : 30)).round()
+            ? SummaryPeriodUtils.safeDivideInt(totalCalories, periodDays)
             : null;
 
         return NutritionSection(

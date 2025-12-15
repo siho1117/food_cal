@@ -83,61 +83,58 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
         _previousTarget = targetWeight;
         _previousProgress = progress;
 
-        return GestureDetector(
-          onTap: () => _showWeightDialog(context, progressData),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(
-                sigmaX: GlassCardStyle.blurSigma,
-                sigmaY: GlassCardStyle.blurSigma,
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(
+              sigmaX: GlassCardStyle.blurSigma,
+              sigmaY: GlassCardStyle.blurSigma,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
+                borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
+                border: Border.all(
+                  color: borderColor,
+                  width: GlassCardStyle.borderWidth,
+                ),
               ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: GlassCardStyle.backgroundTintOpacity),
-                  borderRadius: BorderRadius.circular(AppWidgetTheme.cardBorderRadius),
-                  border: Border.all(
-                    color: borderColor,
-                    width: GlassCardStyle.borderWidth,
-                  ),
-                ),
-                padding: AppWidgetTheme.cardPadding,
-                child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                _buildHeader(context, progressData, textColor, l10n),
+              padding: AppWidgetTheme.cardPadding,
+              child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              _buildHeader(context, progressData, textColor, l10n),
 
-                SizedBox(height: AppWidgetTheme.spaceLG),
+              SizedBox(height: AppWidgetTheme.spaceLG),
 
-                // Visual Journey Timeline with animations
-                _buildJourneyTimeline(
-                  context,
-                  progressData,
-                  startingWeight,
-                  widget.currentWeight,
-                  targetWeight,
-                  progress,
-                  textColor,
-                  prevStart,
-                  _previousWeight,
-                  prevTarget,
-                  prevProgress,
-                ),
+              // Visual Journey Timeline with animations
+              _buildJourneyTimeline(
+                context,
+                progressData,
+                startingWeight,
+                widget.currentWeight,
+                targetWeight,
+                progress,
+                textColor,
+                prevStart,
+                _previousWeight,
+                prevTarget,
+                prevProgress,
+              ),
 
-                SizedBox(height: AppWidgetTheme.spaceLG),
+              SizedBox(height: AppWidgetTheme.spaceLG),
 
-                // Progress Stats Card
-                _buildProgressStats(
-                  startingWeight,
-                  widget.currentWeight,
-                  targetWeight,
-                  progress,
-                  textColor,
-                  l10n,
-                ),
-              ],
-                ),
+              // Progress Stats Card
+              _buildProgressStats(
+                startingWeight,
+                widget.currentWeight,
+                targetWeight,
+                progress,
+                textColor,
+                l10n,
+              ),
+            ],
               ),
             ),
           ),
@@ -225,12 +222,15 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
                 ),
               ),
             ),
-            Text(
-              AppLocalizations.of(context)!.current,
-              style: TextStyle(
-                fontSize: AppWidgetTheme.fontSizeXS,
-                fontWeight: FontWeight.w500,
-                color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+            GestureDetector(
+              onTap: () => _showWeightDialog(context, progressData, initialMode: WeightMode.current),
+              child: Text(
+                AppLocalizations.of(context)!.current,
+                style: TextStyle(
+                  fontSize: AppWidgetTheme.fontSizeXS,
+                  fontWeight: FontWeight.w500,
+                  color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
+                ),
               ),
             ),
             GestureDetector(
@@ -273,15 +273,18 @@ class _CombinedWeightWidgetState extends State<CombinedWeightWidget> {
                 ],
               ),
             ),
-            // Current weight (prominent) with animation
-            _AnimatedNumber(
-              value: current,
-              prevValue: prevCurrent,
-              isMetric: widget.isMetric,
-              style: TextStyle(
-                fontSize: AppWidgetTheme.fontSizeXXL,
-                fontWeight: FontWeight.w700,
-                color: textColor,
+            // Current weight (prominent) with animation - tappable to open dialog on Current tab
+            GestureDetector(
+              onTap: () => _showWeightDialog(context, progressData, initialMode: WeightMode.current),
+              child: _AnimatedNumber(
+                value: current,
+                prevValue: prevCurrent,
+                isMetric: widget.isMetric,
+                style: TextStyle(
+                  fontSize: AppWidgetTheme.fontSizeXXL,
+                  fontWeight: FontWeight.w700,
+                  color: textColor,
+                ),
               ),
             ),
             // Goal weight with animation - tappable to open dialog on Target tab

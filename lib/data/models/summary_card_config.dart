@@ -1,36 +1,55 @@
 // lib/data/models/summary_card_config.dart
 import 'package:flutter/material.dart';
+import 'package:animated_emoji/animated_emoji.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Enum representing all available summary cards
 enum SummaryCardType {
-  bodyMetrics('body_metrics', 'Body Metrics & Metabolism', false),
-  nutrition('nutrition', 'Nutrition Summary', false),
-  budget('budget', 'Food Budget', false),
-  exercise('exercise', 'Exercise & Activity', false),
-  progress('progress', 'Progress & Achievements', false),
-  mealLog('meal_log', 'Meal Log', false);
+  bodyMetrics('body_metrics', false),
+  nutrition('nutrition', false),
+  budget('budget', false),
+  exercise('exercise', false),
+  progress('progress', false),
+  mealLog('meal_log', false);
 
   final String id;
-  final String displayName;
   final bool isRequired; // Required cards can't be hidden
 
-  const SummaryCardType(this.id, this.displayName, this.isRequired);
+  const SummaryCardType(this.id, this.isRequired);
 
-  /// Get the icon for this card type
-  IconData get icon {
+  /// Get the localized display name for this card type
+  String getDisplayName(AppLocalizations l10n) {
     switch (this) {
       case SummaryCardType.bodyMetrics:
-        return Icons.straighten;
+        return l10n.bodyMetricsMetabolism;
       case SummaryCardType.nutrition:
-        return Icons.restaurant;
+        return l10n.nutritionSummary;
       case SummaryCardType.budget:
-        return Icons.attach_money;
+        return l10n.foodBudget;
       case SummaryCardType.exercise:
-        return Icons.fitness_center;
+        return l10n.exerciseActivityLog;
       case SummaryCardType.progress:
-        return Icons.emoji_events;
+        return l10n.progressAchievements;
       case SummaryCardType.mealLog:
-        return Icons.restaurant_menu;
+        return l10n.mealLog;
+    }
+  }
+
+  /// Get the animated emoji icon for this card type
+  AnimatedEmojiData get icon {
+    switch (this) {
+      case SummaryCardType.bodyMetrics:
+        return AnimatedEmojis.fire;
+      case SummaryCardType.nutrition:
+        return AnimatedEmojis.balanceScale;
+      case SummaryCardType.budget:
+        return AnimatedEmojis.moneyWithWings;
+      case SummaryCardType.exercise:
+        return AnimatedEmojis.muscle;
+      case SummaryCardType.progress:
+        return AnimatedEmojis.trophy;
+      case SummaryCardType.mealLog:
+        return AnimatedEmojis.spaghetti;
     }
   }
 

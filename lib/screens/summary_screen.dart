@@ -15,6 +15,7 @@ import '../providers/theme_provider.dart';
 import '../services/food_image_service.dart';
 import '../services/summary_card_settings_service.dart';
 import '../data/models/summary_card_config.dart';
+import '../utils/summary/summary_constants.dart';
 import '../widgets/summary/summary_controls_widget.dart';
 import '../widgets/summary/summary_export_widget.dart';
 import '../widgets/summary/card_settings_bottom_sheet.dart';
@@ -256,11 +257,11 @@ class _SummaryScreenState extends State<SummaryScreen> {
       await _preloadFoodImages(homeProvider);
 
       // Wait a bit more for FutureBuilder widgets to complete rendering
-      await Future.delayed(const Duration(milliseconds: 300));
+      await Future.delayed(SummaryConstants.imagePreloadDelay);
 
       // Capture the screenshot as PNG
       final Uint8List? imageBytes = await _screenshotController.capture(
-        pixelRatio: 3.0, // High quality for retina displays
+        pixelRatio: SummaryConstants.screenshotPixelRatio,
       );
 
       if (imageBytes == null) {
@@ -283,7 +284,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
           SnackBar(
             content: Text(AppLocalizations.of(context)!.summaryExportedSuccessfully),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
+            duration: SummaryConstants.exportSnackbarDuration,
           ),
         );
       }
@@ -293,7 +294,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
           SnackBar(
             content: Text('${AppLocalizations.of(context)!.exportError}${e.toString()}'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
+            duration: SummaryConstants.errorSnackbarDuration,
           ),
         );
       }

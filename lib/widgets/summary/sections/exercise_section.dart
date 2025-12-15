@@ -1,11 +1,13 @@
 // lib/widgets/summary/sections/exercise_section.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../data/models/exercise_entry.dart';
 import '../../../utils/shared/summary_data_calculator.dart';
+import '../../../utils/summary/summary_period_utils.dart';
 import '../summary_controls_widget.dart';
 import 'base_section_widget.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -30,11 +32,7 @@ class ExerciseSection extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     // Calculate period multiplier for weekly/monthly goals
-    final periodDays = period == SummaryPeriod.weekly
-        ? 7
-        : period == SummaryPeriod.monthly
-            ? 30
-            : 1;
+    final periodDays = SummaryPeriodUtils.getPeriodDays(period);
 
     // Scale burn goal based on period
     final periodBurnGoal = burnGoal * periodDays;
@@ -45,7 +43,7 @@ class ExerciseSection extends StatelessWidget {
     final percentage = periodBurnGoal > 0 ? ((totalBurned / periodBurnGoal) * 100).round() : 0;
 
     return BaseSectionWidget(
-      icon: Icons.fitness_center,
+      icon: AnimatedEmojis.muscle,
       title: l10n.exerciseActivityLog,
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
@@ -145,7 +143,7 @@ class ExerciseSection extends StatelessWidget {
                               ),
                               const SizedBox(width: 16),
                               Text(
-                                '${l10n.paceLabel}${(exercise.caloriesBurned / exercise.duration).toStringAsFixed(1)} ${l10n.calPerMin}',
+                                '${l10n.paceLabel}${SummaryPeriodUtils.safeDivide(exercise.caloriesBurned, exercise.duration).toStringAsFixed(1)} ${l10n.calPerMin}',
                                 style: AppTypography.bodySmall.copyWith(
                                   fontSize: AppWidgetTheme.fontSizeSM,
                                   color: textColor.withValues(alpha: AppWidgetTheme.opacityHigher),

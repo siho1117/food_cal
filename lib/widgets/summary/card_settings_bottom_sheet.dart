@@ -1,6 +1,7 @@
 // lib/widgets/summary/card_settings_bottom_sheet.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/typography.dart';
 import '../../providers/theme_provider.dart';
@@ -211,10 +212,9 @@ class _CardSettingsBottomSheetState extends State<CardSettingsBottomSheet> {
                   left: AppWidgetTheme.spaceXS,
                   right: AppWidgetTheme.spaceSM,
                 ),
-                child: Icon(
+                child: AnimatedEmoji(
                   config.type.icon,
-                  color: Colors.white,
-                  size: AppWidgetTheme.iconSizeMedium,
+                  size: 26,
                 ),
               ),
 
@@ -222,7 +222,7 @@ class _CardSettingsBottomSheetState extends State<CardSettingsBottomSheet> {
               Expanded(
                 child: SwitchListTile(
                   title: Text(
-                    config.type.displayName,
+                    config.type.getDisplayName(l10n),
                     style: AppTypography.bodyMedium.copyWith(
                       fontSize: AppWidgetTheme.fontSizeMD,
                       fontWeight: FontWeight.w600,

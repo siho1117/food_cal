@@ -1,8 +1,11 @@
 // lib/widgets/summary/sections/progress_achievements_section.dart
 import 'package:flutter/material.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
 import '../../../config/design_system/nutrition_colors.dart';
+import '../../../utils/summary/summary_period_utils.dart';
+import '../../../utils/summary/summary_constants.dart';
 import 'base_section_widget.dart';
 import '../summary_controls_widget.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -44,11 +47,7 @@ class ProgressAchievementsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     // Determine period multiplier
-    final periodDays = period == SummaryPeriod.weekly
-        ? 7
-        : period == SummaryPeriod.monthly
-            ? 30
-            : 1;
+    final periodDays = SummaryPeriodUtils.getPeriodDays(period);
 
     // Calculate period goals (multiply daily goals by period)
     final periodCalorieGoal = calorieGoal * periodDays;
@@ -90,7 +89,7 @@ class ProgressAchievementsSection extends StatelessWidget {
     final unit = isMetric ? l10n.kg : l10n.lbs;
 
     return BaseSectionWidget(
-      icon: Icons.emoji_events,
+      icon: AnimatedEmojis.trophy,
       title: l10n.progressAchievements,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,7 +236,7 @@ class ProgressAchievementsSection extends StatelessWidget {
     if (weight == null) return '--';
 
     // Convert to display unit if needed
-    final displayWeight = isMetric ? weight : weight * 2.20462;
+    final displayWeight = isMetric ? weight : weight * SummaryConstants.kgToLbsRatio;
     return displayWeight.toStringAsFixed(1);
   }
 }

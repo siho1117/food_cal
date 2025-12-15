@@ -1,5 +1,6 @@
 // lib/widgets/summary/sections/base_section_widget.dart
 import 'package:flutter/material.dart';
+import 'package:animated_emoji/animated_emoji.dart';
 import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
 import '../../common/frosted_glass_card.dart';
@@ -8,7 +9,7 @@ import '../../common/frosted_glass_card.dart';
 /// Glassmorphism design with frosted glass effect on gradient background
 /// 75% white opacity with black text for optimal readability
 class BaseSectionWidget extends StatelessWidget {
-  final IconData icon;
+  final AnimatedEmojiData icon;
   final String title;
   final Widget child;
 
@@ -28,10 +29,9 @@ class BaseSectionWidget extends StatelessWidget {
           // Section Header
           Row(
             children: [
-              Icon(
+              AnimatedEmoji(
                 icon,
-                size: AppWidgetTheme.iconSizeMedium,
-                color: Colors.white,
+                size: 26,
               ),
               const SizedBox(width: AppWidgetTheme.spaceSM),
               Expanded(

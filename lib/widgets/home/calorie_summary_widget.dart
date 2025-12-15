@@ -6,6 +6,7 @@ import 'package:animated_emoji/animated_emoji.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/accent_colors.dart';
+import '../../config/design_system/animation_constants.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/theme_provider.dart';
 
@@ -54,6 +55,7 @@ class CalorieSummaryUtils {
 
   /// Calculates progress as a value between 0.0 and 1.0
   static double calculateProgress(int totalCalories, int calorieGoal) {
+    if (calorieGoal <= 0) return 0.0;
     return (totalCalories / calorieGoal).clamp(0.0, 1.0);
   }
 }
@@ -83,17 +85,17 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
     super.initState();
     
     _progressController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: AnimationDurations.verySlow,
       vsync: this,
     );
-    
+
     _countController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: AnimationDurations.slow,
       vsync: this,
     );
-    
+
     _slideController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: AnimationDurations.medium,
       vsync: this,
     );
     
@@ -122,7 +124,7 @@ class _CalorieSummaryWidgetState extends State<CalorieSummaryWidget>
 
   void _startAnimations() {
     _slideController.forward();
-    Future.delayed(const Duration(milliseconds: 200), () {
+    Future.delayed(AnimationDurations.fast, () {
       if (mounted) {
         _progressController.forward();
         _countController.forward();

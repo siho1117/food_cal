@@ -219,10 +219,10 @@ class FoodLogWidget extends StatelessWidget {
     Color textColor,
   ) {
     final nutrition = item.getNutritionForServing();
-    final itemCalories = nutrition['calories']!.round();
-    final protein = nutrition['proteins']!.round();
-    final carbs = nutrition['carbs']!.round();
-    final fat = nutrition['fats']!.round();
+    final itemCalories = (nutrition['calories'] ?? 0.0).round();
+    final protein = (nutrition['proteins'] ?? 0.0).round();
+    final carbs = (nutrition['carbs'] ?? 0.0).round();
+    final fat = (nutrition['fats'] ?? 0.0).round();
     final itemCost = item.getCostForServing() ?? 0.0;
 
     return Container(
@@ -380,7 +380,7 @@ class FoodLogWidget extends StatelessWidget {
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: Colors.grey[300]!,
+          color: Colors.grey[300] ?? Colors.grey,
           width: 2,
         ),
       ),
