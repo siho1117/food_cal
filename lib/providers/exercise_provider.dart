@@ -68,6 +68,14 @@ class ExerciseProvider extends ChangeNotifier {
   // Check if can navigate to next day
   bool get canGoToNextDay => !isToday;
 
+  // MARK: - Summary Data Caching
+  // Cache for aggregated summary data to avoid repeated calculations
+  Map<String, Map<String, num>>? _cachedExerciseData;
+  Map<String, List<ExerciseEntry>>? _cachedExerciseEntries;
+  String? _lastCacheKey;
+  int _cacheVersion = 0; // Increments when cache is invalidated
+  int get cacheVersion => _cacheVersion;
+
   /// Load all exercise data for the current date
   Future<void> loadData({DateTime? date}) async {
     if (date != null) {
@@ -143,9 +151,12 @@ class ExerciseProvider extends ChangeNotifier {
 
       // Recalculate totals
       _totalCaloriesBurned = _exerciseEntries.fold(
-        0, 
+        0,
         (sum, entry) => sum + entry.caloriesBurned,
       );
+
+      // Invalidate cached summary data
+      _invalidateSummaryCache();
 
       notifyListeners();
     } catch (e) {
@@ -171,9 +182,12 @@ class ExerciseProvider extends ChangeNotifier {
 
         // Recalculate totals
         _totalCaloriesBurned = _exerciseEntries.fold(
-          0, 
+          0,
           (sum, entry) => sum + entry.caloriesBurned,
         );
+
+        // Invalidate cached summary data
+        _invalidateSummaryCache();
 
         notifyListeners();
       }
@@ -194,9 +208,12 @@ class ExerciseProvider extends ChangeNotifier {
 
       // Recalculate totals
       _totalCaloriesBurned = _exerciseEntries.fold(
-        0, 
+        0,
         (sum, entry) => sum + entry.caloriesBurned,
       );
+
+      // Invalidate cached summary data
+      _invalidateSummaryCache();
 
       notifyListeners();
     } catch (e) {
@@ -334,5 +351,73 @@ class ExerciseProvider extends ChangeNotifier {
       'duration': totalDuration,
       'exerciseCount': totalExercises,
     };
+  }
+
+  /// Get cached aggregated exercise data for a date range
+  ///
+  /// Returns cached data if available, otherwise calculates and caches it.
+  /// This prevents summary page from repeatedly calculating the same data.
+  Future<Map<String, num>> getCachedAggregatedExercise(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    // Create cache key from date range
+    final cacheKey = '${_getDateKey(startDate)}_${_getDateKey(endDate)}';
+
+    // Return cached data if available and key matches
+    if (_lastCacheKey == cacheKey && _cachedExerciseData != null && _cachedExerciseData!.containsKey(cacheKey)) {
+      return _cachedExerciseData![cacheKey]!;
+    }
+
+    // Calculate fresh data
+    final data = await calculateAggregatedExercise(startDate, endDate);
+
+    // Cache the result
+    _cachedExerciseData = {cacheKey: data};
+    _lastCacheKey = cacheKey;
+
+    return data;
+  }
+
+  /// Get cached exercise entries for a date range
+  ///
+  /// Returns cached entries if available, otherwise loads and caches them.
+  Future<List<ExerciseEntry>> getCachedExerciseEntriesForRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    // Create cache key from date range
+    final cacheKey = '${_getDateKey(startDate)}_${_getDateKey(endDate)}';
+
+    // Return cached data if available and key matches
+    if (_lastCacheKey == cacheKey && _cachedExerciseEntries != null && _cachedExerciseEntries!.containsKey(cacheKey)) {
+      return _cachedExerciseEntries![cacheKey]!;
+    }
+
+    // Load fresh data
+    final entriesByDate = await getExerciseEntriesForDateRange(startDate, endDate);
+
+    // Flatten the map into a single list
+    final List<ExerciseEntry> allEntries = [];
+    for (final dayEntries in entriesByDate.values) {
+      allEntries.addAll(dayEntries);
+    }
+
+    // Cache the result
+    _cachedExerciseEntries = {cacheKey: allEntries};
+    _lastCacheKey = cacheKey;
+
+    return allEntries;
+  }
+
+  /// Invalidate cached summary data
+  ///
+  /// Called when exercise entries are added, updated, or deleted to ensure
+  /// summary page gets fresh data on next load.
+  void _invalidateSummaryCache() {
+    _cachedExerciseData = null;
+    _cachedExerciseEntries = null;
+    _lastCacheKey = null;
+    _cacheVersion++; // Increment version to force UI reload
   }
 }

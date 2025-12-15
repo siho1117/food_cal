@@ -440,9 +440,7 @@ class FoodLogWidget extends StatelessWidget {
       context: context,
       builder: (context) => QuickEditFoodDialog(
         foodItem: item,
-        onUpdated: () {
-          homeProvider.refreshData();
-        },
+        homeProvider: homeProvider,
       ),
     );
   }
@@ -475,7 +473,7 @@ class FoodLogWidget extends StatelessWidget {
           FilledButton(
             onPressed: () async {
               Navigator.pop(context);
-              await homeProvider.deleteFoodEntry(item.id);
+              await homeProvider.deleteFoodEntry(item);
             },
             style: AppDialogTheme.destructiveButtonStyle,
             child: Text(l10n.delete),

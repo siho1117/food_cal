@@ -21,6 +21,11 @@ import 'sections/report_footer_section.dart';
 
 /// Comprehensive fitness report widget optimized for PDF/image export
 /// Uses professional white background with ReportColors for maximum readability
+///
+/// CACHE INVALIDATION:
+/// - Tracks cache versions from HomeProvider, ExerciseProvider, and ProgressData
+/// - Automatically reloads when any provider's data changes (food, exercise, or weight)
+/// - Uses PostFrameCallback to schedule reloads after widget rebuild
 class SummaryExportWidget extends StatefulWidget {
   final SummaryPeriod period;
   final List<SummaryCardConfig> cardConfigs;
@@ -42,8 +47,10 @@ class _SummaryExportWidgetState extends State<SummaryExportWidget> {
   List<ExerciseEntry>? _aggregatedExerciseEntries;
   bool _isLoading = false;
 
-  // Track last data hash to detect changes
-  String? _lastDataHash;
+  // Track cache versions to detect when data changes
+  int? _lastFoodCacheVersion;
+  int? _lastExerciseCacheVersion;
+  int? _lastProgressCacheVersion;
 
   @override
   void initState() {
@@ -60,6 +67,8 @@ class _SummaryExportWidgetState extends State<SummaryExportWidget> {
   }
 
   Future<void> _loadAggregatedData() async {
+    if (_isLoading) return; // Prevent concurrent loads
+
     setState(() {
       _isLoading = true;
     });
@@ -67,27 +76,24 @@ class _SummaryExportWidgetState extends State<SummaryExportWidget> {
     try {
       final homeProvider = Provider.of<HomeProvider>(context, listen: false);
       final exerciseProvider = Provider.of<ExerciseProvider>(context, listen: false);
+      final progressData = Provider.of<ProgressData>(context, listen: false);
 
       final now = DateTime.now();
+      // Normalize to end of day (23:59:59) for consistent date range calculations
+      final endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
 
       // Calculate date range based on period using utility
       final startDate = SummaryPeriodUtils.getStartDateForPeriod(widget.period);
 
-      // Load aggregated data for the period
-      final nutrition = await homeProvider.calculateAggregatedNutrition(startDate, now);
-      final exercise = await exerciseProvider.calculateAggregatedExercise(startDate, now);
+      // Load aggregated data for the period using cached methods
+      final nutrition = await homeProvider.getCachedAggregatedNutrition(startDate, endDate);
+      final exercise = await exerciseProvider.getCachedAggregatedExercise(startDate, endDate);
 
       // Load food entries for the period (for meal log)
-      final foodEntries = await homeProvider.getFoodEntriesForRange(startDate, now);
+      final foodEntries = await homeProvider.getCachedFoodEntriesForRange(startDate, endDate);
 
       // Load exercise entries for the period (for exercise log)
-      final exerciseEntriesByDate = await exerciseProvider.getExerciseEntriesForDateRange(startDate, now);
-
-      // Flatten the map into a single list of all exercises
-      final List<ExerciseEntry> exerciseEntries = [];
-      for (final dayEntries in exerciseEntriesByDate.values) {
-        exerciseEntries.addAll(dayEntries);
-      }
+      final exerciseEntries = await exerciseProvider.getCachedExerciseEntriesForRange(startDate, endDate);
 
       if (mounted) {
         setState(() {
@@ -96,9 +102,16 @@ class _SummaryExportWidgetState extends State<SummaryExportWidget> {
           _aggregatedFoodEntries = foodEntries;
           _aggregatedExerciseEntries = exerciseEntries;
           _isLoading = false;
+
+          // Update version trackers AFTER data is loaded
+          // This prevents skipping updates if Consumer rebuilds during load
+          _lastFoodCacheVersion = homeProvider.cacheVersion;
+          _lastExerciseCacheVersion = exerciseProvider.cacheVersion;
+          _lastProgressCacheVersion = progressData.cacheVersion;
         });
       }
     } catch (e) {
+      debugPrint('Error loading aggregated data: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -111,21 +124,31 @@ class _SummaryExportWidgetState extends State<SummaryExportWidget> {
   Widget build(BuildContext context) {
     return Consumer3<HomeProvider, ExerciseProvider, ProgressData>(
       builder: (context, homeProvider, exerciseProvider, progressData, child) {
-        // Create hash of current data to detect changes
-        final currentHash = '${homeProvider.foodEntries.length}-'
-            '${exerciseProvider.totalCaloriesBurned}-'
-            '${progressData.currentWeight}';
+        // Check if cache versions have changed (data was added/updated/deleted)
+        final currentFoodVersion = homeProvider.cacheVersion;
+        final currentExerciseVersion = exerciseProvider.cacheVersion;
+        final currentProgressVersion = progressData.cacheVersion;
 
-        // Only reload if data has actually changed
-        if (_lastDataHash != null && _lastDataHash != currentHash && !_isLoading) {
+        // Only reload if cache version changed (not on every rebuild)
+        if (_lastFoodCacheVersion != null &&
+            (_lastFoodCacheVersion != currentFoodVersion ||
+             _lastExerciseCacheVersion != currentExerciseVersion ||
+             _lastProgressCacheVersion != currentProgressVersion) &&
+            !_isLoading) {
+          // Schedule reload after this frame
+          // Don't update version here - let _loadAggregatedData do it after loading completes
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              _lastDataHash = currentHash;
+            if (mounted && !_isLoading) {
               _loadAggregatedData();
             }
           });
-        } else if (_lastDataHash == null) {
-          _lastDataHash = currentHash;
+        }
+
+        // Initialize versions on first build
+        if (_lastFoodCacheVersion == null) {
+          _lastFoodCacheVersion = currentFoodVersion;
+          _lastExerciseCacheVersion = currentExerciseVersion;
+          _lastProgressCacheVersion = currentProgressVersion;
         }
 
         // Show loading if aggregating weekly/monthly data

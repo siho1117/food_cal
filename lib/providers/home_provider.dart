@@ -11,7 +11,6 @@ import '../utils/home/macro_calculator.dart';
 import '../utils/home/daily_calorie_calculator.dart';
 import '../utils/home/cost_calculator.dart';
 import '../utils/home/exercise_bonus_calculator.dart';
-import '../utils/progress/progress_calculator.dart';
 import '../utils/shared/date_helper.dart';
 import './exercise_provider.dart';
 
@@ -65,25 +64,26 @@ class HomeProvider extends ChangeNotifier {
   int get effectiveCalorieGoal => _calorieGoal +
     (_exerciseBonusEnabled ? _exerciseBonusCalories : 0);
 
-  int get caloriesRemaining => ProgressCalculator.calculateRemaining(
-    consumed: _totalCalories.toDouble(),
-    target: effectiveCalorieGoal.toDouble(),
-  ).round();
+  int get caloriesRemaining =>
+    (effectiveCalorieGoal - _totalCalories).clamp(0, effectiveCalorieGoal);
 
-  bool get isOverBudget => ProgressCalculator.isOverTarget(
-    consumed: _totalCalories.toDouble(),
-    target: effectiveCalorieGoal.toDouble(),
-  );
+  bool get isOverBudget => _totalCalories > effectiveCalorieGoal;
 
   // Progress tracking
-  double get calorieProgress => ProgressCalculator.calculateProgress(
-    consumed: _totalCalories.toDouble(),
-    target: effectiveCalorieGoal.toDouble(),
-  );
+  double get calorieProgress => effectiveCalorieGoal > 0
+    ? (_totalCalories / effectiveCalorieGoal).clamp(0.0, 1.0)
+    : 0.0;
 
-  double get expectedDailyPercentage => ProgressCalculator.calculateExpectedDailyProgress(
-    selectedDate: _selectedDate,
-  );
+  double get expectedDailyPercentage {
+    final now = DateTime.now();
+    // If not viewing today, return 100%
+    if (!_isSameDay(now, _selectedDate)) return 1.0;
+
+    // Calculate minutes elapsed today
+    const minutesInDay = 24 * 60;
+    final currentMinutes = now.hour * 60 + now.minute;
+    return (currentMinutes / minutesInDay).clamp(0.0, 1.0);
+  }
 
   // Macronutrient tracking
   Map<String, double> get consumedMacros {
@@ -116,15 +116,12 @@ class HomeProvider extends ChangeNotifier {
   double _weeklyFoodCost = 0.0;
   double _monthlyFoodCost = 0.0;
 
-  double get budgetRemaining => ProgressCalculator.calculateRemaining(
-    consumed: _totalFoodCost,
-    target: _dailyFoodBudget,
-  );
+  double get budgetRemaining =>
+    (_dailyFoodBudget - _totalFoodCost).clamp(0.0, _dailyFoodBudget);
 
-  double get budgetProgress => ProgressCalculator.calculateProgress(
-    consumed: _totalFoodCost,
-    target: _dailyFoodBudget,
-  );
+  double get budgetProgress => _dailyFoodBudget > 0
+    ? (_totalFoodCost / _dailyFoodBudget).clamp(0.0, 1.0)
+    : 0.0;
 
   // Macro targets - NOW USING PERSONALIZED CALCULATIONS ✅
   // Uses effectiveCalorieGoal to scale macros when exercise bonus is enabled
@@ -136,16 +133,23 @@ class HomeProvider extends ChangeNotifier {
     );
   }
 
-  bool get isOverFoodBudget => ProgressCalculator.isOverTarget(
-    consumed: _totalFoodCost,
-    target: _dailyFoodBudget,
-  );
+  bool get isOverFoodBudget => _totalFoodCost > _dailyFoodBudget;
 
   Map<String, double> get macroProgressPercentages {
-    return ProgressCalculator.calculateMacroProgress(
-      consumed: consumedMacros,
-      targets: targetMacros,
-    );
+    final consumed = consumedMacros;
+    final targets = targetMacros;
+
+    return {
+      'protein': targets['protein'] != null && targets['protein']! > 0
+        ? (consumed['protein']! / targets['protein']!).clamp(0.0, 1.0)
+        : 0.0,
+      'carbs': targets['carbs'] != null && targets['carbs']! > 0
+        ? (consumed['carbs']! / targets['carbs']!).clamp(0.0, 1.0)
+        : 0.0,
+      'fat': targets['fat'] != null && targets['fat']! > 0
+        ? (consumed['fat']! / targets['fat']!).clamp(0.0, 1.0)
+        : 0.0,
+    };
   }
 
   int get foodEntriesCount => _foodEntries.length;
@@ -154,6 +158,14 @@ class HomeProvider extends ChangeNotifier {
   // These are loaded via _loadCostSummaries() during data load
   double get weeklyFoodCost => _weeklyFoodCost;
   double get monthlyFoodCost => _monthlyFoodCost;
+
+  // MARK: - Summary Data Caching
+  // Cache for aggregated summary data to avoid repeated calculations
+  Map<String, Map<String, num>>? _cachedNutritionData;
+  Map<String, List<FoodItem>>? _cachedFoodEntries;
+  String? _lastCacheKey;
+  int _cacheVersion = 0; // Increments when cache is invalidated
+  int get cacheVersion => _cacheVersion;
 
   /// Load all data for the home screen
   Future<void> loadData({DateTime? date}) async {
@@ -317,65 +329,124 @@ class HomeProvider extends ChangeNotifier {
 
   /// Add a food entry
   Future<void> addFoodEntry(FoodItem entry) async {
+    // Track if we added to local state (for rollback on error)
+    bool addedToLocal = false;
+
     try {
+      // If it's for the currently selected date, optimistically add to local state
+      if (_isSameDay(entry.timestamp, _selectedDate)) {
+        _foodEntries.add(entry);
+        _calculateTotals();
+        addedToLocal = true;
+        notifyListeners(); // Show immediate feedback
+      }
+
       // Save to storage
       await _foodRepository.storageService.saveFoodEntry(entry);
 
-      // If it's for the currently selected date, add to local state
-      if (_isSameDay(entry.timestamp, _selectedDate)) {
-        _foodEntries.add(entry);
+      // Always invalidate summary cache (affects all date ranges)
+      _invalidateSummaryCache();
 
-        // Recalculate totals
-        _calculateTotals();
+      // Notify listeners if we didn't already (for entries on different dates)
+      if (!addedToLocal) {
         notifyListeners();
       }
     } catch (e) {
       debugPrint('Error adding food entry: $e');
+
+      // Rollback: Remove from local state if we added it
+      if (addedToLocal) {
+        _foodEntries.removeWhere((item) => item.id == entry.id);
+        _calculateTotals();
+        notifyListeners();
+      }
+
       rethrow;
     }
   }
 
   /// Update a food entry
   Future<void> updateFoodEntry(FoodItem updatedItem) async {
+    // Track original item for rollback on error
+    FoodItem? originalItem;
+    int itemIndex = -1;
+
     try {
+      // If it's for the current date, optimistically update local state
+      if (_isSameDay(updatedItem.timestamp, _selectedDate)) {
+        itemIndex = _foodEntries.indexWhere((item) => item.id == updatedItem.id);
+        if (itemIndex != -1) {
+          originalItem = _foodEntries[itemIndex]; // Save for rollback
+          _foodEntries[itemIndex] = updatedItem;
+          _calculateTotals();
+          notifyListeners(); // Show immediate feedback
+        }
+      }
+
       // Save to storage
       await _foodRepository.storageService.updateFoodEntry(updatedItem);
 
-      // Update in local state if it's for the current date
-      if (_isSameDay(updatedItem.timestamp, _selectedDate)) {
-        final index = _foodEntries.indexWhere((item) => item.id == updatedItem.id);
-        if (index != -1) {
-          _foodEntries[index] = updatedItem;
-          _calculateTotals();
-          notifyListeners();
-        }
+      // Always invalidate summary cache (affects all date ranges)
+      _invalidateSummaryCache();
+
+      // Notify listeners if we didn't already (for entries on different dates)
+      if (originalItem == null) {
+        notifyListeners();
       }
     } catch (e) {
       debugPrint('Error updating food entry: $e');
+
+      // Rollback: Restore original item if we updated it
+      if (originalItem != null && itemIndex != -1) {
+        _foodEntries[itemIndex] = originalItem;
+        _calculateTotals();
+        notifyListeners();
+      }
+
       rethrow;
     }
   }
 
   /// Delete a food entry
-  Future<void> deleteFoodEntry(String entryId) async {
+  ///
+  /// Accepts the full [FoodItem] to ensure we have the timestamp for deletion.
+  /// This allows deletion even when the entry is not in the currently loaded date.
+  Future<void> deleteFoodEntry(FoodItem entry) async {
+    // Track if we removed from local state (for rollback on error)
+    FoodItem? removedItem;
+    int removedIndex = -1;
+
     try {
-      // Find the item first to get its timestamp
-      final itemToDelete = _foodEntries.firstWhere(
-        (item) => item.id == entryId,
-        orElse: () => throw Exception('Food entry not found'),
-      );
+      // If item is in local state (for currently selected date), optimistically remove it
+      final itemIndex = _foodEntries.indexWhere((item) => item.id == entry.id);
+      if (itemIndex != -1) {
+        removedItem = _foodEntries[itemIndex]; // Save for rollback
+        removedIndex = itemIndex;
+        _foodEntries.removeAt(itemIndex);
+        _calculateTotals();
+        notifyListeners(); // Show immediate feedback
+      }
 
-      // Delete from storage with both id and timestamp
-      await _foodRepository.storageService.deleteFoodEntry(entryId, itemToDelete.timestamp);
+      // Delete from storage using both id and timestamp
+      await _foodRepository.storageService.deleteFoodEntry(entry.id, entry.timestamp);
 
-      // Remove from local state
-      _foodEntries.removeWhere((item) => item.id == entryId);
+      // Always invalidate summary cache
+      _invalidateSummaryCache();
 
-      // Recalculate totals
-      _calculateTotals();
-      notifyListeners();
+      // Notify listeners if we didn't already (for entries on different dates)
+      if (removedItem == null) {
+        notifyListeners();
+      }
     } catch (e) {
       debugPrint('Error deleting food entry: $e');
+
+      // Rollback: Re-add to local state if we removed it
+      if (removedItem != null && removedIndex != -1) {
+        _foodEntries.insert(removedIndex, removedItem);
+        _calculateTotals();
+        notifyListeners();
+      }
+
       rethrow;
     }
   }
@@ -547,5 +618,67 @@ class HomeProvider extends ChangeNotifier {
       debugPrint('Error loading exercise bonus state: $e');
       _exerciseBonusEnabled = false;
     }
+  }
+
+  /// Get cached aggregated nutrition data for a date range
+  ///
+  /// Returns cached data if available, otherwise calculates and caches it.
+  /// This prevents summary page from repeatedly calculating the same data.
+  Future<Map<String, num>> getCachedAggregatedNutrition(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    // Create cache key from date range
+    final cacheKey = '${_getDateKey(startDate)}_${_getDateKey(endDate)}';
+
+    // Return cached data if available and key matches
+    if (_lastCacheKey == cacheKey && _cachedNutritionData != null && _cachedNutritionData!.containsKey(cacheKey)) {
+      return _cachedNutritionData![cacheKey]!;
+    }
+
+    // Calculate fresh data
+    final data = await calculateAggregatedNutrition(startDate, endDate);
+
+    // Cache the result
+    _cachedNutritionData = {cacheKey: data};
+    _lastCacheKey = cacheKey;
+
+    return data;
+  }
+
+  /// Get cached food entries for a date range
+  ///
+  /// Returns cached entries if available, otherwise loads and caches them.
+  Future<List<FoodItem>> getCachedFoodEntriesForRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    // Create cache key from date range
+    final cacheKey = '${_getDateKey(startDate)}_${_getDateKey(endDate)}';
+
+    // Return cached data if available and key matches
+    if (_lastCacheKey == cacheKey && _cachedFoodEntries != null && _cachedFoodEntries!.containsKey(cacheKey)) {
+      return _cachedFoodEntries![cacheKey]!;
+    }
+
+    // Load fresh data
+    final entries = await getFoodEntriesForRange(startDate, endDate);
+
+    // Cache the result
+    _cachedFoodEntries = {cacheKey: entries};
+    _lastCacheKey = cacheKey;
+
+    return entries;
+  }
+
+  /// Invalidate cached summary data
+  ///
+  /// Called when food entries are added, updated, or deleted to ensure
+  /// summary page gets fresh data on next load.
+  void _invalidateSummaryCache() {
+    _cachedNutritionData = null;
+    _cachedFoodEntries = null;
+    _lastCacheKey = null;
+    _cacheVersion++; // Increment version to force UI reload
   }
 }

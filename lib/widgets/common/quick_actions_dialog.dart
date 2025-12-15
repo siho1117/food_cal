@@ -314,13 +314,12 @@ class _QuickActionsDialogContent extends StatelessWidget {
       context: context,
       builder: (context) => QuickEditFoodDialog(
         foodItem: emptyFoodItem,
-        onUpdated: () {
-          homeProvider.refreshData();
-          // Navigate to Home page after food is saved
-          navigationProvider.navigateToHome();
-        },
+        homeProvider: homeProvider,
       ),
-    );
+    ).then((_) {
+      // Navigate to Home page after dialog is closed (food is saved or cancelled)
+      navigationProvider.navigateToHome();
+    });
   }
 }
 

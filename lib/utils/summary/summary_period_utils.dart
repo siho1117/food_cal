@@ -24,16 +24,18 @@ class SummaryPeriodUtils {
   /// Calculate the start date for a given period from now
   static DateTime getStartDateForPeriod(SummaryPeriod period) {
     final now = DateTime.now();
+    // Normalize to start of day (midnight) for consistent date comparisons
+    final today = DateTime(now.year, now.month, now.day);
 
     switch (period) {
       case SummaryPeriod.daily:
-        return now;
+        return today;
       case SummaryPeriod.weekly:
         // Last 7 days (including today)
-        return now.subtract(Duration(days: SummaryConstants.daysInWeek - 1));
+        return today.subtract(const Duration(days: SummaryConstants.daysInWeek - 1));
       case SummaryPeriod.monthly:
         // Last 30 days (including today)
-        return now.subtract(Duration(days: SummaryConstants.daysInMonth - 1));
+        return today.subtract(const Duration(days: SummaryConstants.daysInMonth - 1));
     }
   }
 

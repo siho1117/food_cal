@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../config/constants/app_constants.dart';
 import '../../data/models/food_item.dart';
-import '../../data/repositories/food_repository.dart';
+import '../../providers/home_provider.dart';
 import '../../services/food_image_service.dart';
 
 /// Controller for QuickEditFoodDialog business logic
@@ -34,9 +34,7 @@ import '../../services/food_image_service.dart';
 /// proportionally using the original per-unit values as a baseline.
 class QuickEditFoodController {
   final FoodItem foodItem;
-  final VoidCallback? onUpdated;
-
-  final FoodRepository _foodRepository = FoodRepository();
+  final HomeProvider homeProvider;
 
   // Text controllers
   late final TextEditingController nameController;
@@ -60,7 +58,7 @@ class QuickEditFoodController {
 
   QuickEditFoodController({
     required this.foodItem,
-    this.onUpdated,
+    required this.homeProvider,
   }) {
     // Store original per-unit values for proportional recalculation
     // These are the base values per single serving unit
@@ -293,16 +291,15 @@ class QuickEditFoodController {
         imagePath: imagePath,
       );
 
-      // Save to repository - use saveFoodEntry for new items, updateFoodEntry for existing
-      final success = isNewItem
-          ? await _foodRepository.storageService.saveFoodEntry(updatedItem)
-          : await _foodRepository.storageService.updateFoodEntry(updatedItem);
-
-      if (success) {
-        onUpdated?.call();
+      // Use provider methods instead of calling storage directly
+      // This ensures proper cache invalidation and notifyListeners()
+      if (isNewItem) {
+        await homeProvider.addFoodEntry(updatedItem);
+      } else {
+        await homeProvider.updateFoodEntry(updatedItem);
       }
 
-      return success;
+      return true;
     } catch (e) {
       debugPrint('Error saving food item: $e');
       rethrow;
@@ -316,22 +313,16 @@ class QuickEditFoodController {
     isLoading = true;
 
     try {
-      // Delete the food entry from storage
-      final success = await _foodRepository.storageService.deleteFoodEntry(
-        foodItem.id,
-        foodItem.timestamp,
-      );
-
-      if (success) {
-        // Also delete the associated food card image
-        if (foodItem.imagePath != null) {
-          await FoodImageService.deleteImage(foodItem.imagePath);
-        }
-
-        onUpdated?.call();
+      // Delete the associated food card image before deleting the entry
+      if (foodItem.imagePath != null) {
+        await FoodImageService.deleteImage(foodItem.imagePath);
       }
 
-      return success;
+      // Use provider method instead of calling storage directly
+      // This ensures proper cache invalidation and notifyListeners()
+      await homeProvider.deleteFoodEntry(foodItem);
+
+      return true;
     } catch (e) {
       debugPrint('Error deleting food item: $e');
       rethrow;

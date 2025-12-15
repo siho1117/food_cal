@@ -50,4 +50,8 @@ class HealthConstants {
   /// Average days per month for goal calculations
   /// Using 30 as approximation for monthly weight goals
   static const int averageDaysPerMonth = 30;
+
+  /// Minimum BMR percentage for safe calorie restriction
+  /// Never allow calorie goals below 75% of BMR to maintain health and metabolism
+  static const double minimumBmrPercentage = 0.75;
 }

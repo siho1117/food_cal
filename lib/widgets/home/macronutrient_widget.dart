@@ -2,13 +2,14 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:math' as math;
 import '../../l10n/generated/app_localizations.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/nutrition_colors.dart';
+import '../../config/design_system/animation_constants.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../common/activity_emoji.dart';
+import '../common/circular_progress_painter.dart';
 
 class MacronutrientWidget extends StatefulWidget {
   const MacronutrientWidget({super.key});
@@ -30,7 +31,7 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: AnimationDurations.verySlow,
     );
 
     _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -208,10 +209,11 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
                   // Progress Ring (capped at 100%)
                   CustomPaint(
                     size: const Size(56, 56),
-                    painter: _CircularProgressPainter(
+                    painter: CircularProgressPainter(
                       progress: animatedProgress,
-                      color: color,
+                      progressColor: color,
                       backgroundColor: textColor.withValues(alpha: 0.2),
+                      strokeWidth: 5.0,
                     ),
                   ),
 
@@ -292,57 +294,3 @@ class _MacronutrientWidgetState extends State<MacronutrientWidget>
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// CIRCULAR PROGRESS PAINTER
-// ═══════════════════════════════════════════════════════════════
-
-class _CircularProgressPainter extends CustomPainter {
-  final double progress;
-  final Color color;
-  final Color backgroundColor;
-
-  _CircularProgressPainter({
-    required this.progress,
-    required this.color,
-    required this.backgroundColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 3;
-
-    // Background circle (theme-adaptive)
-    final bgPaint = Paint()
-      ..color = backgroundColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 5
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawCircle(center, radius, bgPaint);
-
-    // Progress arc (capped at 100% = full circle)
-    final progressPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 5
-      ..strokeCap = StrokeCap.round;
-
-    final sweepAngle = 2 * math.pi * progress.clamp(0.0, 1.0);
-    
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2, // Start from top
-      sweepAngle,
-      false,
-      progressPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_CircularProgressPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-           oldDelegate.color != color ||
-           oldDelegate.backgroundColor != backgroundColor;
-  }
-}

@@ -8,18 +8,19 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../data/models/food_item.dart';
+import '../../providers/home_provider.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../food/food_card.dart';
 import 'quick_edit_food_controller.dart';
 
 class QuickEditFoodDialog extends StatefulWidget {
   final FoodItem foodItem;
-  final VoidCallback? onUpdated;
+  final HomeProvider homeProvider;
 
   const QuickEditFoodDialog({
     super.key,
     required this.foodItem,
-    this.onUpdated,
+    required this.homeProvider,
   });
 
   @override
@@ -35,7 +36,7 @@ class _QuickEditFoodDialogState extends State<QuickEditFoodDialog> {
     super.initState();
     _controller = QuickEditFoodController(
       foodItem: widget.foodItem,
-      onUpdated: widget.onUpdated,
+      homeProvider: widget.homeProvider,
     );
   }
 

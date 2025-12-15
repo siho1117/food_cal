@@ -4,14 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:animated_emoji/animated_emoji.dart';
-import 'dart:math' as math;
 import '../../l10n/generated/app_localizations.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/typography.dart';
+import '../../config/design_system/animation_constants.dart';
 import '../../config/design_system/accent_colors.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../common/currency_picker_dialog.dart';
+import '../common/circular_progress_painter.dart';
 
 class CostSummaryWidget extends StatefulWidget {
   const CostSummaryWidget({super.key});
@@ -30,17 +31,17 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: AnimationDurations.extraSlow,
     );
-    
+
     _animation = CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutCubic,
     );
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _controller.forward();
@@ -212,9 +213,11 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
 
     return CustomPaint(
       size: const Size(64, 64),
-      painter: _CircularProgressPainter(
+      painter: CircularProgressPainter(
         progress: ringProgress,
-        baseColor: ringColor,
+        progressColor: ringColor.withValues(alpha: AppWidgetTheme.opacityHighest),
+        backgroundColor: ringColor.withValues(alpha: AppWidgetTheme.opacityMediumHigh),
+        strokeWidth: 4.0,
       ),
       child: SizedBox(
         width: 64,
@@ -248,50 +251,3 @@ class _CostSummaryWidgetState extends State<CostSummaryWidget>
   }
 }
 
-/// Custom painter for circular progress indicator
-class _CircularProgressPainter extends CustomPainter {
-  final double progress;
-  final Color baseColor;
-
-  _CircularProgressPainter({
-    required this.progress,
-    required this.baseColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 4;
-    
-    // Background circle
-    final bgPaint = Paint()
-      ..color = baseColor.withValues(alpha: AppWidgetTheme.opacityMediumHigh)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4  // Thinner line
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawCircle(center, radius, bgPaint);
-
-    // Progress arc
-    final progressPaint = Paint()
-      ..color = baseColor.withValues(alpha: AppWidgetTheme.opacityHighest)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4  // Thinner line
-      ..strokeCap = StrokeCap.round;
-    
-    final sweepAngle = 2 * math.pi * progress;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2, // Start from top
-      sweepAngle,
-      false,
-      progressPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_CircularProgressPainter oldDelegate) {
-    return oldDelegate.progress != progress || 
-           oldDelegate.baseColor != baseColor;
-  }
-}

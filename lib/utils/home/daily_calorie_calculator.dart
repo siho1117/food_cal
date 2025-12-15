@@ -1,5 +1,7 @@
 // lib/utils/daily_calorie_calculator.dart
+import 'package:flutter/foundation.dart';
 import '../../data/models/user_profile.dart';
+import '../../config/constants/nutrition_constants.dart';
 import '../progress/health_metrics.dart';
 
 /// Calculator for daily calorie goals based on BMR baseline and weight goals
@@ -40,8 +42,14 @@ class DailyCalorieCalculator {
     required UserProfile? userProfile,
     required double? currentWeight,
   }) {
+    // Dev-only performance monitoring
+    final stopwatch = kDebugMode ? (Stopwatch()..start()) : null;
+
     // Return default if essential data is missing
     if (userProfile == null || currentWeight == null) {
+      if (kDebugMode) {
+        debugPrint('[DailyCalorieCalculator] calculateDailyGoal: ${stopwatch?.elapsedMicroseconds}μs (defaults)');
+      }
       return 2000;
     }
 
@@ -70,8 +78,8 @@ class DailyCalorieCalculator {
       if (userProfile.monthlyWeightGoal != null) {
         // Calculate daily calorie adjustment
         // 1 kg of body fat = approximately 7700 calories
-        final dailyWeightChangeKg = userProfile.monthlyWeightGoal! / 30;
-        final calorieAdjustment = dailyWeightChangeKg * 7700;
+        final dailyWeightChangeKg = userProfile.monthlyWeightGoal! / HealthConstants.averageDaysPerMonth;
+        final calorieAdjustment = dailyWeightChangeKg * HealthConstants.caloriesPerKgBodyFat;
 
         // Apply adjustment to baseline
         calorieGoal = (baselineCalories + calorieAdjustment).round();
@@ -79,7 +87,7 @@ class DailyCalorieCalculator {
         // SAFETY CHECK: For weight loss, ensure minimum safe calories
         // Never go below 75% of BMR to maintain health and metabolism
         if (userProfile.monthlyWeightGoal! < 0) {
-          final minimumSafeCalories = (bmr * 0.75).round();
+          final minimumSafeCalories = (bmr * HealthConstants.minimumBmrPercentage).round();
           if (calorieGoal < minimumSafeCalories) {
             calorieGoal = minimumSafeCalories;
           }
@@ -87,8 +95,17 @@ class DailyCalorieCalculator {
       }
 
       // Final safety check: ensure positive value
-      return calorieGoal > 0 ? calorieGoal : 2000;
+      final result = calorieGoal > 0 ? calorieGoal : 2000;
+
+      if (kDebugMode) {
+        debugPrint('[DailyCalorieCalculator] calculateDailyGoal: ${stopwatch?.elapsedMicroseconds}μs → ${result}cal');
+      }
+
+      return result;
     } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[DailyCalorieCalculator] calculateDailyGoal: ${stopwatch?.elapsedMicroseconds}μs (error fallback)');
+      }
       // Return default on any error
       return 2000;
     }
@@ -139,7 +156,7 @@ class DailyCalorieCalculator {
       final weeklyDifference = dailyDifference * 7;
 
       // Convert to kg (7700 calories per kg of body fat)
-      return weeklyDifference / 7700;
+      return weeklyDifference / HealthConstants.caloriesPerKgBodyFat;
     } catch (e) {
       return null;
     }
@@ -184,12 +201,12 @@ class DailyCalorieCalculator {
 
       final baselineCalories = bmr;
 
-      final dailyWeightChangeKg = userProfile.monthlyWeightGoal! / 30;
-      final calorieAdjustment = dailyWeightChangeKg * 7700;
+      final dailyWeightChangeKg = userProfile.monthlyWeightGoal! / HealthConstants.averageDaysPerMonth;
+      final calorieAdjustment = dailyWeightChangeKg * HealthConstants.caloriesPerKgBodyFat;
       final theoreticalGoal = (baselineCalories + calorieAdjustment).round();
 
       // Check if it would go below the safety threshold
-      final minimumSafeCalories = (bmr * 0.75).round();
+      final minimumSafeCalories = (bmr * HealthConstants.minimumBmrPercentage).round();
       return theoreticalGoal < minimumSafeCalories;
     } catch (e) {
       return false;
@@ -233,8 +250,8 @@ class DailyCalorieCalculator {
   static int getDailyCalorieAdjustment(double? monthlyWeightGoal) {
     if (monthlyWeightGoal == null) return 0;
 
-    final dailyWeightChangeKg = monthlyWeightGoal / 30;
-    final calorieAdjustment = dailyWeightChangeKg * 7700;
+    final dailyWeightChangeKg = monthlyWeightGoal / HealthConstants.averageDaysPerMonth;
+    final calorieAdjustment = dailyWeightChangeKg * HealthConstants.caloriesPerKgBodyFat;
 
     return calorieAdjustment.round();
   }

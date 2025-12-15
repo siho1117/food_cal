@@ -1,5 +1,7 @@
 // lib/utils/macro_calculator.dart
+import 'package:flutter/foundation.dart';
 import '../../data/models/user_profile.dart';
+import '../../config/constants/nutrition_constants.dart';
 
 /// Centralized macronutrient calculation logic
 /// 
@@ -30,14 +32,26 @@ class MacroCalculator {
     required UserProfile? userProfile,
     required double? currentWeight,
   }) {
+    // Dev-only performance monitoring
+    final stopwatch = kDebugMode ? (Stopwatch()..start()) : null;
+
     // Default targets if calculation fails (30% protein, 45% carbs, 25% fat)
     final defaultTargets = {
-      'protein': (calorieGoal * 0.30 / 4).round().clamp(1, 9999),
-      'carbs': (calorieGoal * 0.45 / 4).round().clamp(1, 9999),
-      'fat': (calorieGoal * 0.25 / 9).round().clamp(1, 9999),
+      'protein': (calorieGoal * NutritionConstants.defaultProteinPercent / NutritionConstants.caloriesPerGramProtein)
+          .round()
+          .clamp(NutritionConstants.minMacroGrams, NutritionConstants.maxMacroGrams),
+      'carbs': (calorieGoal * NutritionConstants.defaultCarbsPercent / NutritionConstants.caloriesPerGramCarbs)
+          .round()
+          .clamp(NutritionConstants.minMacroGrams, NutritionConstants.maxMacroGrams),
+      'fat': (calorieGoal * NutritionConstants.defaultFatPercent / NutritionConstants.caloriesPerGramFat)
+          .round()
+          .clamp(NutritionConstants.minMacroGrams, NutritionConstants.maxMacroGrams),
     };
 
     if (userProfile == null || currentWeight == null || calorieGoal <= 0) {
+      if (kDebugMode) {
+        debugPrint('[MacroCalculator] calculateTargets: ${stopwatch?.elapsedMicroseconds}μs (defaults)');
+      }
       return defaultTargets;
     }
 
@@ -58,18 +72,31 @@ class MacroCalculator {
       final fatPercent = macrosRatio['fat_percentage'] as int? ?? 25;
 
       // Convert percentages to grams based on calorie goal
-      // Protein and carbs: 4 calories per gram
-      // Fat: 9 calories per gram
-      final targetProtein = ((calorieGoal * proteinPercent / 100) / 4).round().clamp(1, 9999);
-      final targetCarbs = ((calorieGoal * carbsPercent / 100) / 4).round().clamp(1, 9999);
-      final targetFat = ((calorieGoal * fatPercent / 100) / 9).round().clamp(1, 9999);
+      final targetProtein = ((calorieGoal * proteinPercent / 100) / NutritionConstants.caloriesPerGramProtein)
+          .round()
+          .clamp(NutritionConstants.minMacroGrams, NutritionConstants.maxMacroGrams);
+      final targetCarbs = ((calorieGoal * carbsPercent / 100) / NutritionConstants.caloriesPerGramCarbs)
+          .round()
+          .clamp(NutritionConstants.minMacroGrams, NutritionConstants.maxMacroGrams);
+      final targetFat = ((calorieGoal * fatPercent / 100) / NutritionConstants.caloriesPerGramFat)
+          .round()
+          .clamp(NutritionConstants.minMacroGrams, NutritionConstants.maxMacroGrams);
 
-      return {
+      final result = {
         'protein': targetProtein,
         'carbs': targetCarbs,
         'fat': targetFat,
       };
+
+      if (kDebugMode) {
+        debugPrint('[MacroCalculator] calculateTargets: ${stopwatch?.elapsedMicroseconds}μs');
+      }
+
+      return result;
     } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[MacroCalculator] calculateTargets: ${stopwatch?.elapsedMicroseconds}μs (error fallback)');
+      }
       // Return defaults on error
       return defaultTargets;
     }
