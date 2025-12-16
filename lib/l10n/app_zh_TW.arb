@@ -327,6 +327,9 @@
   "report": "報告",
   "generated": "生成時間：",
   "generatedByOptimate": "由 OptiMate 生成",
+  "dailySummary": "每日摘要",
+  "weeklySummary": "每週摘要",
+  "monthlySummary": "每月摘要",
 
   "@_SUMMARY_BODY_METRICS": {},
   "bodyMetricsMetabolism": "身體指標與代謝",

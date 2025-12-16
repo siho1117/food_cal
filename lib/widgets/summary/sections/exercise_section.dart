@@ -11,6 +11,7 @@ import '../../../utils/summary/summary_period_utils.dart';
 import '../summary_controls_widget.dart';
 import 'base_section_widget.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../common/activity_emoji.dart';
 
 /// Exercise & Activity Log Section
 class ExerciseSection extends StatelessWidget {
@@ -102,15 +103,14 @@ class ExerciseSection extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(width: AppWidgetTheme.spaceXS),
-                                    Icon(
-                                      _getExerciseIcon(exercise.name),
-                                      color: textColor,
+                                    ActivityEmoji(
+                                      _getExerciseIconPath(exercise.name),
                                       size: AppWidgetTheme.iconSizeMedium,
                                     ),
                                     const SizedBox(width: AppWidgetTheme.spaceXS),
                                     Expanded(
                                       child: Text(
-                                        exercise.name,
+                                        _getLocalizedExerciseName(exercise.name, l10n),
                                         style: AppTypography.bodyMedium.copyWith(
                                           fontSize: AppWidgetTheme.fontSizeSM,
                                           fontWeight: FontWeight.w600,
@@ -186,7 +186,7 @@ class ExerciseSection extends StatelessWidget {
                           // Left: Exercise name
                           Expanded(
                             child: Text(
-                              '${index + 1}. ${exercise.name}',
+                              '${index + 1}. ${_getLocalizedExerciseName(exercise.name, l10n)}',
                               style: AppTypography.bodyMedium.copyWith(
                                 fontSize: AppWidgetTheme.fontSizeSM,
                                 fontWeight: FontWeight.w600,
@@ -228,28 +228,52 @@ class ExerciseSection extends StatelessWidget {
     );
   }
 
-  /// Get the appropriate icon for an exercise based on its name
-  IconData _getExerciseIcon(String exerciseName) {
+  /// Get the appropriate icon path for an exercise based on its name
+  String _getExerciseIconPath(String exerciseName) {
+    // Map standard exercise names (in English) to their emoji paths
     final iconMap = {
-      'running': Icons.directions_run,
-      'cycling': Icons.directions_bike,
-      'swimming': Icons.pool,
-      'walking': Icons.directions_walk,
-      'weight training': Icons.fitness_center,
-      'yoga': Icons.self_improvement,
-      'hiking': Icons.terrain,
-      'basketball': Icons.sports_basketball,
-      'soccer': Icons.sports_soccer,
-      'tennis': Icons.sports_tennis,
+      'Running': ActivityEmojis.personRunning,
+      'Cycling': ActivityEmojis.personBiking,
+      'Swimming': ActivityEmojis.personSwimming,
+      'Walking': ActivityEmojis.personWalking,
+      'Weight Training': ActivityEmojis.personLiftingWeights,
+      'Yoga': ActivityEmojis.personLotus,
     };
 
+    // Direct match first (for English or exact matches)
+    if (iconMap.containsKey(exerciseName)) {
+      return iconMap[exerciseName]!;
+    }
+
+    // Fallback to contains check (case-insensitive)
     final key = exerciseName.toLowerCase();
     for (var entry in iconMap.entries) {
-      if (key.contains(entry.key)) {
+      if (key.contains(entry.key.toLowerCase())) {
         return entry.value;
       }
     }
-    return Icons.sports_gymnastics;
+
+    return ActivityEmojis.personCartwheeling; // Default fallback
+  }
+
+  /// Get localized exercise name for standard exercises
+  String _getLocalizedExerciseName(String exerciseName, AppLocalizations l10n) {
+    switch (exerciseName) {
+      case 'Running':
+        return l10n.running;
+      case 'Walking':
+        return l10n.walking;
+      case 'Cycling':
+        return l10n.cycling;
+      case 'Swimming':
+        return l10n.swimming;
+      case 'Weight Training':
+        return l10n.weightTraining;
+      case 'Yoga':
+        return l10n.yoga;
+      default:
+        return exerciseName; // Return as-is for custom exercises
+    }
   }
 
   /// Get burn goal label based on period

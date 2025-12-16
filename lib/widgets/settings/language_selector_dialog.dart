@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/design_system/theme_design.dart';
 import '../../providers/language_provider.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 class LanguageSelectorDialog extends StatelessWidget {
   const LanguageSelectorDialog({super.key});
@@ -10,7 +11,8 @@ class LanguageSelectorDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
-    
+    final l10n = AppLocalizations.of(context)!;
+
     // Only show languages that have .arb files
     final availableLanguages = [
       'en',
@@ -45,9 +47,9 @@ class LanguageSelectorDialog extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'Select Language',
-                  style: TextStyle(
+                Text(
+                  l10n.selectLanguage,
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textDark,
@@ -63,7 +65,7 @@ class LanguageSelectorDialog extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Choose your preferred language',
+              l10n.choosePreferredLanguage,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[600],
@@ -89,7 +91,7 @@ class LanguageSelectorDialog extends StatelessWidget {
                   }
                 },
               );
-            }).toList(),
+            }),
 
             const SizedBox(height: 16),
 
@@ -113,7 +115,7 @@ class LanguageSelectorDialog extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Language will be saved and applied immediately',
+                      l10n.languageSavedApplied,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[700],

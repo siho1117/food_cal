@@ -684,6 +684,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get generatedByOptimate => '由 OptiMate 生成';
 
   @override
+  String get dailySummary => '每日摘要';
+
+  @override
+  String get weeklySummary => '每周摘要';
+
+  @override
+  String get monthlySummary => '每月摘要';
+
+  @override
   String get bodyMetricsMetabolism => '身体指标与代谢';
 
   @override
@@ -1611,6 +1620,15 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get generatedByOptimate => '由 OptiMate 生成';
 
   @override
+  String get dailySummary => '每日摘要';
+
+  @override
+  String get weeklySummary => '每周摘要';
+
+  @override
+  String get monthlySummary => '每月摘要';
+
+  @override
   String get bodyMetricsMetabolism => '身体指标与代谢';
 
   @override
@@ -2536,6 +2554,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get generatedByOptimate => '由 OptiMate 生成';
+
+  @override
+  String get dailySummary => '每日摘要';
+
+  @override
+  String get weeklySummary => '每週摘要';
+
+  @override
+  String get monthlySummary => '每月摘要';
 
   @override
   String get bodyMetricsMetabolism => '身體指標與代謝';

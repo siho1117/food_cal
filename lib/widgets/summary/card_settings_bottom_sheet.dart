@@ -13,12 +13,14 @@ class CardSettingsBottomSheet extends StatefulWidget {
   final List<SummaryCardConfig> cardConfigs;
   final Function(SummaryCardType, bool) onVisibilityChanged;
   final Function(int, int)? onReorder;
+  final VoidCallback? onResetToDefault;
 
   const CardSettingsBottomSheet({
     super.key,
     required this.cardConfigs,
     required this.onVisibilityChanged,
     this.onReorder,
+    this.onResetToDefault,
   });
 
   @override
@@ -166,6 +168,41 @@ class _CardSettingsBottomSheetState extends State<CardSettingsBottomSheet> {
               ),
 
               const SizedBox(height: AppWidgetTheme.spaceMD),
+
+              // Reset to Default button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    widget.onResetToDefault?.call();
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(
+                    Icons.restore,
+                    color: Colors.white,
+                  ),
+                  label: Text(
+                    'Reset to Default',
+                    style: AppTypography.bodyMedium.copyWith(
+                      fontSize: AppWidgetTheme.fontSizeMD,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(
+                      color: borderColor.withValues(alpha: 0.5),
+                      width: 2,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppWidgetTheme.spaceMD,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         );

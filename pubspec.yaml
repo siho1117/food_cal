@@ -79,6 +79,7 @@ flutter:
     - assets/icon/
     - assets/emojis/activities/
     - assets/emojis/food/
+    - assets/emojis/icon/
 
 # ✅ APP ICON CONFIGURATION
 flutter_launcher_icons:

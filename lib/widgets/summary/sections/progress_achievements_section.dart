@@ -149,7 +149,7 @@ class ProgressAchievementsSection extends StatelessWidget {
 
           // Calories Goal
           _buildGoalRow(
-            icon: Icons.restaurant_menu,
+            icon: AnimatedEmojis.spaghetti,
             label: l10n.calories,
             value: '$totalCalories / $periodCalorieGoal ${l10n.cal} ($caloriePercentage%)',
             isMet: caloriesMet,
@@ -157,7 +157,7 @@ class ProgressAchievementsSection extends StatelessWidget {
 
           // Exercise Goal
           _buildGoalRow(
-            icon: Icons.fitness_center,
+            icon: AnimatedEmojis.muscle,
             label: l10n.exercise,
             value: '$totalBurned / $periodBurnGoal ${l10n.cal} ($exercisePercentage%)',
             isMet: exerciseMet,
@@ -165,7 +165,7 @@ class ProgressAchievementsSection extends StatelessWidget {
 
           // Budget Goal
           _buildGoalRow(
-            icon: Icons.attach_money,
+            icon: AnimatedEmojis.moneyWithWings,
             label: l10n.budget,
             value: '\$${totalCost.toStringAsFixed(2)} / \$${periodBudget.toStringAsFixed(2)} ($budgetPercentage%)',
             isMet: budgetMet,
@@ -177,7 +177,7 @@ class ProgressAchievementsSection extends StatelessWidget {
 
   /// Build a goal row with icon and status indicator
   Widget _buildGoalRow({
-    required IconData icon,
+    required AnimatedEmojiData icon,
     required String label,
     required String value,
     required bool isMet,
@@ -193,10 +193,9 @@ class ProgressAchievementsSection extends StatelessWidget {
             size: 20,
           ),
           const SizedBox(width: AppWidgetTheme.spaceXS),
-          // Goal icon
-          Icon(
+          // Goal icon (animated emoji)
+          AnimatedEmoji(
             icon,
-            color: Colors.white.withValues(alpha: 0.8),
             size: 18,
           ),
           const SizedBox(width: AppWidgetTheme.spaceXS),

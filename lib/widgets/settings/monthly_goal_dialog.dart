@@ -9,6 +9,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/exercise_provider.dart';
 import '../../providers/home_provider.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../utils/constants/unit_constants.dart';
 
 /// Monthly Weight Goal Picker Dialog
 ///
@@ -41,7 +42,6 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
   late double _initialGoalKg; // Track initial value for zone calculation
 
   // Constants
-  static const double _kgToLbsRatio = 2.20462;
   static const double _minGoalKg = 0.1;
   static const double _maxGoalKg = 9.9;
   static const double _increment = 0.1;
@@ -150,10 +150,10 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
   // ============ Unit Conversion Helpers ============
 
   /// Convert kg to display unit (kg or lbs)
-  double _toDisplayUnit(double kg) => _isMetric ? kg : kg * _kgToLbsRatio;
+  double _toDisplayUnit(double kg) => _isMetric ? kg : UnitConstants.kgToLbs(kg);
 
   /// Convert display unit to kg
-  double _toKg(double displayValue) => _isMetric ? displayValue : displayValue / _kgToLbsRatio;
+  double _toKg(double displayValue) => _isMetric ? displayValue : UnitConstants.lbsToKg(displayValue);
 
   /// Format range for display
   String _formatRange(double minKg, double maxKg) {

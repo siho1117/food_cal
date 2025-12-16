@@ -34,9 +34,22 @@ class ReportHeaderSection extends StatelessWidget {
           child: Center(
             child: Column(
               children: [
-                // Title: User Name + App Name + Report
+                // First Row: User Name
                 Text(
-                  '${(profile?.name ?? 'User').toUpperCase()} ${AppConstants.appDisplayName} ${l10n.report.toUpperCase()}',
+                  (profile?.name ?? 'User').toUpperCase(),
+                  style: AppTypography.displayLarge.copyWith(
+                    fontSize: AppWidgetTheme.fontSizeXL,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 2.0,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppWidgetTheme.spaceXS),
+
+                // Second Row: OptiMate Report
+                Text(
+                  '${AppConstants.appDisplayName} ${l10n.report}',
                   style: AppTypography.displayLarge.copyWith(
                     fontSize: AppWidgetTheme.fontSizeXL,
                     fontWeight: FontWeight.bold,
@@ -51,14 +64,10 @@ class ReportHeaderSection extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      _getPeriodIcon(period),
-                      size: AppWidgetTheme.iconSizeSmall,
-                      color: Colors.white.withValues(alpha: 0.7),
-                    ),
+                    _buildPeriodIcon(period),
                     const SizedBox(width: AppWidgetTheme.spaceXS),
                     Text(
-                      SummaryDataCalculator.getPeriodTitle(period),
+                      _getPeriodTitle(period, l10n),
                       style: AppTypography.bodyMedium.copyWith(
                         fontSize: AppWidgetTheme.fontSizeMS,
                         color: Colors.white.withValues(alpha: 0.7),
@@ -82,22 +91,10 @@ class ReportHeaderSection extends StatelessWidget {
 
                 // Generated Date
                 Text(
-                  '${l10n.generated}: ${SummaryDataCalculator.formatDate(now)}',
+                  '${l10n.generated}${SummaryDataCalculator.formatDate(now)}',
                   style: AppTypography.bodySmall.copyWith(
                     fontSize: AppWidgetTheme.fontSizeSM,
                     color: Colors.white.withValues(alpha: 0.6),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppWidgetTheme.spaceSM),
-
-                // Footer
-                Text(
-                  l10n.generatedByOptimate,
-                  style: AppTypography.bodySmall.copyWith(
-                    fontSize: AppWidgetTheme.fontSizeXS,
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontStyle: FontStyle.italic,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -109,14 +106,37 @@ class ReportHeaderSection extends StatelessWidget {
     );
   }
 
-  IconData _getPeriodIcon(SummaryPeriod period) {
+  Widget _buildPeriodIcon(SummaryPeriod period) {
     switch (period) {
       case SummaryPeriod.daily:
-        return Icons.today;
+        return Image.asset(
+          'assets/emojis/icon/calendar_3d.png',
+          width: AppWidgetTheme.iconSizeSmall,
+          height: AppWidgetTheme.iconSizeSmall,
+        );
       case SummaryPeriod.weekly:
-        return Icons.view_week;
+        return Image.asset(
+          'assets/emojis/icon/spiral_calendar_3d.png',
+          width: AppWidgetTheme.iconSizeSmall,
+          height: AppWidgetTheme.iconSizeSmall,
+        );
       case SummaryPeriod.monthly:
-        return Icons.calendar_month;
+        return Icon(
+          Icons.calendar_month,
+          size: AppWidgetTheme.iconSizeSmall,
+          color: Colors.white.withValues(alpha: 0.7),
+        );
+    }
+  }
+
+  String _getPeriodTitle(SummaryPeriod period, AppLocalizations l10n) {
+    switch (period) {
+      case SummaryPeriod.daily:
+        return l10n.dailySummary;
+      case SummaryPeriod.weekly:
+        return l10n.weeklySummary;
+      case SummaryPeriod.monthly:
+        return l10n.monthlySummary;
     }
   }
 }

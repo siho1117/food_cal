@@ -123,15 +123,8 @@ class SummaryControlsWidget extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min, // Minimize space usage
                       children: [
-                        Icon(
-                          _getPeriodIcon(period),
-                          size: AppWidgetTheme.iconSizeSmall,
-                          color: isSelected
-                              ? (textColor == AppWidgetTheme.colorPrimaryDark
-                                  ? Colors.white
-                                  : AppWidgetTheme.colorPrimaryDark)
-                              : textColor.withValues(alpha: AppWidgetTheme.opacityHigher),
-                        ),
+                        // Custom PNG icon for daily/weekly, Material Icon for monthly
+                        _buildPeriodIconWidget(period, isSelected, textColor),
                         SizedBox(width: AppWidgetTheme.spaceXXS), // Smaller gap
                         Flexible(
                           child: Text(
@@ -234,14 +227,33 @@ class SummaryControlsWidget extends StatelessWidget {
     );
   }
 
-  IconData _getPeriodIcon(SummaryPeriod period) {
+  Widget _buildPeriodIconWidget(SummaryPeriod period, bool isSelected, Color textColor) {
+    final iconColor = isSelected
+        ? (textColor == AppWidgetTheme.colorPrimaryDark
+            ? Colors.white
+            : AppWidgetTheme.colorPrimaryDark)
+        : textColor.withValues(alpha: AppWidgetTheme.opacityHigher);
+
+    // Use custom PNG icons for daily and weekly
     switch (period) {
       case SummaryPeriod.daily:
-        return Icons.today;
+        return Image.asset(
+          'assets/emojis/icon/calendar_3d.png',
+          width: AppWidgetTheme.iconSizeSmall,
+          height: AppWidgetTheme.iconSizeSmall,
+        );
       case SummaryPeriod.weekly:
-        return Icons.view_week;
+        return Image.asset(
+          'assets/emojis/icon/spiral_calendar_3d.png',
+          width: AppWidgetTheme.iconSizeSmall,
+          height: AppWidgetTheme.iconSizeSmall,
+        );
       case SummaryPeriod.monthly:
-        return Icons.calendar_month;
+        return Icon(
+          Icons.calendar_month,
+          size: AppWidgetTheme.iconSizeSmall,
+          color: iconColor,
+        );
     }
   }
 

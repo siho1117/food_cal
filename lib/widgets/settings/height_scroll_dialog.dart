@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../providers/settings_provider.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../utils/constants/unit_constants.dart';
 
 /// Height scroll picker dialog with different design from weight
 /// - Metric: Single cm picker (100-250 cm)
@@ -25,14 +26,6 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
   late FixedExtentScrollController _secondaryController;
   late bool _isMetric;
 
-  // Metric: 100-250 cm
-  static const int minHeightCm = 100;
-  static const int maxHeightCm = 250;
-
-  // Imperial: 3-8 feet, 0-11 inches
-  static const int minFeet = 3;
-  static const int maxFeet = 8;
-
   @override
   void initState() {
     super.initState();
@@ -46,20 +39,18 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
       // Metric: single cm picker
       final cm = heightInCm.round();
       _primaryController = FixedExtentScrollController(
-        initialItem: (cm - minHeightCm).clamp(0, maxHeightCm - minHeightCm),
+        initialItem: (cm - UnitConstants.minHeightCm).clamp(0, UnitConstants.maxHeightCm - UnitConstants.minHeightCm),
       );
       _secondaryController = FixedExtentScrollController(initialItem: 0);
     } else {
       // Imperial: feet and inches
-      final totalInches = heightInCm / 2.54;
-      final feet = totalInches ~/ 12;
-      final inches = (totalInches % 12).round();
+      final heightData = UnitConstants.cmToFeetAndInches(heightInCm);
 
       _primaryController = FixedExtentScrollController(
-        initialItem: (feet - minFeet).clamp(0, maxFeet - minFeet),
+        initialItem: (heightData.feet - UnitConstants.minHeightFeet).clamp(0, UnitConstants.maxHeightFeet - UnitConstants.minHeightFeet),
       );
       _secondaryController = FixedExtentScrollController(
-        initialItem: inches.clamp(0, 11),
+        initialItem: heightData.inches.clamp(0, 11),
       );
     }
   }
@@ -91,13 +82,12 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
   double get _currentHeight {
     if (_isMetric) {
       // Return cm directly
-      return (minHeightCm + _primaryController.selectedItem).toDouble();
+      return (UnitConstants.minHeightCm + _primaryController.selectedItem).toDouble();
     } else {
       // Convert feet + inches to cm
-      final feet = minFeet + _primaryController.selectedItem;
+      final feet = UnitConstants.minHeightFeet + _primaryController.selectedItem;
       final inches = _secondaryController.selectedItem;
-      final totalInches = (feet * 12) + inches;
-      return totalInches * 2.54;
+      return UnitConstants.feetAndInchesToCm(feet, inches);
     }
   }
 
@@ -240,10 +230,10 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
                 setState(() {});
               },
               children: List.generate(
-                maxHeightCm - minHeightCm + 1,
+                UnitConstants.maxHeightCm - UnitConstants.minHeightCm + 1,
                 (index) => Center(
                   child: Text(
-                    '${minHeightCm + index}',
+                    '${UnitConstants.minHeightCm + index}',
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w600,
@@ -291,10 +281,10 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
                 setState(() {});
               },
               children: List.generate(
-                maxFeet - minFeet + 1,
+                UnitConstants.maxHeightFeet - UnitConstants.minHeightFeet + 1,
                 (index) => Center(
                   child: Text(
-                    '${minFeet + index}',
+                    '${UnitConstants.minHeightFeet + index}',
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w600,

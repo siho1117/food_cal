@@ -58,6 +58,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
         cardConfigs: _cardConfigs,
         onVisibilityChanged: _updateCardVisibility,
         onReorder: _reorderCards,
+        onResetToDefault: _resetToDefault,
       ),
     );
   }
@@ -69,6 +70,11 @@ class _SummaryScreenState extends State<SummaryScreen> {
 
   Future<void> _reorderCards(int oldIndex, int newIndex) async {
     await SummaryCardSettingsService.reorderCards(oldIndex, newIndex);
+    await _loadCardConfiguration();
+  }
+
+  Future<void> _resetToDefault() async {
+    await SummaryCardSettingsService.resetToDefault();
     await _loadCardConfiguration();
   }
 
