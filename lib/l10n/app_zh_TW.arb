@@ -529,5 +529,9 @@
   "safe": "安全",
   "aggressive": "積極",
   "gradual": "漸進",
-  "custom": "自訂"
+  "custom": "自訂",
+
+  "@_UNITS": {},
+  "years": "歲",
+  "month": "月"
 }

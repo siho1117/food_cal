@@ -938,6 +938,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get high => '高';
+
+  @override
+  String get years => '歲';
+
+  @override
+  String get month => '月';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -1874,6 +1880,12 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get high => '高';
+
+  @override
+  String get years => '岁';
+
+  @override
+  String get month => '月';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -2810,4 +2822,10 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get high => '高';
+
+  @override
+  String get years => '歲';
+
+  @override
+  String get month => '月';
 }

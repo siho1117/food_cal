@@ -1,16 +1,19 @@
 // lib/widgets/settings/personal_details_widget.dart
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../config/design_system/widget_theme.dart';
-import '../../config/design_system/dialog_theme.dart';
 import '../../config/design_system/typography.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'height_scroll_dialog.dart';
-import 'weight_scroll_dialog.dart';
+import 'monthly_goal_dialog.dart';
+import 'date_of_birth_dialog.dart';
+import 'gender_selection_dialog.dart';
+import '../../utils/constants/unit_constants.dart';
+import '../progress/weight_edit_dialog.dart';
+import '../../providers/progress_data.dart';
 
 class PersonalDetailsWidget extends StatelessWidget {
   const PersonalDetailsWidget({super.key});
@@ -19,8 +22,8 @@ class PersonalDetailsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return Consumer2<SettingsProvider, ThemeProvider>(
-      builder: (context, settingsProvider, themeProvider, child) {
+    return Consumer3<SettingsProvider, ThemeProvider, ProgressData>(
+      builder: (context, settingsProvider, themeProvider, progressData, child) {
         final borderColor = AppWidgetTheme.getBorderColor(
           themeProvider.selectedGradient,
           GlassCardStyle.borderOpacity,
@@ -51,10 +54,10 @@ class PersonalDetailsWidget extends StatelessWidget {
                 context,
                 settingsProvider,
                 textColor,
-                icon: Icons.cake,
+                icon: Icons.cake_outlined,
                 title: l10n.dateOfBirth,
-                value: settingsProvider.calculatedAge,
-                onTap: () => _showDatePicker(context, settingsProvider),
+                value: _formatAge(settingsProvider.userProfile?.birthDate, context),
+                onTap: () => DateOfBirthDialog.show(context, settingsProvider),
               ),
               Divider(
                 height: 1,
@@ -65,9 +68,9 @@ class PersonalDetailsWidget extends StatelessWidget {
                 context,
                 settingsProvider,
                 textColor,
-                icon: Icons.height,
+                icon: Icons.straighten,
                 title: l10n.height,
-                value: settingsProvider.formattedHeight,
+                value: _formatHeight(settingsProvider.userProfile?.height, settingsProvider.isMetric, context),
                 onTap: () => _showHeightDialog(context, settingsProvider),
               ),
               Divider(
@@ -75,14 +78,13 @@ class PersonalDetailsWidget extends StatelessWidget {
                 thickness: 1,
                 color: borderColor.withValues(alpha: AppWidgetTheme.opacityMediumLight),
               ),
-              _buildDetailItem(
+              _buildWeightRow(
                 context,
                 settingsProvider,
+                progressData,
                 textColor,
-                icon: Icons.monitor_weight,
-                title: l10n.currentWeight,
-                value: settingsProvider.formattedWeight,
-                onTap: () => _showWeightDialog(context, settingsProvider),
+                borderColor,
+                l10n,
               ),
               Divider(
                 height: 1,
@@ -93,10 +95,10 @@ class PersonalDetailsWidget extends StatelessWidget {
                 context,
                 settingsProvider,
                 textColor,
-                icon: Icons.flag,
-                title: l10n.startingWeight,
-                value: settingsProvider.formattedStartingWeight,
-                onTap: () => _showStartingWeightDialog(context, settingsProvider),
+                icon: Icons.track_changes,
+                title: l10n.monthlyWeightGoal,
+                value: _formatMonthlyGoal(settingsProvider.userProfile?.monthlyWeightGoal, settingsProvider.isMetric, context),
+                onTap: () => _showWeightGoalDialog(context, settingsProvider),
               ),
               Divider(
                 height: 1,
@@ -107,10 +109,10 @@ class PersonalDetailsWidget extends StatelessWidget {
                 context,
                 settingsProvider,
                 textColor,
-                icon: Icons.person,
+                icon: Icons.wc,
                 title: l10n.gender,
-                value: settingsProvider.userProfile?.gender ?? l10n.notSet,
-                onTap: () => _showGenderDialog(context, settingsProvider),
+                value: _translateGender(settingsProvider.userProfile?.gender, context),
+                onTap: () => GenderSelectionDialog.show(context),
               ),
             ],
           ),
@@ -133,7 +135,7 @@ class PersonalDetailsWidget extends StatelessWidget {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppWidgetTheme.spaceLG,
-        vertical: AppWidgetTheme.spaceSM,
+        vertical: 1.0,
       ),
       leading: Container(
         width: AppWidgetTheme.iconContainerMedium,
@@ -172,41 +174,221 @@ class PersonalDetailsWidget extends StatelessWidget {
     );
   }
 
+  Widget _buildWeightRow(
+    BuildContext context,
+    SettingsProvider settingsProvider,
+    ProgressData progressData,
+    Color textColor,
+    Color borderColor,
+    AppLocalizations l10n,
+  ) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppWidgetTheme.spaceLG,
+        vertical: 1.0,
+      ),
+      leading: Container(
+        width: AppWidgetTheme.iconContainerMedium,
+        height: AppWidgetTheme.iconContainerMedium,
+        decoration: BoxDecoration(
+          color: textColor.withValues(alpha: AppWidgetTheme.opacityLight),
+          borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
+        ),
+        child: Icon(
+          Icons.monitor_weight_outlined,
+          color: textColor,
+          size: AppWidgetTheme.iconSizeMedium,
+        ),
+      ),
+      title: Row(
+        children: [
+          // Starting Label
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(right: AppWidgetTheme.spaceSM),
+              child: Text(
+                l10n.starting,
+                style: AppTypography.labelMedium.copyWith(
+                  color: textColor,
+                ),
+              ),
+            ),
+          ),
+          // Current Label
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppWidgetTheme.spaceSM),
+              child: Text(
+                l10n.current,
+                style: AppTypography.labelMedium.copyWith(
+                  color: textColor,
+                ),
+              ),
+            ),
+          ),
+          // Goal Label
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(left: AppWidgetTheme.spaceSM),
+              child: Text(
+                l10n.goal,
+                style: AppTypography.labelMedium.copyWith(
+                  color: textColor,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      subtitle: Row(
+        children: [
+          // Starting Value
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _showWeightDialog(context, settingsProvider, initialMode: WeightMode.start),
+              child: Padding(
+                padding: const EdgeInsets.only(right: AppWidgetTheme.spaceSM),
+                child: Text(
+                  _formatWeightValue(
+                    progressData.startingWeight,
+                    settingsProvider.isMetric,
+                    context,
+                  ),
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: textColor.withValues(alpha: AppWidgetTheme.opacityVeryHigh),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Current Value
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _showWeightDialog(context, settingsProvider),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppWidgetTheme.spaceSM),
+                child: Text(
+                  _formatWeightValue(
+                    progressData.currentWeight,
+                    settingsProvider.isMetric,
+                    context,
+                  ),
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: textColor.withValues(alpha: AppWidgetTheme.opacityVeryHigh),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Goal Weight Value
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _showWeightDialog(context, settingsProvider, initialMode: WeightMode.target),
+              child: Padding(
+                padding: const EdgeInsets.only(left: AppWidgetTheme.spaceSM),
+                child: Text(
+                  _formatWeightValue(
+                    progressData.targetWeight,
+                    settingsProvider.isMetric,
+                    context,
+                  ),
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: textColor.withValues(alpha: AppWidgetTheme.opacityVeryHigh),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-  void _showDatePicker(BuildContext context, SettingsProvider settingsProvider) {
-    final currentDate = settingsProvider.userProfile?.birthDate ?? DateTime.now().subtract(const Duration(days: 365 * 25));
-    
-    showDatePicker(
-      context: context,
-      initialDate: currentDate,
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
-    ).then((date) async {
-      if (date != null) {
-        try {
-          // Calculate age from selected date
-          final now = DateTime.now();
-          int age = now.year - date.year;
-          if (now.month < date.month || (now.month == date.month && now.day < date.day)) {
-            age--;
-          }
-          
-          await settingsProvider.updateDateOfBirth(date, age);
-          if (context.mounted) {
-            final l10n = AppLocalizations.of(context)!;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.dateOfBirthUpdated), behavior: SnackBarBehavior.floating),
-            );
-          }
-        } catch (e) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-            );
-          }
-        }
-      }
-    });
+  String _formatAge(DateTime? birthDate, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    if (birthDate == null) return l10n.notSet;
+
+    final now = DateTime.now();
+    int age = now.year - birthDate.year;
+
+    // Adjust age if birthday hasn't occurred yet this year
+    if (now.month < birthDate.month ||
+        (now.month == birthDate.month && now.day < birthDate.day)) {
+      age--;
+    }
+
+    return '$age ${l10n.years}';
+  }
+
+  String _formatHeight(double? heightInCm, bool isMetric, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    if (heightInCm == null) return l10n.notSet;
+
+    if (isMetric) {
+      return '${heightInCm.round()} ${l10n.cm}';
+    } else {
+      // Convert to feet and inches
+      final heightData = UnitConstants.cmToFeetAndInches(heightInCm);
+      return '${heightData.feet} ${l10n.ft} ${heightData.inches} ${l10n.inchesUnit}';
+    }
+  }
+
+  String _translateGender(String? genderKey, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    if (genderKey == null) return l10n.notSet;
+
+    // Map gender keys to localized strings
+    final genderMap = {
+      'male': l10n.male,
+      'female': l10n.female,
+      'other': l10n.other,
+      'preferNotToSay': l10n.preferNotToSay,
+      // Backward compatibility with old stored values
+      'Male': l10n.male,
+      'Female': l10n.female,
+      'Other': l10n.other,
+      'Prefer not to say': l10n.preferNotToSay,
+      '男性': l10n.male,
+      '女性': l10n.female,
+      '其他': l10n.other,
+      '不願透露': l10n.preferNotToSay,
+    };
+
+    return genderMap[genderKey] ?? genderKey;
+  }
+
+  String _formatWeightValue(double? weightInKg, bool isMetric, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    if (weightInKg == null) return l10n.notSet;
+
+    if (isMetric) {
+      return '${weightInKg.toStringAsFixed(1)} ${l10n.kg}';
+    } else {
+      final weightInLbs = UnitConstants.kgToLbs(weightInKg);
+      return '${weightInLbs.toStringAsFixed(1)} ${l10n.lbs}';
+    }
+  }
+
+  String _formatMonthlyGoal(double? monthlyGoal, bool isMetric, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    if (monthlyGoal == null) return l10n.notSet;
+
+    final absValue = monthlyGoal.abs();
+    final label = monthlyGoal < 0 ? l10n.lose : l10n.gain;
+
+    // Convert to lbs if needed (monthly goal is stored in kg)
+    final displayValue = isMetric ? absValue : UnitConstants.kgToLbs(absValue);
+    final unit = isMetric ? l10n.kg : l10n.lbs;
+
+    return '${displayValue.toStringAsFixed(1)} $unit/${l10n.month} ($label)';
   }
 
   void _showHeightDialog(BuildContext context, SettingsProvider settingsProvider) {
@@ -218,88 +400,72 @@ class PersonalDetailsWidget extends StatelessWidget {
     );
   }
 
-  void _showWeightDialog(BuildContext context, SettingsProvider settingsProvider) {
-    showDialog(
+  void _showWeightDialog(BuildContext context, SettingsProvider settingsProvider, {WeightMode initialMode = WeightMode.current}) {
+    final progressData = context.read<ProgressData>();
+
+    showWeightEditDialog(
       context: context,
-      builder: (context) => WeightScrollDialog(
-        settingsProvider: settingsProvider,
-        type: WeightDialogType.current,
-      ),
+      initialWeight: settingsProvider.currentWeight ?? 70.0,
+      isMetric: settingsProvider.isMetric,
+      targetWeight: progressData.targetWeight,
+      startingWeight: progressData.startingWeight,
+      initialMode: initialMode,
+      onAddWeight: (weight, isMetric) async {
+        await progressData.addWeightEntry(weight, isMetric);
+
+        if (context.mounted) {
+          final l10n = AppLocalizations.of(context)!;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.weightUpdatedSuccessfully),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
+      onSaveTarget: (targetWeight) async {
+        await progressData.updateTargetWeight(targetWeight);
+
+        if (context.mounted) {
+          final l10n = AppLocalizations.of(context)!;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.targetWeightUpdatedSuccessfully),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
+      onSaveStartingWeight: (startingWeight) async {
+        await settingsProvider.updateStartingWeight(startingWeight);
+
+        // Reload progress data to refresh the UI with new starting weight
+        await progressData.refreshData();
+
+        if (context.mounted) {
+          final l10n = AppLocalizations.of(context)!;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.startingWeightUpdated),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
     );
   }
 
-  void _showStartingWeightDialog(BuildContext context, SettingsProvider settingsProvider) {
+  void _showWeightGoalDialog(BuildContext context, SettingsProvider settingsProvider) {
     showDialog(
       context: context,
-      builder: (context) => WeightScrollDialog(
+      builder: (context) => MonthlyGoalDialog(
         settingsProvider: settingsProvider,
-        type: WeightDialogType.starting,
-      ),
-    );
-  }
-
-  void _showGenderDialog(BuildContext context, SettingsProvider settingsProvider) {
-    final l10n = AppLocalizations.of(context)!;
-    final genders = [l10n.male, l10n.female, l10n.other, l10n.preferNotToSay];
-    final currentGender = settingsProvider.userProfile?.gender;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: AppDialogTheme.shape,
-        backgroundColor: AppDialogTheme.backgroundColor,
-        contentPadding: AppDialogTheme.contentPadding,
-        actionsPadding: AppDialogTheme.actionsPadding,
-        title: Text(
-          l10n.gender,
-          style: AppDialogTheme.titleStyle,
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: genders.map((gender) {
-            final isSelected = gender == currentGender;
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                gender,
-                style: AppDialogTheme.bodyStyle.copyWith(
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  color: isSelected
-                      ? AppDialogTheme.colorPrimaryDark
-                      : AppDialogTheme.colorTextSecondary,
-                ),
-              ),
-              trailing: isSelected
-                  ? Icon(Icons.check, color: AppDialogTheme.colorPrimaryDark)
-                  : null,
-              onTap: () async {
-                try {
-                  await settingsProvider.updateGender(gender);
-                  if (context.mounted) {
-                    final l10n = AppLocalizations.of(context)!;
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.genderUpdated), behavior: SnackBarBehavior.floating),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-                    );
-                  }
-                }
-              },
-            );
-          }).toList(),
-        ),
-        actions: [
-          TextButton(
-            style: AppDialogTheme.cancelButtonStyle,
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-        ],
       ),
     );
   }

@@ -1,4 +1,5 @@
 // lib/widgets/settings/height_scroll_dialog.dart
+import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../config/design_system/dialog_theme.dart';
@@ -124,11 +125,16 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return AlertDialog(
-      backgroundColor: AppDialogTheme.backgroundColor,
-      shape: AppDialogTheme.shape,
-      contentPadding: AppDialogTheme.contentPadding,
-      actionsPadding: AppDialogTheme.actionsPadding,
+    return BackdropFilter(
+      filter: ImageFilter.blur(
+        sigmaX: AppDialogTheme.backdropBlurSigmaX,
+        sigmaY: AppDialogTheme.backdropBlurSigmaY,
+      ),
+      child: AlertDialog(
+        backgroundColor: AppDialogTheme.backgroundColor,
+        shape: AppDialogTheme.shape,
+        contentPadding: AppDialogTheme.contentPadding,
+        actionsPadding: AppDialogTheme.actionsPadding,
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -165,6 +171,7 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
           ],
         ),
       ],
+      ),
     );
   }
 

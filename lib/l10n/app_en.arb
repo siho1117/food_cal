@@ -550,5 +550,9 @@
   "safe": "Safe",
   "aggressive": "Aggressive",
   "gradual": "Gradual",
-  "custom": "Custom"
+  "custom": "Custom",
+
+  "@_UNITS": {},
+  "years": "years",
+  "month": "month"
 }

@@ -98,13 +98,16 @@ class UserProfile {
       }
     }
 
+    // Normalize gender value to lowercase for consistency
+    String? normalizedGender = _normalizeGenderValue(map['gender']);
+
     final profile = UserProfile(
       id: map['id'],
       name: map['name'],
       age: ageValue,
       height: map['height'],
       isMetric: map['isMetric'] ?? true,
-      gender: map['gender'],
+      gender: normalizedGender,
       goalWeight: map['goalWeight'],
       birthDate: map['birthDate'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['birthDate'])
@@ -115,6 +118,40 @@ class UserProfile {
     // Silent migration: ignore legacy activityLevel field if present
 
     return profile;
+  }
+
+  /// Normalize legacy gender values to lowercase keys
+  /// Handles backward compatibility for old capitalized and translated values
+  static String? _normalizeGenderValue(dynamic gender) {
+    if (gender == null) return null;
+
+    // Mapping for old values to new lowercase keys
+    const genderMap = {
+      // Old capitalized values
+      'Male': 'male',
+      'Female': 'female',
+      'Other': 'other',
+      'Prefer not to say': 'preferNotToSay',
+      // Old Chinese values
+      '男性': 'male',
+      '女性': 'female',
+      '其他': 'other',
+      '不願透露': 'preferNotToSay',
+    };
+
+    // If it's an old value, convert it
+    if (genderMap.containsKey(gender)) {
+      return genderMap[gender];
+    }
+
+    // If it's already lowercase, return as-is
+    final String genderStr = gender.toString();
+    if (['male', 'female', 'other', 'preferNotToSay'].contains(genderStr)) {
+      return genderStr;
+    }
+
+    // For any other value, try to normalize to lowercase
+    return genderStr.toLowerCase();
   }
 
   // Debug method to print all user profile details - USE MANUALLY ONLY

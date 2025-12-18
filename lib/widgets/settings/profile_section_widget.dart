@@ -80,7 +80,7 @@ class ProfileSectionWidget extends StatelessWidget {
                     // Avatar circle with gradient letter or empty icon
                     _buildAvatar(context, userName, hasName, themeProvider, textColor),
 
-                    SizedBox(width: AppWidgetTheme.spaceLG),
+                    const SizedBox(width: AppWidgetTheme.spaceLG),
                     
                     // Name section
                     Expanded(
@@ -169,7 +169,7 @@ class ProfileSectionWidget extends StatelessWidget {
       blendMode: BlendMode.srcIn,
       child: Text(
         letter,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: AppWidgetTheme.fontSizeXL,
           fontWeight: FontWeight.w700,
           color: Colors.white, // This color gets replaced by gradient

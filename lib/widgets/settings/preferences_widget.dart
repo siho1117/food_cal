@@ -11,7 +11,6 @@ import '../../config/design_system/typography.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'language_selector_dialog.dart';
 import 'theme_selector_dialog.dart';
-import 'monthly_goal_dialog.dart';
 
 class PreferencesWidget extends StatelessWidget {
   const PreferencesWidget({super.key});
@@ -96,7 +95,7 @@ class PreferencesWidget extends StatelessWidget {
                 settingsProvider,
                 textColor,
                 borderColor,
-                icon: Icons.straighten,
+                icon: Icons.balance,
                 title: l10n.units,
                 value: settingsProvider.isMetric ? l10n.metric : l10n.imperial,
                 trailing: Switch(
@@ -106,24 +105,6 @@ class PreferencesWidget extends StatelessWidget {
                   trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
                 ),
                 onTap: () => _toggleUnits(context, settingsProvider),
-              ),
-
-              Divider(
-                height: 1,
-                thickness: 1,
-                color: borderColor.withValues(alpha: AppWidgetTheme.opacityMediumLight),
-              ),
-
-              // Monthly weight goal
-              _buildPreferenceItem(
-                context,
-                settingsProvider,
-                textColor,
-                borderColor,
-                icon: Icons.speed,
-                title: l10n.monthlyWeightGoal,
-                value: settingsProvider.formattedMonthlyGoal,
-                onTap: () => _showWeightGoalDialog(context, settingsProvider),
                 isLast: true,
               ),
             ],
@@ -151,7 +132,7 @@ class PreferencesWidget extends StatelessWidget {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppWidgetTheme.spaceLG,
-        vertical: AppWidgetTheme.spaceSM,
+        vertical: 1.0,
       ),
       leading: leadingEmoji != null
           ? Container(
@@ -236,14 +217,5 @@ class PreferencesWidget extends StatelessWidget {
         ),
       );
     }
-  }
-
-  void _showWeightGoalDialog(BuildContext context, SettingsProvider settingsProvider) {
-    showDialog(
-      context: context,
-      builder: (context) => MonthlyGoalDialog(
-        settingsProvider: settingsProvider,
-      ),
-    );
   }
 }

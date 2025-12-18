@@ -1,4 +1,5 @@
 // lib/widgets/settings/weight_scroll_dialog.dart
+import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -181,11 +182,16 @@ class _WeightScrollDialogState extends State<WeightScrollDialog> {
         ? l10n.weight
         : l10n.startingWeight;
 
-    return AlertDialog(
-      backgroundColor: AppDialogTheme.backgroundColor,
-      shape: AppDialogTheme.shape,
-      contentPadding: AppDialogTheme.contentPadding,
-      actionsPadding: AppDialogTheme.actionsPadding,
+    return BackdropFilter(
+      filter: ImageFilter.blur(
+        sigmaX: AppDialogTheme.backdropBlurSigmaX,
+        sigmaY: AppDialogTheme.backdropBlurSigmaY,
+      ),
+      child: AlertDialog(
+        backgroundColor: AppDialogTheme.backgroundColor,
+        shape: AppDialogTheme.shape,
+        contentPadding: AppDialogTheme.contentPadding,
+        actionsPadding: AppDialogTheme.actionsPadding,
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -202,7 +208,7 @@ class _WeightScrollDialogState extends State<WeightScrollDialog> {
           if (widget.type == WeightDialogType.starting) ...[
             Text(
               l10n.setYourWeightWhenStarted,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 13,
                 color: AppDialogTheme.colorTextSecondary,
               ),
@@ -230,6 +236,7 @@ class _WeightScrollDialogState extends State<WeightScrollDialog> {
           ],
         ),
       ],
+      ),
     );
   }
 

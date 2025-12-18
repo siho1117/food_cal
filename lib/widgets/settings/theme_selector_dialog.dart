@@ -1,8 +1,10 @@
 // lib/widgets/settings/theme_selector_dialog.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/design_system/theme_design.dart';  // ✅ NEW: Using theme_design
 import '../../config/design_system/theme_background.dart';  // ✅ NEW: Using theme_background for gradients
+import '../../config/design_system/dialog_theme.dart';
 import '../../providers/theme_provider.dart';
 
 class ThemeSelectorDialog extends StatelessWidget {
@@ -15,12 +17,17 @@ class ThemeSelectorDialog extends StatelessWidget {
     // Get all available gradients from provider (01-09)
     final availableGradients = themeProvider.availableGradients;
 
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+    return BackdropFilter(
+      filter: ImageFilter.blur(
+        sigmaX: AppDialogTheme.backdropBlurSigmaX,
+        sigmaY: AppDialogTheme.backdropBlurSigmaY,
       ),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 700),
+      child: Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400, maxHeight: 700),
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -42,7 +49,7 @@ class ThemeSelectorDialog extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
+                const Text(
                   'Select Theme',
                   style: TextStyle(
                     fontSize: 20,
@@ -59,7 +66,7 @@ class ThemeSelectorDialog extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Choose your color scheme',
               style: TextStyle(
                 fontSize: 14,
@@ -122,7 +129,7 @@ class ThemeSelectorDialog extends StatelessWidget {
                     color: AppColors.textDark.withValues(alpha: 0.7),  // ✅ Using AppColors
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
+                  const Expanded(
                     child: Text(
                       'Theme will be applied to all screens',
                       style: TextStyle(
@@ -136,6 +143,7 @@ class ThemeSelectorDialog extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -242,7 +250,7 @@ class _ThemeTileState extends State<_ThemeTile> {
                           const SizedBox(height: 4),
                           Text(
                             widget.description,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 13,
                               color: AppColors.textGrey,  // ✅ Using AppColors
                             ),

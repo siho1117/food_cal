@@ -1,7 +1,9 @@
 // lib/widgets/settings/language_selector_dialog.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/design_system/theme_design.dart';
+import '../../config/design_system/dialog_theme.dart';
 import '../../providers/language_provider.dart';
 import '../../l10n/generated/app_localizations.dart';
 
@@ -20,11 +22,16 @@ class LanguageSelectorDialog extends StatelessWidget {
       'zh_TW',
     ];
 
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+    return BackdropFilter(
+      filter: ImageFilter.blur(
+        sigmaX: AppDialogTheme.backdropBlurSigmaX,
+        sigmaY: AppDialogTheme.backdropBlurSigmaY,
       ),
-      child: Container(
+      child: Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Container(
         constraints: const BoxConstraints(maxWidth: 400),
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -127,6 +134,7 @@ class LanguageSelectorDialog extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

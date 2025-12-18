@@ -938,4 +938,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get high => 'High';
+
+  @override
+  String get years => 'years';
+
+  @override
+  String get month => 'month';
 }

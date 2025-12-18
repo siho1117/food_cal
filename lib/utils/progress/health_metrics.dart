@@ -79,11 +79,14 @@ class HealthMetrics {
       return null;
     }
 
+    // Normalize gender to lowercase for consistent comparison
+    final normalizedGender = gender.toLowerCase();
+
     // Gender factor for the formula
     double genderFactor;
-    if (gender == 'Male') {
+    if (normalizedGender == 'male') {
       genderFactor = 1.0;
-    } else if (gender == 'Female') {
+    } else if (normalizedGender == 'female') {
       genderFactor = 0.0;
     } else {
       // For non-binary genders (Other, Prefer not to say, etc.)
@@ -101,14 +104,17 @@ class HealthMetrics {
 
   /// Get body fat classification based on percentage and gender
   static String getBodyFatClassification(double bodyFat, String? gender) {
-    if (gender == 'Male') {
+    // Normalize gender to lowercase for consistent comparison
+    final normalizedGender = gender?.toLowerCase();
+
+    if (normalizedGender == 'male') {
       if (bodyFat < 6) return 'Essential';
       if (bodyFat < 14) return 'Athletic';
       if (bodyFat < 18) return 'Fitness';
       if (bodyFat < 25) return 'Average';
       if (bodyFat < 30) return 'Above Avg';
       return 'Obese';
-    } else if (gender == 'Female') {
+    } else if (normalizedGender == 'female') {
       if (bodyFat < 14) return 'Essential';
       if (bodyFat < 21) return 'Athletic';
       if (bodyFat < 25) return 'Fitness';
@@ -147,10 +153,13 @@ class HealthMetrics {
       return null;
     }
 
+    // Normalize gender to lowercase for consistent comparison
+    final normalizedGender = gender?.toLowerCase();
+
     // Gender-specific BMR calculation
-    if (gender == 'Male') {
+    if (normalizedGender == 'male') {
       return (10 * weight) + (6.25 * height) - (5 * age) + 5;
-    } else if (gender == 'Female') {
+    } else if (normalizedGender == 'female') {
       return (10 * weight) + (6.25 * height) - (5 * age) - 161;
     }
 
@@ -409,12 +418,15 @@ class HealthMetrics {
       ageAdjustmentFactor = 1.15; // Higher intensity for younger adults
     }
 
+    // Normalize gender to lowercase for consistent comparison
+    final normalizedGender = gender?.toLowerCase();
+
     // Gender-based adjustment (if relevant)
     double genderAdjustmentFactor = 1.0;
-    if (gender == 'Male') {
+    if (normalizedGender == 'male') {
       genderAdjustmentFactor =
           1.1; // Slightly higher for males due to muscle mass
-    } else if (gender == 'Female') {
+    } else if (normalizedGender == 'female') {
       genderAdjustmentFactor = 0.9; // Slightly lower for females
     }
 
