@@ -287,11 +287,10 @@ void _startPostCancelTimer() async {
 
 /// Called when user completes cost entry.
 ///
-/// This triggers Phase 2 of the preview:
+/// This triggers immediate dismissal of the preview:
 /// 1. Updates the food item with the selected cost
-/// 2. Marks cost entry as completed (makes cost field read-only)
-/// 3. Switches to Phase 2 (1-second final preview)
-/// 4. Starts 1-second auto-dismiss timer
+/// 2. Marks cost entry as completed
+/// 3. Dismisses the preview immediately to avoid black screen
 ///
 /// **Parameters:**
 /// - [cost] - The cost value selected by user
@@ -304,23 +303,7 @@ void _onCostUpdated(double cost) {
     // Switch to Phase 2
     _previewPhase = _PreviewPhase.postCost;
 
-    // Force rebuild to make cost field read-only
-    _previewOverlay?.markNeedsBuild();
-
-    // Start 1-second timer for Phase 2
-    _startPostCostTimer();
-  }
-}
-
-/// Starts the 1-second timer after cost entry (Phase 2).
-///
-/// Auto-dismisses the preview after 1 second unless user
-/// manually dismisses by tapping outside.
-void _startPostCostTimer() async {
-  await Future.delayed(const Duration(seconds: 1));
-
-  // Auto-close if we're still in post-cost phase
-  if (_previewPhase == _PreviewPhase.postCost) {
+    // Dismiss immediately to avoid black screen after cost picker closes
     hideFoodRecognitionPreview();
   }
 }

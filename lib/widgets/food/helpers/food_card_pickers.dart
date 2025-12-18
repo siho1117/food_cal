@@ -1,9 +1,11 @@
 // lib/widgets/food/helpers/food_card_pickers.dart
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:animated_emoji/animated_emoji.dart';
 import '../../common/number_picker_dialog.dart';
 import '../../common/currency_picker_dialog.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../main.dart';
 
 /// Static helper class for food card picker dialogs.
 ///
@@ -159,7 +161,7 @@ class FoodCardPickers {
   /// allowing users to add cost information before the item is saved.
   ///
   /// **Parameters:**
-  /// - [context] - BuildContext for showing dialog
+  /// - [context] - BuildContext for showing dialog (not used, kept for API consistency)
   /// - [currentValue] - Current cost value (default: 0.0)
   /// - [onCostPickerOpened] - Callback fired when picker opens (cancels preview timer)
   ///
@@ -168,7 +170,8 @@ class FoodCardPickers {
   ///
   /// **Special behavior:**
   /// - Calls [onCostPickerOpened] to cancel the 8-second auto-dismiss timer
-  /// - Same UI as edit mode for consistency
+  /// - Uses overlay-based approach with CurrencyPickerDialog for guaranteed z-index control
+  /// - This ensures the picker always appears above the preview overlay
   static Future<double?> showCostPickerInPreview({
     required BuildContext context,
     required double currentValue,
@@ -177,20 +180,105 @@ class FoodCardPickers {
     // Notify parent that cost picker is opening (cancels preview timer)
     onCostPickerOpened?.call();
 
-    // Show cost picker using dialog
-    double? result;
-    await showDialog<void>(
-      context: context,
-      builder: (context) => CurrencyPickerDialog(
-        initialValue: currentValue,
-        title: AppLocalizations.of(context)!.addCostPerServing,
-        icon: AnimatedEmojis.moneyWithWings,
-        onSave: (value) async {
-          result = value;
+    // Use overlay-based approach for guaranteed z-index control
+    // This bypasses Flutter's dialog system and ensures proper stacking
+    final result = await _showCurrencyPickerAsOverlay(
+      initialValue: currentValue,
+    );
+
+    return result;
+  }
+
+  /// Shows CurrencyPickerDialog as an overlay for guaranteed z-index control.
+  ///
+  /// This is a private helper that wraps the CurrencyPickerDialog in an OverlayEntry
+  /// to ensure it appears above all other UI elements, including the preview overlay.
+  ///
+  /// **Parameters:**
+  /// - [initialValue] - The starting cost value
+  ///
+  /// **Returns:**
+  /// - [Future<double?>] - The selected cost, or null if cancelled
+  static Future<double?> _showCurrencyPickerAsOverlay({
+    required double initialValue,
+  }) async {
+    final overlayState = navigatorKey.currentState?.overlay;
+    if (overlayState == null) {
+      debugPrint('❌ [CostPicker] Overlay state unavailable');
+      return null;
+    }
+
+    // Create a completer to wait for result
+    final completer = Completer<double?>();
+    OverlayEntry? overlayEntry;
+    bool isOverlayRemoved = false; // Safety flag to prevent double removal
+
+    // Helper function to safely remove overlay (prevents race condition)
+    void safeRemoveOverlay() {
+      if (!isOverlayRemoved && overlayEntry != null) {
+        isOverlayRemoved = true;
+        try {
+          overlayEntry.remove();
+        } catch (e) {
+          debugPrint('❌ [CostPicker] Error removing overlay: $e');
+        }
+      }
+    }
+
+    // Create overlay entry with CurrencyPickerDialog
+    // We need to wrap in Navigator so that CurrencyPickerDialog's Navigator.pop() works
+    overlayEntry = OverlayEntry(
+      builder: (context) => Navigator(
+        onGenerateRoute: (settings) {
+          return PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => Material(
+              type: MaterialType.transparency,
+              child: GestureDetector(
+                onTap: () {
+                  // Tapping outside dismisses (returns null)
+                  if (!completer.isCompleted) {
+                    completer.complete(null);
+                  }
+                  safeRemoveOverlay();
+                },
+                child: Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      // Prevent taps on dialog from dismissing
+                    },
+                    child: CurrencyPickerDialog(
+                      initialValue: initialValue,
+                      title: AppLocalizations.of(context)!.addCostPerServing,
+                      icon: AnimatedEmojis.moneyWithWings,
+                      onSave: (value) async {
+                        // Complete the future and remove overlay
+                        if (!completer.isCompleted) {
+                          completer.complete(value);
+                        }
+                        safeRemoveOverlay();
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          );
         },
       ),
     );
-    return result;
+
+    // Insert overlay on top
+    overlayState.insert(overlayEntry);
+
+    // Wait for result with safety timeout and cleanup
+    try {
+      return await completer.future;
+    } finally {
+      // Ensure overlay is always removed, even if something goes wrong
+      safeRemoveOverlay();
+    }
   }
 
 }

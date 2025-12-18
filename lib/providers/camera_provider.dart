@@ -222,32 +222,11 @@ class CameraProvider {
         try {
           final navigationProvider = Provider.of<NavigationProvider>(globalContext, listen: false);
           navigationProvider.navigateToHome();
+          // Success! User will see the food item in their log
+          debugPrint('✅ Food item${itemCount > 1 ? 's' : ''} added successfully');
         } catch (e) {
           debugPrint('Error navigating to Home: $e');
         }
-      }
-
-      // Show success message
-      if (globalContext.mounted) {
-        ScaffoldMessenger.of(globalContext).showSnackBar(
-          SnackBar(
-            content: Text(
-              itemCount == 1
-                ? 'Food item added to your log!'
-                : '$itemCount food items added to your log!',
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'View',
-              textColor: Colors.white,
-              onPressed: () {
-                // Optional: scroll to today's food log section
-              },
-            ),
-          ),
-        );
       }
     });
   }
