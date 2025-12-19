@@ -54,7 +54,7 @@ class PersonalDetailsWidget extends StatelessWidget {
                 context,
                 settingsProvider,
                 textColor,
-                icon: Icons.cake_outlined,
+                iconAsset: 'assets/emojis/icon/birthday_cake_3d.png',
                 title: l10n.dateOfBirth,
                 value: _formatAge(settingsProvider.userProfile?.birthDate, context),
                 onTap: () => DateOfBirthDialog.show(context, settingsProvider),
@@ -68,7 +68,7 @@ class PersonalDetailsWidget extends StatelessWidget {
                 context,
                 settingsProvider,
                 textColor,
-                icon: Icons.straighten,
+                iconAsset: 'assets/emojis/icon/straight_ruler_3d.png',
                 title: l10n.height,
                 value: _formatHeight(settingsProvider.userProfile?.height, settingsProvider.isMetric, context),
                 onTap: () => _showHeightDialog(context, settingsProvider),
@@ -95,7 +95,7 @@ class PersonalDetailsWidget extends StatelessWidget {
                 context,
                 settingsProvider,
                 textColor,
-                icon: Icons.track_changes,
+                iconAsset: _getMonthlyGoalEmoji(settingsProvider.userProfile?.monthlyWeightGoal),
                 title: l10n.monthlyWeightGoal,
                 value: _formatMonthlyGoal(settingsProvider.userProfile?.monthlyWeightGoal, settingsProvider.isMetric, context),
                 onTap: () => _showWeightGoalDialog(context, settingsProvider),
@@ -109,7 +109,7 @@ class PersonalDetailsWidget extends StatelessWidget {
                 context,
                 settingsProvider,
                 textColor,
-                icon: Icons.wc,
+                iconAsset: 'assets/emojis/icon/dna_3d.png',
                 title: l10n.gender,
                 value: _translateGender(settingsProvider.userProfile?.gender, context),
                 onTap: () => GenderSelectionDialog.show(context),
@@ -127,7 +127,8 @@ class PersonalDetailsWidget extends StatelessWidget {
     BuildContext context,
     SettingsProvider settingsProvider,
     Color textColor, {
-    required IconData icon,
+    IconData? icon,
+    String? iconAsset,
     required String title,
     required String value,
     required VoidCallback onTap,
@@ -137,19 +138,26 @@ class PersonalDetailsWidget extends StatelessWidget {
         horizontal: AppWidgetTheme.spaceLG,
         vertical: 1.0,
       ),
-      leading: Container(
-        width: AppWidgetTheme.iconContainerMedium,
-        height: AppWidgetTheme.iconContainerMedium,
-        decoration: BoxDecoration(
-          color: textColor.withValues(alpha: AppWidgetTheme.opacityLight),
-          borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
-        ),
-        child: Icon(
-          icon,
-          color: textColor,
-          size: AppWidgetTheme.iconSizeMedium,
-        ),
-      ),
+      leading: iconAsset != null
+          ? Image.asset(
+              iconAsset,
+              width: 32,
+              height: 32,
+              fit: BoxFit.contain,
+            )
+          : Container(
+              width: AppWidgetTheme.iconContainerMedium,
+              height: AppWidgetTheme.iconContainerMedium,
+              decoration: BoxDecoration(
+                color: textColor.withValues(alpha: AppWidgetTheme.opacityLight),
+                borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
+              ),
+              child: Icon(
+                icon!,
+                color: textColor,
+                size: AppWidgetTheme.iconSizeMedium,
+              ),
+            ),
       title: Text(
         title,
         style: AppTypography.labelMedium.copyWith(
@@ -187,18 +195,11 @@ class PersonalDetailsWidget extends StatelessWidget {
         horizontal: AppWidgetTheme.spaceLG,
         vertical: 1.0,
       ),
-      leading: Container(
-        width: AppWidgetTheme.iconContainerMedium,
-        height: AppWidgetTheme.iconContainerMedium,
-        decoration: BoxDecoration(
-          color: textColor.withValues(alpha: AppWidgetTheme.opacityLight),
-          borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
-        ),
-        child: Icon(
-          Icons.monitor_weight_outlined,
-          color: textColor,
-          size: AppWidgetTheme.iconSizeMedium,
-        ),
+      leading: Image.asset(
+        'assets/emojis/icon/bullseye_3d.png',
+        width: 32,
+        height: 32,
+        fit: BoxFit.contain,
       ),
       title: Row(
         children: [
@@ -305,6 +306,15 @@ class PersonalDetailsWidget extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _getMonthlyGoalEmoji(double? monthlyGoal) {
+    // Negative = weight loss (inbox_tray), Positive = weight gain (outbox_tray)
+    if (monthlyGoal == null || monthlyGoal < 0) {
+      return 'assets/emojis/icon/inbox_tray_3d.png';
+    } else {
+      return 'assets/emojis/icon/outbox_tray_3d.png';
+    }
   }
 
   String _formatAge(DateTime? birthDate, BuildContext context) {

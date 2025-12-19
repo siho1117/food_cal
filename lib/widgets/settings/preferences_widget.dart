@@ -57,10 +57,9 @@ class PreferencesWidget extends StatelessWidget {
                 settingsProvider,
                 textColor,
                 borderColor,
-                icon: Icons.language,
+                iconAsset: 'assets/emojis/icon/world_map_3d.png',
                 title: l10n.language,
                 value: languageProvider.currentLanguageName,
-                leadingEmoji: languageProvider.currentLanguageFlag,
                 onTap: () => _showLanguageDialog(context),
               ),
 
@@ -76,10 +75,9 @@ class PreferencesWidget extends StatelessWidget {
                 settingsProvider,
                 textColor,
                 borderColor,
-                icon: Icons.palette,
+                iconAsset: 'assets/emojis/icon/glowing_star_3d.png',
                 title: l10n.theme,
                 value: themeProvider.getGradientDisplayName(themeProvider.selectedGradient),
-                leadingEmoji: themeProvider.getGradientEmoji(themeProvider.selectedGradient),
                 onTap: () => _showThemeDialog(context),
               ),
 
@@ -95,7 +93,7 @@ class PreferencesWidget extends StatelessWidget {
                 settingsProvider,
                 textColor,
                 borderColor,
-                icon: Icons.balance,
+                iconAsset: 'assets/emojis/icon/balance_scale_3d.png',
                 title: l10n.units,
                 value: settingsProvider.isMetric ? l10n.metric : l10n.imperial,
                 trailing: Switch(
@@ -121,7 +119,8 @@ class PreferencesWidget extends StatelessWidget {
     SettingsProvider settingsProvider,
     Color textColor,
     Color borderColor, {
-    required IconData icon,
+    IconData? icon,
+    String? iconAsset,
     required String title,
     required String value,
     required VoidCallback onTap,
@@ -144,19 +143,26 @@ class PreferencesWidget extends StatelessWidget {
                 style: const TextStyle(fontSize: 24),
               ),
             )
-          : Container(
-              width: AppWidgetTheme.iconContainerMedium,
-              height: AppWidgetTheme.iconContainerMedium,
-              decoration: BoxDecoration(
-                color: textColor.withValues(alpha: AppWidgetTheme.opacityLight),
-                borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
-              ),
-              child: Icon(
-                icon,
-                color: textColor,
-                size: AppWidgetTheme.iconSizeMedium,
-              ),
-            ),
+          : iconAsset != null
+              ? Image.asset(
+                  iconAsset,
+                  width: 32,
+                  height: 32,
+                  fit: BoxFit.contain,
+                )
+              : Container(
+                  width: AppWidgetTheme.iconContainerMedium,
+                  height: AppWidgetTheme.iconContainerMedium,
+                  decoration: BoxDecoration(
+                    color: textColor.withValues(alpha: AppWidgetTheme.opacityLight),
+                    borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusMD),
+                  ),
+                  child: Icon(
+                    icon!,
+                    color: textColor,
+                    size: AppWidgetTheme.iconSizeMedium,
+                  ),
+                ),
       title: Text(
         title,
         style: AppTypography.labelMedium.copyWith(

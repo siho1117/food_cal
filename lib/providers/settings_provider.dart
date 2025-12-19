@@ -239,6 +239,43 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Update profile emoji for avatar
+  Future<void> updateProfileEmoji(String emojiId) async {
+    await _createUserProfileIfNeeded();
+
+    if (_userProfile != null) {
+      final updatedProfile = _userProfile!.copyWith(
+        profileEmojiId: emojiId,
+        useEmojiAvatar: true, // Automatically enable emoji mode when selecting
+      );
+      await _updateProfile(updatedProfile);
+    }
+  }
+
+  /// Toggle between emoji and letter avatar modes
+  Future<void> toggleAvatarMode(bool useEmoji) async {
+    await _createUserProfileIfNeeded();
+
+    if (_userProfile != null) {
+      final updatedProfile = _userProfile!.copyWith(
+        useEmojiAvatar: useEmoji,
+      );
+      await _updateProfile(updatedProfile);
+    }
+  }
+
+  /// Switch to letter avatar mode
+  Future<void> useLetterAvatar() async {
+    await toggleAvatarMode(false);
+  }
+
+  /// Switch to emoji avatar mode (if emoji is set)
+  Future<void> useEmojiAvatar() async {
+    if (_userProfile?.profileEmojiId != null) {
+      await toggleAvatarMode(true);
+    }
+  }
+
   Future<void> sendFeedback(String message) async {
     try {
       // TODO: Implement actual feedback sending logic

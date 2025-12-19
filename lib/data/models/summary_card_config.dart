@@ -41,7 +41,7 @@ enum SummaryCardType {
       case SummaryCardType.bodyMetrics:
         return AnimatedEmojis.fire;
       case SummaryCardType.nutrition:
-        return AnimatedEmojis.balanceScale;
+        return AnimatedEmojis.fromId('u2764_fe0f');
       case SummaryCardType.budget:
         return AnimatedEmojis.moneyWithWings;
       case SummaryCardType.exercise:

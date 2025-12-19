@@ -9,6 +9,7 @@ import '../../../providers/theme_provider.dart';
 import '../../../utils/shared/summary_data_calculator.dart';
 import '../summary_controls_widget.dart';
 import '../../common/frosted_glass_card.dart';
+import '../../common/user_avatar_widget.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
 /// Combined Report Header + Client Info Section
@@ -26,25 +27,41 @@ class ReportHeaderSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
+
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) {
         final now = DateTime.now();
 
         return FrostedGlassCard(
-          child: Center(
-            child: Column(
-              children: [
-                // First Row: User Name
-                Text(
-                  (profile?.name ?? 'User').toUpperCase(),
-                  style: AppTypography.displayLarge.copyWith(
-                    fontSize: AppWidgetTheme.fontSizeXL,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 2.0,
-                  ),
-                  textAlign: TextAlign.center,
+          child: Stack(
+            children: [
+              // Left-aligned avatar badge
+              Positioned(
+                left: 16,
+                top: 16,
+                child: UserAvatarWidget(
+                  profile: profile,
+                  size: 48.0, // Compact size for badge
+                  useAnimation: false, // Static for reports
                 ),
+              ),
+
+              // Centered content
+              Center(
+                child: Column(
+                  children: [
+                    // First Row: User Name
+                    Text(
+                      (profile?.name ?? 'User').toUpperCase(),
+                      style: AppTypography.displayLarge.copyWith(
+                        fontSize: AppWidgetTheme.fontSizeXL,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 2.0,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                 const SizedBox(height: AppWidgetTheme.spaceXS),
 
                 // Second Row: OptiMate Report
@@ -80,7 +97,7 @@ class ReportHeaderSection extends StatelessWidget {
 
                 // Date Range
                 Text(
-                  SummaryDataCalculator.getPeriodSubtitle(period),
+                  SummaryDataCalculator.getPeriodSubtitle(period, locale),
                   style: AppTypography.bodySmall.copyWith(
                     fontSize: AppWidgetTheme.fontSizeSM,
                     color: Colors.white.withValues(alpha: 0.6),
@@ -91,15 +108,17 @@ class ReportHeaderSection extends StatelessWidget {
 
                 // Generated Date
                 Text(
-                  '${l10n.generated}${SummaryDataCalculator.formatDate(now)}',
+                  '${l10n.generated}${SummaryDataCalculator.formatDate(now, locale)}',
                   style: AppTypography.bodySmall.copyWith(
                     fontSize: AppWidgetTheme.fontSizeSM,
                     color: Colors.white.withValues(alpha: 0.6),
                   ),
                   textAlign: TextAlign.center,
                 ),
-              ],
-            ),
+                  ],
+                ),
+              ),
+            ],
           ),
         );
       },

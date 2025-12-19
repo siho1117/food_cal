@@ -139,6 +139,8 @@
   "@_PROFILE_SECTION": {},
   "tapToEdit": "点击编辑",
   "editName": "编辑姓名",
+  "chooseYourAvatar": "选择您的头像",
+  "tapAnEmojiToSelect": "点击表情符号以选择为您的头像",
 
   "@_PERSONAL_DETAILS": {},
   "dateOfBirth": "出生日期",

@@ -2,6 +2,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../config/design_system/theme_design.dart';
 import '../../config/design_system/typography.dart';
@@ -238,7 +239,7 @@ class WeekNavigationWidget extends StatelessWidget {
         duration: const Duration(milliseconds: 300),
         child: Text(
           key: ValueKey(selectedDate),
-          _formatSelectedDate(now, localizations),
+          _formatSelectedDate(context, now, localizations),
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w600,
@@ -278,24 +279,27 @@ class WeekNavigationWidget extends StatelessWidget {
            date1.day == date2.day;
   }
 
-  /// Format selected date - keep today/yesterday translated, show dates as dd/mm/yyyy
+  /// Format selected date - keep today/yesterday translated, show dates localized
   String _formatSelectedDate(
+    BuildContext context,
     DateTime now,
     AppLocalizations localizations,
   ) {
     final yesterday = now.subtract(const Duration(days: 1));
-    
+
     // Check for relative dates (using translation keys)
     if (_isSameDay(selectedDate, now)) {
       return localizations.today;
     } else if (_isSameDay(selectedDate, yesterday)) {
       return localizations.yesterday;
     } else {
-      // For all other dates, use dd/mm/yyyy format (no translation)
-      final day = selectedDate.day.toString().padLeft(2, '0');
-      final month = selectedDate.month.toString().padLeft(2, '0');
-      final year = selectedDate.year.toString();
-      return '$day/$month/$year';
+      // For all other dates, use localized date format with day of week
+      // Examples:
+      // - en_US: "Thu, 12/19"
+      // - zh_CN: "周四 12/19"
+      // - ja_JP: "木 12/19"
+      final locale = Localizations.localeOf(context).toString();
+      return DateFormat.MEd(locale).format(selectedDate);
     }
   }
 }

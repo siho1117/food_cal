@@ -56,22 +56,6 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
     }
   }
 
-  void _toggleUnit() {
-    setState(() {
-      // Get current height in cm
-      final currentHeightCm = _currentHeight;
-
-      // Toggle the unit
-      _isMetric = !_isMetric;
-
-      // Dispose old controllers
-      _primaryController.dispose();
-      _secondaryController.dispose();
-
-      // Reinitialize with the same height value
-      _initializeControllers(currentHeightCm);
-    });
-  }
 
   @override
   void dispose() {
@@ -94,11 +78,6 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
 
   void _handleSave() async {
     try {
-      // Update global isMetric if it changed
-      if (_isMetric != widget.settingsProvider.isMetric) {
-        await widget.settingsProvider.updateUnitPreference(_isMetric);
-      }
-
       await widget.settingsProvider.updateHeight(_currentHeight);
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
@@ -136,13 +115,17 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
         contentPadding: AppDialogTheme.contentPadding,
         actionsPadding: AppDialogTheme.actionsPadding,
       title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Image.asset(
+            'assets/emojis/icon/straight_ruler_3d.png',
+            width: 28,
+            height: 28,
+          ),
+          const SizedBox(width: 12),
           Text(
             l10n.height,
             style: AppDialogTheme.titleStyle,
           ),
-          _buildUnitToggle(l10n),
         ],
       ),
       content: Column(
@@ -171,47 +154,6 @@ class _HeightScrollDialogState extends State<HeightScrollDialog> {
           ],
         ),
       ],
-      ),
-    );
-  }
-
-  Widget _buildUnitToggle(AppLocalizations l10n) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildUnitButton(l10n.cm, _isMetric, true),
-          _buildUnitButton(l10n.ft, !_isMetric, false),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUnitButton(String label, bool isSelected, bool isMetricButton) {
-    return GestureDetector(
-      onTap: () {
-        if ((isMetricButton && !_isMetric) || (!isMetricButton && _isMetric)) {
-          _toggleUnit();
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? AppDialogTheme.colorPrimaryDark : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : AppDialogTheme.colorTextSecondary,
-          ),
-        ),
       ),
     );
   }

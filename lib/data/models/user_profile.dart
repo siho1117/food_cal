@@ -12,6 +12,8 @@ class UserProfile {
   final DateTime? birthDate; // New field for date of birth
   final double? monthlyWeightGoal; // New field for monthly weight change goal in kg
   final double? startingWeight; // Starting weight for progress tracking in kg
+  final String? profileEmojiId; // Emoji ID for avatar (e.g., '1f436' for dog emoji)
+  final bool useEmojiAvatar; // Whether to display emoji avatar (true) or letter avatar (false)
 
   UserProfile({
     required this.id,
@@ -24,6 +26,8 @@ class UserProfile {
     this.birthDate,
     this.monthlyWeightGoal,
     this.startingWeight,
+    this.profileEmojiId,
+    this.useEmojiAvatar = false,
   });
 
   // Copy constructor for updating user profile
@@ -38,6 +42,8 @@ class UserProfile {
     DateTime? birthDate,
     double? monthlyWeightGoal,
     double? startingWeight,
+    String? profileEmojiId,
+    bool? useEmojiAvatar,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -50,6 +56,8 @@ class UserProfile {
       birthDate: birthDate ?? this.birthDate,
       monthlyWeightGoal: monthlyWeightGoal ?? this.monthlyWeightGoal,
       startingWeight: startingWeight ?? this.startingWeight,
+      profileEmojiId: profileEmojiId ?? this.profileEmojiId,
+      useEmojiAvatar: useEmojiAvatar ?? this.useEmojiAvatar,
     );
   }
 
@@ -81,6 +89,8 @@ class UserProfile {
       'birthDate': birthDate?.millisecondsSinceEpoch,
       'monthlyWeightGoal': monthlyWeightGoal,
       'startingWeight': startingWeight,
+      'profileEmojiId': profileEmojiId,
+      'useEmojiAvatar': useEmojiAvatar,
     };
   }
 
@@ -114,6 +124,8 @@ class UserProfile {
           : null,
       monthlyWeightGoal: map['monthlyWeightGoal'],
       startingWeight: map['startingWeight'],
+      profileEmojiId: map['profileEmojiId'],
+      useEmojiAvatar: map['useEmojiAvatar'] ?? false,
     );
     // Silent migration: ignore legacy activityLevel field if present
 

@@ -83,16 +83,6 @@ class _WeightScrollDialogState extends State<WeightScrollDialog> {
     );
   }
 
-  void _toggleUnit() {
-    setState(() {
-      final currentWeightKg = _currentWeight;
-      _isMetric = !_isMetric;
-      _weightWholeController.dispose();
-      _weightDecimalController.dispose();
-      _initializeControllers(currentWeightKg);
-    });
-  }
-
   @override
   void dispose() {
     _weightWholeController.dispose();
@@ -120,11 +110,6 @@ class _WeightScrollDialogState extends State<WeightScrollDialog> {
 
   Future<void> _handleSave() async {
     try {
-      // Update global isMetric if it changed
-      if (_isMetric != widget.settingsProvider.isMetric) {
-        await widget.settingsProvider.updateUnitPreference(_isMetric);
-      }
-
       // Save weight based on dialog type
       switch (widget.type) {
         case WeightDialogType.current:
@@ -193,13 +178,14 @@ class _WeightScrollDialogState extends State<WeightScrollDialog> {
         contentPadding: AppDialogTheme.contentPadding,
         actionsPadding: AppDialogTheme.actionsPadding,
       title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: AppDialogTheme.titleStyle,
+          Image.asset(
+            'assets/emojis/icon/bullseye_3d.png',
+            width: 28,
+            height: 28,
           ),
-          _buildUnitToggle(),
+          const SizedBox(width: 12),
+          Text(title, style: AppDialogTheme.titleStyle),
         ],
       ),
       content: Column(
@@ -236,47 +222,6 @@ class _WeightScrollDialogState extends State<WeightScrollDialog> {
           ],
         ),
       ],
-      ),
-    );
-  }
-
-  Widget _buildUnitToggle() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildUnitButton('kg', _isMetric),
-          _buildUnitButton('lbs', !_isMetric),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUnitButton(String label, bool isSelected) {
-    return GestureDetector(
-      onTap: () {
-        if ((label == 'kg' && !_isMetric) || (label == 'lbs' && _isMetric)) {
-          _toggleUnit();
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? AppDialogTheme.colorPrimaryDark : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : AppDialogTheme.colorTextSecondary,
-          ),
-        ),
       ),
     );
   }

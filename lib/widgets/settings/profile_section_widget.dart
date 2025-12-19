@@ -7,6 +7,8 @@ import '../../providers/theme_provider.dart';
 import '../../config/design_system/widget_theme.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../common/user_avatar_widget.dart';
+import 'emoji_avatar_picker_dialog.dart';
 
 class ProfileSectionWidget extends StatelessWidget {
   const ProfileSectionWidget({super.key});
@@ -26,7 +28,7 @@ class ProfileSectionWidget extends StatelessWidget {
           userName: userName,
           hasName: hasName,
           themeProvider: themeProvider,
-          onTap: () => _handleProfileTap(context, settingsProvider),
+          settingsProvider: settingsProvider,
           l10n: l10n,
         );
       },
@@ -38,7 +40,7 @@ class ProfileSectionWidget extends StatelessWidget {
     required String? userName,
     required bool hasName,
     required ThemeProvider themeProvider,
-    required VoidCallback onTap,
+    required SettingsProvider settingsProvider,
     required AppLocalizations l10n,
   }) {
     // Get theme-adaptive colors using widget theme
@@ -69,7 +71,7 @@ class ProfileSectionWidget extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: onTap,
+              onTap: () => _showEditNameDialog(context, settingsProvider),
               borderRadius: BorderRadius.circular(AppWidgetTheme.borderRadiusXL),
               splashColor: textColor.withValues(alpha: AppWidgetTheme.opacityMediumLight),
               highlightColor: textColor.withValues(alpha: 0.05),
@@ -77,11 +79,17 @@ class ProfileSectionWidget extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
                 child: Row(
                   children: [
-                    // Avatar circle with gradient letter or empty icon
-                    _buildAvatar(context, userName, hasName, themeProvider, textColor),
+                    // Avatar circle with gradient letter or empty icon - separate tap handler
+                    UserAvatarWidget(
+                      profile: settingsProvider.userProfile,
+                      size: 68.0,
+                      isInteractive: true,
+                      onTap: () => showEmojiAvatarPicker(context),
+                      useAnimation: true, // Animated in settings
+                    ),
 
                     const SizedBox(width: AppWidgetTheme.spaceLG),
-                    
+
                     // Name section
                     Expanded(
                       child: Column(
@@ -102,7 +110,7 @@ class ProfileSectionWidget extends StatelessWidget {
                         ],
                       ),
                     ),
-                    
+
                     // Arrow icon
                     Icon(
                       Icons.arrow_forward_ios_rounded,
@@ -119,69 +127,6 @@ class ProfileSectionWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildAvatar(
-    BuildContext context,
-    String? userName,
-    bool hasName,
-    ThemeProvider themeProvider,
-    Color textColor,
-  ) {
-    // Get solid avatar color based on theme
-    final solidAvatarColor = AppWidgetTheme.getAvatarColor(
-      themeProvider.selectedGradient,
-    );
-
-    return Container(
-      width: AppWidgetTheme.iconContainerLarge,
-      height: AppWidgetTheme.iconContainerLarge,
-      decoration: BoxDecoration(
-        color: hasName
-            ? solidAvatarColor
-            : textColor.withValues(alpha: 0.25),
-        shape: BoxShape.circle,
-        boxShadow: [AppWidgetTheme.standardBoxShadow],
-      ),
-      child: Center(
-        child: hasName
-            ? _buildGradientLetter(context, userName!, themeProvider)
-            : Icon(
-                Icons.person,
-                size: AppWidgetTheme.iconSizeLarge,
-                color: textColor,
-              ),
-      ),
-    );
-  }
-
-  Widget _buildGradientLetter(
-    BuildContext context,
-    String userName,
-    ThemeProvider themeProvider,
-  ) {
-    // Get first character and uppercase it
-    final letter = userName.isNotEmpty ? userName[0].toUpperCase() : '?';
-
-    // Get gradient from theme provider
-    final gradient = themeProvider.getCurrentGradient();
-
-    return ShaderMask(
-      shaderCallback: (bounds) => gradient.createShader(bounds),
-      blendMode: BlendMode.srcIn,
-      child: Text(
-        letter,
-        style: const TextStyle(
-          fontSize: AppWidgetTheme.fontSizeXL,
-          fontWeight: FontWeight.w700,
-          color: Colors.white, // This color gets replaced by gradient
-        ),
-      ),
-    );
-  }
-
-  void _handleProfileTap(BuildContext context, SettingsProvider settingsProvider) {
-    _showEditNameDialog(context, settingsProvider);
-  }
-
   void _showEditNameDialog(BuildContext context, SettingsProvider settingsProvider) {
     final l10n = AppLocalizations.of(context)!;
     final currentName = settingsProvider.userProfile?.name ?? '';
@@ -189,47 +134,63 @@ class ProfileSectionWidget extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppDialogTheme.backgroundColor,
-        shape: AppDialogTheme.shape,
-        contentPadding: AppDialogTheme.contentPadding,
-        actionsPadding: AppDialogTheme.actionsPadding,
-
-        title: Text(
-          l10n.editName,
-          style: AppDialogTheme.titleStyle,
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: AppDialogTheme.backdropBlurSigmaX,
+          sigmaY: AppDialogTheme.backdropBlurSigmaY,
         ),
+        child: AlertDialog(
+          backgroundColor: AppDialogTheme.backgroundColor,
+          shape: AppDialogTheme.shape,
+          contentPadding: AppDialogTheme.contentPadding,
+          actionsPadding: AppDialogTheme.actionsPadding,
 
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          style: AppDialogTheme.inputTextStyle,
-          decoration: AppDialogTheme.inputDecoration(),
-        ),
-
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: AppDialogTheme.cancelButtonStyle,
-            child: Text(l10n.cancel),
+          title: Row(
+            children: [
+              Image.asset(
+                'assets/emojis/icon/balance_scale_3d.png',
+                width: 28,
+                height: 28,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                l10n.editName,
+                style: AppDialogTheme.titleStyle,
+              ),
+            ],
           ),
 
-          const SizedBox(width: AppDialogTheme.buttonGap),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            style: AppDialogTheme.inputTextStyle,
+            decoration: AppDialogTheme.inputDecoration(),
+          ),
 
-          FilledButton(
-            onPressed: () async {
-              final newName = controller.text.trim();
-              if (newName.isNotEmpty) {
-                await settingsProvider.updateName(newName);
-                if (context.mounted) {
-                  Navigator.pop(context);
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: AppDialogTheme.cancelButtonStyle,
+              child: Text(l10n.cancel),
+            ),
+
+            const SizedBox(width: AppDialogTheme.buttonGap),
+
+            FilledButton(
+              onPressed: () async {
+                final newName = controller.text.trim();
+                if (newName.isNotEmpty) {
+                  await settingsProvider.updateName(newName);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                  }
                 }
-              }
-            },
-            style: AppDialogTheme.primaryButtonStyle,
-            child: Text(l10n.save),
-          ),
-        ],
+              },
+              style: AppDialogTheme.primaryButtonStyle,
+              child: Text(l10n.save),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:animated_emoji/animated_emoji.dart';
+import 'package:intl/intl.dart';
 import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
 import '../../../providers/theme_provider.dart';
@@ -173,7 +174,7 @@ class ExerciseSection extends StatelessWidget {
                     final exercise = entry.value;
 
                     // Format date
-                    final dateStr = _formatDate(exercise.timestamp);
+                    final dateStr = _formatDate(context, exercise.timestamp);
 
                     // Format duration
                     final durationStr = _formatDuration(exercise.duration);
@@ -296,11 +297,11 @@ class ExerciseSection extends StatelessWidget {
     return l10n.noExercisesLoggedToday;
   }
 
-  /// Format date for display (MM/DD)
-  String _formatDate(DateTime date) {
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    return '$month/$day';
+  /// Format date for display (localized short format)
+  /// Examples: "12/19" (en_US), "12月19日" (zh_CN), "12/19" (ja_JP)
+  String _formatDate(BuildContext context, DateTime date) {
+    final locale = Localizations.localeOf(context).toString();
+    return DateFormat.Md(locale).format(date);
   }
 
   /// Format duration for compact display (always in minutes: 30m, 75m, etc.)

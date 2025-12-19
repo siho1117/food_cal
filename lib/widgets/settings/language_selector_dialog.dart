@@ -41,17 +41,10 @@ class LanguageSelectorDialog extends StatelessWidget {
             // Header
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.textDark.withValues(alpha:0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.language,
-                    color: AppColors.textDark,
-                    size: 24,
-                  ),
+                Image.asset(
+                  'assets/emojis/icon/world_map_3d.png',
+                  width: 28,
+                  height: 28,
                 ),
                 const SizedBox(width: 12),
                 Text(

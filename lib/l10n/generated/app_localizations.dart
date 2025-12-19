@@ -739,6 +739,18 @@ abstract class AppLocalizations {
   /// **'Edit Name'**
   String get editName;
 
+  /// No description provided for @chooseYourAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Your Avatar'**
+  String get chooseYourAvatar;
+
+  /// No description provided for @tapAnEmojiToSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap an emoji to select it as your avatar'**
+  String get tapAnEmojiToSelect;
+
   /// No description provided for @dateOfBirth.
   ///
   /// In en, this message translates to:

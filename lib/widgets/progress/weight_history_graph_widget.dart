@@ -610,8 +610,9 @@ class _WeightHistoryGraphWidgetState extends State<WeightHistoryGraphWidget> {
                     if (point.isForwardFilled) {
                       suffix = ' ${l10n.tapToAdd}';
                     }
+                    final locale = Localizations.localeOf(context).toString();
                     return LineTooltipItem(
-                      '${spot.y.toStringAsFixed(1)} $unit$suffix\n${DateFormat('MMM d').format(displayData[index].timestamp)}',
+                      '${spot.y.toStringAsFixed(1)} $unit$suffix\n${DateFormat.MMMd(locale).format(displayData[index].timestamp)}',
                       const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

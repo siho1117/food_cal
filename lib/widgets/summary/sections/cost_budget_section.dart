@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:animated_emoji/animated_emoji.dart';
+import 'package:intl/intl.dart';
 import '../../../config/design_system/widget_theme.dart';
 import '../../../config/design_system/typography.dart';
 import '../../../providers/theme_provider.dart';
@@ -133,7 +134,7 @@ class CostBudgetSection extends StatelessWidget {
                     final foodCost = food.cost ?? 0.0;
 
                     // Format date
-                    final dateStr = _formatDate(food.timestamp);
+                    final dateStr = _formatDate(context, food.timestamp);
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -175,10 +176,10 @@ class CostBudgetSection extends StatelessWidget {
     );
   }
 
-  /// Format date for display (MM/DD)
-  String _formatDate(DateTime date) {
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    return '$month/$day';
+  /// Format date for display (localized short format)
+  /// Examples: "12/19" (en_US), "12月19日" (zh_CN), "12/19" (ja_JP)
+  String _formatDate(BuildContext context, DateTime date) {
+    final locale = Localizations.localeOf(context).toString();
+    return DateFormat.Md(locale).format(date);
   }
 }

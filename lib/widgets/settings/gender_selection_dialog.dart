@@ -40,9 +40,16 @@ class GenderSelectionDialog extends StatelessWidget {
         backgroundColor: AppDialogTheme.backgroundColor,
         contentPadding: AppDialogTheme.contentPadding,
         actionsPadding: AppDialogTheme.actionsPadding,
-        title: Text(
-          l10n.gender,
-          style: AppDialogTheme.titleStyle,
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/emojis/icon/dna_3d.png',
+              width: 28,
+              height: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(l10n.gender, style: AppDialogTheme.titleStyle),
+          ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,

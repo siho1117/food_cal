@@ -1,4 +1,5 @@
 // lib/utils/summary_data_calculator.dart
+import 'package:intl/intl.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/exercise_provider.dart';
 import '../../data/models/exercise_entry.dart';
@@ -165,22 +166,23 @@ class SummaryDataCalculator {
     }
   }
 
-  /// Format date for display
-  static String formatDate(DateTime date) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  /// Format date for display (localized)
+  /// Uses intl package for proper internationalization
+  /// Examples:
+  /// - en_US: "Dec 19, 2025"
+  /// - zh_CN: "2025年12月19日"
+  /// - ja_JP: "2025年12月19日"
+  static String formatDate(DateTime date, [String? locale]) {
+    return DateFormat.yMMMd(locale).format(date);
   }
 
-  /// Format month for display
-  static String formatMonth(DateTime date) {
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    return '${months[date.month - 1]} ${date.year}';
+  /// Format month for display (localized)
+  /// Examples:
+  /// - en_US: "December 2025"
+  /// - zh_CN: "2025年12月"
+  /// - ja_JP: "2025年12月"
+  static String formatMonth(DateTime date, [String? locale]) {
+    return DateFormat.yMMMM(locale).format(date);
   }
 
   /// Get period display title
@@ -195,19 +197,19 @@ class SummaryDataCalculator {
     }
   }
 
-  /// Get period subtitle with date range
-  static String getPeriodSubtitle(SummaryPeriod period) {
+  /// Get period subtitle with date range (localized)
+  static String getPeriodSubtitle(SummaryPeriod period, [String? locale]) {
     final now = DateTime.now();
 
     switch (period) {
       case SummaryPeriod.daily:
-        return formatDate(now);
+        return formatDate(now, locale);
       case SummaryPeriod.weekly:
         // Last 7 days (rolling window)
         final startDate = now.subtract(const Duration(days: 6));
-        return 'Last 7 Days: ${formatDate(startDate)} - ${formatDate(now)}';
+        return 'Last 7 Days: ${formatDate(startDate, locale)} - ${formatDate(now, locale)}';
       case SummaryPeriod.monthly:
-        return formatMonth(now);
+        return formatMonth(now, locale);
     }
   }
 

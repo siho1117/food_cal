@@ -330,6 +330,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get editName => '编辑姓名';
 
   @override
+  String get chooseYourAvatar => '选择您的头像';
+
+  @override
+  String get tapAnEmojiToSelect => '点击表情符号以选择为您的头像';
+
+  @override
   String get dateOfBirth => '出生日期';
 
   @override
@@ -1272,6 +1278,12 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get editName => '编辑姓名';
 
   @override
+  String get chooseYourAvatar => '选择您的头像';
+
+  @override
+  String get tapAnEmojiToSelect => '点击表情符号以选择为您的头像';
+
+  @override
   String get dateOfBirth => '出生日期';
 
   @override
@@ -2212,6 +2224,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get editName => '編輯姓名';
+
+  @override
+  String get chooseYourAvatar => '選擇您的頭像';
+
+  @override
+  String get tapAnEmojiToSelect => '點擊表情符號以選擇為您的頭像';
 
   @override
   String get dateOfBirth => '出生日期';

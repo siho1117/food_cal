@@ -139,6 +139,8 @@
   "@_PROFILE_SECTION": {},
   "tapToEdit": "Tap to edit",
   "editName": "Edit Name",
+  "chooseYourAvatar": "Choose Your Avatar",
+  "tapAnEmojiToSelect": "Tap an emoji to select it as your avatar",
 
   "@_PERSONAL_DETAILS": {},
   "dateOfBirth": "Date of Birth",

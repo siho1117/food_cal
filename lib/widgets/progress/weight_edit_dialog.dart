@@ -339,7 +339,7 @@ class _WeightEditDialogState extends State<_WeightEditDialog> {
                       if (widget.entry != null) ...[
                         const SizedBox(height: 4),
                         Text(
-                          DateFormat('dd/MM/yy').format(widget.entry!.timestamp),
+                          DateFormat.yMd(Localizations.localeOf(context).toString()).format(widget.entry!.timestamp),
                           style: const TextStyle(
                             fontSize: 13,
                             color: AppDialogTheme.colorTextSecondary,

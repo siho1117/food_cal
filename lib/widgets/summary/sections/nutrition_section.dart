@@ -57,7 +57,7 @@ class NutritionSection extends StatelessWidget {
     final percentage = effectiveGoal > 0 ? ((totalCalories / effectiveGoal) * 100).round() : 0;
 
     return BaseSectionWidget(
-      icon: AnimatedEmojis.balanceScale,
+      icon: AnimatedEmojis.fromId('u2764_fe0f'),
       title: l10n.nutritionSummary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

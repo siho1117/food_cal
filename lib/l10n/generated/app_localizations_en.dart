@@ -330,6 +330,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editName => 'Edit Name';
 
   @override
+  String get chooseYourAvatar => 'Choose Your Avatar';
+
+  @override
+  String get tapAnEmojiToSelect => 'Tap an emoji to select it as your avatar';
+
+  @override
   String get dateOfBirth => 'Date of Birth';
 
   @override

@@ -36,17 +36,10 @@ class ThemeSelectorDialog extends StatelessWidget {
             // Header
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF6B6B).withValues(alpha: 0.1),  // ✅ Using coral color inline
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.palette,
-                    color: Color(0xFFFF6B6B),  // ✅ Coral accent
-                    size: 24,
-                  ),
+                Image.asset(
+                  'assets/emojis/icon/glowing_star_3d.png',
+                  width: 28,
+                  height: 28,
                 ),
                 const SizedBox(width: 12),
                 const Text(

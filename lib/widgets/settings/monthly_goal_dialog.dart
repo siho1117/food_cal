@@ -96,16 +96,6 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
     _scrollController = FixedExtentScrollController(initialItem: selectedIndex);
   }
 
-  void _toggleUnit() {
-    setState(() {
-      final currentGoalKg = _currentGoalInKg;
-      _isMetric = !_isMetric;
-      _initialGoalKg = currentGoalKg; // Update initial value to current selection
-      _scrollController.dispose();
-      _initializeController(currentGoalKg);
-    });
-  }
-
   void _toggleMode() {
     setState(() {
       _isLossMode = !_isLossMode;
@@ -233,21 +223,27 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
         shape: AppDialogTheme.shape,
         contentPadding: AppDialogTheme.contentPadding,
         actionsPadding: AppDialogTheme.actionsPadding,
-        title: Text(
-          l10n.monthlyWeightGoal,
-          style: AppDialogTheme.titleStyle,
+        title: Row(
+          children: [
+            Image.asset(
+              _isLossMode
+                  ? 'assets/emojis/icon/inbox_tray_3d.png'
+                  : 'assets/emojis/icon/outbox_tray_3d.png',
+              width: 28,
+              height: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              l10n.monthlyWeightGoal,
+              style: AppDialogTheme.titleStyle,
+            ),
+          ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Row with mode toggle (left) and unit toggle (right)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildModeToggle(l10n),
-                _buildUnitToggle(context),
-              ],
-            ),
+            // Mode toggle (Loss/Gain)
+            _buildModeToggle(l10n),
             const SizedBox(height: 16),
             _buildWeightPicker(),
             const SizedBox(height: 20),
@@ -292,53 +288,11 @@ class _MonthlyGoalDialogState extends State<MonthlyGoalDialog> {
     );
   }
 
-  Widget _buildUnitToggle(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildUnitButton(l10n.kg, _isMetric),
-          _buildUnitButton(l10n.lbs, !_isMetric),
-        ],
-      ),
-    );
-  }
-
   Widget _buildModeButton(String label, bool isSelected) {
     return GestureDetector(
       onTap: () {
         if (!isSelected) {
           _toggleMode();
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? AppDialogTheme.colorPrimaryDark : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : AppDialogTheme.colorTextSecondary,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUnitButton(String label, bool isSelected) {
-    return GestureDetector(
-      onTap: () {
-        if (!isSelected) {
-          _toggleUnit();
         }
       },
       child: Container(
