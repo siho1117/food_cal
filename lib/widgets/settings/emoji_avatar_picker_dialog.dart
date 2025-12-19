@@ -5,6 +5,7 @@ import 'package:animated_emoji/animated_emoji.dart';
 import 'package:provider/provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/home_provider.dart';
 import '../../config/design_system/dialog_theme.dart';
 import '../../utils/emoji_filters.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -127,6 +128,13 @@ class _EmojiAvatarPickerDialogState extends State<EmojiAvatarPickerDialog> {
       onTap: () async {
         // Switch to letter avatar and close dialog
         await settingsProvider.useLetterAvatar();
+
+        // Refresh HomeProvider so summary screen updates
+        if (context.mounted) {
+          final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+          await homeProvider.refreshUserProfile();
+        }
+
         if (context.mounted) {
           Navigator.of(context).pop();
         }
@@ -214,6 +222,12 @@ class _EmojiAvatarPickerDialogState extends State<EmojiAvatarPickerDialog> {
         onTap: () async {
           // Save selected emoji and enable emoji mode
           await settingsProvider.updateProfileEmoji(emoji.id);
+
+          // Refresh HomeProvider so summary screen updates
+          if (context.mounted) {
+            final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+            await homeProvider.refreshUserProfile();
+          }
 
           // Close dialog after selection
           if (context.mounted) {

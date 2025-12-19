@@ -34,37 +34,12 @@ class ReportHeaderSection extends StatelessWidget {
         final now = DateTime.now();
 
         return FrostedGlassCard(
-          child: Stack(
-            children: [
-              // Left-aligned avatar badge
-              Positioned(
-                left: 16,
-                top: 16,
-                child: UserAvatarWidget(
-                  profile: profile,
-                  size: 48.0, // Compact size for badge
-                  useAnimation: false, // Static for reports
-                ),
-              ),
+          child: Center(
+            child: Column(
+              children: [
+                const SizedBox(height: AppWidgetTheme.spaceMD),
 
-              // Centered content
-              Center(
-                child: Column(
-                  children: [
-                    // First Row: User Name
-                    Text(
-                      (profile?.name ?? 'User').toUpperCase(),
-                      style: AppTypography.displayLarge.copyWith(
-                        fontSize: AppWidgetTheme.fontSizeXL,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 2.0,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                const SizedBox(height: AppWidgetTheme.spaceXS),
-
-                // Second Row: OptiMate Report
+                // Top Row: OptiMate Report
                 Text(
                   '${AppConstants.appDisplayName} ${l10n.report}',
                   style: AppTypography.displayLarge.copyWith(
@@ -75,9 +50,30 @@ class ReportHeaderSection extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: AppWidgetTheme.spaceMD),
+
+                // Centered Avatar
+                UserAvatarWidget(
+                  profile: profile,
+                  size: 72.0, // Larger, prominent avatar
+                  useAnimation: false, // Static for reports
+                ),
+                const SizedBox(height: AppWidgetTheme.spaceMD),
+
+                // User Name
+                Text(
+                  (profile?.name ?? 'User').toUpperCase(),
+                  style: AppTypography.displayLarge.copyWith(
+                    fontSize: AppWidgetTheme.fontSizeXL,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 2.0,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: AppWidgetTheme.spaceSM),
 
-                // Period Type with Icon
+                // Period Type with Icon + Generated Date (same row)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -85,10 +81,25 @@ class ReportHeaderSection extends StatelessWidget {
                     const SizedBox(width: AppWidgetTheme.spaceXS),
                     Text(
                       _getPeriodTitle(period, l10n),
-                      style: AppTypography.bodyMedium.copyWith(
-                        fontSize: AppWidgetTheme.fontSizeMS,
-                        color: Colors.white.withValues(alpha: 0.7),
-                        fontWeight: FontWeight.w500,
+                      style: AppTypography.bodySmall.copyWith(
+                        fontSize: AppWidgetTheme.fontSizeSM,
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    const SizedBox(width: AppWidgetTheme.spaceSM),
+                    Text(
+                      '•',
+                      style: AppTypography.bodySmall.copyWith(
+                        fontSize: AppWidgetTheme.fontSizeSM,
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    const SizedBox(width: AppWidgetTheme.spaceSM),
+                    Text(
+                      '${l10n.generated}${SummaryDataCalculator.formatDate(now, locale)}',
+                      style: AppTypography.bodySmall.copyWith(
+                        fontSize: AppWidgetTheme.fontSizeSM,
+                        color: Colors.white.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -104,21 +115,9 @@ class ReportHeaderSection extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: AppWidgetTheme.spaceXS),
-
-                // Generated Date
-                Text(
-                  '${l10n.generated}${SummaryDataCalculator.formatDate(now, locale)}',
-                  style: AppTypography.bodySmall.copyWith(
-                    fontSize: AppWidgetTheme.fontSizeSM,
-                    color: Colors.white.withValues(alpha: 0.6),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                  ],
-                ),
-              ),
-            ],
+                const SizedBox(height: AppWidgetTheme.spaceMD),
+              ],
+            ),
           ),
         );
       },

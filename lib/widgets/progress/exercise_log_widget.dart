@@ -428,10 +428,9 @@ class ExerciseLogWidget extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Row(
               children: [
-                Icon(
-                  Icons.fitness_center,
-                  size: AppWidgetTheme.iconSizeSmall,
-                  color: textColor,
+                const AnimatedEmoji(
+                  AnimatedEmojis.muscle,
+                  size: 26,
                 ),
                 SizedBox(width: AppWidgetTheme.spaceMS),
                 Text(
@@ -460,7 +459,7 @@ class ExerciseLogWidget extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              Icons.fitness_center,
+              Icons.fitness_center_rounded,
               size: AppWidgetTheme.iconSizeMedium,
               color: textColor,
             ),
