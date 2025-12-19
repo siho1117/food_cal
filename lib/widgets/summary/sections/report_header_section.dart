@@ -108,7 +108,7 @@ class ReportHeaderSection extends StatelessWidget {
 
                 // Date Range
                 Text(
-                  SummaryDataCalculator.getPeriodSubtitle(period, locale),
+                  _getPeriodSubtitle(period, locale, l10n),
                   style: AppTypography.bodySmall.copyWith(
                     fontSize: AppWidgetTheme.fontSizeSM,
                     color: Colors.white.withValues(alpha: 0.6),
@@ -155,6 +155,21 @@ class ReportHeaderSection extends StatelessWidget {
         return l10n.weeklySummary;
       case SummaryPeriod.monthly:
         return l10n.monthlySummary;
+    }
+  }
+
+  String _getPeriodSubtitle(SummaryPeriod period, String locale, AppLocalizations l10n) {
+    final now = DateTime.now();
+
+    switch (period) {
+      case SummaryPeriod.daily:
+        return SummaryDataCalculator.formatDate(now, locale);
+      case SummaryPeriod.weekly:
+        // Last 7 days (rolling window)
+        final startDate = now.subtract(const Duration(days: 6));
+        return '${l10n.lastSevenDays}: ${SummaryDataCalculator.formatDate(startDate, locale)} - ${SummaryDataCalculator.formatDate(now, locale)}';
+      case SummaryPeriod.monthly:
+        return SummaryDataCalculator.formatMonth(now, locale);
     }
   }
 }

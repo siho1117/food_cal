@@ -23,12 +23,12 @@ class GeminiConfig {
   // ═══════════════════════════════════════════════════════════════
 
   /// Model for vision tasks (food image recognition)
-  /// gemini-2.0-flash-exp: Experimental model with enhanced vision capabilities
-  static const String visionModel = 'gemini-2.0-flash-exp';
+  /// gemini-2.5-flash-lite: Lightweight, fast model with enhanced capabilities
+  static const String visionModel = 'gemini-2.5-flash-lite';
 
   /// Model for text tasks (food information lookup)
-  /// gemini-2.0-flash-exp: Fast, cost-effective model for text generation
-  static const String textModel = 'gemini-2.0-flash-exp';
+  /// gemini-2.5-flash-lite: Fast, cost-effective model for text generation
+  static const String textModel = 'gemini-2.5-flash-lite';
 
   // ═══════════════════════════════════════════════════════════════
   // ENVIRONMENT VARIABLE KEYS

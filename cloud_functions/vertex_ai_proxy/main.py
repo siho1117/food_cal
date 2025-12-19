@@ -9,7 +9,7 @@ Architecture:
 - Flutter App (Mobile) -> Cloud Function (this file) -> Vertex AI API
 - Authentication: Workload Identity (service account attached to function)
 - Region: us-central1 (Iowa)
-- Model: gemini-1.5-flash
+- Model: gemini-2.5-flash-lite
 """
 
 import functions_framework
@@ -22,7 +22,7 @@ import json
 # ═══════════════════════════════════════════════════════════════
 
 PROJECT_ID = os.environ.get("GCP_PROJECT")
-LOCATION = "us-central1"  # Iowa region - best model availability
+LOCATION = "us-central1"  # Iowa - Best for global users and model availability
 
 # Initialize the Client for Vertex AI
 # This automatically uses the Service Account credentials (Workload Identity)
@@ -112,7 +112,7 @@ def vertex_ai_proxy(request):
 
         # Call Vertex AI Gemini
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.5-flash-lite',
             contents=contents,
             config=generation_config
         )
@@ -121,6 +121,26 @@ def vertex_ai_proxy(request):
         response_text = response.text
 
         print(f"Response received: {len(response_text)} characters")
+
+        # Extract token usage from response
+        usage_metadata = {
+            "promptTokenCount": 0,
+            "candidatesTokenCount": 0,
+            "totalTokenCount": 0,
+        }
+
+        # Try to extract usage metadata if available
+        try:
+            if hasattr(response, 'usage_metadata'):
+                usage = response.usage_metadata
+                usage_metadata = {
+                    "promptTokenCount": getattr(usage, 'prompt_token_count', 0),
+                    "candidatesTokenCount": getattr(usage, 'candidates_token_count', 0),
+                    "totalTokenCount": getattr(usage, 'total_token_count', 0),
+                }
+                print(f"Token usage - Input: {usage_metadata['promptTokenCount']}, Output: {usage_metadata['candidatesTokenCount']}, Total: {usage_metadata['totalTokenCount']}")
+        except Exception as e:
+            print(f"Could not extract token usage: {e}")
 
         # ═══════════════════════════════════════════════════════════════
         # 4. FORMAT RESPONSE (Gemini API compatible)
@@ -138,12 +158,8 @@ def vertex_ai_proxy(request):
                     "index": 0,
                 }
             ],
-            "usageMetadata": {
-                "promptTokenCount": 0,  # google-genai doesn't expose this
-                "candidatesTokenCount": 0,
-                "totalTokenCount": 0,
-            },
-            "modelVersion": "gemini-1.5-flash",
+            "usageMetadata": usage_metadata,
+            "modelVersion": "gemini-2.5-flash-lite",
         }
 
         return (
@@ -157,7 +173,7 @@ def vertex_ai_proxy(request):
         return (
             json.dumps({
                 'error': f'Vertex AI API call failed: {str(e)}',
-                'model': 'gemini-1.5-flash',
+                'model': 'gemini-2.5-flash-lite',
             }),
             500,
             headers

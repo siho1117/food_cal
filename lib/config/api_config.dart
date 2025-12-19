@@ -3,7 +3,7 @@
 /// Main API Configuration
 ///
 /// Central configuration for API settings.
-/// Using Cloud Function proxy for Vertex AI (gemini-2.0-flash)
+/// Using Cloud Function proxy for Vertex AI (gemini-2.5-flash-lite)
 class ApiConfig {
   // Private constructor to prevent instantiation
   ApiConfig._();

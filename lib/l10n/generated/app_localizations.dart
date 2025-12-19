@@ -1465,6 +1465,12 @@ abstract class AppLocalizations {
   /// **'Monthly Summary'**
   String get monthlySummary;
 
+  /// No description provided for @lastSevenDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 Days'**
+  String get lastSevenDays;
+
   /// No description provided for @bodyMetricsMetabolism.
   ///
   /// In en, this message translates to:

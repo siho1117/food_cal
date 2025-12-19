@@ -9,7 +9,7 @@
 #
 # Prerequisites:
 # 1. gcloud CLI installed and authenticated
-# 2. Service account created: vertex-ai-food-app@optimate-481013.iam.gserviceaccount.com
+# 2. Service account created: vertex-ai-food-app@geminiopti.iam.gserviceaccount.com
 # 3. Service account has "Vertex AI User" role
 # 4. Vertex AI API enabled
 #
@@ -18,10 +18,10 @@
 set -e  # Exit on error
 
 # Configuration
-PROJECT_ID="optimate-481013"
-REGION="asia-east2"  # Hong Kong region
+PROJECT_ID="geminiopti"
+REGION="us-central1"  # Iowa - Best for global users
 FUNCTION_NAME="vertex-ai-proxy"
-SERVICE_ACCOUNT="vertex-ai-food-app@optimate-481013.iam.gserviceaccount.com"
+SERVICE_ACCOUNT="vertex-ai-food-app@geminiopti.iam.gserviceaccount.com"
 RUNTIME="python311"
 ENTRY_POINT="vertex_ai_proxy"
 MEMORY="512MB"

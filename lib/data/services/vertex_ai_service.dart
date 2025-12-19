@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../../config/api_config.dart';
@@ -18,7 +19,7 @@ import '../../config/api_config.dart';
 /// - Endpoint: https://gemini-public-proxy-2fbg2toazq-uc.a.run.app
 /// - Authentication: X-App-Secret header (OptimateFoodApp2025)
 /// - Project: geminiopti
-/// - Model: gemini-2.0-flash
+/// - Model: gemini-2.5-flash-lite
 /// - Temperature: 0.0 (for maximum accuracy)
 ///
 /// Request format (with image):
@@ -86,6 +87,15 @@ class VertexAIService {
     String language = 'English',
   }) async {
     try {
+      // Log configuration details
+      debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      debugPrint('📡 Vertex AI Configuration:');
+      debugPrint('   Project: geminiopti');
+      debugPrint('   Region: us-central1 (Iowa, USA)');
+      debugPrint('   Model: gemini-2.5-flash-lite');
+      debugPrint('   Endpoint: $_cloudFunctionUrl');
+      debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
       // Convert image to base64
       final imageBytes = await imageFile.readAsBytes();
       final base64Image = base64Encode(imageBytes);
@@ -115,6 +125,18 @@ class VertexAIService {
       // Handle response
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+
+        // Extract token usage if available
+        final usageMetadata = data['usageMetadata'];
+        if (usageMetadata != null) {
+          debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          debugPrint('📊 Token Usage:');
+          debugPrint('   Input tokens: ${usageMetadata['promptTokenCount'] ?? 'N/A'}');
+          debugPrint('   Output tokens: ${usageMetadata['candidatesTokenCount'] ?? 'N/A'}');
+          debugPrint('   Total tokens: ${usageMetadata['totalTokenCount'] ?? 'N/A'}');
+          debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        }
+
         // Extract the raw text response for the parser
         final rawText = data['response'] as String?;
         if (rawText == null || rawText.isEmpty) {
@@ -126,8 +148,11 @@ class VertexAIService {
           'text': rawText,
           '_metadata': {
             'provider': 'vertex-ai-proxy',
-            'model': 'gemini-2.0-flash-exp',
+            'model': 'gemini-2.5-flash-lite',
+            'project': 'geminiopti',
+            'region': 'us-central1',
             'timestamp': DateTime.now().toIso8601String(),
+            'tokens': usageMetadata,
           }
         };
       } else {
@@ -204,7 +229,7 @@ Use standard USDA values for 100g serving.
           'text': rawText,
           '_metadata': {
             'provider': 'vertex-ai-proxy',
-            'model': 'gemini-2.0-flash-exp',
+            'model': 'gemini-2.5-flash-lite',
             'timestamp': DateTime.now().toIso8601String(),
           }
         };

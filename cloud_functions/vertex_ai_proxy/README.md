@@ -44,30 +44,30 @@ Before deploying, ensure:
 2. **Authenticated with GCP**
    ```bash
    gcloud auth login
-   gcloud config set project optimate-481013
+   gcloud config set project geminiopti
    ```
 
 3. **Vertex AI API enabled**
    ```bash
-   gcloud services enable aiplatform.googleapis.com --project=optimate-481013
+   gcloud services enable aiplatform.googleapis.com --project=geminiopti
    ```
 
 4. **Cloud Functions API enabled**
    ```bash
-   gcloud services enable cloudfunctions.googleapis.com --project=optimate-481013
-   gcloud services enable cloudbuild.googleapis.com --project=optimate-481013
-   gcloud services enable artifactregistry.googleapis.com --project=optimate-481013
+   gcloud services enable cloudfunctions.googleapis.com --project=geminiopti
+   gcloud services enable cloudbuild.googleapis.com --project=geminiopti
+   gcloud services enable artifactregistry.googleapis.com --project=geminiopti
    ```
 
 5. **Service account created with proper role**
    ```bash
    # Check if service account exists
-   gcloud iam service-accounts list --project=optimate-481013 | grep vertex-ai-food-app
+   gcloud iam service-accounts list --project=geminiopti | grep vertex-ai-food-app
 
    # Verify it has Vertex AI User role
-   gcloud projects get-iam-policy optimate-481013 \
+   gcloud projects get-iam-policy geminiopti \
      --flatten="bindings[].members" \
-     --filter="bindings.members:vertex-ai-food-app@optimate-481013.iam.gserviceaccount.com"
+     --filter="bindings.members:vertex-ai-food-app@geminiopti.iam.gserviceaccount.com"
    ```
 
 ---
@@ -84,7 +84,7 @@ From this directory, run:
 
 The script will:
 1. Validate prerequisites
-2. Deploy the function to `asia-east2` (Hong Kong)
+2. Deploy the function to `us-central1` (Iowa, USA - optimal for global users)
 3. Attach the service account for Workload Identity
 4. Display the function URL
 
@@ -96,16 +96,16 @@ If you prefer manual deployment:
 gcloud functions deploy vertex-ai-proxy \
   --gen2 \
   --runtime=python311 \
-  --region=asia-east2 \
+  --region=us-central1 \
   --source=. \
   --entry-point=vertex_ai_proxy \
   --trigger-http \
   --allow-unauthenticated \
-  --service-account=vertex-ai-food-app@optimate-481013.iam.gserviceaccount.com \
+  --service-account=vertex-ai-food-app@geminiopti.iam.gserviceaccount.com \
   --memory=512MB \
   --timeout=60s \
-  --set-env-vars=GCP_PROJECT=optimate-481013 \
-  --project=optimate-481013
+  --set-env-vars=GCP_PROJECT=geminiopti \
+  --project=geminiopti
 ```
 
 ### Get Function URL
@@ -114,8 +114,8 @@ After deployment:
 
 ```bash
 gcloud functions describe vertex-ai-proxy \
-  --region=asia-east2 \
-  --project=optimate-481013 \
+  --region=us-central1 \
+  --project=geminiopti \
   --format='value(serviceConfig.uri)'
 ```
 
@@ -130,30 +130,32 @@ https://vertex-ai-proxy-abc123-uc.a.run.app
 
 ### Region Selection
 
-Currently set to: **`asia-east2`** (Hong Kong)
+Currently set to: **`us-central1`** (Iowa, USA)
 
-**Why Hong Kong?**
-- Low latency for HK/Asia users
-- Gemini 2.0 Flash available
-- Good availability zone
+**Why us-central1 for global users?**
+- Central location minimizes latency worldwide
+- Most reliable Google Cloud region (highest availability)
+- Best model availability - all Gemini models guaranteed
+- Optimal for global CDN routing
+- Cost-effective
 
-**Alternative regions:**
-- `asia-southeast1` (Singapore)
-- `us-central1` (Iowa) - if US users
-- `europe-west1` (Belgium) - if EU users
+**Alternative regions (if needed):**
+- `us-central1` (Hong Kong) - for Asia-focused apps
+- `asia-southeast1` (Singapore) - for Southeast Asia
+- `europe-west1` (Belgium) - for Europe-focused apps
 
 To change region, edit `deploy.sh` and update `REGION` variable.
 
 ### Model Selection
 
 Current models:
-- **Vision**: `gemini-2.0-flash-exp`
-- **Text**: `gemini-2.0-flash-exp`
+- **Vision**: `gemini-2.5-flash-lite`
+- **Text**: `gemini-2.5-flash-lite`
 
 To change models, edit `main.py`:
 ```python
-VISION_MODEL = "gemini-2.0-flash-exp"
-TEXT_MODEL = "gemini-2.0-flash-exp"
+VISION_MODEL = "gemini-2.5-flash-lite"
+TEXT_MODEL = "gemini-2.5-flash-lite"
 ```
 
 ---
@@ -165,8 +167,8 @@ TEXT_MODEL = "gemini-2.0-flash-exp"
 ```bash
 # Get function URL
 FUNCTION_URL=$(gcloud functions describe vertex-ai-proxy \
-  --region=asia-east2 \
-  --project=optimate-481013 \
+  --region=us-central1 \
+  --project=geminiopti \
   --format='value(serviceConfig.uri)')
 
 # Test text generation
@@ -230,8 +232,8 @@ You can now remove the `VERTEX_SERVICE_ACCOUNT_JSON` from your `.env` file - it'
 
 ```bash
 gcloud functions logs read vertex-ai-proxy \
-  --region=asia-east2 \
-  --project=optimate-481013 \
+  --region=us-central1 \
+  --project=geminiopti \
   --limit=50
 ```
 
@@ -241,19 +243,19 @@ gcloud functions logs read vertex-ai-proxy \
 # Invocation count
 gcloud monitoring time-series list \
   --filter='metric.type="cloudfunctions.googleapis.com/function/execution_count"' \
-  --project=optimate-481013
+  --project=geminiopti
 
 # Error rate
 gcloud monitoring time-series list \
   --filter='metric.type="cloudfunctions.googleapis.com/function/execution_error_count"' \
-  --project=optimate-481013
+  --project=geminiopti
 ```
 
 ### Cloud Console
 
-- Functions: https://console.cloud.google.com/functions/list?project=optimate-481013
-- Logs: https://console.cloud.google.com/logs/query?project=optimate-481013
-- Metrics: https://console.cloud.google.com/monitoring?project=optimate-481013
+- Functions: https://console.cloud.google.com/functions/list?project=geminiopti
+- Logs: https://console.cloud.google.com/logs/query?project=geminiopti
+- Metrics: https://console.cloud.google.com/monitoring?project=geminiopti
 
 ---
 
@@ -322,8 +324,8 @@ Integrate with Firebase Authentication for user-level access control.
 
 **Fix**:
 ```bash
-gcloud projects add-iam-policy-binding optimate-481013 \
-  --member="serviceAccount:vertex-ai-food-app@optimate-481013.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding geminiopti \
+  --member="serviceAccount:vertex-ai-food-app@geminiopti.iam.gserviceaccount.com" \
   --role="roles/aiplatform.user"
 ```
 
@@ -333,7 +335,7 @@ gcloud projects add-iam-policy-binding optimate-481013 \
 
 **Fix**:
 ```bash
-gcloud services enable aiplatform.googleapis.com --project=optimate-481013
+gcloud services enable aiplatform.googleapis.com --project=geminiopti
 ```
 
 ### Error: "Function deployment failed"
@@ -342,9 +344,9 @@ gcloud services enable aiplatform.googleapis.com --project=optimate-481013
 
 **Fix**:
 ```bash
-gcloud services enable cloudfunctions.googleapis.com --project=optimate-481013
-gcloud services enable cloudbuild.googleapis.com --project=optimate-481013
-gcloud services enable artifactregistry.googleapis.com --project=optimate-481013
+gcloud services enable cloudfunctions.googleapis.com --project=geminiopti
+gcloud services enable cloudbuild.googleapis.com --project=geminiopti
+gcloud services enable artifactregistry.googleapis.com --project=geminiopti
 ```
 
 ### Error: "Invalid base64 image"

@@ -5,7 +5,7 @@ This directory contains configuration files for different AI API providers.
 ## Current Provider: Google Gemini
 
 **Active Config:** `gemini_config.dart`
-- Model: `gemini-2.0-flash-exp`
+- Model: `gemini-2.5-flash-lite`
 - Strengths: Fast, supports vision + text, cost-effective
 - Response format: JSON in markdown code blocks
 

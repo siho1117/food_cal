@@ -169,11 +169,13 @@ class SummaryDataCalculator {
   /// Format date for display (localized)
   /// Uses intl package for proper internationalization
   /// Examples:
-  /// - en_US: "Dec 19, 2025"
-  /// - zh_CN: "2025年12月19日"
-  /// - ja_JP: "2025年12月19日"
+  /// - en_US: "Dec 19, 25"
+  /// - zh_CN: "25年12月19日"
+  /// - ja_JP: "25年12月19日"
   static String formatDate(DateTime date, [String? locale]) {
-    return DateFormat.yMMMd(locale).format(date);
+    // Use yy for 2-digit year instead of yyyy (4-digit)
+    final formatter = DateFormat('MMM d, yy', locale);
+    return formatter.format(date);
   }
 
   /// Format month for display (localized)

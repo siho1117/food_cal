@@ -353,6 +353,7 @@
   "dailySummary": "Daily Summary",
   "weeklySummary": "Weekly Summary",
   "monthlySummary": "Monthly Summary",
+  "lastSevenDays": "Last 7 Days",
 
   "@_SUMMARY_BODY_METRICS": {},
   "bodyMetricsMetabolism": "BODY METRICS & METABOLISM",

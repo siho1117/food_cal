@@ -699,6 +699,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get monthlySummary => '每月摘要';
 
   @override
+  String get lastSevenDays => '最近7天';
+
+  @override
   String get bodyMetricsMetabolism => '身体指标与代谢';
 
   @override
@@ -1647,6 +1650,9 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get monthlySummary => '每月摘要';
 
   @override
+  String get lastSevenDays => '最近7天';
+
+  @override
   String get bodyMetricsMetabolism => '身体指标与代谢';
 
   @override
@@ -2593,6 +2599,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get monthlySummary => '每月摘要';
+
+  @override
+  String get lastSevenDays => '最近7天';
 
   @override
   String get bodyMetricsMetabolism => '身體指標與代謝';

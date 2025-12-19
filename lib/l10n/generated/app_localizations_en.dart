@@ -699,6 +699,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get monthlySummary => 'Monthly Summary';
 
   @override
+  String get lastSevenDays => 'Last 7 Days';
+
+  @override
   String get bodyMetricsMetabolism => 'BODY METRICS & METABOLISM';
 
   @override
