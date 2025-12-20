@@ -72,6 +72,29 @@ class PhotoCompressionService {
     }
   }
 
+  /// **Process food name through food search API**
+  /// Searches for food by name (no image required)
+  /// [foodName] - Name of the food to search for
+  /// [language] - Target language for food name (default: "English")
+  Future<FoodRecognitionResult> processFoodName(
+    String foodName, {
+    String language = 'English',
+  }) async {
+    try {
+      // Call Food Search API
+      debugPrint('🔍 Searching for food by name: $foodName (language: $language)');
+      final FoodItem foodItem = await _repository.searchFoodByName(
+        foodName,
+        language: language,
+      );
+
+      // Return as a list to match processImage format
+      return FoodRecognitionResult.success([foodItem]);
+    } catch (e) {
+      return FoodRecognitionResult.error('Search failed: $e');
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════
   // PRIVATE METHODS - Image Optimization
   // ═══════════════════════════════════════════════════════════

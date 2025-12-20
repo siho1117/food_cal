@@ -495,6 +495,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get scanFoodWithCamera => '用相机扫描食物';
 
   @override
+  String get searchByName => '搜尋';
+
+  @override
+  String get quickFoodSearch => '依名稱查找';
+
+  @override
   String get update => '更新';
 
   @override
@@ -531,6 +537,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String removeFoodFromLog(String foodName) {
     return '从食物日志中移除「$foodName」？';
   }
+
+  @override
+  String get enterFoodName => '輸入食物名稱';
+
+  @override
+  String get searchFood => '搜尋';
+
+  @override
+  String get noFoodFound => '找不到食物。請重試。';
 
   @override
   String get failedToDeleteItem => '删除项目失败';
@@ -1446,6 +1461,12 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get scanFoodWithCamera => '用相机扫描食物';
 
   @override
+  String get searchByName => '搜索';
+
+  @override
+  String get quickFoodSearch => '按名称查找';
+
+  @override
   String get update => '更新';
 
   @override
@@ -1482,6 +1503,15 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String removeFoodFromLog(String foodName) {
     return '从食物日志中移除「$foodName」？';
   }
+
+  @override
+  String get enterFoodName => '输入食物名称';
+
+  @override
+  String get searchFood => '搜索';
+
+  @override
+  String get noFoodFound => '找不到食物。请重试。';
 
   @override
   String get failedToDeleteItem => '删除项目失败';
@@ -2397,6 +2427,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get scanFoodWithCamera => '用相機掃描食物';
 
   @override
+  String get searchByName => '搜尋';
+
+  @override
+  String get quickFoodSearch => '依名稱查找';
+
+  @override
   String get update => '更新';
 
   @override
@@ -2433,6 +2469,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String removeFoodFromLog(String foodName) {
     return '從食物日誌中移除「$foodName」？';
   }
+
+  @override
+  String get enterFoodName => '輸入食物名稱';
+
+  @override
+  String get searchFood => '搜尋';
+
+  @override
+  String get noFoodFound => '找不到食物。請重試。';
 
   @override
   String get failedToDeleteItem => '刪除項目失敗';

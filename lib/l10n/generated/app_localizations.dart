@@ -1069,6 +1069,18 @@ abstract class AppLocalizations {
   /// **'Scan food with camera'**
   String get scanFoodWithCamera;
 
+  /// No description provided for @searchByName.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get searchByName;
+
+  /// No description provided for @quickFoodSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Find by name'**
+  String get quickFoodSearch;
+
   /// No description provided for @update.
   ///
   /// In en, this message translates to:
@@ -1140,6 +1152,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove \"{foodName}\" from your food log?'**
   String removeFoodFromLog(String foodName);
+
+  /// No description provided for @enterFoodName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter food name'**
+  String get enterFoodName;
+
+  /// No description provided for @searchFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get searchFood;
+
+  /// No description provided for @noFoodFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No food found. Please try again.'**
+  String get noFoodFound;
 
   /// No description provided for @failedToDeleteItem.
   ///

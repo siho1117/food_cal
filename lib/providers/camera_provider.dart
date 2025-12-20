@@ -10,6 +10,7 @@ import '../data/services/photo_compression_service.dart';
 import '../data/repositories/food_repository.dart';
 import '../data/exceptions/api_exceptions.dart';
 import '../widgets/loading/food_recognition_loading_dialog.dart';
+import '../widgets/common/search_by_name_dialog.dart';
 import '../main.dart'; // Import for navigatorKey
 import '../services/food_image_service.dart';
 import 'home_provider.dart';
@@ -49,6 +50,102 @@ class CameraProvider {
   /// Select image from gallery and auto-save to food log
   Future<void> selectFromGallery(BuildContext context) async {
     await _captureAnalyzeAndSave(context, isCamera: false);
+  }
+
+  /// Search for food by name and auto-save to food log
+  /// Similar flow to camera/gallery but uses text input instead of image
+  Future<void> searchByFoodName(BuildContext context) async {
+    // Get user's language from locale BEFORE any async operations
+    final locale = Localizations.localeOf(context);
+    final language = _getLanguageName(locale);
+
+    // Show search dialog to get food name from user
+    final foodName = await showDialog<String>(
+      context: context,
+      builder: (context) => const SearchByNameDialog(),
+    );
+
+    // User cancelled or entered empty name
+    if (foodName == null || foodName.trim().isEmpty) {
+      debugPrint('ℹ️ User cancelled food name search');
+      return;
+    }
+
+    debugPrint('🔍 Searching for food: $foodName (language: $language)');
+
+    FoodRecognitionResult? result;
+
+    try {
+      // ═══════════════════════════════════════════════════════════
+      // STEP 1: Show Loading (NO image path for text search)
+      // ═══════════════════════════════════════════════════════════
+      showFoodRecognitionLoading(null, imagePath: null);
+
+      // ═══════════════════════════════════════════════════════════
+      // STEP 2: Call API Service (text-based search)
+      // ═══════════════════════════════════════════════════════════
+      result = await _apiService.processFoodName(foodName.trim(), language: language);
+
+      // ═══════════════════════════════════════════════════════════
+      // STEP 3: Hide Loading
+      // ═══════════════════════════════════════════════════════════
+      hideFoodRecognitionLoading();
+
+      // Handle errors
+      if (result.hasError) {
+        if (context.mounted) {
+          _showErrorAndReturn(context, result.error ?? 'Unknown error occurred');
+        }
+        return;
+      }
+
+      // Handle success - check if we got items
+      if (!result.isSuccess || result.items == null || result.items!.isEmpty) {
+        if (context.mounted) {
+          _showErrorAndReturn(context, 'No food found. Please try again.');
+        }
+        return;
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      // STEP 4: Show Preview (NO image path for text search)
+      // ═══════════════════════════════════════════════════════════
+      final firstItem = result.items!.first;
+      final updatedItem = await showFoodRecognitionPreview(
+        foodItem: firstItem,
+        imagePath: '', // Empty string = no image
+      );
+
+      // Update the items list with the potentially updated item (with cost)
+      final finalItemsToSave = result.items!.map((item) {
+        if (item.id == firstItem.id) {
+          return updatedItem;
+        }
+        return item;
+      }).toList();
+
+      // ═══════════════════════════════════════════════════════════
+      // STEP 5: Save to Database
+      // ═══════════════════════════════════════════════════════════
+      final saveSuccess = await _foodRepository.storageService.saveFoodEntries(finalItemsToSave);
+
+      if (!saveSuccess) {
+        if (context.mounted) {
+          _showErrorAndReturn(context, 'Failed to save food item. Please try again.');
+        }
+        return;
+      }
+
+      // STEP 6: Refresh home and show success
+      _showSuccessAndRefreshHome(result.items!.length);
+
+    } catch (e) {
+      debugPrint('Error in food name search: $e');
+      hideFoodRecognitionLoading(); // Hide overlay if shown
+      if (context.mounted) {
+        _showErrorAndReturn(context, 'Search error: $e');
+      }
+    }
   }
 
   /// Complete flow: capture → analyze → save → navigate home

@@ -212,6 +212,8 @@
   "logManually": "Log manually",
   "takePhoto": "Take Photo",
   "scanFoodWithCamera": "Scan food with camera",
+  "searchByName": "Search",
+  "quickFoodSearch": "Find by name",
   "weight": "Weight",
   "update": "Update",
   "exercise": "Exercise",
@@ -228,6 +230,9 @@
   "failedToSaveChanges": "Failed to save changes",
   "remove": "Remove",
   "removeFoodFromLog": "Remove \"{foodName}\" from your food log?",
+  "enterFoodName": "Enter food name",
+  "searchFood": "Search",
+  "noFoodFound": "No food found. Please try again.",
   "@removeFoodFromLog": {
     "placeholders": {
       "foodName": {

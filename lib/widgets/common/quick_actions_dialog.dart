@@ -8,14 +8,11 @@ import '../../config/design_system/typography.dart';
 import '../../config/design_system/accent_colors.dart';
 import '../../providers/camera_provider.dart';
 import '../../providers/exercise_provider.dart';
-import '../../providers/progress_data.dart';
-import '../../providers/settings_provider.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/navigation_provider.dart';
 import '../../data/models/food_item.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../progress/exercise_entry_dialog.dart';
-import '../progress/weight_edit_dialog.dart';
 import '../home/quick_edit_food_dialog.dart';
 
 /// Modern Quick Actions bottom sheet dialog
@@ -140,18 +137,18 @@ class _QuickActionsDialogContent extends StatelessWidget {
 
                 const SizedBox(height: AppWidgetTheme.spaceSM),
 
-                // Row 2: Weight + Exercise (matching flex ratios above)
+                // Row 2: Search + Exercise (matching flex ratios above)
                 Row(
                   children: [
                     Expanded(
                       flex: 2,
                       child: _FloatingTileMedium(
                         action: _QuickAction(
-                          icon: Icons.monitor_weight_rounded,
-                          label: l10n.weight,
-                          subtitle: l10n.update,
+                          icon: Icons.search_rounded,
+                          label: l10n.searchByName,
+                          subtitle: l10n.quickFoodSearch,
                           color: AccentColors.brightGreen,
-                          onTap: () => _handleWeightAction(context),
+                          onTap: () => _handleSearchByNameAction(context),
                         ),
                       ),
                     ),
@@ -233,73 +230,17 @@ class _QuickActionsDialogContent extends StatelessWidget {
     );
   }
 
-  void _handleWeightAction(BuildContext context) {
-    Navigator.of(context).pop();
+  Future<void> _handleSearchByNameAction(BuildContext context) async {
+    // Close quick actions dialog and wait for animation to complete
+    await Navigator.of(context).maybePop();
 
-    // Show weight edit dialog
-    final progressData = Provider.of<ProgressData>(context, listen: false);
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-    final navigationProvider = Provider.of<NavigationProvider>(context, listen: false);
+    // Small delay for smooth transition
+    await Future.delayed(const Duration(milliseconds: 100));
 
-    showWeightEditDialog(
-      context: context,
-      initialWeight: progressData.currentWeight ?? 70.0,
-      isMetric: progressData.isMetric,
-      targetWeight: progressData.targetWeight,
-      startingWeight: progressData.startingWeight,
-      onAddWeight: (weight, isMetric) async {
-        await progressData.addWeightEntry(weight, isMetric);
-        // Navigate to Progress page after weight is saved
-        navigationProvider.navigateToProgress();
-        if (context.mounted) {
-          final l10n = AppLocalizations.of(context)!;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.weightUpdatedSuccessfully),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      },
-      onSaveTarget: (targetWeight) async {
-        await progressData.updateTargetWeight(targetWeight);
-        // Navigate to Progress page after target weight is saved
-        navigationProvider.navigateToProgress();
-        if (context.mounted) {
-          final l10n = AppLocalizations.of(context)!;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.targetWeightUpdatedSuccessfully),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      },
-      onSaveStartingWeight: (startingWeight) async {
-        await settingsProvider.updateStartingWeight(startingWeight);
-
-        // Reload progress data to refresh the UI with new starting weight
-        await progressData.refreshData();
-
-        // Navigate to Progress page after starting weight is saved
-        navigationProvider.navigateToProgress();
-        if (context.mounted) {
-          final l10n = AppLocalizations.of(context)!;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.startingWeightUpdated),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      },
-    );
+    // Call camera provider's search method
+    if (context.mounted) {
+      CameraProvider().searchByFoodName(context);
+    }
   }
 
   void _handleManualEntryAction(BuildContext context) {

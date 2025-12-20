@@ -495,6 +495,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scanFoodWithCamera => 'Scan food with camera';
 
   @override
+  String get searchByName => 'Search';
+
+  @override
+  String get quickFoodSearch => 'Find by name';
+
+  @override
   String get update => 'Update';
 
   @override
@@ -531,6 +537,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String removeFoodFromLog(String foodName) {
     return 'Remove \"$foodName\" from your food log?';
   }
+
+  @override
+  String get enterFoodName => 'Enter food name';
+
+  @override
+  String get searchFood => 'Search';
+
+  @override
+  String get noFoodFound => 'No food found. Please try again.';
 
   @override
   String get failedToDeleteItem => 'Failed to delete item';

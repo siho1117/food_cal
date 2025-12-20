@@ -99,6 +99,28 @@ class FoodRepository {
     }
   }
 
+  /// Search for food by name and return nutrition information
+  /// This is similar to recognizeFood but uses text input instead of an image
+  /// [foodName] - Name of the food to search for
+  /// [language] - Target language for food name (default: "English")
+  Future<FoodItem> searchFoodByName(
+    String foodName, {
+    String language = 'English',
+  }) async {
+    try {
+      // Call the API to get food information
+      final foodInfo = await _apiService.getFoodInformation(foodName);
+
+      // Create FoodItem from the response (same format as image analysis)
+      final item = FoodItem.fromApiAnalysis(foodInfo);
+
+      return item;
+    } catch (e) {
+      debugPrint('Error searching food by name: $e');
+      rethrow;
+    }
+  }
+
   /// Expose storage service for direct access by UI layer
   /// UI should use this instead of going through repository pass-through methods
   FoodStorageService get storageService => _storageService;
