@@ -205,6 +205,10 @@
   "thankYouForFeedback": "Thank you for your feedback!",
   "enterFeedbackFirst": "Please enter your feedback first",
 
+  "@_LEGAL_DOCUMENTS": {},
+  "privacyPolicy": "Privacy Policy",
+  "termsOfService": "Terms of Service",
+
   "@_QUICK_ACTIONS": {},
   "gallery": "Gallery",
   "pickFoodPhoto": "Pick food photo",

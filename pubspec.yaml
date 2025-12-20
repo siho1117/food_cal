@@ -50,6 +50,9 @@ dependencies:
   # ⚠️ SHARING - CONSERVATIVE VERSION
   share_plus: ^7.2.1
 
+  # ✅ URL LAUNCHING
+  url_launcher: ^6.3.1
+
   # ✅ FONTS & UI COMPONENTS
   google_fonts: ^6.2.1
   percent_indicator: ^4.2.3

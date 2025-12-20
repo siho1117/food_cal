@@ -205,6 +205,10 @@
   "thankYouForFeedback": "感謝您的回饋！",
   "enterFeedbackFirst": "請先輸入您的回饋",
 
+  "@_LEGAL_DOCUMENTS": {},
+  "privacyPolicy": "隱私權政策",
+  "termsOfService": "服務條款",
+
   "@_QUICK_ACTIONS": {},
   "gallery": "相簿",
   "pickFoodPhoto": "選擇食物照片",

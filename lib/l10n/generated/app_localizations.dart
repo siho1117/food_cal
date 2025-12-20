@@ -1033,6 +1033,18 @@ abstract class AppLocalizations {
   /// **'Please enter your feedback first'**
   String get enterFeedbackFirst;
 
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @termsOfService.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get termsOfService;
+
   /// No description provided for @gallery.
   ///
   /// In en, this message translates to:

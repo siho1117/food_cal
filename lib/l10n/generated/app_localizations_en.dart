@@ -477,6 +477,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enterFeedbackFirst => 'Please enter your feedback first';
 
   @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get termsOfService => 'Terms of Service';
+
+  @override
   String get gallery => 'Gallery';
 
   @override

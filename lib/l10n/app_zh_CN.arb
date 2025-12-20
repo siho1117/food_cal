@@ -205,6 +205,10 @@
   "thankYouForFeedback": "感谢您的反馈！",
   "enterFeedbackFirst": "请先输入您的反馈",
 
+  "@_LEGAL_DOCUMENTS": {},
+  "privacyPolicy": "隐私政策",
+  "termsOfService": "服务条款",
+
   "@_QUICK_ACTIONS": {},
   "gallery": "相册",
   "pickFoodPhoto": "选择食物照片",

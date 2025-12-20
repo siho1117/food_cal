@@ -7,6 +7,7 @@ import '../widgets/settings/profile_section_widget.dart';
 import '../widgets/settings/personal_details_widget.dart';
 import '../widgets/settings/preferences_widget.dart';
 import '../widgets/settings/feedback_widget.dart';
+import '../widgets/settings/legal_documents_widget.dart';
 import '../config/design_system/theme_background.dart';
 import '../widgets/common/custom_app_bar.dart';
 import '../l10n/generated/app_localizations.dart';
@@ -78,6 +79,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       // Feedback Widget
                       const FeedbackWidget(),
+
+                      const SizedBox(height: 20),
+
+                      // Legal Documents (Privacy Policy & Terms of Service)
+                      const LegalDocumentsWidget(),
 
                       // Bottom padding for navigation bar
                       const SizedBox(height: 100),

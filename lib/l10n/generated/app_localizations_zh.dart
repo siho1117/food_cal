@@ -477,6 +477,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get enterFeedbackFirst => '请先输入您的反馈';
 
   @override
+  String get privacyPolicy => '隐私政策';
+
+  @override
+  String get termsOfService => '服务条款';
+
+  @override
   String get gallery => '相册';
 
   @override
@@ -1443,6 +1449,12 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get enterFeedbackFirst => '请先输入您的反馈';
 
   @override
+  String get privacyPolicy => '隐私政策';
+
+  @override
+  String get termsOfService => '服务条款';
+
+  @override
   String get gallery => '相册';
 
   @override
@@ -2407,6 +2419,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get enterFeedbackFirst => '請先輸入您的回饋';
+
+  @override
+  String get privacyPolicy => '隱私權政策';
+
+  @override
+  String get termsOfService => '服務條款';
 
   @override
   String get gallery => '相簿';
